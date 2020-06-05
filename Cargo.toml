@@ -1,0 +1,17 @@
+[package]
+name = "flutterbug"
+version = "0.1.0"
+authors = ["not_a_seagull jtnunley01@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bitflags = "1.2"
+euclid = "0.20"
+libc = "*"
+thiserror = "1"
+x11 = { version = "2", features = ["xlib"] }
+
+[dev-dependencies]
+anyhow = "1"
+font-kit = "0.7"
+pathfinder_geometry = "0.5"
