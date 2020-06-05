@@ -1,8 +1,11 @@
 [package]
 name = "flutterbug"
 version = "0.1.0"
-authors = ["not_a_seagull jtnunley01@gmail.com>"]
+authors = ["not_a_seagull <jtnunley01@gmail.com>"]
+description = "Safe X11 bindings for Rust"
 edition = "2018"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/not-a-seagull/flutterbug"
 
 [dependencies]
 bitflags = "1.2"
