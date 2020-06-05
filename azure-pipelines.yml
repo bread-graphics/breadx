@@ -1,0 +1,70 @@
+trigger:
+  branches:
+    include: ['*']
+
+jobs:
+ - job:
+   displayName: "Check Formatting"
+   pool:
+     vmImage: ubuntu-latest
+   steps: 
+    - template: ci/install-rust.yml
+      parameters:
+        toolchain: stable
+    - script: rustup component add rustfmt
+      displayName: "Add Rustfmt"
+    - bash: rustfmt --edition 2018 --check src/lib.rs
+      displayName: "Check for properly formatted code"
+# - job:
+#   displayName: "Clippy Warnings"
+#   pool:
+#    vmImage: ubuntu-latest
+#   steps:
+#    - template: ci/install-rust.yml
+#      parameters:
+#        toolchain: stable
+#    - script: rustup component add clippy
+#      displayName: "Add Clippy"
+#    - bash: cargo clippy -- -Dwarnings
+#      displayName: "Clippy"
+ - job:
+   displayName: "Build & Test"
+   strategy:
+     matrix:
+       LinuxNightly:
+         toolchain: nightly
+         vmImage: ubuntu-latest
+       LinuxBeta:
+         toolchain: beta
+         vmImage: ubuntu-latest
+       LinuxStable:
+         toolchain: stable
+         vmImage: ubuntu-latest
+       WindowsStable:
+         toolchain: stable
+         vmImage: windows-latest
+       OSXStable:
+         toolchain: stable
+         vmImage: macOS-latest
+   pool:
+     vmImage: $(vmImage)
+   steps:
+    - template: ci/install-rust.yml
+      parameters:
+        toolchain: $(toolchain)
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
+#    - script: python ci/prepare_vm.py
+#      displayName: "Installing Required Packages"
+#      condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
+    - bash: cargo test
+      displayName: "Basic Test"
+    - bash: cargo build --no-default-features
+      displayName: "No-Std Build"
+    - bash: cargo build --features async
+      displayName: "Async Build"
+    - bash: cargo build --examples --all-features
+      displayName: "Build Examples"
+    - bash: cargo test --all-features
+      displayName: "Run Tests"

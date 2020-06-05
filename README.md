@@ -1,9 +1,32 @@
-# flutterbug
+# breadx
 
-A basic set of X11 bindings. This is intended to be used as a comprehensive, safe interface to the X Window System. Of note is that this interface uses Xlib instead of XCB, because:
+[![Build Status](https://dev.azure.com/jtnunley01/gui-tools/_apis/build/status/bread-graphics.breadx?branchName=master)](https://dev.azure.com/jtnunley01/gui-tools/_build/latest?definitionId=19&branchName=master) [![crates.io](https://img.shields.io/crates/v/breadx)](https://crates.io/crates/breadx) [![Docs](https://docs.rs/breadx/badge.svg)](https://docs.rs/breadx)
 
-1). I know Xlib better than XCB.
+An implementation of the X Window System Protocol in Rust. 100% safe and (generally) mutex-free.
 
-2). I couldn't find a good set of Rust bindings to XCB.
+MSRV is currently 1.44.0. Pull requests that make this MSRV lower are welcome.
 
-This code is dual licensed under the MIT License and the Apache 2.0 License. See the `examples` directory for usage.
+## Reasons you should use this over Xlib/XCB Bindings
+
+* No Mutexes
+* Generally faster (awaiting verification)
+* Built-in support for Rust's async ecosystem via `async_net`
+* Crate proper is `#[forbid(unsafe_code)]`, dependencies are either safe or verified.
+* Tries to provide the ease of use of Xlib while also providing XCB's ability to leverage the async capabilities of the X server
+* Can be used in `#[no_std]` environments.
+
+## Reasons not to use this over Xlib/XCB Bindings
+
+* Currently very immature
+* Extensions are supported but their interfaces are not fully implemented
+* Not ABI/API compatible with Xlib/XCB
+
+If you're looking for a more complete, full-Rust X11 implementation with support for all documented extensions, consider [x11rb](https://github.com/psychon/x11rb/). This project sets out to accomplish very much the same goal as breadx, although with different ideas of how to accomplish those goals.
+
+## Tutorials/Examples
+
+For tutorials and examples of breadx's usage, check out [the docs](https://docs.rs/breadx).
+
+## License
+
+Dual licensed under the MIT and Apache 2.0 Licenses, just like Rust proper is.
