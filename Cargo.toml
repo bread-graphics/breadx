@@ -10,7 +10,7 @@ repository = "https://github.com/not-a-seagull/flutterbug"
 [dependencies]
 bitflags = "1.2"
 euclid = "0.20"
-libc = "*"
+libc = "0.2"
 thiserror = "1"
 x11 = { version = "2", features = ["xlib"] }
 
