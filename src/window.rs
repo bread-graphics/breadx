@@ -109,6 +109,12 @@ impl Window {
         self.win
     }
 
+    /// Get the display reference stored within the window.
+    #[inline]
+    pub fn display_reference(&self) -> &DisplayReference {
+        &self.dpy
+    }
+
     /// Map this window, as either raised or not raised.
     #[inline]
     pub fn map(&self, raised: bool) -> Result<(), FlutterbugError> {

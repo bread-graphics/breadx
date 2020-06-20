@@ -1,6 +1,6 @@
 [package]
 name = "flutterbug"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["not_a_seagull <jtnunley01@gmail.com>"]
 description = "Safe X11 bindings for Rust"
 edition = "2018"
