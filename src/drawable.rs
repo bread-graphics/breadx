@@ -291,7 +291,7 @@ pub trait Drawable: HasXID + fmt::Debug {
     /// uses the one stored in the graphics context.
     #[inline]
     fn dpy(&self) -> DisplayReference {
-        self.gc_ref().dpy().clone()
+        self.gc_ref().dpy()
     }
     /// Get a reference to the colormap. By default, this gets the colormap used
     /// by the loaded display.

@@ -69,8 +69,9 @@ impl InputMethod {
         Self { inner }
     }
 
+    /// Get the raw pointer to this InputMethod.
     #[inline]
-    pub unsafe fn raw(&self) -> NonNull<_XIM> {
+    pub fn raw(&self) -> NonNull<_XIM> {
         self.inner
     }
 }
