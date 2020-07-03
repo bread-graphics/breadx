@@ -50,12 +50,12 @@ use super::{
     GenericImage, HasXID, Image, Pixmap,
 };
 use euclid::default::{Point2D, Size2D};
-use std::{
-    ffi::CString,
-    fmt, mem,
-    os::raw::{c_int, c_short, c_uint, c_ulong, c_ushort},
-    ptr::NonNull,
-    sync::{Arc, Weak},
+use core::{fmt, mem};
+use pseudostd::{
+    CString, 
+    c_int, c_short, c_uint, c_ulong, c_ushort,
+    NonNull,
+    Arc, Weak,
 };
 use x11::xlib::{self, _XGC};
 

@@ -43,10 +43,10 @@
  * ----------------------------------------------------------------------------------
  */
 
+use core::{fmt, mem};
 use super::{DisplayReference, FlutterbugError, GenericDisplay, HasXID};
-use std::{
-    fmt, mem,
-    os::raw::{c_char, c_ulong, c_ushort},
+use crate::pseudostd::{
+    c_char, c_ulong, c_ushort,
 };
 use x11::xlib;
 

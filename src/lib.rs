@@ -43,17 +43,41 @@
  * ----------------------------------------------------------------------------------
  */
 
+#![no_std]
+
 //! X11 wrapper library.
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+#[cfg(feature = "std")]
+extern crate std as core;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub extern crate x11;
 
+#[cfg(not(feature = "std"))]
+pub(crate) mod pseudostd {
+    pub use cstr_core::{CString, CStr};
+    pub use cty::*;    
+    pub use core::ptr::{self, NonNull};
+    pub use alloc::sync::{Arc, Weak};
+}
+
+#[cfg(feature = "std")]
+pub(crate) mod pseudostd {
+    pub use std::{ffi::{CString, CSTR}, os::raw::*, ptr::{self, NonNull}, sync::{Arc, Weak}};
+}
+
+use core::{fmt, mem};
 use euclid::default::{Point2D, Size2D};
-use std::{
-    ffi::CString,
-    fmt, mem,
-    os::raw::{c_char, c_int, c_uint},
-    ptr::{self, NonNull},
-    sync::{Arc, Weak},
+use pseudostd::{
+    CString, 
+    c_char, c_int, c_uint,
+    ptr, NonNull,
+    Arc, Weak,
 };
 use x11::xlib::{self, XID};
 
