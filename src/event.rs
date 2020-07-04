@@ -46,9 +46,10 @@
 
 use super::{FlutterbugError, GenericDisplay, GenericInputContext, Window};
 use alloc::string::String;
-use core::{mem, ptr::{self, NonNull}};
+use core::ptr::{self, NonNull};
 use cstr_core::CString;
 use cty::{c_int, c_long, c_uchar, c_uint, c_ulong};
+use maybe_uninit::MaybeUninit;
 use x11::xlib::{self, XID};
 
 /// The type of an X11 event.
@@ -1052,11 +1053,11 @@ impl DerivesEvent<xlib::XEvent> for Event {
 
     #[allow(unused_unsafe)]
     fn inner(&self) -> Result<xlib::XEvent, FlutterbugError> {
-        let mut xev: xlib::XEvent = unsafe { mem::zeroed() };
+        let mut xev: MaybeUninit<xlib::XEvent> = MaybeUninit::zeroed();
 
         macro_rules! set_evt {
             ($item: ident, $field: ident) => {
-                unsafe { xev.$field = $item.inner()? }
+                unsafe { (*xev.as_mut_ptr()).$field = $item.inner()? }
             };
         }
 
@@ -1093,17 +1094,17 @@ impl DerivesEvent<xlib::XEvent> for Event {
             Event::Selection(ref sn) => set_evt!(sn, selection),
         }
 
-        Ok(xev)
+        Ok(unsafe { xev.assume_init() })
     }
 }
 
 impl Event {
     /// Get the next event from the event loop.
     pub fn next(dpy: &dyn GenericDisplay) -> Result<Event, FlutterbugError> {
-        let mut xev: xlib::XEvent = unsafe { mem::zeroed() };
-        unsafe { xlib::XNextEvent(dpy.raw()?.as_mut(), &mut xev) };
+        let mut xev: MaybeUninit<xlib::XEvent> = MaybeUninit::uninit(); 
+        unsafe { xlib::XNextEvent(dpy.raw()?.as_mut(), xev.as_mut_ptr()) };
 
-        Self::from_evstruct(xev)
+        Self::from_evstruct(unsafe { xev.assume_init() })
     }
 
     /// Send this event into an event loop.

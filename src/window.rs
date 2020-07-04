@@ -50,13 +50,11 @@ use super::{
     InputMethod, Pixmap,
 };
 use alloc::{sync::Arc, vec, vec::Vec};
-use core::{
-    mem,
-    ptr::{self, NonNull},
-};
+use core::ptr::{self, NonNull};
 use cstr_core::CString;
 use cty::{c_char, c_int, c_uint, c_ulong};
 use euclid::default::{Point2D, Size2D};
+use maybe_uninit::MaybeUninit;
 use x11::xlib;
 
 bitflags::bitflags! {
@@ -138,10 +136,10 @@ impl Window {
     /// Get the window attributes for this window.
     #[inline]
     pub fn window_attributes(&self) -> Result<xlib::XWindowAttributes, FlutterbugError> {
-        let mut xattrs: xlib::XWindowAttributes = unsafe { mem::zeroed() };
-        unsafe { xlib::XGetWindowAttributes(self.dpy.raw()?.as_mut(), self.win, &mut xattrs) };
+        let mut xattrs: MaybeUninit<xlib::XWindowAttributes> = MaybeUninit::zeroed();
+        unsafe { xlib::XGetWindowAttributes(self.dpy.raw()?.as_mut(), self.win, xattrs.as_mut_ptr()) };
         // TODO: check window
-        Ok(xattrs)
+        Ok(unsafe { xattrs.assume_init() })
     }
 
     /// Set the window attributes for this window.
@@ -388,18 +386,6 @@ impl Drawable for Window {
         self.dpy.clone()
     }
 }
-
-// macro for using the set function
-/*macro_rules! set_winattrs {
-    ($($prop: ident = $val: expr),* $($flag: expr)|*) => {
-        let mut xset = xlib::XSetWindowAttributes {
-            $($prop: $val),*
-            ..unsafe { std::mem::zeroed() }
-        };
-
-        self.set_window_attributes(xset, $($flag)|*)
-    }
-}*/
 
 impl Drop for Window {
     fn drop(&mut self) {
