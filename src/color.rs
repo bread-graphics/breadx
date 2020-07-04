@@ -43,11 +43,9 @@
  * ----------------------------------------------------------------------------------
  */
 
-use core::{fmt, mem};
 use super::{DisplayReference, FlutterbugError, GenericDisplay, HasXID};
-use crate::pseudostd::{
-    c_char, c_ulong, c_ushort,
-};
+use core::{fmt, mem};
+use cty::{c_char, c_ulong, c_ushort};
 use x11::xlib;
 
 /// A color that can be used in an X11 setting.
@@ -205,7 +203,7 @@ impl ColorMap {
         // iterate over the list of colors and check for equality
         if (r == 0) && (g == 0) && (b == 0) {
             return Ok(Color::PixelID(self.black_pixel));
-        } else if (r == std::u16::MAX) && (g == std::u16::MAX) && (b == std::u16::MAX) {
+        } else if (r == core::u16::MAX) && (g == core::u16::MAX) && (b == core::u16::MAX) {
             return Ok(Color::PixelID(self.white_pixel));
         }
 

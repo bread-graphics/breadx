@@ -44,14 +44,13 @@
  */
 
 use super::{DisplayReference, FlutterbugError, GenericDisplay, HasXID};
-use std::{
+use alloc::boxed::Box;
+use core::{
     any::{Any, TypeId},
-    boxed::Box,
-    collections::HashMap,
-    fmt,
-    os::raw::c_char,
-    ptr,
+    fmt, ptr,
 };
+use cty::c_char;
+use hashbrown::HashMap;
 use x11::xlib::{self, XID};
 
 mod xctx {

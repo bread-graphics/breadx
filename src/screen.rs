@@ -43,7 +43,7 @@
  * ----------------------------------------------------------------------------------
  */
 
-use std::os::raw::c_int;
+use cty::c_int;
 
 /// A screen in an X11 display.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

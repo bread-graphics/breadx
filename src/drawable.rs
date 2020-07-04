@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------------------------
- * src/drawable.rs - Base trait for items that can be drawed upon. They are expected 
- *                   to hold references to their own GCs. This file also defines a 
+ * src/drawable.rs - Base trait for items that can be drawed upon. They are expected
+ *                   to hold references to their own GCs. This file also defines a
  *                   wrapper for the GC struct.
  * beetle - Simple graphics framework for Rust
  * Copyright © 2020 not_a_seagull
@@ -49,14 +49,14 @@ use super::{
     Color, ColorMap, DisplayReference, DroppableObject, FlutterbugError, GenericDisplay,
     GenericImage, HasXID, Image, Pixmap,
 };
-use euclid::default::{Point2D, Size2D};
-use core::{fmt, mem};
-use pseudostd::{
-    CString, 
-    c_int, c_short, c_uint, c_ulong, c_ushort,
-    NonNull,
-    Arc, Weak,
+use alloc::{
+    sync::{Arc, Weak},
+    vec::Vec,
 };
+use core::{fmt, mem, ptr::NonNull};
+use cstr_core::CString;
+use cty::{c_int, c_short, c_uint, c_ulong, c_ushort};
+use euclid::default::{Point2D, Size2D};
 use x11::xlib::{self, _XGC};
 
 bitflags::bitflags! {
@@ -242,7 +242,7 @@ impl GenericGraphicsContext for GraphicsContextReference {
     fn reference(&self) -> GraphicsContextReference {
         self.clone()
     }
-    
+
     #[inline]
     fn raw(&self) -> Result<NonNull<_XGC>, FlutterbugError> {
         Ok(*self
@@ -265,12 +265,12 @@ impl GenericGraphicsContext for GraphicsContextReference {
 // set a GC function
 macro_rules! set_gc_val {
     ($self: ident, $mask: expr, $slot: ident, $value: expr) => {{
-        let stat = xlib::XGCValues {
-            $slot: $value,
-            ..unsafe { std::mem::zeroed() }
-        };
+        use maybe_uninit::MaybeUninit;
 
-        $self.set_gc_properties($mask, stat)
+        let mut stat: MaybeUninit<xlib::XGCValues> = MaybeUninit::zeroed();
+        unsafe { (*stat.as_mut_ptr()).$slot = $value };
+
+        $self.set_gc_properties($mask, unsafe { stat.assume_init() })
     }};
 }
 
@@ -306,7 +306,7 @@ pub trait Drawable: HasXID + fmt::Debug {
         &self,
         mask: GraphicsContextValues,
     ) -> Result<xlib::XGCValues, FlutterbugError> {
-        self.gc_ref().gc_properties(mask) 
+        self.gc_ref().gc_properties(mask)
     }
 
     /// Set the properties of the graphics context for this drawable.

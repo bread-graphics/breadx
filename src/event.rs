@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------------
- * src/event.rs - An event that is emitted by the X11 server. The main Event object 
+ * src/event.rs - An event that is emitted by the X11 server. The main Event object
  *                should be an enum that encompasses all other events.
  * beetle - Simple graphics framework for Rust
  * Copyright © 2020 not_a_seagull
@@ -45,12 +45,10 @@
  */
 
 use super::{FlutterbugError, GenericDisplay, GenericInputContext, Window};
-use std::{
-    ffi::CString,
-    mem,
-    os::raw::{c_int, c_long, c_uchar, c_uint, c_ulong},
-    ptr::{self, NonNull},
-};
+use alloc::string::String;
+use core::{mem, ptr::{self, NonNull}};
+use cstr_core::CString;
+use cty::{c_int, c_long, c_uchar, c_uint, c_ulong};
 use x11::xlib::{self, XID};
 
 /// The type of an X11 event.
@@ -416,7 +414,8 @@ macro_rules! event_type {
 
             use crate::{FlutterbugError, GenericDisplay, Window};
             use super::{DerivesAnEvent, DerivesEvent, EventType};
-            use std::{convert::TryInto, os::raw::{c_char, c_uint, c_ulong, c_int}, ptr::NonNull};
+            use core::{convert::TryInto, ptr::NonNull};
+            use cty::{c_char, c_uint, c_ulong, c_int};
             use x11::xlib;
 
             #[derive(Debug, Clone)]

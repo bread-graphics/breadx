@@ -49,12 +49,10 @@
 //! a catch-all error type, and the X11Error, which holds data derived from the
 //! XErrorEvent type.
 
-use std::{
-    ffi::{IntoStringError, NulError},
-    fmt,
-    sync::TryLockError,
-};
-use thiserror::Error;
+use alloc::string::String;
+use core::fmt;
+use cstr_core::{IntoStringError, NulError};
+use cty::c_ulong;
 use x11::xlib::XID;
 
 /// Objects that can be dropped with a reference.
@@ -82,73 +80,89 @@ impl fmt::Display for DroppableObject {
 }
 
 /// An error that occurred during normal operation of Flutterbug.
-#[derive(Debug, Error)]
+#[derive(Debug, Clone)]
 pub enum FlutterbugError {
     /// A non-static error message.
-    #[error("{0}")]
     Msg(String),
     /// A static error message.
-    #[error("{0}")]
     StaticMsg(&'static str),
     /// A function failed.
-    #[error("The X11 function {0} failed.")]
     FunctionFailed(&'static str),
     /// Can't cast pointer reference to pointer.
-    #[error(
-        "Unable to cast {0}Reference to {0}. This usually means that the {0} object was dropped."
-    )]
     PointerWasDropped(DroppableObject),
     /// XCreateIC returned null.
-    #[error("Unable to create input context.")]
     ICWasNull,
     /// XOpenDisplay returned null.
-    #[error("Unable to open X11 display")]
     UnableToOpenDisplay,
-    #[error("Unable to create image")]
     ImageWasNull,
     /// No ID in color map
-    #[error("Pixel ID {0} was not found in the colormap")]
-    ColorNotFound(std::os::raw::c_ulong),
+    ColorNotFound(c_ulong),
     /// GC returned null.
-    #[error("Unable to create graphics context for window")]
     GCWasNull,
     /// Invalid event type
-    #[error("Event type is not a valid X11 event type")]
     InvalidEventType,
-    /// RwLock failed to lock.
-    #[error("Unable to create lock for RwLock")]
-    LockError,
     /// Context does not contain object
-    #[error("The context did not contain object {0}")]
     ContextNotFound(XID),
     /// Context contained invalid type
-    #[error("Context contained invalid type object")]
     ContextInvalidType,
-    #[error("Unable to access inner element of AnyEvent")]
     InnerAnyEventInaccessible,
-    #[error("Display field for event is null")]
     DisplayFieldNull,
-    #[error("Unable to retrieve input method")]
     InputMethodNull,
-    #[error("Graphics contexts must be identical in order to copy")]
     GCMustEqual,
-    /// CString creation process failed.
-    #[error("CString creation process failed")]
-    NulError(#[from] NulError),
-    #[error("CString failed to convert to UTF-8 String")]
-    IntoString(#[from] IntoStringError),
+    Nul(NulError),
+    IntoString(IntoStringError),
 }
 
-impl<T> From<TryLockError<T>> for FlutterbugError {
+impl fmt::Display for FlutterbugError {
     #[inline]
-    fn from(_t: TryLockError<T>) -> Self {
-        Self::LockError
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Msg(ref s) => f.pad(s),
+            Self::StaticMsg(s) => f.pad(s),
+            Self::FunctionFailed(s) => f.pad(s),
+            Self::PointerWasDropped(d) => write!(
+                f,
+                "Attempted to cast {0}Reference to {0}. It is possible that the {0} was dropped.",
+                d
+            ),
+            Self::ICWasNull => f.pad("Unable to create input context"),
+            Self::GCWasNull => f.pad("Unable to create graphics context"),
+            Self::InvalidEventType => f.pad("Invalid event type"),
+            Self::ContextNotFound(x) => write!(f, "Unable to find ID {} within XContext", x),
+            Self::UnableToOpenDisplay => f.pad("Unable to open display"),
+            Self::ImageWasNull => f.pad("Unable to create image"),
+            Self::ColorNotFound(c) => write!(f, "The color ID {} did not return a color", c),
+            Self::ContextInvalidType => f.pad("Attempted to retrieve invalid type from context"),
+            Self::InnerAnyEventInaccessible => f.pad("Unable to access inner AnyEvent"),
+            Self::DisplayFieldNull => f.pad("Display field was null"),
+            Self::InputMethodNull => f.pad("Input method was null"),
+            Self::GCMustEqual => f.pad("Graphics context for operations were not equal"),
+            Self::Nul(ref n) => fmt::Display::fmt(n, f),
+            Self::IntoString(ref i) => fmt::Display::fmt(i, f),
+        }
     }
 }
 
 impl From<FlutterbugError> for fmt::Error {
-    #[inline] 
+    #[inline]
     fn from(_f: FlutterbugError) -> Self {
         Self
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for FlutterbugError {}
+
+impl From<NulError> for FlutterbugError {
+    #[inline]
+    fn from(n: NulError) -> FlutterbugError {
+        Self::Nul(n)
+    }
+}
+
+impl From<IntoStringError> for FlutterbugError {
+    #[inline]
+    fn from(i: IntoStringError) -> FlutterbugError {
+        Self::IntoString(i)
     }
 }

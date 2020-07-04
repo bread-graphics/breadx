@@ -1,6 +1,6 @@
 [package]
 name = "flutterbug"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["not_a_seagull <jtnunley01@gmail.com>"]
 description = "Safe X11 bindings for Rust"
 edition = "2018"
@@ -9,19 +9,21 @@ repository = "https://github.com/not-a-seagull/flutterbug"
 
 [dependencies]
 bitflags = "1.2"
-cstr_core = { version = "0.2", optional = true }
-cty = { version = "0.2.1", optional = true }
+cfg-if = "0.1"
+cstr_core = { version = "0.2", features = ["alloc"] }
+cty = "0.2.1"
 euclid = "0.20"
+maybe-uninit = "2"
+hashbrown = "0.8"
 libc = "0.2"
-parking_lot = "0.11"
-thiserror = "1"
-x11 = { git = "https://github.com/not-a-seagull/x11-rs", branch = "no_std", features = ["xlib"], default-features = false }
+
+[dependencies.x11]
+git = "https://github.com/not-a-seagull/x11-rs"
+branch = "no_std"
+features = ["xlib"]
+default-features = false
 
 [dev-dependencies]
 anyhow = "1"
 font-kit = "0.7"
 pathfinder_geometry = "0.5"
-
-[features]
-default = ["std"]
-std = ["x11/std", "cstr_core", "cty"]

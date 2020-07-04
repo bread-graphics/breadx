@@ -47,38 +47,22 @@
 
 //! X11 wrapper library.
 
-#[cfg(not(feature = "std"))]
 extern crate alloc;
-#[cfg(feature = "std")]
-extern crate std as alloc;
-#[cfg(feature = "std")]
-extern crate std as core;
-#[cfg(feature = "std")]
-extern crate std;
 
 pub extern crate x11;
 
-#[cfg(not(feature = "std"))]
-pub(crate) mod pseudostd {
-    pub use cstr_core::{CString, CStr};
-    pub use cty::*;    
-    pub use core::ptr::{self, NonNull};
-    pub use alloc::sync::{Arc, Weak};
-}
-
-#[cfg(feature = "std")]
-pub(crate) mod pseudostd {
-    pub use std::{ffi::{CString, CSTR}, os::raw::*, ptr::{self, NonNull}, sync::{Arc, Weak}};
-}
-
-use core::{fmt, mem};
-use euclid::default::{Point2D, Size2D};
-use pseudostd::{
-    CString, 
-    c_char, c_int, c_uint,
-    ptr, NonNull,
-    Arc, Weak,
+use alloc::{
+    format,
+    sync::{Arc, Weak},
+    vec::Vec,
 };
+use core::{
+    fmt, mem,
+    ptr::{self, NonNull},
+};
+use cstr_core::CString;
+use cty::{c_char, c_int, c_uint};
+use euclid::default::{Point2D, Size2D};
 use x11::xlib::{self, XID};
 
 pub use x11::xlib::{Atom, KeySym};
@@ -298,11 +282,15 @@ pub trait GenericDisplay: fmt::Debug {
     }
 
     /// Get the default graphics context for a screen.
-    #[inline] 
+    #[inline]
     fn gc(&self, screen: Screen) -> Result<GraphicsContext, FlutterbugError> {
         let gc = unsafe { xlib::XDefaultGC(self.raw()?.as_mut(), screen.value()) };
         let gc = NonNull::new(gc).ok_or_else(|| FlutterbugError::GCWasNull)?;
-        Ok(GraphicsContext::from_raw(Arc::new(gc), self.reference(), true))
+        Ok(GraphicsContext::from_raw(
+            Arc::new(gc),
+            self.reference(),
+            true,
+        ))
     }
 
     /// Get the graphics context for the default screen.

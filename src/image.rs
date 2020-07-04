@@ -44,13 +44,10 @@
  */
 
 use super::{DroppableObject, FlutterbugError};
+use alloc::sync::{Arc, Weak};
+use core::{fmt, ptr::NonNull};
+use cty::c_ulong;
 use euclid::default::Point2D;
-use std::{
-    fmt,
-    os::raw::c_ulong,
-    ptr::NonNull,
-    sync::{Arc, Weak},
-};
 use x11::xlib;
 
 /// A 2D pixmap image.

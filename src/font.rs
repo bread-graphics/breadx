@@ -43,8 +43,12 @@
  * ----------------------------------------------------------------------------------
  */
 
-use super::{DisplayReference, GenericDisplay, FlutterbugError};
-use std::{ffi::{c_void, CStr}, fmt, ptr::NonNull};
+use super::{DisplayReference, FlutterbugError, GenericDisplay};
+use alloc::string::String;
+use core::fmt;
+use core::ptr::NonNull;
+use cstr_core::CStr;
+use cty::c_void;
 use x11::xlib;
 
 pub struct Font {
@@ -54,19 +58,29 @@ pub struct Font {
 
 impl fmt::Debug for Font {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "X11 Font with name \"{}\"", match self.name() {
-            Ok(s) => s,
-            Err(_) => String::from("UNKNOWN"),
-        })
+        write!(
+            f,
+            "X11 Font with name \"{}\"",
+            match self.name() {
+                Ok(s) => s,
+                Err(_) => String::from("UNKNOWN"),
+            }
+        )
     }
 }
 
 impl Font {
     /// Get this font from a font ID.
     #[inline]
-    pub fn from_id(dpy: &dyn GenericDisplay, id: xlib::Font) -> Result<Option<Font>, FlutterbugError> {
+    pub fn from_id(
+        dpy: &dyn GenericDisplay,
+        id: xlib::Font,
+    ) -> Result<Option<Font>, FlutterbugError> {
         let fnt = unsafe { xlib::XQueryFont(dpy.raw()?.as_mut(), id) };
-        Ok(NonNull::new(fnt).map(|storage| Self { dpy: dpy.reference(), storage }))
+        Ok(NonNull::new(fnt).map(|storage| Self {
+            dpy: dpy.reference(),
+            storage,
+        }))
     }
 
     /// Get the name of this font.

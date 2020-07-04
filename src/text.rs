@@ -44,11 +44,8 @@
  */
 
 use super::{DisplayReference, DroppableObject, FlutterbugError};
-use std::{
-    fmt,
-    ptr::NonNull,
-    sync::{Arc, Weak},
-};
+use alloc::sync::{Arc, Weak};
+use core::{fmt, ptr::NonNull};
 use x11::xlib::{self, _XIC, _XIM};
 
 /// An X11 input method, used to determine how text is input.

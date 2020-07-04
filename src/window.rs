@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------------
- * src/window.rs - A window in X11 terms. This struct stores the int representing the 
+ * src/window.rs - A window in X11 terms. This struct stores the int representing the
  *                 window, as well as its associated items.
  * beetle - Simple graphics framework for Rust
  * Copyright © 2020 not_a_seagull
@@ -49,15 +49,14 @@ use super::{
     GenericGraphicsContext, GraphicsContext, GraphicsContextReference, HasXID, InputContext,
     InputMethod, Pixmap,
 };
-use euclid::default::{Point2D, Size2D};
-use std::{
-    env,
-    ffi::CString,
+use alloc::{sync::Arc, vec, vec::Vec};
+use core::{
     mem,
-    os::raw::{c_char, c_int, c_uint, c_ulong},
     ptr::{self, NonNull},
-    sync::Arc,
 };
+use cstr_core::CString;
+use cty::{c_char, c_int, c_uint, c_ulong};
+use euclid::default::{Point2D, Size2D};
 use x11::xlib;
 
 bitflags::bitflags! {
@@ -258,11 +257,21 @@ impl Window {
             None => 0,
         };
 
+        // if we're running in a No-STD environment, make env::args() is a no-op
+        #[inline]
+        fn args() -> Result<Vec<*mut c_char>, FlutterbugError> {
+            cfg_if::cfg_if! {
+                if #[cfg(feature = "std")] {
+                    std::env::args().map(|a| unsafe { to_cstring(&a) }).collect()
+                } else {
+                    Ok(vec![])
+                }
+            }
+        }
+
         let tuple = if set_argv {
             // map env::args() to a c argv**
-            let mut args = env::args()
-                .map(|a| unsafe { to_cstring(&a) })
-                .collect::<Result<Vec<*mut c_char>, FlutterbugError>>()?;
+            let mut args = args()?;
             let argv = args.as_mut_ptr();
             let argc = args.len();
 
