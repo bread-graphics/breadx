@@ -1,0 +1,21 @@
+[package]
+name = "exbound_generator"
+version = "0.1.0"
+authors = ["not_a_seagull <jtnunley01@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+env_logger = "0.7.1"
+heck = "*"
+itertools = "*"
+log = "0.4"
+proc-macro2 = "1.0.24"
+syn = { version = "1", features = ["full"] }
+thiserror = "1"
+tinyvec = { version = "1.0.1", features = ["alloc"] }
+treexml = "0.7"
+
+[profile.release]
+lto = "fat"
+opt-level = 3
+#panic = "abort"
