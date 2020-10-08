@@ -91,3 +91,47 @@ pub fn size_of_ty(t: &str) -> syn::Expr {
     args: Punctuated::new(),
   })
 }
+
+#[inline]
+pub fn single_generic(owner: &str, gen: &str) -> syn::Type {
+  syn::Type::Path(syn::TypePath {
+    qself: None,
+    path: syn::Path {
+      leading_colon: None,
+      segments: iter::once(syn::PathSegment {
+        ident: syn::Ident::new(owner, Span::call_site()),
+        arguments: syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+          colon2_token: None,
+          lt_token: Default::default(),
+          args: iter::once(syn::GenericArgument::Type(str_to_ty(gen))).collect(),
+          gt_token: Default::default(),
+        }),
+      })
+      .collect(),
+    },
+  })
+}
+
+#[inline]
+pub fn bytes_fnarg_immut() -> syn::FnArg {
+  syn::FnArg::Typed(syn::PatType {
+    attrs: vec![],
+    pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+      attrs: vec![],
+      by_ref: None,
+      mutability: None,
+      ident: syn::Ident::new("bytes", Span::call_site()),
+      subpat: None,
+    })),
+    colon_token: Default::default(),
+    ty: Box::new(syn::Type::Reference(syn::TypeReference {
+      and_token: Default::default(),
+      lifetime: None,
+      mutability: None,
+      elem: Box::new(syn::Type::Slice(syn::TypeSlice {
+        bracket_token: Default::default(),
+        elem: Box::new(str_to_ty("u8")),
+      })),
+    })),
+  })
+}

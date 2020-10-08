@@ -1,5 +1,5 @@
 [package]
-name = "exbound"
+name = "flutterbug"
 version = "0.1.0"
 authors = ["not_a_seagull <jtnunley01@gmail.com>"]
 edition = "2018"

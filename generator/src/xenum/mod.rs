@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::{syn_util::*, Failures};
+use crate::{name_safety, syn_util::*, Failures};
 use heck::CamelCase;
 use proc_macro2::Span;
 use std::iter;
@@ -10,8 +10,13 @@ mod bitflags;
 mod true_enum;
 
 #[inline]
-pub fn xenum(name: &str, subelems: Vec<Element>) -> Result<UnresolvedEnum, Failures> {
-  Ok(UnresolvedEnum {
+pub fn xenum(name: &str, subelems: Vec<Element>) -> Result<Option<UnresolvedEnum>, Failures> {
+  // if there's only one element, don't bother
+  if subelems.len() == 1 {
+    return Ok(None);
+  }
+
+  Ok(Some(UnresolvedEnum {
     name: name.to_camel_case(),
     generator: match subelems
       .iter()
@@ -20,7 +25,7 @@ pub fn xenum(name: &str, subelems: Vec<Element>) -> Result<UnresolvedEnum, Failu
       false => true_enum::xtrueenum(name, subelems)?,
       true => bitflags::xbitflags(name, subelems)?,
     },
-  })
+  }))
 }
 
 #[inline]
@@ -49,29 +54,6 @@ pub fn size_of_tmethod(t: &str) -> syn::ImplItem {
   })
 }
 
-#[inline]
-pub fn name_safety(mut name: String) -> String {
-  match name.as_str() {
-    "1" => {
-      name = "One".to_owned();
-    }
-    "2" => {
-      name = "Two".to_owned();
-    }
-    "3" => {
-      name = "Three".to_owned();
-    }
-    "4" => {
-      name = "Four".to_owned();
-    }
-    "5" => {
-      name = "Five".to_owned();
-    }
-    _ => (),
-  }
-  name
-}
-
 pub struct UnresolvedEnum {
   generator: Box<dyn FnOnce(&str) -> Vec<syn::Item>>,
   name: String,
@@ -93,6 +75,7 @@ impl UnresolvedEnum {
     match ty.to_lowercase().as_str() {
       "byte" => "u8",
       "card8" => "u8",
+      "card16" => "u16",
       _ => {
         log::warn!("Unresolved type: {}", ty);
         ty

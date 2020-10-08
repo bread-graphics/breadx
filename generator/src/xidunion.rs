@@ -14,7 +14,7 @@ pub fn xidunion(name: &str, subelems: Vec<Element>) -> Result<Vec<syn::Item>, Fa
     .into_iter()
     .filter_map(|elem| {
       if &elem.name.to_lowercase() == "type" {
-        Some(elem.text.unwrap())
+        Some(elem.text.unwrap().to_camel_case())
       } else {
         None
       }
@@ -27,6 +27,7 @@ pub fn xidunion(name: &str, subelems: Vec<Element>) -> Result<Vec<syn::Item>, Fa
     Ok(vec![
       enum_decl(name, &subtypes),
       xidtype_impl(name, &subtypes),
+      default_impl(name, &subtypes),
     ])
   }
 }
@@ -35,7 +36,7 @@ pub fn xidunion(name: &str, subelems: Vec<Element>) -> Result<Vec<syn::Item>, Fa
 fn enum_decl(name: &str, subtypes: &[String]) -> syn::Item {
   /* Equivalent generated code:
 
-     #[derive(Default, Debug, Copy, Clone, Hash)]
+     #[derive(Debug, Copy, Clone, Hash)]
      pub enum {name} {
          {item1}({item1}),
          {item2}({item2}),
@@ -43,7 +44,7 @@ fn enum_decl(name: &str, subtypes: &[String]) -> syn::Item {
      }
   */
   syn::Item::Enum(syn::ItemEnum {
-    attrs: vec![derives(&["Default", "Debug", "Copy", "Clone", "Hash"])],
+    attrs: vec![derives(&["Debug", "Copy", "Clone", "Hash"])],
     vis: syn::Visibility::Public(syn::VisPublic {
       pub_token: Default::default(),
     }),
@@ -102,69 +103,199 @@ fn xidtype_impl(name: &str, subtypes: &[String]) -> syn::Item {
       path: str_to_path(name),
     })),
     brace_token: Default::default(),
+    items: vec![
+      syn::ImplItem::Method(syn::ImplItemMethod {
+        attrs: vec![inliner()],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        sig: syn::Signature {
+          constness: None,
+          asyncness: None,
+          unsafety: None,
+          abi: None,
+          fn_token: Default::default(),
+          ident: syn::Ident::new("xid", Span::call_site()),
+          generics: Default::default(),
+          paren_token: Default::default(),
+          inputs: iter::once(self_fnarg()).collect(),
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("XID"))),
+          variadic: None,
+        },
+        block: syn::Block {
+          brace_token: Default::default(),
+          stmts: vec![syn::Stmt::Expr(syn::Expr::Match(syn::ExprMatch {
+            attrs: vec![],
+            match_token: Default::default(),
+            expr: Box::new(str_to_exprpath("self")),
+            brace_token: Default::default(),
+            arms: subtypes
+              .iter()
+              .map(|t| syn::Arm {
+                attrs: vec![],
+                pat: syn::Pat::TupleStruct(syn::PatTupleStruct {
+                  attrs: vec![],
+                  path: syn::Path {
+                    leading_colon: None,
+                    segments: iter::once(str_to_pathseg("Self"))
+                      .chain(iter::once(str_to_pathseg(&t.to_camel_case())))
+                      .collect(),
+                  },
+                  pat: syn::PatTuple {
+                    attrs: vec![],
+                    paren_token: Default::default(),
+                    elems: iter::once(syn::Pat::Ident(syn::PatIdent {
+                      attrs: vec![],
+                      by_ref: None,
+                      mutability: None,
+                      ident: syn::Ident::new("i", Span::call_site()),
+                      subpat: None,
+                    }))
+                    .collect(),
+                  },
+                }),
+                guard: None,
+                fat_arrow_token: Default::default(),
+                comma: Some(Default::default()),
+                body: Box::new(syn::Expr::MethodCall(syn::ExprMethodCall {
+                  attrs: vec![],
+                  receiver: Box::new(str_to_exprpath("i")),
+                  dot_token: Default::default(),
+                  method: syn::Ident::new("xid", Span::call_site()),
+                  turbofish: None,
+                  paren_token: Default::default(),
+                  args: Punctuated::new(),
+                })),
+              })
+              .collect(),
+          }))],
+        },
+      }),
+      syn::ImplItem::Method(syn::ImplItemMethod {
+        attrs: vec![inliner()],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        sig: syn::Signature {
+          constness: None,
+          asyncness: None,
+          unsafety: None,
+          abi: None,
+          fn_token: Default::default(),
+          ident: syn::Ident::new("from_xid", Span::call_site()),
+          generics: Default::default(),
+          paren_token: Default::default(),
+          inputs: iter::once(syn::FnArg::Typed(syn::PatType {
+            attrs: vec![],
+            pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: syn::Ident::new("xid", Span::call_site()),
+              subpat: None,
+            })),
+            colon_token: Default::default(),
+            ty: Box::new(str_to_ty("XID")),
+          }))
+          .collect(),
+          variadic: None,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("Self"))),
+        },
+        block: syn::Block {
+          brace_token: Default::default(),
+          stmts: vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
+            attrs: vec![],
+            func: Box::new(syn::Expr::Path(syn::ExprPath {
+              attrs: vec![],
+              qself: None,
+              path: syn::Path {
+                leading_colon: None,
+                segments: iter::once(str_to_pathseg("Self"))
+                  .chain(iter::once(str_to_pathseg(&subtypes[0].to_camel_case())))
+                  .collect(),
+              },
+            })),
+            paren_token: Default::default(),
+            args: iter::once(syn::Expr::Call(syn::ExprCall {
+              attrs: vec![],
+              func: Box::new(syn::Expr::Path(syn::ExprPath {
+                attrs: vec![],
+                qself: None,
+                path: syn::Path {
+                  leading_colon: None,
+                  segments: iter::once(str_to_pathseg(&subtypes[0].to_camel_case()))
+                    .chain(iter::once(str_to_pathseg("from_xid")))
+                    .collect(),
+                },
+              })),
+              paren_token: Default::default(),
+              args: iter::once(str_to_exprpath("xid")).collect(),
+            }))
+            .collect(),
+          }))],
+        },
+      }),
+    ],
+  })
+}
+
+#[inline]
+fn default_impl(name: &str, variants: &[String]) -> syn::Item {
+  syn::Item::Impl(syn::ItemImpl {
+    attrs: vec![],
+    defaultness: None,
+    unsafety: None,
+    impl_token: Default::default(),
+    generics: Default::default(),
+    trait_: Some((None, str_to_path("Default"), Default::default())),
+    self_ty: Box::new(str_to_ty(name)),
+    brace_token: Default::default(),
     items: vec![syn::ImplItem::Method(syn::ImplItemMethod {
       attrs: vec![inliner()],
       vis: syn::Visibility::Inherited,
       defaultness: None,
       sig: syn::Signature {
+        paren_token: Default::default(),
         constness: None,
         asyncness: None,
         unsafety: None,
         abi: None,
         fn_token: Default::default(),
-        ident: syn::Ident::new("xid", Span::call_site()),
+        ident: syn::Ident::new("default", Span::call_site()),
         generics: Default::default(),
-        paren_token: Default::default(),
-        inputs: iter::once(self_fnarg()).collect(),
-        output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("XID"))),
+        inputs: Punctuated::new(),
         variadic: None,
+        output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty(name))),
       },
       block: syn::Block {
         brace_token: Default::default(),
-        stmts: vec![syn::Stmt::Expr(syn::Expr::Match(syn::ExprMatch {
+        stmts: vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
           attrs: vec![],
-          match_token: Default::default(),
-          expr: Box::new(str_to_exprpath("Self")),
-          brace_token: Default::default(),
-          arms: subtypes
-            .iter()
-            .map(|t| syn::Arm {
+          func: Box::new(syn::Expr::Path(syn::ExprPath {
+            attrs: vec![],
+            qself: None,
+            path: syn::Path {
+              leading_colon: None,
+              segments: iter::once(str_to_pathseg(name))
+                .chain(iter::once(str_to_pathseg(&variants[0])))
+                .collect(),
+            },
+          })),
+          paren_token: Default::default(),
+          args: iter::once(syn::Expr::Call(syn::ExprCall {
+            attrs: vec![],
+            func: Box::new(syn::Expr::Path(syn::ExprPath {
               attrs: vec![],
-              pat: syn::Pat::TupleStruct(syn::PatTupleStruct {
-                attrs: vec![],
-                path: syn::Path {
-                  leading_colon: None,
-                  segments: iter::once(str_to_pathseg("self"))
-                    .chain(iter::once(str_to_pathseg(&t.to_camel_case())))
-                    .collect(),
-                },
-                pat: syn::PatTuple {
-                  attrs: vec![],
-                  paren_token: Default::default(),
-                  elems: iter::once(syn::Pat::Ident(syn::PatIdent {
-                    attrs: vec![],
-                    by_ref: None,
-                    mutability: None,
-                    ident: syn::Ident::new("i", Span::call_site()),
-                    subpat: None,
-                  }))
+              qself: None,
+              path: syn::Path {
+                leading_colon: None,
+                segments: iter::once(str_to_pathseg("Default"))
+                  .chain(iter::once(str_to_pathseg("default")))
                   .collect(),
-                },
-              }),
-              guard: None,
-              fat_arrow_token: Default::default(),
-              comma: Some(Default::default()),
-              body: Box::new(syn::Expr::MethodCall(syn::ExprMethodCall {
-                attrs: vec![],
-                receiver: Box::new(str_to_exprpath("i")),
-                dot_token: Default::default(),
-                method: syn::Ident::new("xid", Span::call_site()),
-                turbofish: None,
-                paren_token: Default::default(),
-                args: Punctuated::new(),
-              })),
-            })
-            .collect(),
+              },
+            })),
+            paren_token: Default::default(),
+            args: Punctuated::new(),
+          }))
+          .collect(),
         }))],
       },
     })],

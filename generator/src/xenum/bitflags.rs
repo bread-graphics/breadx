@@ -91,7 +91,7 @@ fn xbitflag_asb(name: &str, flags: &[Flag], underlying: &str) -> syn::Item {
     items: vec![
       super::size_of_tmethod(underlying),
       syn::ImplItem::Method(syn::ImplItemMethod {
-        attrs: vec![],
+        attrs: vec![inliner()],
         vis: syn::Visibility::Inherited,
         defaultness: None,
         sig: syn::Signature {
@@ -114,6 +114,7 @@ fn xbitflag_asb(name: &str, flags: &[Flag], underlying: &str) -> syn::Item {
           stmts: asb_stmts(name, flags, underlying),
         },
       }),
+      syn::ImplItem::Method(from_bytes_method(name, flags, underlying)),
     ],
   })
 }
@@ -165,6 +166,156 @@ fn asb_stmts(name: &str, flags: &[Flag], underlying: &str) -> Vec<syn::Stmt> {
   iter::once(init_i32)
     .chain(flags.iter().map(Flag::as_incrementer_for_asb))
     .chain(iter::once(asb_i32))
+    .collect()
+}
+
+#[inline]
+fn from_bytes_method(name: &str, flags: &[Flag], underlying: &str) -> syn::ImplItemMethod {
+  syn::ImplItemMethod {
+    attrs: vec![inliner()],
+    vis: syn::Visibility::Inherited,
+    defaultness: None,
+    sig: syn::Signature {
+      constness: None,
+      asyncness: None,
+      unsafety: None,
+      abi: None,
+      fn_token: Default::default(),
+      ident: syn::Ident::new("from_bytes", Span::call_site()),
+      generics: Default::default(),
+      paren_token: Default::default(),
+      inputs: iter::once(bytes_fnarg_immut()).collect(),
+      variadic: None,
+      output: syn::ReturnType::Type(
+        Default::default(),
+        Box::new(single_generic("Option", "Self")),
+      ),
+    },
+    block: syn::Block {
+      brace_token: Default::default(),
+      stmts: from_bytes_statements(name, flags, underlying),
+    },
+  }
+}
+
+#[inline]
+fn from_bytes_statements(name: &str, flags: &[Flag], underlying: &str) -> Vec<syn::Stmt> {
+  // let mut ul: {underlying} = {underlying}::from_bytes(bytes);
+  let load_base = syn::Stmt::Semi(
+    syn::Expr::Let(syn::ExprLet {
+      attrs: vec![],
+      let_token: Default::default(),
+      pat: syn::Pat::Type(syn::PatType {
+        pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+          attrs: vec![],
+          by_ref: None,
+          mutability: None,
+          ident: syn::Ident::new("ul", Span::call_site()),
+          subpat: None,
+        })),
+        attrs: vec![],
+        colon_token: Default::default(),
+        ty: Box::new(str_to_ty(underlying)),
+      }),
+      eq_token: Default::default(),
+      expr: Box::new(syn::Expr::Try(syn::ExprTry {
+        attrs: vec![],
+        expr: Box::new(syn::Expr::Call(syn::ExprCall {
+          attrs: vec![],
+          func: Box::new(syn::Expr::Path(syn::ExprPath {
+            attrs: vec![],
+            qself: Some(syn::QSelf {
+              lt_token: Default::default(),
+              ty: Box::new(str_to_ty(underlying)),
+              position: 0,
+              as_token: None,
+              gt_token: Default::default(),
+            }),
+            path: syn::Path {
+              leading_colon: Some(Default::default()),
+              segments: iter::once(str_to_pathseg("from_bytes")).collect(),
+            },
+          })),
+          paren_token: Default::default(),
+          args: iter::once(str_to_exprpath("bytes")).collect(),
+        })),
+        question_token: Default::default(),
+      })),
+    }),
+    Default::default(),
+  );
+
+  // let flag1: bool = ul & (1 << {bit}) != 0;
+  let flags_decl = flags.iter().map(|f| {
+    syn::Stmt::Semi(
+      syn::Expr::Let(syn::ExprLet {
+        attrs: vec![],
+        let_token: Default::default(),
+        pat: syn::Pat::Type(syn::PatType {
+          attrs: vec![],
+          pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+            attrs: vec![],
+            by_ref: None,
+            mutability: None,
+            ident: syn::Ident::new(&f.name, Span::call_site()),
+            subpat: None,
+          })),
+          colon_token: Default::default(),
+          ty: Box::new(str_to_ty("bool")),
+        }),
+        eq_token: Default::default(),
+        expr: Box::new(syn::Expr::Binary(syn::ExprBinary {
+          attrs: vec![],
+          left: Box::new(syn::Expr::Binary(syn::ExprBinary {
+            attrs: vec![],
+            left: Box::new(str_to_exprpath("ul")),
+            op: syn::BinOp::BitAnd(Default::default()),
+            right: Box::new(syn::Expr::Paren(syn::ExprParen {
+              attrs: vec![],
+              paren_token: Default::default(),
+              expr: Box::new(syn::Expr::Binary(syn::ExprBinary {
+                attrs: vec![],
+                left: Box::new(int_litexpr("1")),
+                op: syn::BinOp::Shl(Default::default()),
+                right: Box::new(int_litexpr(&format!("{}", f.bit))),
+              })),
+            })),
+          })),
+          op: syn::BinOp::Ne(Default::default()),
+          right: Box::new(int_litexpr("0")),
+        })),
+      }),
+      Default::default(),
+    )
+  });
+
+  // Some(Self { fields })
+  let ctor = syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
+    attrs: vec![],
+    func: Box::new(str_to_exprpath("Some")),
+    paren_token: Default::default(),
+    args: iter::once(syn::Expr::Struct(syn::ExprStruct {
+      attrs: vec![],
+      path: str_to_path("Self"),
+      brace_token: Default::default(),
+      fields: flags
+        .iter()
+        .map(|f| syn::FieldValue {
+          attrs: vec![],
+          member: syn::Member::Named(syn::Ident::new(&f.name, Span::call_site())),
+          colon_token: None,
+          expr: str_to_exprpath(&f.name),
+        })
+        .collect(),
+      dot2_token: Default::default(),
+      rest: Default::default(),
+    }))
+    .collect(),
+  }));
+
+  iter::once(load_base)
+    .chain(flags_decl)
+    .chain(iter::once(ctor))
     .collect()
 }
 
