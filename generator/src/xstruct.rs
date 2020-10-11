@@ -19,13 +19,15 @@ pub fn xstruct(
     .collect::<Vec<Field>>();
   normalize_fields(&mut subelems);
 
-  Ok(vec![
-    xstruct_defn(name, &subelems),
-    match subelems.is_empty() {
+  let mut res = vec![
+    xstruct_defn(name, &subelems)];
+  if name != "Str" {
+    res.push(match subelems.is_empty() {
       false => xstruct_abs_impl(name, &subelems),
       true => xstruct_abs_impl_unit(name),
-    },
-  ])
+    });
+  }
+  Ok(res)
 }
 
 #[inline]
@@ -279,7 +281,7 @@ fn xstruct_as_bytes(name: &str, subelems: &[Field]) -> syn::ImplItemMethod {
 
 #[inline]
 fn as_bytes_stmts(name: &str, subelems: &[Field]) -> Vec<syn::Stmt> {
-  let mut sizing_init = sizing_init();
+  let sizing_init = sizing_init();
 
   let as_bytes_statements = subelems.iter().map(|subelem| match subelem {
     Field::Actual {
@@ -402,7 +404,7 @@ fn xstruct_from_bytes(name: &str, fields: &[Field]) -> syn::ImplItemMethod {
 
 #[inline]
 fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
-  let mut sizing_init = syn::Stmt::Semi(sizing_init(), Default::default());
+  let sizing_init = syn::Stmt::Semi(sizing_init(), Default::default());
   let mut len_hints: HashMap<usize, String> = HashMap::new();
 
   let statements = fields.iter().enumerate().flat_map(|(i, f)| {

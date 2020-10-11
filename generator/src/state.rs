@@ -3,11 +3,25 @@
 use crate::xenum::UnresolvedEnum;
 use std::collections::HashMap;
 use tinyvec::TinyVec;
+use treexml::Element;
 
 pub struct State {
   unresolved_enums: TinyVec<[UnresolvedEnum; 20]>,
   resolved: Vec<syn::Item>,
   events: HashMap<String, (usize, Vec<syn::Item>)>,
+  scanned_names: Vec<NameHints>,
+}
+
+struct NameHints {
+  name: String,
+  type_hint: TypeHint,
+}
+
+#[derive(Copy, Clone)]
+pub enum TypeHint {
+  No,
+  Enum,
+  Xidtype,
 }
 
 impl State {
@@ -17,6 +31,7 @@ impl State {
       unresolved_enums: TinyVec::new(),
       resolved: Vec::new(),
       events: HashMap::new(),
+      scanned_names: Vec::new(),
     }
   }
 
@@ -56,11 +71,30 @@ impl State {
   }
 
   #[inline]
+  pub fn generate_name_hints(&mut self, elements: &[Element]) {
+    self
+      .scanned_names
+      .extend(elements.iter().filter_map(NameHints::from_element));
+  }
+
+  #[inline]
+  pub fn name_hint(&self, name: &str) -> Option<TypeHint> {
+    self.scanned_names.iter().find_map(|x| {
+      if x.name.as_str() == &name.to_lowercase() {
+        Some(x.type_hint)
+      } else {
+        None
+      }
+    })
+  }
+
+  #[inline]
   pub fn resolved(self) -> Vec<syn::Item> {
     let Self {
       unresolved_enums,
       mut resolved,
       events,
+      ..
     } = self;
     resolved.extend(
       unresolved_enums
@@ -70,5 +104,19 @@ impl State {
         .flat_map(|ue| ue.into_iter()),
     );
     resolved
+  }
+}
+
+impl NameHints {
+  #[inline]
+  fn from_element(elem: &Element) -> Option<Self> {
+    let name = elem.attributes.get("name")?.to_lowercase();
+    let type_hint = match elem.name.as_str() {
+      "xidtype" => TypeHint::Xidtype,
+      "enum" => TypeHint::Enum,
+      _ => TypeHint::No,
+    };
+
+    Some(Self { name, type_hint })
   }
 }

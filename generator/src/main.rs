@@ -47,6 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   let document = Document::parse(file).expect("Unable to parse XML document");
 
   let root = document.root.unwrap();
+  state.generate_name_hints(&root.children);
   root
     .children
     .iter()
@@ -91,7 +92,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn determine_unresolved(elem: &Element, state: &mut state::State) -> Result<(), Failures> {
   match elem.name.to_lowercase().as_str() {
     "enum" => {
-      if let Some(ue) = xenum::xenum(elem.attributes.get("name").unwrap(), elem.children.clone())? {
+      if let Some(ue) = xenum::xenum(
+        elem.attributes.get("name").unwrap(),
+        elem.children.clone(),
+        state,
+      )? {
         state.add_unresolved_enum(ue);
       }
       Ok(())
@@ -226,26 +231,23 @@ pub enum MalformedStruct {
 
 #[inline]
 pub fn name_safety(mut name: String) -> String {
-  match name.as_str() {
-    "1" => {
-      name = "One".to_owned();
-    }
-    "2" => {
-      name = "Two".to_owned();
-    }
-    "3" => {
-      name = "Three".to_owned();
-    }
-    "4" => {
-      name = "Four".to_owned();
-    }
-    "5" => {
-      name = "Five".to_owned();
-    }
-    "type" => {
-      name = "ty".to_owned();
-    }
-    _ => (),
-  }
+  name = name.replace("16", "Sixteen");
+  name = name.replace("15", "Fifteen");
+  name = name.replace("14", "Fourteen");
+  name = name.replace("13", "Thirteen");
+  name = name.replace("12", "Twelve");
+  name = name.replace("11", "Eleven");
+  name = name.replace("10", "Ten");
+  name = name.replace("0", "Zero");
+  name = name.replace("1", "One");
+  name = name.replace("2", "Two");
+  name = name.replace("3", "Three");
+  name = name.replace("4", "Four");
+  name = name.replace("5", "Five");
+  name = name.replace("6", "Six");
+  name = name.replace("7", "Seven");
+  name = name.replace("8", "Eight");
+  name = name.replace("9", "Nine");
+  name = name.replace("type", "type_");
   name
 }

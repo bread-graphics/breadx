@@ -68,7 +68,7 @@ impl Field {
         args: Punctuated::new(),
       })),
       Field::PaddingHint { bytes } => Box::new(int_litexpr(&format!("{}", bytes))),
-      Field::LenSlot { target_index } => Box::new(int_litexpr("2")),
+      Field::LenSlot { .. } => Box::new(int_litexpr("2")),
     }
   }
 

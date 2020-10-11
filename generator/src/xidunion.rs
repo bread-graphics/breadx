@@ -43,6 +43,11 @@ fn enum_decl(name: &str, subtypes: &[String]) -> syn::Item {
          ...
      }
   */
+  let name = match name.chars().position(|x| x == ':') {
+    None => name,
+    Some(posn) => &name[posn + 1..],
+  };
+
   syn::Item::Enum(syn::ItemEnum {
     attrs: vec![derives(&["Debug", "Copy", "Clone", "Hash"])],
     vis: syn::Visibility::Public(syn::VisPublic {
@@ -54,23 +59,30 @@ fn enum_decl(name: &str, subtypes: &[String]) -> syn::Item {
     brace_token: Default::default(),
     variants: subtypes
       .iter()
-      .map(|t| syn::Variant {
-        attrs: vec![],
-        ident: syn::Ident::new(&t.to_camel_case(), Span::call_site()),
-        discriminant: None,
-        fields: syn::Fields::Unnamed(syn::FieldsUnnamed {
-          paren_token: syn::token::Paren {
-            span: Span::call_site(),
-          },
-          unnamed: iter::once(syn::Field {
-            attrs: vec![],
-            vis: syn::Visibility::Inherited,
-            ident: None,
-            colon_token: None,
-            ty: str_to_ty(&t.to_camel_case()),
-          })
-          .collect(),
-        }),
+      .map(|t| {
+        let t = match t.chars().position(|x| x == ':') {
+          None => t,
+          Some(posn) => &t[posn + 1..],
+        };
+
+        syn::Variant {
+          attrs: vec![],
+          ident: syn::Ident::new(&t.to_camel_case(), Span::call_site()),
+          discriminant: None,
+          fields: syn::Fields::Unnamed(syn::FieldsUnnamed {
+            paren_token: syn::token::Paren {
+              span: Span::call_site(),
+            },
+            unnamed: iter::once(syn::Field {
+              attrs: vec![],
+              vis: syn::Visibility::Inherited,
+              ident: None,
+              colon_token: None,
+              ty: str_to_ty(&t.to_camel_case()),
+            })
+            .collect(),
+          }),
+        }
       })
       .collect(),
   })

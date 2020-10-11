@@ -1,16 +1,39 @@
 // MIT/Apache2 License
 
-use crate::{name_safety, syn_util::*, Failures};
+use crate::{
+  name_safety,
+  state::{State, TypeHint},
+  syn_util::*,
+  Failures,
+};
 use heck::CamelCase;
 use proc_macro2::Span;
 use std::iter;
 use treexml::Element;
 
 mod bitflags;
+mod const_items;
 mod true_enum;
 
 #[inline]
-pub fn xenum(name: &str, subelems: Vec<Element>) -> Result<Option<UnresolvedEnum>, Failures> {
+pub fn xenum(
+  name: &str,
+  subelems: Vec<Element>,
+  state: &mut State,
+) -> Result<Option<UnresolvedEnum>, Failures> {
+  if let Some(xtype) = state.name_hint(name) {
+    if let TypeHint::Enum = xtype {
+    } else {
+      let owned = name.to_owned();
+      return Ok(Some(UnresolvedEnum {
+        name: "_".to_owned(),
+        generator: Some(Box::new(move |_| {
+          const_items::const_items(&owned, subelems, matches!(xtype, TypeHint::Xidtype))
+        })),
+      }));
+    }
+  }
+
   // if there's only one element, don't bother
   if subelems.len() == 1 {
     return Ok(None);
@@ -22,8 +45,8 @@ pub fn xenum(name: &str, subelems: Vec<Element>) -> Result<Option<UnresolvedEnum
       .iter()
       .any(|e| e.children[0].name.as_str() == "bit")
     {
-      false => true_enum::xtrueenum(name, subelems)?,
-      true => bitflags::xbitflags(name, subelems)?,
+      false => Some(true_enum::xtrueenum(name, subelems)?),
+      true => Some(bitflags::xbitflags(name, subelems)?),
     },
   }))
 }
@@ -55,7 +78,7 @@ pub fn size_of_tmethod(t: &str) -> syn::ImplItem {
 }
 
 pub struct UnresolvedEnum {
-  generator: Box<dyn FnOnce(&str) -> Vec<syn::Item>>,
+  generator: Option<Box<dyn FnOnce(&str) -> Vec<syn::Item>>>,
   name: String,
 }
 
@@ -67,7 +90,7 @@ impl UnresolvedEnum {
 
   #[inline]
   pub fn resolve(self, ty: &str) -> Vec<syn::Item> {
-    (self.generator)(Self::match_ty(ty))
+    (self.generator.unwrap())(Self::match_ty(ty))
   }
 
   #[inline]
@@ -84,15 +107,11 @@ impl UnresolvedEnum {
   }
 }
 
-fn _dummy(_t: &str) -> Vec<syn::Item> {
-  vec![]
-}
-
 impl Default for UnresolvedEnum {
   #[inline]
   fn default() -> Self {
     Self {
-      generator: Box::new(_dummy),
+      generator: None,
       name: String::new(),
     }
   }

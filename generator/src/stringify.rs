@@ -50,6 +50,21 @@ pub fn stringify(file: &mut syn::File) {
         }
       }
     }
+    syn::Item::Impl(syn::ItemImpl { self_ty, .. }) => match *self_ty.clone() {
+      syn::Type::Path(syn::TypePath { path, .. }) => {
+        let id = format!(
+          "{}",
+          match path.get_ident() {
+            Some(id) => id,
+            None => return,
+          }
+        );
+        if id.as_str() == "String" {
+          *item = syn::Item::Verbatim(proc_macro2::TokenStream::new());
+        }
+      }
+      _ => (),
+    },
     _ => (),
   });
 }

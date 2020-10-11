@@ -20,16 +20,7 @@ pub fn xbitflags(
 
       let child = &elem.children[0];
       match child.name.as_str() {
-        "value" => match child.text.as_deref() {
-          None => None,
-          Some(text) => {
-            if let Some('0') = text.chars().nth(0) {
-              None
-            } else {
-              Some(Err(Failures::MalformedBitflags))
-            }
-          }
-        },
+        "value" => None,
         "bit" => Some(Ok(Flag {
           name: {
             let name = elem.attributes.get("name").unwrap().to_owned();

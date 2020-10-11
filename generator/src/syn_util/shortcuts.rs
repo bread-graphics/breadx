@@ -1,12 +1,16 @@
 // MIT/Apache2 License
 
 use proc_macro2::Span;
-use std::iter;
+use std::{borrow::Cow, iter};
 
 #[inline]
 pub fn str_to_pathseg(s: &str) -> syn::PathSegment {
+  let s = match s.chars().position(|x| x == ':') {
+    None => s,
+    Some(posn) => &s[posn + 1..],
+  };
   syn::PathSegment {
-    ident: syn::Ident::new(s, Span::call_site()),
+    ident: syn::Ident::new(&*s, Span::call_site()),
     arguments: syn::PathArguments::None,
   }
 }

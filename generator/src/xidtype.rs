@@ -11,6 +11,7 @@ pub fn xidtype(name: &str) -> Vec<syn::Item> {
     xidtype_struct_decl(name),
     xidtype_trait_impl(name),
     xidtype_default(name),
+    xidtype_const_ctor(name),
   ]
 }
 
@@ -98,7 +99,7 @@ fn xidtype_trait_impl(name: &str) -> syn::Item {
       }),
       syn::ImplItem::Method(syn::ImplItemMethod {
         attrs: vec![inliner()],
-        vis: pub_vis(),
+        vis: syn::Visibility::Inherited,
         defaultness: None,
         sig: syn::Signature {
           constness: None,
@@ -174,6 +175,70 @@ fn xidtype_default(name: &str) -> syn::Item {
         generics: Default::default(),
         paren_token: Default::default(),
         inputs: Punctuated::new(),
+        variadic: None,
+        output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty(name))),
+      },
+      block: syn::Block {
+        brace_token: Default::default(),
+        stmts: vec![syn::Stmt::Expr(syn::Expr::Struct(syn::ExprStruct {
+          attrs: vec![],
+          path: str_to_path(name),
+          brace_token: Default::default(),
+          fields: iter::once(syn::FieldValue {
+            attrs: vec![],
+            member: syn::Member::Named(syn::Ident::new("inner", Span::call_site())),
+            colon_token: Some(Default::default()),
+            expr: int_litexpr("0"),
+          })
+          .collect(),
+          dot2_token: None,
+          rest: None,
+        }))],
+      },
+    })],
+  })
+}
+
+#[inline]
+fn xidtype_const_ctor(name: &str) -> syn::Item {
+  syn::Item::Impl(syn::ItemImpl {
+    attrs: vec![],
+    defaultness: None,
+    unsafety: None,
+    impl_token: Default::default(),
+    generics: Default::default(),
+    trait_: None,
+    self_ty: Box::new(str_to_ty(name)),
+    brace_token: Default::default(),
+    items: vec![syn::ImplItem::Method(syn::ImplItemMethod {
+      attrs: vec![inliner()],
+      vis: syn::Visibility::Restricted(syn::VisRestricted {
+        pub_token: Default::default(),
+        paren_token: Default::default(),
+        in_token: None,
+        path: Box::new(str_to_path("crate")),
+      }),
+      defaultness: Default::default(),
+      sig: syn::Signature {
+        constness: Some(Default::default()),
+        asyncness: None,
+        unsafety: None,
+        abi: None,
+        fn_token: Default::default(),
+        ident: syn::Ident::new("const_from_xid", Span::call_site()),
+        generics: Default::default(),
+        paren_token: Default::default(),
+        inputs: iter::once(syn::FnArg::Typed(syn::PatType {
+          attrs: vec![],
+          pat: Box::new(syn::Pat::Path(syn::PatPath {
+            attrs: vec![],
+            qself: None,
+            path: str_to_path("xid"),
+          })),
+          colon_token: Default::default(),
+          ty: Box::new(str_to_ty("XID")),
+        }))
+        .collect(),
         variadic: None,
         output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty(name))),
       },
