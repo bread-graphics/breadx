@@ -1,0 +1,1350 @@
+   Compiling flutterbug v0.1.0 (/home/jtnunley/Programming/Projects/exbound)
+error: expected one of `.`, `;`, `?`, `}`, or an operator, found keyword `Self`
+  --> src/client_message_data.rs:59:9
+   |
+58 |         bytes.copy_from_slice(bytemuck::cast_slice(&self.data))
+   |                                                                - expected one of `.`, `;`, `?`, `}`, or an operator
+59 |         Self::size()
+   |         ^^^^ unexpected token
+
+error[E0425]: cannot find function `as_bytes` in module `std::str`
+   --> src/auto/mod.rs:103:31
+    |
+103 |     vector_as_bytes(std::str::as_bytes(string), bytes)
+    |                               ^^^^^^^^ not found in `std::str`
+
+error[E0412]: cannot find type `AuthInfo` in this scope
+   --> src/display/mod.rs:103:26
+    |
+103 |     const fn setup(auth: AuthInfo) -> SetupRequest {
+    |                          ^^^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `AuthInfo` in this scope
+   --> src/display/mod.rs:104:13
+    |
+104 |         let AuthInfo { name, data } = auth;
+    |             ^^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `AuthInfo` in this scope
+   --> src/display/mod.rs:116:30
+    |
+116 |     fn init(&mut self, auth: AuthInfo) -> crate::Result {
+    |                              ^^^^^^^^ not found in this scope
+
+error[E0412]: cannot find type `AuthInfo` in this scope
+   --> src/display/mod.rs:130:42
+    |
+130 |     async fn init_async(&mut self, auth: AuthInfo) -> crate::Result {
+    |                                          ^^^^^^^^ not found in this scope
+
+error[E0637]: `'_` cannot be used here
+   --> src/display/mod.rs:150:32
+    |
+150 |     pub fn create<IC: Into<Cow<'_, str>>, IO: Into<Option<IC>>>(name: IO) -> crate::Result<Self> {
+    |                                ^^ `'_` is a reserved lifetime name
+
+warning: unused import: `boxed::Box`
+ --> src/display/mod.rs:7:26
+  |
+7 | use alloc::{borrow::Cow, boxed::Box};
+  |                          ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `boxed::Box`
+ --> src/display/name.rs:6:26
+  |
+6 | use alloc::{borrow::Cow, boxed::Box, string::String};
+  |                          ^^^^^^^^^^
+
+warning: unused import: `io::prelude::*`
+ --> src/display/name.rs:9:16
+  |
+9 | use std::{env, io::prelude::*, net, path::Path};
+  |                ^^^^^^^^^^^^^^
+
+error[E0053]: method `from_bytes` has an incompatible type for trait
+   --> src/auto/mod.rs:155:36
+    |
+28  |     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)>;
+    |                                    --------------------- type in trait
+...
+155 |     fn from_bytes(bytes: &[u8]) -> Option<Self> {
+    |                                    ^^^^^^^^^^^^ expected tuple, found `bool`
+    |
+    = note: expected fn pointer `fn(&[u8]) -> Option<(bool, usize)>`
+               found fn pointer `fn(&[u8]) -> Option<bool>`
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:44:57
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:44:57
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:44:44
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:44:44
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:44:44
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:44:44
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:44:44
+   |
+44 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `32_usize`, found `O::size()`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 32]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no method named `send_packet_async` found for type parameter `Conn` in the current scope
+  --> src/display/mod.rs:46:25
+   |
+46 |         self.connection.send_packet_async(&bytes).await?;
+   |                         ^^^^^^^^^^^^^^^^^ method not found in `Conn`
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:52:57
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:52:57
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:52:44
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:52:44
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:52:44
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:52:44
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:52:44
+   |
+52 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `32_usize`, found `O::size()`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 32]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no method named `read_packet_async` found for type parameter `Conn` in the current scope
+  --> src/display/mod.rs:53:25
+   |
+53 |         self.connection.read_packet_async(&mut bytes).await?;
+   |                         ^^^^^^^^^^^^^^^^^ method not found in `Conn`
+
+error[E0599]: no variant or associated item named `BadObjectRead` found for enum `error::Error` in the current scope
+  --> src/display/mod.rs:55:63
+   |
+55 |             O::from_bytes(&bytes).ok_or_else(|| crate::Error::BadObjectRead(stringify!(O)))?;
+   |                                                               ^^^^^^^^^^^^^ variant or associated item not found in `error::Error`
+   | 
+  ::: src/error.rs:7:1
+   |
+7  | pub enum Error {
+   | -------------- variant or associated item `BadObjectRead` not found here
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:56:12
+   |
+51 |     async fn read_object_async<O: AsByteSequence>(&mut self) -> crate::Result<O> {
+   |                                - this type parameter
+...
+56 |         Ok(())
+   |            ^^ expected type parameter `O`, found `()`
+   |
+   = note: expected type parameter `O`
+                   found unit type `()`
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:86:57
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:86:57
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                                         ^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:86:44
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:86:44
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:86:44
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:86:44
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:86:44
+   |
+86 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `33_usize`, found `R::size() + 1`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 33]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0061]: this function takes 1 argument but 0 arguments were supplied
+  --> src/display/mod.rs:87:20
+   |
+87 |         bytes[0] = R::opcode();
+   |                    ^^^^^^^^^-- supplied 0 arguments
+   |                    |
+   |                    expected 1 argument
+   | 
+  ::: src/lib.rs:48:5
+   |
+48 |     fn opcode(&self) -> u8;
+   |     ----------------------- defined here
+
+error[E0599]: no method named `write_bytes` found for type parameter `Conn` in the current scope
+  --> src/display/mod.rs:91:25
+   |
+91 |         self.connection.write_bytes(&bytes).await?;
+   |                         ^^^^^^^^^^^ method not found in `Conn`
+
+error[E0277]: `std::result::Result<(), error::Error>` is not a future
+  --> src/display/mod.rs:96:9
+   |
+96 |         self.connection.read_packet(&mut bytes).await?;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `std::result::Result<(), error::Error>` is not a future
+   |
+   = help: the trait `Future` is not implemented for `std::result::Result<(), error::Error>`
+   = note: required by `poll`
+
+error[E0599]: no variant or associated item named `BadObjectRead` found for enum `error::Error` in the current scope
+  --> src/display/mod.rs:98:42
+   |
+98 |             .ok_or_else(|| crate::Error::BadObjectRead(stringify!(R::Reply)))
+   |                                          ^^^^^^^^^^^^^ variant or associated item not found in `error::Error`
+   | 
+  ::: src/error.rs:7:1
+   |
+7  | pub enum Error {
+   | -------------- variant or associated item `BadObjectRead` not found here
+
+error[E0599]: no method named `read_packet_async` found for type parameter `Conn` in the current scope
+   --> src/display/mod.rs:134:25
+    |
+134 |         self.connection.read_packet_async(&mut bytes).await?;
+    |                         ^^^^^^^^^^^^^^^^^ method not found in `Conn`
+
+error[E0599]: no method named `collect` found for enum `std::result::Result<CString, NulError>` in the current scope
+   --> src/auto/mod.rs:68:10
+    |
+68  |         .collect::<Vec<u8>>()
+    |          ^^^^^^^ method not found in `std::result::Result<CString, NulError>`
+    | 
+   ::: /home/jtnunley/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:241:1
+    |
+241 | pub enum Result<T, E> {
+    | --------------------- doesn't satisfy `std::result::Result<CString, NulError>: Iterator`
+    |
+    = note: the method `collect` exists but the following trait bounds were not satisfied:
+            `std::result::Result<CString, NulError>: Iterator`
+            which is required by `&mut std::result::Result<CString, NulError>: Iterator`
+
+error[E0277]: `CString` doesn't implement `std::fmt::Display`
+  --> src/auto/mod.rs:80:58
+   |
+80 |             log::error!("Encountered invalid UTF-8: {}", estr.into_cstring());
+   |                                                          ^^^^^^^^^^^^^^^^^^^ `CString` cannot be formatted with the default formatter
+   |
+   = help: the trait `std::fmt::Display` is not implemented for `CString`
+   = note: in format strings you may be able to use `{:?}` (or {:#?} for pretty-print) instead
+   = note: required by `std::fmt::Display::fmt`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/auto/mod.rs:157:23
+    |
+157 |             0 => Some((false, 1)),
+    |                       ^^^^^^^^^^ expected `bool`, found tuple
+    |
+    = note: expected type `bool`
+              found tuple `(bool, {integer})`
+
+error[E0308]: mismatched types
+   --> src/auto/mod.rs:158:23
+    |
+158 |             1 => Some((true, 1)),
+    |                       ^^^^^^^^^ expected `bool`, found tuple
+    |
+    = note: expected type `bool`
+              found tuple `(bool, {integer})`
+
+error[E0308]: mismatched types
+   --> src/auto/mod.rs:273:41
+    |
+273 |         let end = match memchr::memrchr(bytes, 0) {
+    |                                         ^^^^^ expected `u8`, found `&[u8]`
+
+error[E0308]: mismatched types
+   --> src/auto/mod.rs:273:48
+    |
+273 |         let end = match memchr::memrchr(bytes, 0) {
+    |                                                ^ expected `&[u8]`, found integer
+
+error[E0308]: mismatched types
+   --> src/auto/mod.rs:280:15
+    |
+280 |         Some((s, len))
+    |               ^
+    |               |
+    |               expected struct `String`, found enum `Cow`
+    |               help: try using a conversion method: `s.to_string()`
+    |
+    = note: expected struct `String`
+                 found enum `Cow<'_, str>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:533:55
+    |
+533 |         let (visuals, sz): (Vec<Visualtype>, usize) = vector_from_bytes(bytes, len3040236485);
+    |                            ------------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                            |
+    |                            expected due to this
+    |
+    = note: expected tuple `(Vec<Visualtype>, usize)`
+                found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:636:57
+    |
+636 |         let (allowed_depths, sz): (Vec<Depth>, usize) = vector_from_bytes(bytes, len4117916042);
+    |                                   -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                                   |
+    |                                   expected due to this
+    |
+    = note: expected tuple `(Vec<Depth>, usize)`
+                found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:710:13
+    |
+709 |         let (authorization_protocol_name, sz): (String, usize) =
+    |                                                --------------- expected due to this
+710 |             string_from_bytes(bytes, len349945556);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |
+    = note: expected tuple `(String, usize)`
+                found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:713:13
+    |
+712 |         let (authorization_protocol_data, sz): (String, usize) =
+    |                                                --------------- expected due to this
+713 |             string_from_bytes(bytes, len3260496969);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |
+    = note: expected tuple `(String, usize)`
+                found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:769:45
+    |
+769 |         let (reason, sz): (String, usize) = string_from_bytes(bytes, len3106594741);
+    |                           ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                           |
+    |                           expected due to this
+    |
+    = note: expected tuple `(String, usize)`
+                found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:810:45
+    |
+810 |         let (reason, sz): (String, usize) = string_from_bytes(bytes, (length as u16 * 4) as Card16);
+    |                           ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                           |
+    |                           expected due to this
+    |
+    = note: expected tuple `(String, usize)`
+                found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:943:45
+    |
+943 |         let (vendor, sz): (String, usize) = string_from_bytes(bytes, len2038706105);
+    |                           ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                           |
+    |                           expected due to this
+    |
+    = note: expected tuple `(String, usize)`
+                found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:945:58
+    |
+945 |         let (pixmap_formats, sz): (Vec<Format>, usize) = vector_from_bytes(bytes, len801897784);
+    |                                   --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                                   |
+    |                                   expected due to this
+    |
+    = note: expected tuple `(Vec<Format>, usize)`
+                found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+   --> src/auto/xproto.rs:947:49
+    |
+947 |         let (roots, sz): (Vec<Screen>, usize) = vector_from_bytes(bytes, len439905033);
+    |                          --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+    |                          |
+    |                          expected due to this
+    |
+    = note: expected tuple `(Vec<Screen>, usize)`
+                found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:1733:52
+     |
+1733 |         let (children, sz): (Vec<Window>, usize) = vector_from_bytes(bytes, len3869234972);
+     |                             --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                             |
+     |                             expected due to this
+     |
+     = note: expected tuple `(Vec<Window>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:1779:43
+     |
+1779 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len631520816);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:1868:43
+     |
+1868 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len1276772302);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:1930:44
+     |
+1930 |           let (data, sz): (Vec<u8>, usize) = vector_from_bytes(
+     |  _________________________----------------___^
+     | |                         |
+     | |                         expected due to this
+1931 | |             bytes,
+1932 | |             ((data_len as u16 * format as u16) / format as u16) as Card16,
+1933 | |         );
+     | |_________^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:2091:13
+     |
+2090 |         let (value, sz): (Vec<u8>, usize) =
+     |                          ---------------- expected due to this
+2091 |             vector_from_bytes(bytes, (value_len as u16 * (format as u16 / 8)) as Card16);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:2159:47
+     |
+2159 |         let (atoms, sz): (Vec<Atom>, usize) = vector_from_bytes(bytes, len3145474052);
+     |                          ------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<Atom>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3202:53
+     |
+3202 |         let (events, sz): (Vec<Timecoord>, usize) = vector_from_bytes(bytes, len198709637);
+     |                           -----------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<Timecoord>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3557:43
+     |
+3557 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len1012248771);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3800:56
+     |
+3800 |         let (properties, sz): (Vec<Fontprop>, usize) = vector_from_bytes(bytes, len3186915822);
+     |                               ----------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                               |
+     |                               expected due to this
+     |
+     = note: expected tuple `(Vec<Fontprop>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3802:56
+     |
+3802 |         let (char_infos, sz): (Vec<Charinfo>, usize) = vector_from_bytes(bytes, len2172698749);
+     |                               ----------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                               |
+     |                               expected due to this
+     |
+     = note: expected tuple `(Vec<Charinfo>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3957:46
+     |
+3957 |         let (pattern, sz): (String, usize) = string_from_bytes(bytes, len1424672681);
+     |                            ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                            |
+     |                            expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:3985:49
+     |
+3985 |         let (names, sz): (Vec<String>, usize) = vector_from_bytes(bytes, len1569827429);
+     |                          --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<String>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4023:46
+     |
+4023 |         let (pattern, sz): (String, usize) = string_from_bytes(bytes, len1696285006);
+     |                            ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                            |
+     |                            expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4122:56
+     |
+4122 |         let (properties, sz): (Vec<Fontprop>, usize) = vector_from_bytes(bytes, len1229192620);
+     |                               ----------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                               |
+     |                               expected due to this
+     |
+     = note: expected tuple `(Vec<Fontprop>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4124:43
+     |
+4124 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len3734009216);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4177:48
+     |
+4177 |         let (font, sz): (Vec<String>, usize) = vector_from_bytes(bytes, len3058100284);
+     |                         --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(Vec<String>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4228:48
+     |
+4228 |         let (path, sz): (Vec<String>, usize) = vector_from_bytes(bytes, len3188705919);
+     |                         --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(Vec<String>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:4472:49
+     |
+4472 |         let (dashes, sz): (Vec<Card8>, usize) = vector_from_bytes(bytes, len3532769451);
+     |                           -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:5363:13
+     |
+5362 |         let (data, sz): (Vec<Byte>, usize) =
+     |                         ------------------ expected due to this
+5363 |             vector_from_bytes(bytes, (length as u16 * 4) as Card16);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:5512:45
+     |
+5512 |         let (string, sz): (String, usize) = string_from_bytes(bytes, len2237201508);
+     |                           ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:5575:50
+     |
+5575 |         let (string, sz): (Vec<Char2b>, usize) = vector_from_bytes(bytes, len1061843355);
+     |                           --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<Char2b>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:5821:51
+     |
+5821 |         let (cmaps, sz): (Vec<Colormap>, usize) = vector_from_bytes(bytes, len3590789389);
+     |                          ----------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<Colormap>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:5957:43
+     |
+5957 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len2434337522);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6107:50
+     |
+6107 |         let (pixels, sz): (Vec<Card32>, usize) = vector_from_bytes(bytes, len1274302304);
+     |                           --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<u32>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6109:49
+     |
+6109 |         let (masks, sz): (Vec<Card32>, usize) = vector_from_bytes(bytes, len807114526);
+     |                          --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<u32>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6223:50
+     |
+6223 |         let (pixels, sz): (Vec<Card32>, usize) = vector_from_bytes(bytes, len1663800904);
+     |                           --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<u32>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6396:43
+     |
+6396 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len1782138810);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6495:47
+     |
+6495 |         let (colors, sz): (Vec<Rgb>, usize) = vector_from_bytes(bytes, len1864027989);
+     |                           -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                           |
+     |                           expected due to this
+     |
+     = note: expected tuple `(Vec<Rgb>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:6534:43
+     |
+6534 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len1730097997);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7005:43
+     |
+7005 |         let (name, sz): (String, usize) = string_from_bytes(bytes, len1079927227);
+     |                         ---------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                         |
+     |                         expected due to this
+     |
+     = note: expected tuple `(String, usize)`
+                 found enum `Option<(String, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7100:49
+     |
+7100 |         let (names, sz): (Vec<String>, usize) = vector_from_bytes(bytes, len1027467012);
+     |                          --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<String>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7143:51
+     |
+7143 |           let (keysyms, sz): (Vec<Keysym>, usize) = vector_from_bytes(
+     |  ____________________________--------------------___^
+     | |                            |
+     | |                            expected due to this
+7144 | |             bytes,
+7145 | |             (keycode_count as u16 * keysyms_per_keycode as u16) as Card16,
+7146 | |         );
+     | |_________^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u32>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7230:51
+     |
+7230 |         let (keysyms, sz): (Vec<Keysym>, usize) = vector_from_bytes(bytes, len3986087695);
+     |                            --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                            |
+     |                            expected due to this
+     |
+     = note: expected tuple `(Vec<u32>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7670:49
+     |
+7670 |         let (address, sz): (Vec<Byte>, usize) = vector_from_bytes(bytes, len2529944729);
+     |                            ------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                            |
+     |                            expected due to this
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7715:49
+     |
+7715 |         let (address, sz): (Vec<Byte>, usize) = vector_from_bytes(bytes, len4256165127);
+     |                            ------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                            |
+     |                            expected due to this
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7762:47
+     |
+7762 |         let (hosts, sz): (Vec<Host>, usize) = vector_from_bytes(bytes, len3359490580);
+     |                          ------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<Host>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7895:47
+     |
+7895 |         let (atoms, sz): (Vec<Atom>, usize) = vector_from_bytes(bytes, len3175942458);
+     |                          ------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                          |
+     |                          expected due to this
+     |
+     = note: expected tuple `(Vec<Atom>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:7965:46
+     |
+7965 |         let (map, sz): (Vec<Card8>, usize) = vector_from_bytes(bytes, len141236219);
+     |                        -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                        |
+     |                        expected due to this
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:8038:46
+     |
+8038 |         let (map, sz): (Vec<Card8>, usize) = vector_from_bytes(bytes, len3662392473);
+     |                        -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |                        |
+     |                        expected due to this
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:8073:13
+     |
+8072 |         let (keycodes, sz): (Vec<Keycode>, usize) =
+     |                             --------------------- expected due to this
+8073 |             vector_from_bytes(bytes, (keycodes_per_modifier as u16 * 8) as Card16);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0308]: mismatched types
+    --> src/auto/xproto.rs:8154:13
+     |
+8153 |         let (keycodes, sz): (Vec<Keycode>, usize) =
+     |                             --------------------- expected due to this
+8154 |             vector_from_bytes(bytes, (keycodes_per_modifier as u16 * 8) as Card16);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected tuple, found enum `Option`
+     |
+     = note: expected tuple `(Vec<u8>, usize)`
+                 found enum `Option<(Vec<_>, usize)>`
+
+error[E0277]: the trait bound `[i8; 40]: Array` is not satisfied
+   --> src/client_message_data.rs:33:24
+    |
+33  |             .collect::<ArrayVec<[c_char; BYTE_LEN]>>()
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[i8; 40]`
+    | 
+   ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/arrayvec.rs:102:24
+    |
+102 | pub struct ArrayVec<A: Array> {
+    |                        ----- required by this bound in `ArrayVec`
+    |
+    = help: the following implementations were found:
+              <[T; 0] as Array>
+              <[T; 1024] as Array>
+              <[T; 10] as Array>
+              <[T; 11] as Array>
+            and 37 others
+
+error[E0599]: no method named `into_inner` found for struct `ArrayVec<[i8; 40]>` in the current scope
+  --> src/client_message_data.rs:34:14
+   |
+34 |             .into_inner()
+   |              ^^^^^^^^^^ method not found in `ArrayVec<[i8; 40]>`
+   |
+   = note: the method `into_inner` exists but the following trait bounds were not satisfied:
+           `[i8; 40]: Array`
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:27:57
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:27:57
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:27:44
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:27:44
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:27:44
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:27:44
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:27:44
+   |
+27 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `32_usize`, found `O::size()`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 32]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:35:57
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:35:57
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                                         ^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:35:44
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:35:44
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:35:44
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:35:44
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:35:44
+   |
+35 |         let mut bytes: TinyVec<[u8; 32]> = tiny_vec![0; O::size()];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `32_usize`, found `O::size()`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 32]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no variant or associated item named `BadObjectRead` found for enum `error::Error` in the current scope
+  --> src/display/mod.rs:38:63
+   |
+38 |             O::from_bytes(&bytes).ok_or_else(|| crate::Error::BadObjectRead(stringify!(O)))?;
+   |                                                               ^^^^^^^^^^^^^ variant or associated item not found in `error::Error`
+   | 
+  ::: src/error.rs:7:1
+   |
+7  | pub enum Error {
+   | -------------- variant or associated item `BadObjectRead` not found here
+
+error[E0015]: calls in constants are limited to constant functions, tuple structs and tuple variants
+  --> src/display/mod.rs:68:57
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                                         ^^^^^^^^^
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:68:57
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                                         ^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:68:44
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:68:44
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `[{integer}; _]: Array` is not satisfied
+  --> src/display/mod.rs:68:44
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Array` is not implemented for `[{integer}; _]`
+   | 
+  ::: /home/jtnunley/.cargo/git/checkouts/tinyvec-b41568ce67574a83/3946023/src/tinyvec.rs:95:21
+   |
+95 | pub enum TinyVec<A: Array> {
+   |                     ----- required by this bound in `TinyVec`
+   |
+   = help: the following implementations were found:
+             <[T; 0] as Array>
+             <[T; 1024] as Array>
+             <[T; 10] as Array>
+             <[T; 11] as Array>
+           and 37 others
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: constant expression depends on a generic parameter
+  --> src/display/mod.rs:68:44
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this may fail depending on what value the parameter takes
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+  --> src/display/mod.rs:68:44
+   |
+68 |         let mut bytes: TinyVec<[u8; 33]> = tiny_vec![0; R::size() + 1];
+   |                        -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `33_usize`, found `R::size() + 1`
+   |                        |
+   |                        expected due to this
+   |
+   = note: expected enum `TinyVec<[u8; 33]>`
+              found enum `TinyVec<[{integer}; _]>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0061]: this function takes 1 argument but 0 arguments were supplied
+  --> src/display/mod.rs:69:20
+   |
+69 |         bytes[0] = R::opcode();
+   |                    ^^^^^^^^^-- supplied 0 arguments
+   |                    |
+   |                    expected 1 argument
+   | 
+  ::: src/lib.rs:48:5
+   |
+48 |     fn opcode(&self) -> u8;
+   |     ----------------------- defined here
+
+error[E0599]: no variant or associated item named `BadObjectRead` found for enum `error::Error` in the current scope
+  --> src/display/mod.rs:80:42
+   |
+80 |             .ok_or_else(|| crate::Error::BadObjectRead(stringify!(R::Reply)))
+   |                                          ^^^^^^^^^^^^^ variant or associated item not found in `error::Error`
+   | 
+  ::: src/error.rs:7:1
+   |
+7  | pub enum Error {
+   | -------------- variant or associated item `BadObjectRead` not found here
+
+error[E0599]: no method named `read_packet_blocking` found for type parameter `Conn` in the current scope
+   --> src/display/mod.rs:120:25
+    |
+120 |         self.connection.read_packet_blocking(&mut bytes)?;
+    |                         ^^^^^^^^^^^^^^^^^^^^ method not found in `Conn`
+
+error: aborting due to 122 previous errors; 3 warnings emitted
+
+Some errors have detailed explanations: E0015, E0053, E0061, E0277, E0308, E0412, E0422, E0425, E0599...
+For more information about an error, try `rustc --explain E0015`.
+error: could not compile `flutterbug`
+
+To learn more, run the command again with --verbose.

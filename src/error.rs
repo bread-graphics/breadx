@@ -11,6 +11,10 @@ pub enum Error {
     UnableToOpenConnection,
     /// IO Error
     Io(IoError),
+    /// Unable to open connection to the X11 server.
+    FailedToConnect,
+    /// BadReadError
+    BadObjectRead,
 }
 
 impl From<IoError> for Error {
@@ -26,6 +30,8 @@ impl fmt::Display for Error {
         match self {
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
+            Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
+            Self::BadObjectRead => write!(f, "Unable to read object from bytes"),
             Self::Io(i) => write!(f, "{}", i),
         }
     }

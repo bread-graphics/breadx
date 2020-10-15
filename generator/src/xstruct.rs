@@ -1,7 +1,6 @@
 // MIT/Apache2 License
 
 use crate::{field::*, state::State, syn_util::*, Failures, MalformedStruct};
-use itertools::Itertools;
 use proc_macro2::Span;
 use std::{collections::HashMap, convert::TryInto, iter};
 use syn::punctuated::Punctuated;
@@ -19,15 +18,19 @@ pub fn xstruct(
     .collect::<Vec<Field>>();
   normalize_fields(&mut subelems);
 
-  let mut res = vec![
-    xstruct_defn(name, &subelems)];
+  Ok(xstruct_with_fields(name, subelems))
+}
+
+#[inline]
+pub fn xstruct_with_fields(name: &str, fields: Vec<Field>) -> Vec<syn::Item> {
+  let mut res = vec![xstruct_defn(name, &fields)];
   if name != "Str" {
-    res.push(match subelems.is_empty() {
-      false => xstruct_abs_impl(name, &subelems),
+    res.push(match fields.is_empty() {
+      false => xstruct_abs_impl(name, &fields),
       true => xstruct_abs_impl_unit(name),
     });
   }
-  Ok(res)
+  res
 }
 
 #[inline]
@@ -98,6 +101,11 @@ fn xstruct_abs_impl(name: &str, fields: &[Field]) -> syn::Item {
 
 #[inline]
 fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
+  let ret_zero = syn::Block {
+    brace_token: Default::default(),
+    stmts: vec![syn::Stmt::Expr(int_litexpr("0"))],
+  };
+
   syn::Item::Impl(syn::ItemImpl {
     unsafety: None,
     attrs: vec![],
@@ -125,10 +133,7 @@ fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
           variadic: None,
           output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
         },
-        block: syn::Block {
-          brace_token: Default::default(),
-          stmts: vec![syn::Stmt::Expr(int_litexpr("0"))],
-        },
+        block: ret_zero.clone(),
       }),
       syn::ImplItem::Method(syn::ImplItemMethod {
         attrs: vec![inliner()],
@@ -144,15 +149,12 @@ fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
           generics: Default::default(),
           paren_token: Default::default(),
           variadic: None,
-          output: syn::ReturnType::Default,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
           inputs: iter::once(self_fnarg())
             .chain(iter::once(bytes_fnarg()))
             .collect(),
         },
-        block: syn::Block {
-          brace_token: Default::default(),
-          stmts: vec![],
-        },
+        block: ret_zero,
       }),
       syn::ImplItem::Method(syn::ImplItemMethod {
         attrs: vec![inliner()],
@@ -171,7 +173,15 @@ fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
           variadic: None,
           output: syn::ReturnType::Type(
             Default::default(),
-            Box::new(single_generic("Option", "Self")),
+            Box::new(single_generic_type(
+              "Option",
+              syn::Type::Tuple(syn::TypeTuple {
+                paren_token: Default::default(),
+                elems: vec![str_to_ty("Self"), str_to_ty("usize")]
+                  .into_iter()
+                  .collect(),
+              }),
+            )),
           ),
         },
         block: syn::Block {
@@ -180,7 +190,14 @@ fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
             attrs: vec![],
             func: Box::new(str_to_exprpath("Some")),
             paren_token: Default::default(),
-            args: iter::once(str_to_exprpath("Self")).collect(),
+            args: iter::once(syn::Expr::Tuple(syn::ExprTuple {
+              attrs: vec![],
+              paren_token: Default::default(),
+              elems: vec![str_to_exprpath("Self"), int_litexpr("0")]
+                .into_iter()
+                .collect(),
+            }))
+            .collect(),
           }))],
         },
       }),
@@ -195,7 +212,7 @@ fn xstruct_size_fn(name: &str, subelems: &[Field]) -> syn::ImplItemMethod {
      #[inline]
      fn size(&self) -> usize {
          /* the sum of the size of the fields, the padding hints, and the lengths
-            (which are represented as 16 bit unsigned integers, by the way */
+            (which are represented as 16 bit unsigned integers, by the way) */
      }
   */
   syn::ImplItemMethod {
@@ -248,8 +265,7 @@ fn xstruct_as_bytes(name: &str, subelems: &[Field]) -> syn::ImplItemMethod {
      #[inline]
      fn as_bytes(&self, bytes: &mut [u8]) {
          let mut index = 0;
-         self.field1.as_bytes(&mut bytes[index..]);
-         index += {size of field1};
+         index += self.field1.as_bytes(&mut bytes[index..]);
          // and so on and so forth
      }
   */
@@ -267,7 +283,7 @@ fn xstruct_as_bytes(name: &str, subelems: &[Field]) -> syn::ImplItemMethod {
       generics: Default::default(),
       paren_token: Default::default(),
       variadic: None,
-      output: syn::ReturnType::Default,
+      output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
       inputs: iter::once(self_fnarg())
         .chain(iter::once(bytes_fnarg()))
         .collect(),
@@ -283,53 +299,16 @@ fn xstruct_as_bytes(name: &str, subelems: &[Field]) -> syn::ImplItemMethod {
 fn as_bytes_stmts(name: &str, subelems: &[Field]) -> Vec<syn::Stmt> {
   let sizing_init = sizing_init();
 
-  let as_bytes_statements = subelems.iter().map(|subelem| match subelem {
-    Field::Actual {
-      name,
-      vec_len_index,
-      ..
-    } => match vec_len_index {
-      None => method_call_for_as_bytes(self_field(name.clone())),
-      Some(_) => method_call_for_as_bytes(Box::new(syn::Expr::MethodCall(syn::ExprMethodCall {
-        attrs: vec![],
-        receiver: self_field(name.clone()),
-        dot_token: Default::default(),
-        method: syn::Ident::new("as_ptr", Span::call_site()),
-        turbofish: None,
-        paren_token: Default::default(),
-        args: Punctuated::new(),
-      }))),
-    },
-    Field::PaddingHint { .. } => syn::Expr::Verbatim("".parse().unwrap()),
-    Field::LenSlot { target_index } => {
-      method_call_for_as_bytes(Box::new(syn::Expr::Paren(syn::ExprParen {
-        attrs: vec![],
-        paren_token: Default::default(),
-        expr: Box::new(syn::Expr::Cast(syn::ExprCast {
-          attrs: vec![],
-          expr: Box::new(syn::Expr::MethodCall(syn::ExprMethodCall {
-            attrs: vec![],
-            receiver: self_field(subelems[*target_index].name_or_panic().clone()),
-            dot_token: Default::default(),
-            method: syn::Ident::new("len", Span::call_site()),
-            turbofish: None,
-            paren_token: Default::default(),
-            args: Punctuated::new(),
-          })),
-          as_token: Default::default(),
-          ty: Box::new(str_to_ty("Card16")),
-        })),
-      })))
-    }
-  });
-
-  let increment_statements = subelems
+  let as_bytes_statements = subelems
     .iter()
-    .map(|subelem| increment_subelem_size(subelem));
+    .map(|subelem| subelem.as_bytes_stmt(subelems));
+
+  let ret2 = str_to_exprpath("index");
 
   iter::once(sizing_init)
-    .chain(as_bytes_statements.interleave(increment_statements))
+    .chain(as_bytes_statements)
     .map(|expr| syn::Stmt::Semi(expr, Default::default()))
+    .chain(iter::once(syn::Stmt::Expr(ret2)))
     .collect()
 }
 
@@ -340,36 +319,6 @@ fn increment_subelem_size(field: &Field) -> syn::Expr {
     left: Box::new(str_to_exprpath("index")),
     op: syn::BinOp::AddEq(Default::default()),
     right: field.size(),
-  })
-}
-
-#[inline]
-fn method_call_for_as_bytes(field_path: Box<syn::Expr>) -> syn::Expr {
-  syn::Expr::MethodCall(syn::ExprMethodCall {
-    attrs: vec![],
-    receiver: field_path,
-    dot_token: Default::default(),
-    method: syn::Ident::new("as_bytes", Span::call_site()),
-    turbofish: None,
-    paren_token: Default::default(),
-    args: iter::once(syn::Expr::Reference(syn::ExprReference {
-      attrs: vec![],
-      and_token: Default::default(),
-      raw: Default::default(),
-      mutability: Some(Default::default()),
-      expr: Box::new(syn::Expr::Index(syn::ExprIndex {
-        attrs: vec![],
-        expr: Box::new(str_to_exprpath("bytes")),
-        bracket_token: Default::default(),
-        index: Box::new(syn::Expr::Range(syn::ExprRange {
-          attrs: vec![],
-          from: Some(Box::new(str_to_exprpath("index"))),
-          limits: syn::RangeLimits::HalfOpen(Default::default()),
-          to: None,
-        })),
-      })),
-    }))
-    .collect(),
   })
 }
 
@@ -392,7 +341,15 @@ fn xstruct_from_bytes(name: &str, fields: &[Field]) -> syn::ImplItemMethod {
       variadic: None,
       output: syn::ReturnType::Type(
         Default::default(),
-        Box::new(single_generic("Option", "Self")),
+        Box::new(single_generic_type(
+          "Option",
+          syn::Type::Tuple(syn::TypeTuple {
+            paren_token: Default::default(),
+            elems: vec![str_to_ty("Self"), str_to_ty("usize")]
+              .into_iter()
+              .collect(),
+          }),
+        )),
       ),
     },
     block: syn::Block {
@@ -403,6 +360,19 @@ fn xstruct_from_bytes(name: &str, fields: &[Field]) -> syn::ImplItemMethod {
 }
 
 #[inline]
+fn increment_by_sz() -> syn::Stmt {
+  syn::Stmt::Semi(
+    syn::Expr::AssignOp(syn::ExprAssignOp {
+      attrs: vec![],
+      left: Box::new(str_to_exprpath("index")),
+      op: syn::BinOp::AddEq(Default::default()),
+      right: Box::new(str_to_exprpath("sz")),
+    }),
+    Default::default(),
+  )
+}
+
+#[inline]
 fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
   let sizing_init = syn::Stmt::Semi(sizing_init(), Default::default());
   let mut len_hints: HashMap<usize, String> = HashMap::new();
@@ -410,91 +380,126 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
   let statements = fields.iter().enumerate().flat_map(|(i, f)| {
     match f {
       Field::LenSlot { target_index } => {
-        let mut randomized: [u8; 4] = [0; 4];
-        getrandom::getrandom(&mut randomized).unwrap();
-        let randomized = u32::from_ne_bytes(randomized);
-        let randomized = format!("len{}", randomized);
+        match &fields[*target_index] {
+          Field::Actual {
+            vec_len_index: Some(ll),
+            name,
+            ..
+          } => {
+            if let Ok(_) = ll.clone().into_single_item() {
+              let mut randomized: [u8; 4] = [0; 4];
+              getrandom::getrandom(&mut randomized).unwrap();
+              let randomized = u32::from_ne_bytes(randomized);
+              let randomized = format!("len{}", randomized);
 
-        // load it
-        let load_stmt = load_stmt(
-          str_to_ty("i32"),
-          syn::Ident::new(&randomized, Span::call_site()),
-        );
-        let inc_stmt = syn::Stmt::Semi(increment_subelem_size(f), Default::default());
+              // load it
+              let load_stmt = load_stmt(
+                str_to_ty("Card16"),
+                syn::Ident::new(&randomized, Span::call_site()),
+              );
 
-        len_hints.insert(*target_index, randomized);
-        vec![load_stmt, inc_stmt]
+              len_hints.insert(*target_index, randomized);
+              vec![load_stmt, increment_by_sz()]
+            } else {
+              vec![]
+            }
+          }
+          _ => vec![],
+        }
       }
-      Field::PaddingHint { .. } => vec![syn::Stmt::Semi(
-        increment_subelem_size(f),
+      Field::PaddingHint { bytes } => vec![syn::Stmt::Semi(
+        syn::Expr::AssignOp(syn::ExprAssignOp {
+          attrs: vec![],
+          left: Box::new(str_to_exprpath("index")),
+          op: syn::BinOp::AddEq(Default::default()),
+          right: Box::new(int_litexpr(&format!("{}", bytes))),
+        }),
         Default::default(),
       )],
       Field::Actual {
         ty,
         name: field_name,
         vec_len_index,
+        is_string,
       } => {
         if let Some(ll) = vec_len_index {
-          if let Ok(_) = ll.clone().into_single_item() {
-            let len = match len_hints.remove(&i) {
-              Some(len) => len,
-              None => {
-                log::error!("Bad list found in {}: {}", name, field_name);
-                return vec![];
+          if !ll.is_fixed_size() {
+            match ll.clone().into_single_item() {
+              Ok(_) => {
+                let len = match len_hints.remove(&i) {
+                  Some(len) => len,
+                  None => {
+                    log::error!("Bad list found in {}: {}", name, field_name);
+                    log::error!("LL is {:?}", ll);
+                    return vec![];
+                  }
+                };
+                // we need to load the pointer, then increment the index,
+                // then create the vector via the function
+                // "vector_from_bytes" or "string_from_bytes"
+                let vfb = utilize_vector_from_bytes(
+                  ty.clone(),
+                  field_name.clone(),
+                  syn::Expr::Path(syn::ExprPath {
+                    attrs: vec![],
+                    qself: None,
+                    path: syn::Path {
+                      leading_colon: None,
+                      segments: iter::once(syn::PathSegment {
+                        ident: syn::Ident::new(&len, Span::call_site()),
+                        arguments: Default::default(),
+                      })
+                      .collect(),
+                    },
+                  }),
+                  *is_string,
+                );
+                return vec![vfb, increment_by_sz()];
               }
-            };
-            // we need to load the pointer, then increment the index,
-            // then create the vector via the unsafe function
-            // "clone_from_ptr"
-            return vec![
-              load_stmt(
-                syn::Type::Ptr(syn::TypePtr {
-                  star_token: Default::default(),
-                  const_token: Some(Default::default()),
-                  mutability: None,
-                  elem: Box::new(str_to_ty("u8")),
-                }),
-                field_name.clone(),
-              ),
-              syn::Stmt::Semi(increment_subelem_size(f), Default::default()),
-              utilize_clone_from_ptr(ty.clone(), field_name.clone(), &len),
-            ];
+              Err(ll) => {
+                let vfb =
+                  utilize_vector_from_bytes(ty.clone(), field_name.clone(), ll.expr(), *is_string);
+                return vec![vfb, increment_by_sz()];
+              }
+            }
           }
         }
 
-        vec![
-          load_stmt(ty.clone(), field_name.clone()),
-          syn::Stmt::Semi(increment_subelem_size(f), Default::default()),
-        ]
+        vec![load_stmt(ty.clone(), field_name.clone()), increment_by_sz()]
       }
     }
   });
 
+  let ctor = syn::Expr::Struct(syn::ExprStruct {
+    attrs: vec![],
+    path: str_to_path("Self"),
+    brace_token: Default::default(),
+    dot2_token: None,
+    rest: None,
+    fields: fields
+      .iter()
+      .filter_map(|f| {
+        if let Field::Actual { name, .. } = f {
+          Some(syn::FieldValue {
+            attrs: vec![],
+            member: syn::Member::Named(name.clone()),
+            colon_token: None,
+            expr: syn::Expr::Verbatim(proc_macro2::TokenStream::new()),
+          })
+        } else {
+          None
+        }
+      })
+      .collect(),
+  });
   let init_struct = syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
     attrs: vec![],
     func: Box::new(str_to_exprpath("Some")),
     paren_token: Default::default(),
-    args: iter::once(syn::Expr::Struct(syn::ExprStruct {
+    args: iter::once(syn::Expr::Tuple(syn::ExprTuple {
       attrs: vec![],
-      path: str_to_path("Self"),
-      brace_token: Default::default(),
-      dot2_token: None,
-      rest: None,
-      fields: fields
-        .iter()
-        .filter_map(|f| {
-          if let Field::Actual { name, .. } = f {
-            Some(syn::FieldValue {
-              attrs: vec![],
-              member: syn::Member::Named(name.clone()),
-              colon_token: None,
-              expr: syn::Expr::Verbatim(proc_macro2::TokenStream::new()),
-            })
-          } else {
-            None
-          }
-        })
-        .collect(),
+      paren_token: Default::default(),
+      elems: vec![ctor, str_to_exprpath("index")].into_iter().collect(),
     }))
     .collect(),
   }));
@@ -506,41 +511,64 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
 }
 
 #[inline]
-fn utilize_clone_from_ptr(vec_ty: syn::Type, id: syn::Ident, len: &str) -> syn::Stmt {
-  // SAFETY: we know the length of the ptr and the ptr, so this
-  //         should work out
-  // TODO: increment list len
+fn utilize_vector_from_bytes(
+  vec_ty: syn::Type,
+  id: syn::Ident,
+  len: syn::Expr,
+  is_string: bool,
+) -> syn::Stmt {
   syn::Stmt::Semi(
     syn::Expr::Let(syn::ExprLet {
       attrs: vec![],
       pat: syn::Pat::Type(syn::PatType {
         attrs: vec![],
         colon_token: Default::default(),
-        pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+        pat: Box::new(syn::Pat::Tuple(syn::PatTuple {
           attrs: vec![],
-          by_ref: None,
-          mutability: None,
-          ident: id.clone(),
-          subpat: None,
+          paren_token: Default::default(),
+          elems: vec![
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: id.clone(),
+              subpat: None,
+            }),
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: syn::Ident::new("sz", Span::call_site()),
+              subpat: None,
+            }),
+          ]
+          .into_iter()
+          .collect(),
         })),
-        ty: Box::new(vec_ty),
+        ty: Box::new(syn::Type::Tuple(syn::TypeTuple {
+          paren_token: Default::default(),
+          elems: vec![vec_ty.clone(), str_to_ty("usize")]
+            .into_iter()
+            .collect(),
+        })),
       }),
       eq_token: Default::default(),
-      expr: Box::new(syn::Expr::Unsafe(syn::ExprUnsafe {
+      expr: Box::new(syn::Expr::Try(syn::ExprTry {
         attrs: vec![],
-        unsafe_token: Default::default(),
-        block: syn::Block {
-          brace_token: Default::default(),
-          stmts: vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
-            attrs: vec![],
-            func: Box::new(str_to_exprpath("clone_from_ptr")),
-            paren_token: Default::default(),
-            args: iter::once(str_to_exprpath(&format!("{}", id)))
-              .chain(iter::once(str_to_exprpath(len)))
-              .collect(),
-          }))],
-        },
+        question_token: Default::default(),
+        expr: Box::new(syn::Expr::Call(syn::ExprCall {
+          attrs: vec![],
+          func: Box::new(str_to_exprpath(match is_string {
+            true => "string_from_bytes",
+            false => "vector_from_bytes",
+          })),
+          paren_token: Default::default(),
+          args: iter::once(str_to_exprpath("bytes"))
+            .chain(iter::once(len))
+            .collect(),
+        })),
       })),
+
       let_token: Default::default(),
     }),
     Default::default(),
@@ -556,15 +584,33 @@ fn load_stmt(ty: syn::Type, id: syn::Ident) -> syn::Stmt {
       eq_token: Default::default(),
       pat: syn::Pat::Type(syn::PatType {
         attrs: vec![],
-        pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+        pat: Box::new(syn::Pat::Tuple(syn::PatTuple {
           attrs: vec![],
-          by_ref: None,
-          mutability: None,
-          ident: id,
-          subpat: None,
+          paren_token: Default::default(),
+          elems: vec![
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: id,
+              subpat: None,
+            }),
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: syn::Ident::new("sz", Span::call_site()),
+              subpat: None,
+            }),
+          ]
+          .into_iter()
+          .collect(),
         })),
         colon_token: Default::default(),
-        ty: Box::new(ty.clone()),
+        ty: Box::new(syn::Type::Tuple(syn::TypeTuple {
+          paren_token: Default::default(),
+          elems: vec![ty.clone(), str_to_ty("usize")].into_iter().collect(),
+        })),
       }),
       expr: Box::new(syn::Expr::Try(syn::ExprTry {
         question_token: Default::default(),

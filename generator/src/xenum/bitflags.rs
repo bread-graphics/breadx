@@ -98,7 +98,7 @@ fn xbitflag_asb(name: &str, flags: &[Flag], underlying: &str) -> syn::Item {
             .chain(iter::once(bytes_fnarg()))
             .collect(),
           variadic: None,
-          output: syn::ReturnType::Default,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
         },
         block: syn::Block {
           brace_token: Default::default(),
@@ -141,18 +141,15 @@ fn asb_stmts(name: &str, flags: &[Flag], underlying: &str) -> Vec<syn::Stmt> {
     Default::default(),
   );
 
-  let asb_i32 = syn::Stmt::Semi(
-    syn::Expr::MethodCall(syn::ExprMethodCall {
-      attrs: vec![],
-      receiver: Box::new(str_to_exprpath("asb")),
-      dot_token: Default::default(),
-      method: syn::Ident::new("as_bytes", Span::call_site()),
-      turbofish: None,
-      paren_token: Default::default(),
-      args: iter::once(str_to_exprpath("bytes")).collect(),
-    }),
-    Default::default(),
-  );
+  let asb_i32 = syn::Stmt::Expr(syn::Expr::MethodCall(syn::ExprMethodCall {
+    attrs: vec![],
+    receiver: Box::new(str_to_exprpath("asb")),
+    dot_token: Default::default(),
+    method: syn::Ident::new("as_bytes", Span::call_site()),
+    turbofish: None,
+    paren_token: Default::default(),
+    args: iter::once(str_to_exprpath("bytes")).collect(),
+  }));
 
   iter::once(init_i32)
     .chain(flags.iter().map(Flag::as_incrementer_for_asb))
@@ -179,7 +176,15 @@ fn from_bytes_method(name: &str, flags: &[Flag], underlying: &str) -> syn::ImplI
       variadic: None,
       output: syn::ReturnType::Type(
         Default::default(),
-        Box::new(single_generic("Option", "Self")),
+        Box::new(single_generic_type(
+          "Option",
+          syn::Type::Tuple(syn::TypeTuple {
+            paren_token: Default::default(),
+            elems: vec![str_to_ty("Self"), str_to_ty("usize")]
+              .into_iter()
+              .collect(),
+          }),
+        )),
       ),
     },
     block: syn::Block {
@@ -191,22 +196,42 @@ fn from_bytes_method(name: &str, flags: &[Flag], underlying: &str) -> syn::ImplI
 
 #[inline]
 fn from_bytes_statements(name: &str, flags: &[Flag], underlying: &str) -> Vec<syn::Stmt> {
-  // let mut ul: {underlying} = {underlying}::from_bytes(bytes);
+  // let (ul, len) = {underlying}::from_bytes(bytes)?;
   let load_base = syn::Stmt::Semi(
     syn::Expr::Let(syn::ExprLet {
       attrs: vec![],
       let_token: Default::default(),
       pat: syn::Pat::Type(syn::PatType {
-        pat: Box::new(syn::Pat::Ident(syn::PatIdent {
+        pat: Box::new(syn::Pat::Tuple(syn::PatTuple {
           attrs: vec![],
-          by_ref: None,
-          mutability: None,
-          ident: syn::Ident::new("ul", Span::call_site()),
-          subpat: None,
+          paren_token: Default::default(),
+          elems: vec![
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: syn::Ident::new("ul", Span::call_site()),
+              subpat: None,
+            }),
+            syn::Pat::Ident(syn::PatIdent {
+              attrs: vec![],
+              by_ref: None,
+              mutability: None,
+              ident: syn::Ident::new("len", Span::call_site()),
+              subpat: None,
+            }),
+          ]
+          .into_iter()
+          .collect(),
         })),
         attrs: vec![],
         colon_token: Default::default(),
-        ty: Box::new(str_to_ty(underlying)),
+        ty: Box::new(syn::Type::Tuple(syn::TypeTuple {
+          paren_token: Default::default(),
+          elems: vec![str_to_ty(underlying), str_to_ty("usize")]
+            .into_iter()
+            .collect(),
+        })),
       }),
       eq_token: Default::default(),
       expr: Box::new(syn::Expr::Try(syn::ExprTry {
@@ -280,26 +305,31 @@ fn from_bytes_statements(name: &str, flags: &[Flag], underlying: &str) -> Vec<sy
     )
   });
 
-  // Some(Self { fields })
+  // Some((Self { fields }, len))
+  let sinit = syn::Expr::Struct(syn::ExprStruct {
+    attrs: vec![],
+    path: str_to_path("Self"),
+    brace_token: Default::default(),
+    fields: flags
+      .iter()
+      .map(|f| syn::FieldValue {
+        attrs: vec![],
+        member: syn::Member::Named(syn::Ident::new(&f.name, Span::call_site())),
+        colon_token: None,
+        expr: str_to_exprpath(&f.name),
+      })
+      .collect(),
+    dot2_token: Default::default(),
+    rest: Default::default(),
+  });
   let ctor = syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
     attrs: vec![],
     func: Box::new(str_to_exprpath("Some")),
     paren_token: Default::default(),
-    args: iter::once(syn::Expr::Struct(syn::ExprStruct {
+    args: iter::once(syn::Expr::Tuple(syn::ExprTuple {
       attrs: vec![],
-      path: str_to_path("Self"),
-      brace_token: Default::default(),
-      fields: flags
-        .iter()
-        .map(|f| syn::FieldValue {
-          attrs: vec![],
-          member: syn::Member::Named(syn::Ident::new(&f.name, Span::call_site())),
-          colon_token: None,
-          expr: str_to_exprpath(&f.name),
-        })
-        .collect(),
-      dot2_token: Default::default(),
-      rest: Default::default(),
+      paren_token: Default::default(),
+      elems: vec![sinit, str_to_exprpath("len")].into_iter().collect(),
     }))
     .collect(),
   }));

@@ -11,9 +11,9 @@ for licensing information.
   <xidtype name="ALARM" />
 
   <enum name="ALARMSTATE">
-    <item name="Active">    <value>0</value> </item>
-    <item name="Inactive">  <value>1</value> </item>
-    <item name="Destroyed"> <value>2</value> </item>
+    <item name="Active" />
+    <item name="Inactive" />
+    <item name="Destroyed" />
   </enum>
 
   <xidtype name="COUNTER" />
@@ -21,15 +21,15 @@ for licensing information.
   <xidtype name="FENCE" />
 
   <enum name="TESTTYPE">
-    <item name="PositiveTransition"> <value>0</value> </item>
-    <item name="NegativeTransition"> <value>1</value> </item>
-    <item name="PositiveComparison"> <value>2</value> </item>
-    <item name="NegativeComparison"> <value>3</value> </item>
+    <item name="PositiveTransition" />
+    <item name="NegativeTransition" />
+    <item name="PositiveComparison" />
+    <item name="NegativeComparison" />
   </enum>
 
   <enum name="VALUETYPE">
-    <item name="Absolute"> <value>0</value> </item>
-    <item name="Relative"> <value>1</value> </item>
+    <item name="Absolute" />
+    <item name="Relative" />
   </enum>
 
   <enum name="CA">
@@ -48,7 +48,7 @@ for licensing information.
 
   <struct name="SYSTEMCOUNTER">
     <field type="COUNTER" name="counter" />
-    <field type="sync:INT64" name="resolution" />
+    <field type="INT64" name="resolution" />
     <field type="CARD16" name="name_len" />
     <list type="char" name="name">
       <fieldref>name_len</fieldref>
@@ -58,13 +58,13 @@ for licensing information.
   <struct name="TRIGGER">
     <field type="COUNTER" name="counter" />
     <field type="CARD32" name="wait_type" enum="VALUETYPE" />
-    <field type="sync:INT64" name="wait_value" />
+    <field type="INT64" name="wait_value" />
     <field type="CARD32" name="test_type" enum="TESTTYPE" />
   </struct>
 
   <struct name="WAITCONDITION">
     <field type="TRIGGER" name="trigger" />
-    <field type="sync:INT64" name="event_threshold" />
+    <field type="INT64" name="event_threshold" />
   </struct>
 
   <error name="Counter" number="0">
@@ -103,7 +103,7 @@ for licensing information.
 
   <request name="CreateCounter" opcode="2">
     <field type="COUNTER" name="id" />
-    <field type="sync:INT64" name="initial_value" />
+    <field type="INT64" name="initial_value" />
   </request>
 
   <request name="DestroyCounter" opcode="6">
@@ -114,7 +114,7 @@ for licensing information.
     <field type="COUNTER" name="counter" />
     <reply>
       <pad bytes="1" />
-      <field type="sync:INT64" name="counter_value" />
+      <field type="INT64" name="counter_value" />
     </reply>
   </request>
 
@@ -124,76 +124,26 @@ for licensing information.
 
   <request name="ChangeCounter" opcode="4">
     <field type="COUNTER" name="counter" />
-    <field type="sync:INT64" name="amount" />
+    <field type="INT64" name="amount" />
   </request>
 
   <request name="SetCounter" opcode="3">
     <field type="COUNTER" name="counter" />
-    <field type="sync:INT64" name="value" />
+    <field type="INT64" name="value" />
   </request>
 
   <request name="CreateAlarm" opcode="8">
     <field type="ALARM" name="id" />
-    <field type="CARD32" name="value_mask" mask="CA" />
-    <switch name="value_list">
-      <fieldref>value_mask</fieldref>
-      <bitcase>
-        <enumref ref="CA">Counter</enumref>
-        <field type="COUNTER" name="counter" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">ValueType</enumref>
-        <field type="CARD32" name="valueType" enum="VALUETYPE" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Value</enumref>
-        <field type="sync:INT64" name="value" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">TestType</enumref>
-        <field type="CARD32" name="testType" enum="TESTTYPE" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Delta</enumref>
-        <field type="sync:INT64" name="delta" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Events</enumref>
-        <field type="CARD32" name="events" />
-      </bitcase>
-    </switch>
+    <valueparam value-mask-type="CARD32"
+                value-mask-name="value_mask"
+                value-list-name="value_list" />
   </request>
 
   <request name="ChangeAlarm" opcode="9">
     <field type="ALARM" name="id" />
-    <field type="CARD32" name="value_mask" mask="CA" />
-    <switch name="value_list">
-      <fieldref>value_mask</fieldref>
-      <bitcase>
-        <enumref ref="CA">Counter</enumref>
-        <field type="COUNTER" name="counter" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">ValueType</enumref>
-        <field type="CARD32" name="valueType" enum="VALUETYPE" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Value</enumref>
-        <field type="sync:INT64" name="value" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">TestType</enumref>
-        <field type="CARD32" name="testType" enum="TESTTYPE" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Delta</enumref>
-        <field type="sync:INT64" name="delta" />
-      </bitcase>
-      <bitcase>
-        <enumref ref="CA">Events</enumref>
-        <field type="CARD32" name="events" />
-      </bitcase>
-    </switch>
+    <valueparam value-mask-type="CARD32"
+                value-mask-name="value_mask"
+                value-list-name="value_list" />
   </request>
 
   <request name="DestroyAlarm" opcode="11">
@@ -205,7 +155,7 @@ for licensing information.
     <reply>
       <pad bytes="1" />
       <field type="TRIGGER" name="trigger" />
-      <field type="sync:INT64" name="delta" />
+      <field type="INT64" name="delta" />
       <field type="BOOL" name="events" />
       <field type="CARD8" name="state" enum="ALARMSTATE" />
       <pad bytes="2" />
@@ -259,8 +209,8 @@ for licensing information.
   <event name="CounterNotify" number="0">
     <field type="CARD8" name="kind" />
     <field type="COUNTER" name="counter" />
-    <field type="sync:INT64" name="wait_value" />
-    <field type="sync:INT64" name="counter_value" />
+    <field type="INT64" name="wait_value" />
+    <field type="INT64" name="counter_value" />
     <field type="TIMESTAMP" name="timestamp" />
     <field type="CARD16" name="count" />
     <field type="BOOL" name="destroyed" />
@@ -270,8 +220,8 @@ for licensing information.
   <event name="AlarmNotify" number="1">
     <field type="CARD8" name="kind" />
     <field type="ALARM" name="alarm" />
-    <field type="sync:INT64" name="counter_value" />
-    <field type="sync:INT64" name="alarm_value" />
+    <field type="INT64" name="counter_value" />
+    <field type="INT64" name="alarm_value" />
     <field type="TIMESTAMP" name="timestamp" />
     <field type="CARD8" name="state" enum="ALARMSTATE" />
     <pad bytes="3" />

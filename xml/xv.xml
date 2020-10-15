@@ -44,13 +44,13 @@ authorization from the authors.
     </enum>
 
     <enum name="ImageFormatInfoType">
-        <item name="RGB"> <value>0</value> </item>
-        <item name="YUV"> <value>1</value> </item>
+        <item name="RGB" />
+        <item name="YUV" />
     </enum>
 
     <enum name="ImageFormatInfoFormat">
-        <item name="Packed"> <value>0</value> </item>
-        <item name="Planar"> <value>1</value> </item>
+        <item name="Packed" />
+        <item name="Planar" />
     </enum>
 
     <enum name="AttributeFlag">
@@ -59,25 +59,25 @@ authorization from the authors.
     </enum>
     
     <enum name="VideoNotifyReason">
-	<item name="Started">   <value>0</value> </item>
-	<item name="Stopped">   <value>1</value> </item>
-	<item name="Busy">      <value>2</value> </item>
-	<item name="Preempted"> <value>3</value> </item>
-	<item name="HardError"> <value>4</value> </item>
+	<item name="Started" />
+	<item name="Stopped" />
+	<item name="Busy" />
+	<item name="Preempted" />
+	<item name="HardError" />
     </enum>
 
     <enum name="ScanlineOrder">
-        <item name="TopToBottom"> <value>0</value> </item>
-        <item name="BottomToTop"> <value>1</value> </item>
+        <item name="TopToBottom" />
+        <item name="BottomToTop" />
     </enum>
 
     <enum name="GrabPortStatus">
-        <item name="Success">        <value>0</value> </item>
-        <item name="BadExtension">   <value>1</value> </item>
-        <item name="AlreadyGrabbed"> <value>2</value> </item>
-        <item name="InvalidTime">    <value>3</value> </item>
-        <item name="BadReply">       <value>4</value> </item>
-        <item name="BadAlloc">       <value>5</value> </item>
+        <item name="Success" />
+        <item name="BadExtension" />
+        <item name="AlreadyGrabbed" />
+        <item name="InvalidTime" />
+        <item name="BadReply" />
+        <item name="BadAlloc" />
     </enum>
 
     <struct name="Rational">
@@ -101,7 +101,6 @@ authorization from the authors.
         <list type="char" name="name">
             <fieldref>name_size</fieldref>
         </list>
-        <pad align="4" />
         <list type="Format" name="formats">
             <fieldref>num_formats</fieldref>
         </list>
@@ -113,6 +112,10 @@ authorization from the authors.
         <field type="CARD16" name="name_size" />
         <field type="CARD16" name="width" />
         <field type="CARD16" name="height" />
+        <!--
+        Some versions of Xvproto.h incorrectly have
+        this padding after "rate".
+        -->
         <pad bytes="2" />
         <field type="Rational" name="rate" />
         <list type="char" name="name">
@@ -231,6 +234,10 @@ authorization from the authors.
         <reply>
             <pad bytes="1" />
             <field type="CARD16" name="num_encodings" />
+            <!--
+            In Xvproto.h this padding is 24 bytes
+            in actuality it is 22 bytes
+            -->
             <pad bytes="22" />
             <list type="EncodingInfo" name="info">
                 <fieldref>num_encodings</fieldref>

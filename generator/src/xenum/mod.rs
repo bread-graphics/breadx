@@ -9,6 +9,7 @@ use crate::{
 use heck::CamelCase;
 use proc_macro2::Span;
 use std::iter;
+use syn::punctuated::Punctuated;
 use treexml::Element;
 
 mod bitflags;
@@ -66,7 +67,7 @@ pub fn size_of_tmethod(t: &str) -> syn::ImplItem {
       ident: syn::Ident::new("size", Span::call_site()),
       generics: Default::default(),
       paren_token: Default::default(),
-      inputs: iter::once(self_fnarg()).collect(),
+      inputs: Punctuated::new(),
       variadic: None,
       output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
     },

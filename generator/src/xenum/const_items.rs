@@ -8,19 +8,40 @@ use treexml::Element;
 
 #[inline]
 pub fn const_items(name: &str, elements: Vec<Element>, is_xidtype: bool) -> Vec<syn::Item> {
+  let mut last_value: Option<usize> = None;
+
   elements
     .into_iter()
     .filter_map(|mut e| {
-      let literal = int_litexpr(&format!("{}", {
-        let child = &e.children[0];
-        let inner: usize = child.text.clone()?.parse().ok()?;
+      #[inline]
+      fn get_literal(element: &Element, last_value: &mut Option<usize>) -> Option<usize> {
+        let child = match element.children.get(0) {
+          Some(child) => child,
+          None => {
+            return Some(match last_value {
+              Some(last_value) => {
+                *last_value += 1;
+                *last_value
+              }
+              None => {
+                *last_value = Some(0);
+                0
+              }
+            })
+          }
+        };
 
-        match child.name.as_str() {
+        let inner: usize = child.text.clone()?.parse().ok()?;
+        *last_value = Some(inner);
+
+        Some(match child.name.as_str() {
           "value" => inner,
           "bits" => 2usize.pow(inner as _),
           _ => return None,
-        }
-      }));
+        })
+      }
+
+      let literal = int_litexpr(&format!("{}", { get_literal(&e, &mut last_value)? }));
 
       let id = format!(
         "{}_{}",

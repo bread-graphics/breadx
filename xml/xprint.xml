@@ -235,9 +235,7 @@ authorization from the authors.
             <pad bytes="1" />
             <field type="CARD32" name="stringLen" />
             <pad bytes="20" />
-            <list type="STRING8" name="attributes">
-                <fieldref>stringLen</fieldref>
-            </list>
+            <field type="STRING8" name="attributes" />
         </reply>
     </request>
 

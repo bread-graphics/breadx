@@ -3,7 +3,11 @@
 use crate::{syn_util::*, Failures};
 use heck::CamelCase;
 use proc_macro2::Span;
-use std::iter;
+use std::{
+  collections::HashSet,
+  hash::{Hash, Hasher},
+  iter,
+};
 use syn::punctuated::Punctuated;
 use treexml::Element;
 
@@ -12,7 +16,7 @@ pub fn xtrueenum(
   name: &str,
   subelems: Vec<Element>,
 ) -> Result<Box<dyn FnOnce(&str) -> Vec<syn::Item>>, Failures> {
-  let variants = subelems
+  let mut variants = subelems
     .into_iter()
     .filter_map(|e| {
       if "item" == e.name.to_lowercase().as_str() {
@@ -36,6 +40,8 @@ pub fn xtrueenum(
         None
       }
     })
+    .collect::<HashSet<Variant>>()
+    .into_iter()
     .collect::<Vec<Variant>>();
 
   if variants.is_empty() {
@@ -106,7 +112,7 @@ fn xenum_asb(name: &str, variants: &[Variant], underlying: &str) -> syn::Item {
             .chain(iter::once(bytes_fnarg()))
             .collect(),
           variadic: None,
-          output: syn::ReturnType::Default,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("usize"))),
         },
         block: syn::Block {
           brace_token: Default::default(),
@@ -130,7 +136,15 @@ fn xenum_asb(name: &str, variants: &[Variant], underlying: &str) -> syn::Item {
           variadic: None,
           output: syn::ReturnType::Type(
             Default::default(),
-            Box::new(single_generic("Option", "Self")),
+            Box::new(single_generic_type(
+              "Option",
+              syn::Type::Tuple(syn::TypeTuple {
+                paren_token: Default::default(),
+                elems: vec![str_to_ty("Self"), str_to_ty("usize")]
+                  .into_iter()
+                  .collect(),
+              }),
+            )),
           ),
         },
         block: syn::Block {
@@ -144,22 +158,32 @@ fn xenum_asb(name: &str, variants: &[Variant], underlying: &str) -> syn::Item {
 
 #[inline]
 fn xenum_fsb_stmts(name: &str, variants: &[Variant], underlying: &str) -> Vec<syn::Stmt> {
-  // let ul: underlying = <underlying>::from_bytes(bytes)?;
+  // let (ul, len) = <underlying>::from_bytes(bytes)?;
   let ul_init = syn::Stmt::Semi(
     syn::Expr::Let(syn::ExprLet {
       attrs: vec![],
       let_token: Default::default(),
-      pat: syn::Pat::Type(syn::PatType {
+      pat: syn::Pat::Tuple(syn::PatTuple {
         attrs: vec![],
-        pat: Box::new(syn::Pat::Ident(syn::PatIdent {
-          attrs: vec![],
-          by_ref: None,
-          mutability: None,
-          ident: syn::Ident::new("ul", Span::call_site()),
-          subpat: None,
-        })),
-        colon_token: Default::default(),
-        ty: Box::new(str_to_ty(underlying)),
+        paren_token: Default::default(),
+        elems: vec![
+          syn::Pat::Ident(syn::PatIdent {
+            attrs: vec![],
+            by_ref: None,
+            mutability: None,
+            ident: syn::Ident::new("ul", Span::call_site()),
+            subpat: None,
+          }),
+          syn::Pat::Ident(syn::PatIdent {
+            attrs: vec![],
+            by_ref: None,
+            mutability: None,
+            ident: syn::Ident::new("len", Span::call_site()),
+            subpat: None,
+          }),
+        ]
+        .into_iter()
+        .collect(),
       }),
       eq_token: Default::default(),
       expr: Box::new(syn::Expr::Try(syn::ExprTry {
@@ -189,59 +213,64 @@ fn xenum_fsb_stmts(name: &str, variants: &[Variant], underlying: &str) -> Vec<sy
     Default::default(),
   );
 
-  /* Some(match ul {
+  /* Some((match ul {
        val1 => Self::Type1,
        ...
        _ => return None,
-     })
+     }, len))
   */
+  let ul_match = syn::Expr::Match(syn::ExprMatch {
+    attrs: vec![],
+    match_token: Default::default(),
+    expr: Box::new(str_to_exprpath("ul")),
+    brace_token: Default::default(),
+    arms: variants
+      .iter()
+      .map(|v| syn::Arm {
+        attrs: vec![],
+        pat: syn::Pat::Lit(syn::PatLit {
+          attrs: vec![],
+          expr: Box::new(int_litexpr(&format!("{}", v.value))),
+        }),
+        guard: None,
+        fat_arrow_token: Default::default(),
+        body: Box::new(syn::Expr::Path(syn::ExprPath {
+          attrs: vec![],
+          qself: None,
+          path: syn::Path {
+            leading_colon: None,
+            segments: iter::once(str_to_pathseg("Self"))
+              .chain(iter::once(str_to_pathseg(&v.name)))
+              .collect(),
+          },
+        })),
+        comma: Some(Default::default()),
+      })
+      .chain(iter::once(syn::Arm {
+        attrs: vec![],
+        pat: syn::Pat::Wild(syn::PatWild {
+          attrs: vec![],
+          underscore_token: Default::default(),
+        }),
+        guard: None,
+        fat_arrow_token: Default::default(),
+        body: Box::new(syn::Expr::Return(syn::ExprReturn {
+          attrs: vec![],
+          return_token: Default::default(),
+          expr: Some(Box::new(str_to_exprpath("None"))),
+        })),
+        comma: Some(Default::default()),
+      }))
+      .collect(),
+  });
   let ul_match = syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
     attrs: vec![],
     paren_token: Default::default(),
     func: Box::new(str_to_exprpath("Some")),
-    args: iter::once(syn::Expr::Match(syn::ExprMatch {
+    args: iter::once(syn::Expr::Tuple(syn::ExprTuple {
       attrs: vec![],
-      match_token: Default::default(),
-      expr: Box::new(str_to_exprpath("ul")),
-      brace_token: Default::default(),
-      arms: variants
-        .iter()
-        .map(|v| syn::Arm {
-          attrs: vec![],
-          pat: syn::Pat::Lit(syn::PatLit {
-            attrs: vec![],
-            expr: Box::new(int_litexpr(&format!("{}", v.value))),
-          }),
-          guard: None,
-          fat_arrow_token: Default::default(),
-          body: Box::new(syn::Expr::Path(syn::ExprPath {
-            attrs: vec![],
-            qself: None,
-            path: syn::Path {
-              leading_colon: None,
-              segments: iter::once(str_to_pathseg("Self"))
-                .chain(iter::once(str_to_pathseg(&v.name)))
-                .collect(),
-            },
-          })),
-          comma: Some(Default::default()),
-        })
-        .chain(iter::once(syn::Arm {
-          attrs: vec![],
-          pat: syn::Pat::Wild(syn::PatWild {
-            attrs: vec![],
-            underscore_token: Default::default(),
-          }),
-          guard: None,
-          fat_arrow_token: Default::default(),
-          body: Box::new(syn::Expr::Return(syn::ExprReturn {
-            attrs: vec![],
-            return_token: Default::default(),
-            expr: Some(Box::new(str_to_exprpath("None"))),
-          })),
-          comma: Some(Default::default()),
-        }))
-        .collect(),
+      paren_token: Default::default(),
+      elems: vec![ul_match, str_to_exprpath("len")].into_iter().collect(),
     }))
     .collect(),
   }));
@@ -315,33 +344,50 @@ fn xenum_transmute_then_asb(name: &str, underlying: &str) -> syn::Stmt {
 
      (self as i32).as_bytes(bytes);
   */
-  syn::Stmt::Semi(
-    syn::Expr::MethodCall(syn::ExprMethodCall {
+  syn::Stmt::Expr(syn::Expr::MethodCall(syn::ExprMethodCall {
+    attrs: vec![],
+    receiver: Box::new(syn::Expr::Paren(syn::ExprParen {
       attrs: vec![],
-      receiver: Box::new(syn::Expr::Paren(syn::ExprParen {
-        attrs: vec![],
-        paren_token: Default::default(),
-        expr: Box::new(syn::Expr::Cast(syn::ExprCast {
-          attrs: vec![],
-          expr: Box::new(str_to_exprpath("self")),
-          as_token: Default::default(),
-          ty: Box::new(str_to_ty(underlying)),
-        })),
-      })),
-      dot_token: Default::default(),
-      method: syn::Ident::new("as_bytes", Span::call_site()),
-      turbofish: None,
       paren_token: Default::default(),
-      args: iter::once(str_to_exprpath("bytes")).collect(),
-    }),
-    Default::default(),
-  )
+      expr: Box::new(syn::Expr::Cast(syn::ExprCast {
+        attrs: vec![],
+        expr: Box::new(syn::Expr::Unary(syn::ExprUnary {
+          attrs: vec![],
+          op: syn::UnOp::Deref(Default::default()),
+          expr: Box::new(str_to_exprpath("self")),
+        })),
+        as_token: Default::default(),
+        ty: Box::new(str_to_ty(underlying)),
+      })),
+    })),
+    dot_token: Default::default(),
+    method: syn::Ident::new("as_bytes", Span::call_site()),
+    turbofish: None,
+    paren_token: Default::default(),
+    args: iter::once(str_to_exprpath("bytes")).collect(),
+  }))
 }
 
 #[derive(Clone)]
 struct Variant {
   name: String,
   value: i32,
+}
+
+impl PartialEq for Variant {
+  #[inline]
+  fn eq(&self, other: &Self) -> bool {
+    self.value.eq(&other.value)
+  }
+}
+
+impl Eq for Variant {}
+
+impl Hash for Variant {
+  #[inline]
+  fn hash<H: Hasher>(&self, hasher: &mut H) {
+    Hash::hash(&self.value, hasher)
+  }
 }
 
 impl Variant {

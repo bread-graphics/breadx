@@ -252,7 +252,7 @@ fn xidtype_const_ctor(name: &str) -> syn::Item {
             attrs: vec![],
             member: syn::Member::Named(syn::Ident::new("inner", Span::call_site())),
             colon_token: Some(Default::default()),
-            expr: int_litexpr("0"),
+            expr: str_to_exprpath("xid"),
           })
           .collect(),
           dot2_token: None,

@@ -1,12 +1,71 @@
 // MIT/Apache2 License
 
+#![cfg(feature = "std")]
+
+use super::Connection;
 use alloc::{borrow::Cow, boxed::Box, string::String};
 use core::mem;
 use memchr::memrchr;
 use std::{env, io::prelude::*, net, path::Path};
 
+#[cfg(unix)]
+use std::os::unix::net as unet;
+
+#[cfg(all(feature = "async", unix))]
+use async_std::os::unix::net as async_unet;
 #[cfg(feature = "async")]
-use tokio::{io::AsyncWrite, net as tokio_net};
+use async_std::{net as async_net, prelude::*};
+
+/// Connection wrapper.
+pub enum NameConnection {
+    Tcp(net::TcpStream),
+    #[cfg(unix)]
+    Socket(unet::UnixStream),
+    #[cfg(feature = "async")]
+    AsyncTcp(async_net::TcpStream),
+    #[cfg(all(feature = "async", unix))]
+    AsyncSocket(async_unet::UnixStream),
+}
+
+impl NameConnection {
+    #[inline]
+    fn generic(&mut self) -> &mut dyn Connection {
+        match self {
+            Self::Tcp(t) => t as _,
+            #[cfg(unix)]
+            Self::Socket(s) => s as _,
+            #[cfg(feature = "async")]
+            Self::AsyncTcp(a) => a as _,
+            #[cfg(all(feature = "async", unix))]
+            Self::AsyncSocket(a) => a as _,
+        }
+    }
+}
+
+#[cfg_attr(feature = "async", async_trait::async_trait)]
+impl Connection for NameConnection {
+    #[inline]
+    fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
+        self.generic().send_packet(bytes)
+    }
+
+    #[inline]
+    fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
+        self.generic().read_packet(bytes)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
+        self.generic().send_packet_async(bytes).await
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
+        self.generic().read_packet_async(bytes).await
+    }
+}
 
 /// Port for X11 server.
 const X_TCP_PORT: u16 = 6000;
@@ -40,7 +99,7 @@ impl Protocol {
 }
 
 /// A connection to the X11 server.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 struct XConnection<'a> {
     host: Option<Cow<'a, str>>,
     protocol: Option<Protocol>,
@@ -50,6 +109,7 @@ struct XConnection<'a> {
 
 impl<'a> XConnection<'a> {
     // load the xconnection from a socket
+    #[inline]
     fn parse_from_socket(name: Cow<'a, str>) -> Result<Self, Cow<'a, str>> {
         // if the name is a file path, use it as the host
         let (host, screen) = if Path::new(&*name).exists() {
@@ -127,7 +187,7 @@ impl<'a> XConnection<'a> {
             None => return Err(crate::Error::UnableToParseConnection),
             Some(0) => None,
             Some(brek) => Some(match name {
-                Cow::Borrowed(s) => Cow::Borrowed(&s[s.rfind(':').unwrap()..]),
+                Cow::Borrowed(s) => Cow::Borrowed(&s[brek..]),
                 Cow::Owned(ref mut sr) => {
                     let mut part = sr.split_off(brek);
                     mem::swap(sr, &mut part);
@@ -180,9 +240,9 @@ impl<'a> XConnection<'a> {
         })
     }
 
-    /// Open the connection via TCP.
+    /// Split self into host and port.
     #[inline]
-    fn open_tcp(self) -> crate::Result<Box<dyn Write>> {
+    fn host_and_port(self) -> (Cow<'a, str>, u16) {
         let XConnection {
             host,
             protocol,
@@ -196,40 +256,61 @@ impl<'a> XConnection<'a> {
 
         // the port will be X_TCP_PORT + display
         let port = X_TCP_PORT + display;
-
-        let connection = net::TcpStream::connect((&*host, port))?;
-        Ok(Box::new(connection))
+        (host, port)
     }
 
-    /// Open a socket file on Unix.
+    /// Open the connection via TCP.
     #[inline]
-    fn open_unix(self) -> crate::Result<Box<dyn Write>> {
+    fn open_tcp(self) -> crate::Result<NameConnection> {
+        let (host, port) = self.host_and_port();
+        let connection = net::TcpStream::connect((&*host, port))?;
+        Ok(NameConnection::Tcp(connection))
+    }
+
+    /// Derive the desired filename.
+    #[inline]
+    fn socket_filename(self) -> crate::Result<Cow<'a, str>> {
         let XConnection {
             host,
             protocol,
             screen,
             display,
         } = self;
-        let host = match host {
-            Some(host) => host,
-            None => return Err(crate::Error::UnableToOpenConnection),
-        };
+        match host {
+            Some(host) => Ok(host),
+            None => Err(crate::Error::UnableToOpenConnection),
+        }
+    }
 
-        unimplemented!()
+    /// Open a socket file on Unix.
+    #[cfg(unix)]
+    #[inline]
+    fn open_unix(self) -> crate::Result<NameConnection> {
+        let fname = self.socket_filename()?;
+        Ok(NameConnection::Socket(unet::UnixStream::connect(&*fname)?))
     }
 
     /// Open the connection.
-    pub fn open(self) -> crate::Result<Box<dyn Write>> {
+    pub fn open(mut self) -> crate::Result<NameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
         {
-            return self.open_tcp();
+            if let Ok(c) = self.clone().open_tcp() {
+                return Ok(c);
+            }
         }
 
         // the next part only applies with unix semantics
         #[cfg(unix)]
         {
+            if let Ok(u) = self.clone().open_unix() {
+                return Ok(u);
+            }
+
+            // add the display name to the host
+            const PART1: &str = "/tmp/.X11-unix/X";
+            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.screen)));
             return self.open_unix();
         }
 
@@ -241,28 +322,15 @@ impl<'a> XConnection<'a> {
     /// Open the connection via TCP, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    async fn open_tcp_async(self) -> crate::Result<Box<dyn AsyncWrite>> {
-        let XConnection {
-            host,
-            protocol,
-            screen,
-            display,
-        } = self;
-        let host = match host {
-            None => Cow::Borrowed("127.0.0.1"),
-            Some(host) => host,
-        };
-
-        // the port will be X_TCP_PORT + display
-        let port = X_TCP_PORT + display;
-
-        let connection = tokio_net::TcpStream::connect((&*host, port)).await?;
-        Ok(Box::new(connection))
+    async fn open_tcp_async(self) -> crate::Result<NameConnection> {
+        let (host, port) = self;
+        let connection = async_net::TcpStream::connect((&*host, port)).await?;
+        Ok(NameConnection::AsyncTcp(connection))
     }
 
     /// Open a socket file on Unix, async redox.
     #[cfg(feature = "async")]
-    async fn open_unix_async(self) -> crate::Result<Box<dyn AsyncWrite>> {
+    async fn open_unix_async(self) -> crate::Result<NameConnection> {
         let XConnection {
             host,
             protocol,
@@ -279,7 +347,7 @@ impl<'a> XConnection<'a> {
 
     /// Open an asynchronous connection.
     #[cfg(feature = "async")]
-    pub async fn open_async(self) -> crate::Result<Box<dyn AsyncWrite>> {
+    pub async fn open_async(self) -> crate::Result<NameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
@@ -299,21 +367,23 @@ impl<'a> XConnection<'a> {
     }
 }
 
-/// Open a new connection.
-#[inline]
-pub fn connect_internal(name: Option<Cow<'_, str>>) -> crate::Result<Box<dyn Write>> {
-    let connection = XConnection::parse(name)?;
-    connection.open()
-}
+impl NameConnection {
+    /// Open a new connection.
+    #[inline]
+    pub fn connect_internal(name: Option<Cow<'_, str>>) -> crate::Result<NameConnection> {
+        let connection = XConnection::parse(name)?;
+        connection.open()
+    }
 
-/// Open a new asynchronous connection.
-#[inline]
-#[cfg(feature = "async")]
-pub async fn connect_internal_async(
-    name: Option<Cow<'_, str>>,
-) -> crate::Result<Box<dyn AsyncWrite>> {
-    let connection = XConnection::parse(name)?;
-    connection.open_async().await
+    /// Open a new asynchronous connection.
+    #[inline]
+    #[cfg(feature = "async")]
+    pub async fn connect_internal_async(
+        name: Option<Cow<'_, str>>,
+    ) -> crate::Result<NameConnection> {
+        let connection = XConnection::parse(name)?;
+        connection.open_async().await
+    }
 }
 
 #[cfg(test)]

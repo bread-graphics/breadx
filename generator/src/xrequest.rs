@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::{syn_util::*, xstruct, Failures};
+use crate::{field::*, syn_util::*, xstruct, Failures};
 use heck::CamelCase;
 use proc_macro2::Span;
 use std::iter;
@@ -25,7 +25,18 @@ pub fn xrequest(
   let reply_name = format!("{}Reply", name);
   let request_items = xstruct::xstruct(&request_name, children, state)?;
   let reply_items = if let Some(ref mut reply) = reply {
-    xstruct::xstruct(&reply_name, reply.children.drain(..).collect(), state)?
+    let mut fields: Vec<Field> = xreq_fields()
+      .into_iter()
+      .chain(
+        reply
+          .children
+          .drain(..)
+          .filter_map(|e| Field::new(e, state).ok()),
+      )
+      .collect();
+    normalize_fields(&mut fields);
+
+    xstruct::xstruct_with_fields(&reply_name, fields)
   } else {
     vec![]
   };
@@ -41,6 +52,25 @@ pub fn xrequest(
       )))
       .collect(),
   )
+}
+
+/// Fields that exist by default.
+#[inline]
+fn xreq_fields() -> Vec<Field> {
+  vec![
+    Field::Actual {
+      name: syn::Ident::new("sequence", Span::call_site()),
+      ty: str_to_ty("Card16"),
+      vec_len_index: None,
+      is_string: false,
+    },
+    Field::Actual {
+      name: syn::Ident::new("length", Span::call_site()),
+      ty: str_to_ty("Card32"),
+      vec_len_index: None,
+      is_string: false,
+    },
+  ]
 }
 
 #[inline]
@@ -85,7 +115,7 @@ fn xrequest_impl(name: &str, opcode: usize, reply_name: Option<String>) -> syn::
           ident: syn::Ident::new("opcode", Span::call_site()),
           generics: Default::default(),
           paren_token: Default::default(),
-          inputs: Punctuated::new(),
+          inputs: iter::once(self_fnarg()).collect(),
           variadic: None,
           output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("Byte"))),
         },

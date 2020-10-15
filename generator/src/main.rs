@@ -31,6 +31,8 @@ mod xidunion;
 mod xrequest;
 pub mod xstruct;
 
+pub use stringify::is_vec_of_char;
+
 fn main() -> Result<(), Box<dyn Error>> {
   env_logger::init();
 
@@ -231,6 +233,7 @@ pub enum MalformedStruct {
 
 #[inline]
 pub fn name_safety(mut name: String) -> String {
+  name = name.replace("type", "type_");
   name = name.replace("16", "Sixteen");
   name = name.replace("15", "Fifteen");
   name = name.replace("14", "Fourteen");
@@ -248,6 +251,5 @@ pub fn name_safety(mut name: String) -> String {
   name = name.replace("7", "Seven");
   name = name.replace("8", "Eight");
   name = name.replace("9", "Nine");
-  name = name.replace("type", "type_");
   name
 }

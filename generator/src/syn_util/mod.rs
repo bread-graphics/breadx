@@ -94,6 +94,11 @@ pub fn size_of_ty(t: &str) -> syn::Expr {
 
 #[inline]
 pub fn single_generic(owner: &str, gen: &str) -> syn::Type {
+  single_generic_type(owner, str_to_ty(gen))
+}
+
+#[inline]
+pub fn single_generic_type(owner: &str, gen: syn::Type) -> syn::Type {
   syn::Type::Path(syn::TypePath {
     qself: None,
     path: syn::Path {
@@ -103,7 +108,7 @@ pub fn single_generic(owner: &str, gen: &str) -> syn::Type {
         arguments: syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
           colon2_token: None,
           lt_token: Default::default(),
-          args: iter::once(syn::GenericArgument::Type(str_to_ty(gen))).collect(),
+          args: iter::once(syn::GenericArgument::Type(gen)).collect(),
           gt_token: Default::default(),
         }),
       })

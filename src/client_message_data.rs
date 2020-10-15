@@ -5,9 +5,10 @@ use std::{
     mem,
     os::raw::{c_char, c_long, c_short},
 };
+use tinyvec::ArrayVec;
 
 /// The data returned from a client message.
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 #[repr(transparent)]
 pub struct ClientMessageData {
     // convention states that it should be at least 5 c longs
@@ -26,36 +27,16 @@ impl ClientMessageData {
     /// Get the bytes assocated with this sequence.
     #[inline]
     pub fn bytes(&self) -> [c_char; BYTE_LEN] {
+        let s = bytemuck::cast_slice::<c_long, c_char>(&self.data);
         let mut res = [0; BYTE_LEN];
-        // hopefully, this gets optimized out
-        for (i, d) in self.data.iter().enumerate() {
-            let d = {
-                let d = d.to_ne_bytes();
-                let mut res: [c_char; BYTE_LEN] = [0; BYTE_LEN];
-                for (index, i) in d.iter().enumerate() {
-                    res[index] = *i as _;
-                }
-                res
-            };
-
-            let start = i * BYTE_INTERVAL;
-            (&mut res[start..start + BYTE_INTERVAL]).copy_from_slice(&d);
-        }
+        res.copy_from_slice(s);
         res
     }
 
     /// Get the shorts assocated with this sequence.
     #[inline]
     pub fn shorts(&self) -> [c_short; SHORT_LEN] {
-        let mut res = [0; SHORT_LEN];
-        // hopefully, this gets optimized out
-        for (i, d) in self.data.iter().enumerate() {
-            let d = d.to_ne_bytes();
-            let start = i * SHORT_INTERVAL;
-            res[start] = c_short::from_ne_bytes([d[0], d[1]]);
-            res[start + 1] = c_short::from_ne_bytes([d[2], d[3]]);
-        }
-        res
+        bytemuck::cast(self.data.clone())
     }
 
     /// Get the longs associated with this sequence.
@@ -72,32 +53,19 @@ impl AsByteSequence for ClientMessageData {
     }
 
     #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) {
-        let b = self.bytes();
-        let mut res: [u8; BYTE_LEN] = [0; BYTE_LEN];
-        for (index, i) in b.iter().enumerate() {
-            res[index] = *i as _;
-        }
-        bytes.copy_from_slice(&res)
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        bytes.copy_from_slice(bytemuck::cast_slice(&self.data));
+        Self::size()
     }
 
     #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<Self> {
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         if bytes.len() <= BYTE_LEN {
             None
         } else {
-            let mut b = [0; BYTE_LEN];
-            b.copy_from_slice(bytes);
-            let mut res = [0; LONG_LEN];
-            for i in 0..LONG_LEN {
-                let start = i * mem::size_of::<c_long>();
-                let mut indiv_number = [0; mem::size_of::<c_long>()];
-                for j in 0..mem::size_of::<c_long>() {
-                    indiv_number[j] = b[start + j];
-                }
-                res[i] = c_long::from_ne_bytes(indiv_number);
-            }
-            Some(res)
+            let mut res: [c_long; LONG_LEN] = [0; LONG_LEN];
+            res.copy_from_slice(bytemuck::cast_slice(bytes));
+            Some((ClientMessageData { data: res }, Self::size()))
         }
     }
 }
