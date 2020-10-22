@@ -13,7 +13,8 @@ pub fn xevent(
   state: &mut State,
 ) -> Result<(), crate::Failures> {
   let sname = format!("{}Event", name.to_camel_case());
-  let s = super::xstruct::xstruct(&sname, children, state)?;
+  let mut s = super::xstruct::xstruct(&sname, children, state)?;
+  //  s.push(event_trait_impl(&sname, number));
   state.add_event(name, s, number);
   Ok(())
 }
@@ -29,4 +30,10 @@ pub fn replace_name(new_name: &str, items: &mut [syn::Item]) {
     }
     _ => (),
   });
+}
+
+#[inline]
+pub fn event_trait_impl(name: &str, number: usize) -> syn::Item {
+  //  syn::Item::)
+  unimplemented!()
 }

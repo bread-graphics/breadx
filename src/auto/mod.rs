@@ -1,12 +1,19 @@
 // MIT/Apache2 License
 
-use std::{ffi::CString, os::raw::c_char};
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::mem;
+use cstr_core::CString;
+use cty::c_char;
 
 pub mod prelude {
     pub use super::{
         string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes, AsByteSequence,
     };
     pub use crate::{client_message_data::ClientMessageData, Request, XidType, XID};
+    pub use alloc::{string::String, vec::Vec};
     pub type Card8 = u8;
     pub type Card16 = u16;
     pub type Card32 = u32;
@@ -32,36 +39,29 @@ pub trait AsByteSequence: Sized {
 /// desired length.
 /// TODO: specialize this somewhat
 #[inline]
-pub fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: u16) -> Option<(Vec<T>, usize)> {
+pub fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<(Vec<T>, usize)> {
+    log::trace!("Deserializing vector of byte length {} from bytes", len);
+
     // allocate the vector
-    let mut items: Vec<T> = Vec::with_capacity(len as usize);
+    let mut items: Vec<T> = Vec::with_capacity(len);
 
     // pull items from the bytes vector and create elements
     let mut current_index = 0;
-    while items.len() < len as usize {
+    while current_index < len {
         let (item, sz) = T::from_bytes(&bytes[current_index..])?;
         items.push(item);
         current_index += sz;
     }
 
-    // ensure we have len items in the array
-    cfg_if::cfg_if! {
-        if #[cfg(debug_assertions)] {
-            if items.len() as u16 != len {
-                None
-            } else {
-                Some((items, current_index))
-            }
-        } else {
-            Some((items, current_index))
-        }
-    }
+    Some((items, current_index))
 }
 
 /// Internal use function to make it easier to convert the c-equivalent string to a Rust string.
 #[inline]
-pub fn string_from_bytes(bytes: &[u8], len: u16) -> Option<(String, usize)> {
-    let chars: Vec<u8> = bytes.iter().take(len as usize).copied().collect();
+pub fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
+    log::trace!("Deserializing string of length {} from bytes", len);
+
+    let chars: Vec<u8> = bytes.iter().take(len).copied().collect();
 
     // convert this vector to the equivalent CString item
     let cstr: CString = match CString::new(chars) {
@@ -76,10 +76,16 @@ pub fn string_from_bytes(bytes: &[u8], len: u16) -> Option<(String, usize)> {
 
     // convert the cstring into a real string
     match cstr.into_string() {
-        Ok(s) => Some((s, len as usize)),
+        Ok(s) => Some((s, len)),
         Err(estr) => {
-            log::error!("Encountered invalid UTF-8: {:?}", estr.into_cstring());
-            None
+            log::warn!("Encountered invalid UTF-8, redoing with substitution.");
+            let mut cstr = estr.into_cstring().into_bytes();
+            cstr.iter_mut().for_each(|b| {
+                if *b > 127 {
+                    *b = b'?';
+                }
+            });
+            Some((CString::new(cstr).ok()?.into_string().ok()?, len as usize))
         }
     }
 }
@@ -156,8 +162,7 @@ impl AsByteSequence for bool {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         match bytes[0] {
             0 => Some((false, 1)),
-            1 => Some((true, 1)),
-            _ => None,
+            _ => Some((true, 1)),
         }
     }
 }
@@ -196,16 +201,27 @@ macro_rules! impl_fundamental_num {
 
             #[inline]
             fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+                log::trace!("Deserializing {} from bytes", stringify!($t));
+
+                cfg_if::cfg_if! {
+                    if #[cfg(debug_assertions)] {
+                        if bytes.len() < $sz {
+                            log::error!("There are {} bytes in the slice, expected {}", bytes.len(), $sz);
+                            return None;
+                        }
+                    }
+                }
+
                 let mut my_bytes = [0; $sz];
-                my_bytes.copy_from_slice(bytes);
+                my_bytes.copy_from_slice(&bytes[0..$sz]);
                 Some((Self::from_ne_bytes(my_bytes), $sz))
             }
         }
     )*}
 }
 
-const USIZE_SIZE: usize = std::mem::size_of::<usize>();
-const ISIZE_SIZE: usize = std::mem::size_of::<isize>();
+const USIZE_SIZE: usize = mem::size_of::<usize>();
+const ISIZE_SIZE: usize = mem::size_of::<isize>();
 impl_fundamental_num! {
     (i16, 2) (u16, 2) (i32, 4) (u32, 4) (i64, 8) (u64, 8) (i128, 16) (u128, 16)
     (usize, USIZE_SIZE) (isize, ISIZE_SIZE)
@@ -232,10 +248,13 @@ macro_rules! impl_array {
             fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
                 let mut index = 0;
                 let mut v: tinyvec::ArrayVec<Self> = Default::default();
+                log::trace!("Deserializing an array of length {}", $len);
 
                 for i in 0..($len) {
                     let (item, sz) = T::from_bytes(&bytes[index..])?;
                     if let Some(_) = v.try_push(item) {
+                        const SZ: usize = $len;
+                        log::error!("Array of {} elements overflowed", SZ);
                         return None;
                     }
                     index += sz;
@@ -271,6 +290,8 @@ impl AsByteSequence for String {
 
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        log::trace!("Deserializing string of unknown length");
+
         let end = match memchr::memrchr(0, bytes) {
             Some(posn) => posn - 1,
             None => bytes.len() - 1,
@@ -287,4 +308,5 @@ impl AsByteSequence for String {
 //pub mod render;
 //pub mod shape;
 //pub mod xfixes;
+pub mod xc_misc;
 pub mod xproto;

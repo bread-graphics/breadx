@@ -31,7 +31,8 @@ pub fn xrequest(
         reply
           .children
           .drain(..)
-          .filter_map(|e| Field::new(e, state).ok()),
+          .filter_map(|e| Field::new(e, state).ok())
+          .flatten(),
       )
       .collect();
     normalize_fields(&mut fields);

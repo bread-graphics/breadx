@@ -1,10 +1,8 @@
 // MIT/Apache2 License
 
 use crate::auto::AsByteSequence;
-use std::{
-    mem,
-    os::raw::{c_char, c_long, c_short},
-};
+use core::mem;
+use cty::{c_char, c_long, c_short};
 use tinyvec::ArrayVec;
 
 /// The data returned from a client message.

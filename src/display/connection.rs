@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 #[cfg(feature = "async")]
-use async_std::{net::TcpStream as AsyncTcpSteam, prelude::*, task};
+use async_std::{net::TcpStream as AsyncTcpStream, prelude::*, task};
 #[cfg(feature = "std")]
 use std::{io::prelude::*, net::TcpStream};
 

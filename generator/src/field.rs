@@ -25,6 +25,7 @@ pub enum Field {
   },
   LenSlot {
     target_index: usize,
+    ty: syn::Type,
   },
 }
 
@@ -89,7 +90,7 @@ impl Field {
         ptr_size
       }),
       Field::PaddingHint { bytes } => Box::new(int_litexpr(&format!("{}", bytes))),
-      Field::LenSlot { .. } => Box::new(int_litexpr("2")),
+      Field::LenSlot { .. } => Box::new(int_litexpr("4")),
     }
   }
 
@@ -161,7 +162,7 @@ impl Field {
           }
         },
         Field::PaddingHint { bytes } => int_litexpr(&format!("{}", bytes)),
-        Field::LenSlot { target_index } => {
+        Field::LenSlot { target_index, ty } => {
           method_call_for_as_bytes(Box::new(syn::Expr::Paren(syn::ExprParen {
             attrs: vec![],
             paren_token: Default::default(),
@@ -187,7 +188,7 @@ impl Field {
                 _ => unreachable!(),
               }),
               as_token: Default::default(),
-              ty: Box::new(str_to_ty("Card16")),
+              ty: Box::new(ty.clone()),
             })),
           })))
         }
@@ -196,7 +197,7 @@ impl Field {
   }
 
   #[inline]
-  pub fn new(mut element: Element, state: &mut crate::state::State) -> Result<Field, ()> {
+  pub fn new(mut element: Element, state: &mut crate::state::State) -> Result<Vec<Field>, ()> {
     #[inline]
     fn resolve_ty(elem: &Element, state: &mut crate::state::State) -> Result<String, ()> {
       let en = match elem.attributes.get("enum") {
@@ -218,7 +219,7 @@ impl Field {
     }
 
     match element.name.to_lowercase().as_str() {
-      "field" => Ok(Field::Actual {
+      "field" => Ok(vec![Field::Actual {
         ty: str_to_ty(&resolve_ty(&element, state)?),
         name: syn::Ident::new(
           &name_safety(element.attributes.get("name").ok_or(())?.to_owned()),
@@ -226,16 +227,16 @@ impl Field {
         ),
         vec_len_index: None,
         is_string: false,
-      }),
-      "pad" => Ok(Field::PaddingHint {
+      }]),
+      "pad" => Ok(vec![Field::PaddingHint {
         bytes: element
           .attributes
           .get("bytes")
           .ok_or(())?
           .parse()
           .map_err(|_| ())?,
-      }),
-      "list" => Ok({
+      }]),
+      "list" => Ok(vec![{
         if element.children.is_empty() {
           return Err(());
         }
@@ -283,6 +284,53 @@ impl Field {
           vec_len_index: Some(ll),
           is_string,
         }
+      }]),
+      "valueparam" => Ok({
+        let name = syn::Ident::new(
+          element.attributes.get("value-mask-name").ok_or(())?,
+          Span::call_site(),
+        );
+
+        vec![
+          Field::Actual {
+            ty: str_to_ty(
+              &element
+                .attributes
+                .get("value-mask-type")
+                .ok_or(())?
+                .to_camel_case(),
+            ),
+            name: name.clone(),
+            vec_len_index: None,
+            is_string: false,
+          },
+          Field::Actual {
+            vec_len_index: Some(ListLen::bits_of(name)),
+            ty: syn::Type::Path(syn::TypePath {
+              qself: None,
+              path: syn::Path {
+                leading_colon: None,
+                segments: iter::once(syn::PathSegment {
+                  ident: syn::Ident::new("Vec", Span::call_site()),
+                  arguments: syn::PathArguments::AngleBracketed(
+                    syn::AngleBracketedGenericArguments {
+                      colon2_token: None,
+                      lt_token: Default::default(),
+                      args: iter::once(syn::GenericArgument::Type(str_to_ty("u32"))).collect(),
+                      gt_token: Default::default(),
+                    },
+                  ),
+                })
+                .collect(),
+              },
+            }),
+            name: syn::Ident::new(
+              element.attributes.get("value-list-name").unwrap(),
+              Span::call_site(),
+            ),
+            is_string: false,
+          },
+        ]
       }),
       _ => Err(()),
     }
@@ -331,7 +379,7 @@ impl Default for Field {
 }
 
 #[inline]
-pub fn normalize_fields(fields: &mut [Field]) {
+pub fn normalize_fields(fields: &mut Vec<Field>) {
   for i in 0..fields.len() {
     if let Field::Actual {
       vec_len_index: Some(ref id),
@@ -343,14 +391,29 @@ pub fn normalize_fields(fields: &mut [Field]) {
         Err(_) => continue,
       };
       fields.iter_mut().any(|f| {
-        if let Field::Actual { name, .. } = f {
+        if let Field::Actual { name, ty, .. } = f {
           if format!("{}", name) == format!("{}", id) {
-            *f = Field::LenSlot { target_index: i };
+            *f = Field::LenSlot {
+              target_index: i,
+              ty: ty.clone(),
+            };
             return true;
           }
         }
         false
       });
+    }
+  }
+
+  let mut names: Vec<String> = Vec::with_capacity(fields.len());
+  for i in (0..fields.len()).rev() {
+    if let Field::Actual { name, .. } = &fields[i] {
+      let name = format!("{}", name);
+      if names.iter().any(|n| n.as_str() == name.as_str()) {
+        fields.remove(i);
+      } else {
+        names.push(name);
+      }
     }
   }
 }
@@ -363,6 +426,7 @@ pub enum ListLenOp {
   Div,
   FieldReference(syn::Ident),
   Value(i64),
+  BitsCount(syn::Ident),
 }
 
 impl ListLenOp {
@@ -392,6 +456,7 @@ impl fmt::Display for ListLenOp {
       Self::Div => f.write_str("/"),
       Self::FieldReference(s) => write!(f, "{}", s),
       Self::Value(m) => write!(f, "{}", m),
+      Self::BitsCount(s) => write!(f, "BitsOf({})", s),
     }
   }
 }
@@ -409,6 +474,13 @@ impl ListLen {
     Self {
       opstack: TinyVec::new(),
     }
+  }
+
+  #[inline]
+  pub fn bits_of(other: syn::Ident) -> Self {
+    let mut opstack = TinyVec::new();
+    opstack.push(ListLenOp::BitsCount(other));
+    Self { opstack }
   }
 
   /// recursively parse an expression
@@ -503,7 +575,7 @@ impl ListLen {
       attrs: vec![],
       expr: Box::new(inner),
       as_token: Default::default(),
-      ty: Box::new(str_to_ty("Card16")),
+      ty: Box::new(str_to_ty("usize")),
     })
   }
 
@@ -522,7 +594,7 @@ impl ListLen {
           attrs: vec![],
           as_token: Default::default(),
           expr: Box::new(str_to_exprpath(&format!("{}", t))),
-          ty: Box::new(str_to_ty("u16")),
+          ty: Box::new(str_to_ty("usize")),
         }),
         1,
       ),
@@ -554,6 +626,20 @@ impl ListLen {
           no1 + no2,
         )
       }
+      ListLenOp::BitsCount(b) => (
+        syn::Expr::Call(syn::ExprCall {
+          attrs: vec![],
+          func: Box::new(syn::Expr::Field(syn::ExprField {
+            attrs: vec![],
+            base: Box::new(str_to_exprpath(&format!("{}", b))),
+            dot_token: Default::default(),
+            member: syn::Member::Named(syn::Ident::new("count_ones", Span::call_site())),
+          })),
+          paren_token: Default::default(),
+          args: Punctuated::new(),
+        }),
+        1,
+      ),
     }
   }
 }

@@ -3,7 +3,7 @@
 #![cfg(feature = "std")]
 
 use super::Connection;
-use alloc::{borrow::Cow, boxed::Box, string::String};
+use alloc::{borrow::Cow, boxed::Box, format, string::String};
 use core::mem;
 use memchr::memrchr;
 use std::{env, io::prelude::*, net, path::Path};

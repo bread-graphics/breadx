@@ -12,7 +12,7 @@ pub fn corrections(body: String, fname: &OsStr) -> String {
 
   let body = re1.replace_all(&body, "String");
   let body = re2.replace_all(&body, "bool");
-  let body = re3.replace_all(&body, "::std::os::raw::c_char");
+  let body = re3.replace_all(&body, "cty::c_char");
   let mut body = re4.replace_all(&body, "u8");
 
   format!(

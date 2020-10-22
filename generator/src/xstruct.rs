@@ -15,6 +15,7 @@ pub fn xstruct(
   let mut subelems = subelems
     .into_iter()
     .filter_map(|item| Field::new(item, state).ok())
+    .flatten()
     .collect::<Vec<Field>>();
   normalize_fields(&mut subelems);
 
@@ -377,9 +378,29 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
   let sizing_init = syn::Stmt::Semi(sizing_init(), Default::default());
   let mut len_hints: HashMap<usize, String> = HashMap::new();
 
+  let log_macro = syn::Stmt::Semi(
+    syn::Expr::Macro(syn::ExprMacro {
+      attrs: vec![],
+      mac: syn::Macro {
+        bang_token: Default::default(),
+        delimiter: syn::MacroDelimiter::Paren(Default::default()),
+        path: syn::Path {
+          leading_colon: None,
+          segments: vec![str_to_pathseg("log"), str_to_pathseg("trace")]
+            .into_iter()
+            .collect(),
+        },
+        tokens: format!("\"Deserializing {} from bytes\"", name)
+          .parse()
+          .unwrap(),
+      },
+    }),
+    Default::default(),
+  );
+
   let statements = fields.iter().enumerate().flat_map(|(i, f)| {
     match f {
-      Field::LenSlot { target_index } => {
+      Field::LenSlot { target_index, ty } => {
         match &fields[*target_index] {
           Field::Actual {
             vec_len_index: Some(ll),
@@ -393,10 +414,8 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
               let randomized = format!("len{}", randomized);
 
               // load it
-              let load_stmt = load_stmt(
-                str_to_ty("Card16"),
-                syn::Ident::new(&randomized, Span::call_site()),
-              );
+              let load_stmt =
+                load_stmt(ty.clone(), syn::Ident::new(&randomized, Span::call_site()));
 
               len_hints.insert(*target_index, randomized);
               vec![load_stmt, increment_by_sz()]
@@ -440,17 +459,22 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
                 let vfb = utilize_vector_from_bytes(
                   ty.clone(),
                   field_name.clone(),
-                  syn::Expr::Path(syn::ExprPath {
+                  syn::Expr::Cast(syn::ExprCast {
                     attrs: vec![],
-                    qself: None,
-                    path: syn::Path {
-                      leading_colon: None,
-                      segments: iter::once(syn::PathSegment {
-                        ident: syn::Ident::new(&len, Span::call_site()),
-                        arguments: Default::default(),
-                      })
-                      .collect(),
-                    },
+                    expr: Box::new(syn::Expr::Path(syn::ExprPath {
+                      attrs: vec![],
+                      qself: None,
+                      path: syn::Path {
+                        leading_colon: None,
+                        segments: iter::once(syn::PathSegment {
+                          ident: syn::Ident::new(&len, Span::call_site()),
+                          arguments: Default::default(),
+                        })
+                        .collect(),
+                      },
+                    })),
+                    as_token: Default::default(),
+                    ty: Box::new(str_to_ty("usize")),
                   }),
                   *is_string,
                 );
@@ -505,6 +529,7 @@ fn xstruct_from_bytes_stmts(name: &str, fields: &[Field]) -> Vec<syn::Stmt> {
   }));
 
   iter::once(sizing_init)
+    .chain(iter::once(log_macro))
     .chain(statements)
     .chain(iter::once(init_struct))
     .collect()
