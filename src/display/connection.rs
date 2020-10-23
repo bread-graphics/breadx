@@ -1,14 +1,23 @@
 // MIT/Apache2 License
 
 #[cfg(feature = "async")]
-use async_std::{net::TcpStream as AsyncTcpStream, prelude::*, task};
+use async_io::block_on;
+#[cfg(feature = "async")]
+use async_net::TcpStream as AsyncTcpStream;
+#[cfg(feature = "async")]
+use futures_io::{AsyncRead, AsyncWrite};
+#[cfg(feature = "async")]
+use futures_lite::{AsyncReadExt, AsyncWriteExt};
+
 #[cfg(feature = "std")]
 use std::{io::prelude::*, net::TcpStream};
 
 #[cfg(all(feature = "async", unix))]
-use async_std::os::unix::net::UnixStream as AsyncUnixStream;
+use async_net::unix::UnixStream as AsyncUnixStream;
 #[cfg(all(feature = "std", unix))]
 use std::os::unix::net::UnixStream;
+
+use alloc::boxed::Box;
 
 /// A trait that represents the ability to send and receive bytes across a connection.
 #[cfg_attr(feature = "async", async_trait::async_trait)]
@@ -63,14 +72,14 @@ impl Connection for AsyncTcpStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
         log::warn!("Called send_packet for async TcpStream");
-        task::block_on(self.write(bytes))?;
+        block_on(self.write(bytes))?;
         Ok(())
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
         log::warn!("Called read_packet for async TcpStream");
-        task::block_on(self.read(bytes))?;
+        block_on(self.read(bytes))?;
         Ok(())
     }
 
@@ -125,14 +134,14 @@ impl Connection for AsyncUnixStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
         log::warn!("Called send_packet for async UnixStream");
-        task::block_on(self.write(bytes))?;
+        block_on(self.write(bytes))?;
         Ok(())
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
         log::warn!("Called read_packet for async UnixStream");
-        task::block_on(self.read(bytes))?;
+        block_on(self.read(bytes))?;
         Ok(())
     }
 

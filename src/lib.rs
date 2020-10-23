@@ -13,7 +13,7 @@ extern crate core;
 extern crate scopeguard;
 
 pub mod auth_info;
-pub(crate) mod auto;
+pub mod auto;
 pub mod client_message_data;
 pub mod display;
 pub mod error;

@@ -204,7 +204,7 @@ impl<Conn: Connection> Display<Conn> {
         height: u16,
         border_width: u16,
         props: T,
-    ) -> crate::Result<XID>
+    ) -> crate::Result<Window>
     where
         T: IntoIterator<Item = (WindowParameter, u32)>,
     {

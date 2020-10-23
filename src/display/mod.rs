@@ -31,7 +31,7 @@ use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
 #[cfg(feature = "async")]
-use async_std::prelude::*;
+use futures_io::{AsyncRead, AsyncWrite}; 
 
 mod connection;
 pub use connection::*;
@@ -194,8 +194,12 @@ impl<Conn: Connection> Display<Conn> {
         }
 
         loop {
-            match self.pending_replies.remove(token.sequence) {
-                Some(reply) => break Ok(reply),
+            match self.pending_replies.remove(&token.sequence) {
+                Some(reply) => {
+                    break Ok(R::Reply::from_bytes(&reply)
+                        .ok_or_else(|| crate::Error::BadObjectRead)?
+                        .0)
+                }
                 None => self.wait_async().await?,
             }
         }
@@ -224,7 +228,10 @@ impl<Conn: Connection> Display<Conn> {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn from_connection_async(connection: Conn) -> crate::Result<Self> {
+    pub async fn from_connection_async(
+        connection: Conn,
+        auth: Option<AuthInfo>,
+    ) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
         d.init_async(auth.unwrap_or(Default::default())).await?;
         Ok(d)

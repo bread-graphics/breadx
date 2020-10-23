@@ -11,10 +11,11 @@ use std::{env, io::prelude::*, net, path::Path};
 #[cfg(unix)]
 use std::os::unix::net as unet;
 
-#[cfg(all(feature = "async", unix))]
-use async_std::os::unix::net as async_unet;
 #[cfg(feature = "async")]
-use async_std::{net as async_net, prelude::*};
+use futures_io::{AsyncRead, AsyncWrite};
+
+#[cfg(all(feature = "async", unix))]
+use async_net::unix as async_unet;
 
 /// Connection wrapper.
 pub enum NameConnection {
@@ -29,7 +30,7 @@ pub enum NameConnection {
 
 impl NameConnection {
     #[inline]
-    fn generic(&mut self) -> &mut dyn Connection {
+    fn generic(&mut self) -> &mut (dyn Connection + Send) {
         match self {
             Self::Tcp(t) => t as _,
             #[cfg(unix)]
@@ -116,7 +117,7 @@ impl<'a> XConnection<'a> {
             (name, 0)
         } else {
             // cut off the extension at the end and try again
-            let rposn = match name.rfind('.') {
+            let rposn = match memrchr(b'.', name.as_bytes()) {
                 Some(rposn) => rposn,
                 None => return Err(name),
             };
@@ -130,7 +131,7 @@ impl<'a> XConnection<'a> {
                     match name {
                         Cow::Borrowed(s) => Cow::Borrowed(&s[..rposn]),
                         Cow::Owned(mut sr) => {
-                            sr.truncate(memrchr(b'.', sr.as_bytes()).unwrap());
+                            sr.truncate(rposn);
                             Cow::Owned(sr)
                         }
                     },
@@ -323,7 +324,7 @@ impl<'a> XConnection<'a> {
     #[cfg(feature = "async")]
     #[inline]
     async fn open_tcp_async(self) -> crate::Result<NameConnection> {
-        let (host, port) = self;
+        let (host, port) = self.host_and_port();
         let connection = async_net::TcpStream::connect((&*host, port)).await?;
         Ok(NameConnection::AsyncTcp(connection))
     }
