@@ -31,7 +31,7 @@ use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
 #[cfg(feature = "async")]
-use futures_io::{AsyncRead, AsyncWrite}; 
+use futures_io::{AsyncRead, AsyncWrite};
 
 mod connection;
 pub use connection::*;
@@ -142,6 +142,21 @@ fn endian_byte() -> u8 {
 
 impl<Conn: Connection> Display<Conn> {
     #[inline]
+    fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
+        let mut reply = reply.to_vec();
+
+        // if the reply is optimized, insert the second byte into the 4th position
+        if R::Reply::includes_optimization() {
+            let b = mem::take(&mut reply[1]);
+            reply.insert(4, b);
+        }
+
+        Ok(R::Reply::from_bytes(&reply)
+            .ok_or_else(|| crate::Error::BadObjectRead)?
+            .0)
+    }
+
+    #[inline]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
         self.send_request_internal(req)
     }
@@ -161,11 +176,7 @@ impl<Conn: Connection> Display<Conn> {
 
         loop {
             match self.pending_replies.remove(&token.sequence) {
-                Some(reply) => {
-                    break Ok(R::Reply::from_bytes(&reply)
-                        .ok_or_else(|| crate::Error::BadObjectRead)?
-                        .0)
-                }
+                Some(reply) => break Self::decode_reply::<R>(reply),
                 None => self.wait()?,
             }
         }
@@ -196,9 +207,7 @@ impl<Conn: Connection> Display<Conn> {
         loop {
             match self.pending_replies.remove(&token.sequence) {
                 Some(reply) => {
-                    break Ok(R::Reply::from_bytes(&reply)
-                        .ok_or_else(|| crate::Error::BadObjectRead)?
-                        .0)
+                    break Self::decode_reply::<R>(reply);
                 }
                 None => self.wait_async().await?,
             }
@@ -270,11 +279,21 @@ impl<Conn: Connection> Display<Conn> {
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
+ 
 
-        self.setup = Setup::from_bytes(&bytes)
+        let (setup, slen) = Setup::from_bytes(&bytes)
             .ok_or_else(|| crate::Error::BadObjectRead)?
-            .0;
+            ;
+        self.setup = setup;
+        debug_assert_eq!(slen, length);
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
+
+        log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
+        log::debug!("resource_id_mask is {:#032b}", self.setup.resource_id_mask);
+        log::debug!(
+            "resource_id inc. is {:#032b}",
+            self.setup.resource_id_mask & self.setup.resource_id_mask.wrapping_neg()
+        );
 
         Ok(())
     }
@@ -314,93 +333,17 @@ impl<Conn: Connection> Display<Conn> {
         self.setup.roots[self.default_screen].root
     }
 
-    #[inline]
-    fn eval_xid(&mut self) -> XID {
-        self.xid.last | self.xid.base
-    }
-
     /// Create another XID.
     #[inline]
     pub fn generate_xid(&mut self) -> crate::Result<XID> {
-        // Algorithm based on: https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_xid.c
-        if self.xid.last >= self.xid.max.wrapping_sub(self.xid.inc).wrapping_add(1) {
-            // we need to set up the initial range
-            assert_eq!(self.xid.last, self.xid.max);
-            if self.xid.last == 0 {
-                self.xid.max = self.setup.resource_id_mask;
-            } else {
-                // query for the XC_MISC extension
-                let query_for_xc_misc = QueryExtensionRequest {
-                    name: "XC-MISC".to_owned(),
-                };
-                let tok = self.send_request(query_for_xc_misc)?;
-                let query_for_xc_misc = self.resolve_request(tok)?;
-
-                if (query_for_xc_misc.present == 0) {
-                    return Err(crate::Error::ExtensionNotPresent("XcMisc"));
-                }
-
-                // now that we know XC_MISC exists, get the range reply
-                let tok = self.send_request(GetXIDRangeRequest)?;
-                let range = self.resolve_request(tok)?;
-
-                if range.start_id == 0 && range.count == 1 {
-                    return Err(crate::Error::StaticMsg("Unable to get XID range"));
-                }
-
-                self.xid.last = range.start_id;
-                self.xid.max = range.start_id + (range.count - 1) * self.xid.inc;
-            }
-        } else {
-            self.xid.last = self.xid.last.wrapping_add(self.xid.inc);
-        }
-
-        Ok(self.eval_xid())
+        Ok(self.xid.next().unwrap())
     }
 
     /// Create an XID, async redox
     #[cfg(feature = "async")]
     #[inline]
     pub async fn generate_xid_async(&mut self) -> crate::Result<XID> {
-        // Algorithm based on: https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_xid.c
-        if self.xid.last >= self.xid.max.wrapping_sub(self.xid.inc).wrapping_add(1) {
-            // we need to set up the initial range
-            assert_eq!(self.xid.last, self.xid.max);
-            if self.xid.last == 0 {
-                self.xid.max = self.setup.resource_id_mask;
-            } else {
-                // query for the XC_MISC extension
-                let query_for_xc_misc = QueryExtensionRequest {
-                    name: "XC-MISC".to_owned(),
-                };
-
-                log::debug!("Sending QueryExtensionRequest to server");
-                let tok = self.send_request_async(query_for_xc_misc).await?;
-                let query_for_xc_misc = self.resolve_request_async(tok).await?;
-                log::debug!("Sent QueryExtensionRequest to server");
-
-                if (query_for_xc_misc.present == 0) {
-                    return Err(crate::Error::ExtensionNotPresent("XcMisc"));
-                }
-
-                // now that we know XC_MISC exists, get the range reply
-                log::debug!("Sending GetXIDRangeRequest to server");
-                let tok = self.send_request_async(GetXIDRangeRequest).await?;
-                let range = self.resolve_request_async(tok).await?;
-                log::debug!("Sent GetXIDRangeRequest to server");
-
-                if range.start_id == 0 && range.count == 1 {
-                    return Err(crate::Error::StaticMsg("Unable to get XID range"));
-                }
-
-                self.xid.last = range.start_id;
-                self.xid.max = range.start_id + (range.count - 1) * self.xid.inc;
-            }
-        } else {
-            self.xid.last += self.xid.inc;
-        }
-
-        Ok(self.eval_xid())
+        Ok(self.xid.next().unwrap())
     }
 
     /// Wait for an event.

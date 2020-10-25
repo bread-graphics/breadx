@@ -6,7 +6,7 @@ use crate::{
         xproto::{CreateWindowRequest, Visualid, Window, WindowClass, CW},
         AsByteSequence,
     },
-    XID,
+    XidType, XID,
 };
 use alloc::vec::Vec;
 
@@ -169,6 +169,7 @@ impl<Conn: Connection> Display<Conn> {
         T: IntoIterator<Item = (WindowParameter, u32)>,
     {
         let wid = Window::const_from_xid(self.generate_xid()?);
+        log::debug!("Generate {:#032b}", wid.xid());
         let cw = self.create_window_request(
             wid,
             parent,

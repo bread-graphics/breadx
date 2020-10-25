@@ -17,17 +17,17 @@ pub fn xstruct(
     .filter_map(|item| Field::new(item, state).ok())
     .flatten()
     .collect::<Vec<Field>>();
-  normalize_fields(&mut subelems);
+  let optimize = normalize_fields(&mut subelems);
 
-  Ok(xstruct_with_fields(name, subelems))
+  Ok(xstruct_with_fields(name, subelems, optimize))
 }
 
 #[inline]
-pub fn xstruct_with_fields(name: &str, fields: Vec<Field>) -> Vec<syn::Item> {
+pub fn xstruct_with_fields(name: &str, fields: Vec<Field>, optimize: bool) -> Vec<syn::Item> {
   let mut res = vec![xstruct_defn(name, &fields)];
   if name != "Str" {
     res.push(match fields.is_empty() {
-      false => xstruct_abs_impl(name, &fields),
+      false => xstruct_abs_impl(name, &fields, optimize),
       true => xstruct_abs_impl_unit(name),
     });
   }
@@ -82,7 +82,7 @@ fn xstruct_defn(name: &str, subelems: &[Field]) -> syn::Item {
 }
 
 #[inline]
-fn xstruct_abs_impl(name: &str, fields: &[Field]) -> syn::Item {
+fn xstruct_abs_impl(name: &str, fields: &[Field], optimize: bool) -> syn::Item {
   syn::Item::Impl(syn::ItemImpl {
     unsafety: None,
     attrs: vec![],
@@ -96,6 +96,7 @@ fn xstruct_abs_impl(name: &str, fields: &[Field]) -> syn::Item {
       syn::ImplItem::Method(xstruct_size_fn(name, fields)),
       syn::ImplItem::Method(xstruct_as_bytes(name, fields)),
       syn::ImplItem::Method(xstruct_from_bytes(name, fields)),
+      syn::ImplItem::Method(xstruct_includes_optimization(optimize)),
     ],
   })
 }
@@ -199,6 +200,34 @@ fn xstruct_abs_impl_unit(name: &str) -> syn::Item {
                 .collect(),
             }))
             .collect(),
+          }))],
+        },
+      }),
+      syn::ImplItem::Method(syn::ImplItemMethod {
+        attrs: vec![inliner()],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        sig: syn::Signature {
+          constness: None,
+          asyncness: None,
+          unsafety: None,
+          abi: None,
+          fn_token: Default::default(),
+          ident: syn::Ident::new("includes_optimization", Span::call_site()),
+          generics: Default::default(),
+          paren_token: Default::default(),
+          inputs: Punctuated::new(),
+          variadic: None,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("bool"))),
+        },
+        block: syn::Block {
+          brace_token: Default::default(),
+          stmts: vec![syn::Stmt::Expr(syn::Expr::Lit(syn::ExprLit {
+            attrs: vec![],
+            lit: syn::Lit::Bool(syn::LitBool {
+              value: false,
+              span: Span::call_site(),
+            }),
           }))],
         },
       }),
@@ -700,4 +729,36 @@ fn sizing_init() -> syn::Expr {
       lit: syn::Lit::Int(syn::LitInt::new("0", Span::call_site())),
     })),
   })
+}
+
+#[inline]
+fn xstruct_includes_optimization(needs_optimization: bool) -> syn::ImplItemMethod {
+  syn::ImplItemMethod {
+    attrs: vec![inliner()],
+    vis: syn::Visibility::Inherited,
+    defaultness: None,
+    sig: syn::Signature {
+      constness: None,
+      asyncness: None,
+      unsafety: None,
+      abi: None,
+      fn_token: Default::default(),
+      ident: syn::Ident::new("includes_optimization", Span::call_site()),
+      generics: Default::default(),
+      paren_token: Default::default(),
+      inputs: Punctuated::new(),
+      variadic: None,
+      output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("bool"))),
+    },
+    block: syn::Block {
+      brace_token: Default::default(),
+      stmts: vec![syn::Stmt::Expr(syn::Expr::Lit(syn::ExprLit {
+        attrs: vec![],
+        lit: syn::Lit::Bool(syn::LitBool {
+          value: needs_optimization,
+          span: Span::call_site(),
+        }),
+      }))],
+    },
+  }
 }

@@ -35,9 +35,9 @@ pub fn xrequest(
           .flatten(),
       )
       .collect();
-    normalize_fields(&mut fields);
+    let o = normalize_fields(&mut fields);
 
-    xstruct::xstruct_with_fields(&reply_name, fields)
+    xstruct::xstruct_with_fields(&reply_name, fields, o)
   } else {
     vec![]
   };

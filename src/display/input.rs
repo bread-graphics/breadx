@@ -25,6 +25,7 @@ impl<Conn: Connection> super::Display<Conn> {
 
         if bytes[0] == TYPE_REPLY {
             log::info!("Received bytes of type REPLY");
+
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
             let bytes = match bytes {

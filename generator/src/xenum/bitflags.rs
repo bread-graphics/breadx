@@ -4,6 +4,7 @@ use crate::{syn_util::*, Failures};
 use heck::SnakeCase;
 use proc_macro2::Span;
 use std::iter;
+use syn::punctuated::Punctuated;
 use treexml::Element;
 
 #[inline]
@@ -106,6 +107,7 @@ fn xbitflag_asb(name: &str, flags: &[Flag], underlying: &str) -> syn::Item {
         },
       }),
       syn::ImplItem::Method(from_bytes_method(name, flags, underlying)),
+      syn::ImplItem::Method(bitflags_includes_optimization(underlying)),
     ],
   })
 }
@@ -338,6 +340,38 @@ fn from_bytes_statements(name: &str, flags: &[Flag], underlying: &str) -> Vec<sy
     .chain(flags_decl)
     .chain(iter::once(ctor))
     .collect()
+}
+
+#[inline]
+fn bitflags_includes_optimization(underyling: &str) -> syn::ImplItemMethod {
+  syn::ImplItemMethod {
+    attrs: vec![],
+    vis: syn::Visibility::Inherited,
+    defaultness: None,
+    sig: syn::Signature {
+      constness: None,
+      asyncness: None,
+      unsafety: None,
+      abi: None,
+      fn_token: Default::default(),
+      ident: syn::Ident::new("includes_optimization", Span::call_site()),
+      generics: Default::default(),
+      paren_token: Default::default(),
+      inputs: Punctuated::new(),
+      variadic: None,
+      output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("bool"))),
+    },
+    block: syn::Block {
+      brace_token: Default::default(),
+      stmts: vec![syn::Stmt::Expr(syn::Expr::Lit(syn::ExprLit {
+        attrs: vec![],
+        lit: syn::Lit::Bool(syn::LitBool {
+          value: false,
+          span: Span::call_site(),
+        }),
+      }))],
+    },
+  }
 }
 
 struct Flag {

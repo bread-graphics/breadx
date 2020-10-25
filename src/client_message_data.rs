@@ -66,4 +66,9 @@ impl AsByteSequence for ClientMessageData {
             Some((ClientMessageData { data: res }, Self::size()))
         }
     }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        false
+    }
 }

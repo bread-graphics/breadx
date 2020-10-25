@@ -33,6 +33,9 @@ pub trait AsByteSequence: Sized {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize;
     /// Convert a sequence of bytes into this item.
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)>;
+    /// Returns true if the first element of this object is a u8, and can be
+    /// optimized into the padding in headers.
+    fn includes_optimization() -> bool;
 }
 
 /// Internal use helper functions to build a vector of elements from a pointer to the bytes and the
@@ -126,6 +129,12 @@ impl AsByteSequence for u8 {
     fn from_bytes(bytes: &[u8]) -> Option<(u8, usize)> {
         Some((bytes[0], 1))
     }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        // not applicable
+        false
+    }
 }
 
 impl AsByteSequence for i8 {
@@ -143,6 +152,12 @@ impl AsByteSequence for i8 {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(i8, usize)> {
         Some((bytes[0] as i8, 1))
+    }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        // not applicable
+        false
     }
 }
 
@@ -165,6 +180,11 @@ impl AsByteSequence for bool {
             _ => Some((true, 1)),
         }
     }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        false
+    }
 }
 
 impl AsByteSequence for () {
@@ -181,6 +201,11 @@ impl AsByteSequence for () {
     #[inline]
     fn from_bytes(_bytes: &[u8]) -> Option<(Self, usize)> {
         Some(((), 0))
+    }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        false
     }
 }
 
@@ -215,6 +240,11 @@ macro_rules! impl_fundamental_num {
                 let mut my_bytes = [0; $sz];
                 my_bytes.copy_from_slice(&bytes[0..$sz]);
                 Some((Self::from_ne_bytes(my_bytes), $sz))
+            }
+
+            #[inline]
+            fn includes_optimization() -> bool {
+                false
             }
         }
     )*}
@@ -262,6 +292,11 @@ macro_rules! impl_array {
 
                 Some((v.into_inner(), index))
             }
+
+            #[inline]
+            fn includes_optimization() -> bool {
+                false
+            }
         }
     )*}
 }
@@ -283,7 +318,7 @@ impl AsByteSequence for String {
 
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        bytes.copy_from_slice(self.as_bytes());
+        bytes.copy_from_slice(String::as_bytes(self));
         bytes[self.len()] = 0;
         self.len() + 1
     }
@@ -300,6 +335,11 @@ impl AsByteSequence for String {
         let s = String::from_utf8_lossy(&bytes[..end]).to_string();
         let len = s.len();
         Some((s, len))
+    }
+
+    #[inline]
+    fn includes_optimization() -> bool {
+        false
     }
 }
 

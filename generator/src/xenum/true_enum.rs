@@ -152,6 +152,34 @@ fn xenum_asb(name: &str, variants: &[Variant], underlying: &str) -> syn::Item {
           stmts: xenum_fsb_stmts(name, variants, underlying),
         },
       }),
+      syn::ImplItem::Method(syn::ImplItemMethod {
+        attrs: vec![inliner()],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        sig: syn::Signature {
+          constness: None,
+          asyncness: None,
+          unsafety: None,
+          abi: None,
+          fn_token: Default::default(),
+          ident: syn::Ident::new("includes_optimization", Span::call_site()),
+          generics: Default::default(),
+          paren_token: Default::default(),
+          inputs: Punctuated::new(),
+          variadic: None,
+          output: syn::ReturnType::Type(Default::default(), Box::new(str_to_ty("bool"))),
+        },
+        block: syn::Block {
+          brace_token: Default::default(),
+          stmts: vec![syn::Stmt::Expr(syn::Expr::Lit(syn::ExprLit {
+            attrs: vec![],
+            lit: syn::Lit::Bool(syn::LitBool {
+              value: false,
+              span: Span::call_site(),
+            }),
+          }))],
+        },
+      }),
     ],
   })
 }

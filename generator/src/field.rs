@@ -379,7 +379,25 @@ impl Default for Field {
 }
 
 #[inline]
-pub fn normalize_fields(fields: &mut Vec<Field>) {
+pub fn normalize_fields(fields: &mut Vec<Field>) -> bool {
+  let optimize = match fields.get(0) {
+    Some(Field::Actual {
+      ty:
+        syn::Type::Path(syn::TypePath {
+          path: syn::Path { segments, .. },
+          ..
+        }),
+      ..
+    }) => {
+      let s = format!("{}", segments[0].ident);
+      match s.as_str() {
+        "u8" | "CARD8" | "Card8" | "BYTE" | "Byte" => true,
+        _ => false,
+      }
+    }
+    _ => false,
+  };
+
   for i in 0..fields.len() {
     if let Field::Actual {
       vec_len_index: Some(ref id),
@@ -416,6 +434,8 @@ pub fn normalize_fields(fields: &mut Vec<Field>) {
       }
     }
   }
+
+  optimize
 }
 
 #[derive(Debug, Clone)]

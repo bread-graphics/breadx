@@ -17,12 +17,21 @@ impl<Conn: Connection> super::Display<Conn> {
         // Second byte is minor opcode (ignored for now)
         // Third and fourth are length
         bytes[0] = req.opcode();
-        let len = req.as_bytes(&mut bytes[4..]);
+        let mut len = req.as_bytes(&mut bytes[4..]);
+
+        // if this item needs to be optimized, remove the 4th byte in the sequence and put it at sequence 1
+        if R::includes_optimization() {
+            let b = bytes.remove(4);
+            bytes[2] = b;
+            len -= 1;
+        }
+
         bytes.truncate(len + 5);
         let xlen = (len / 4) + 1;
         let len_bytes = xlen.to_ne_bytes();
         bytes[2] = len_bytes[0];
         bytes[3] = len_bytes[1];
+
 
         self.expect_reply(sequence, Default::default());
 
