@@ -13,8 +13,8 @@ pub trait XidType {
 
 impl<T: XidType> auto::AsByteSequence for T {
     #[inline]
-    fn size() -> usize {
-        XID::size()
+    fn size(&self) -> usize {
+        self.xid().size()
     }
 
     #[inline]
@@ -26,11 +26,6 @@ impl<T: XidType> auto::AsByteSequence for T {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (xid, len) = XID::from_bytes(bytes)?;
         Some((Self::from_xid(xid), len))
-    }
-
-    #[inline]
-    fn includes_optimization() -> bool {
-        false
     }
 }
 

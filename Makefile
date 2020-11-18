@@ -2,7 +2,7 @@
 # Used to regenerate the xml definition derived from xcbgen
 
 CARGO = cargo
-GENR = $(PWD)/generator/target/debug/flutterbug_generator
+GENR = $(PWD)/generator/target/debug/breadx_generator
 GENR_SRC = $(PWD)/generator/src
 XML = $(PWD)/xml
 OUTPUT = $(PWD)/src/auto

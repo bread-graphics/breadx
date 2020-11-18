@@ -3,7 +3,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xc_misc::GetXIDRangeRequest,
+        xc_misc::GetXidRangeRequest,
         xproto::{
             CreateWindowRequest, QueryExtensionRequest, Setup, SetupRequest, Visualid, Window,
             WindowClass,
@@ -119,40 +119,30 @@ impl<Conn> fmt::Debug for Display<Conn> {
 }
 
 #[inline]
-fn endian_byte() -> u8 {
-    const TEST: u32 = 0xABCD;
-    const NATURAL_ENDIAN: [u8; 4] = TEST.to_ne_bytes();
-    const BE: [u8; 4] = TEST.to_be_bytes();
-    const LE: [u8; 4] = TEST.to_le_bytes();
+const fn endian_byte() -> u8 {
     // Excerpt from the X Window System Protocol
     //
     // The client must send an initial byte of data to identify the byte order to be employed.
     // The value of the byte must be octal 102 or 154. The value 102 (ASCII uppercase B) means
     // values are transmitted most significant byte first, and value 154 (ASCII lowercase l)
     // means values are transmitted least significant byte first.
-    const BE_SIGNIFIER: u8 = b'B';
-    const LE_SIGNIFIER: u8 = b'l';
-
-    if NATURAL_ENDIAN == BE {
-        BE_SIGNIFIER
-    } else {
-        LE_SIGNIFIER
+    #[cfg(not(target_endian = "little"))]
+    {
+      const BE_SIGNIFIER: u8 = b'B';
+      BE_SIGNIFIER
+    }
+    #[cfg(target_endian = "little")]
+    {
+      const LE_SIGNIFIER: u8 = b'l';
+      LE_SIGNIFIER
     }
 }
 
 impl<Conn: Connection> Display<Conn> {
     #[inline]
     fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
-        let mut reply = reply.to_vec();
-
-        // if the reply is optimized, insert the second byte into the 4th position
-        if R::Reply::includes_optimization() {
-            let b = mem::take(&mut reply[1]);
-            reply.insert(4, b);
-        }
-
         Ok(R::Reply::from_bytes(&reply)
-            .ok_or_else(|| crate::Error::BadObjectRead)?
+            .ok_or_else(|| crate::BreadError::BadObjectRead)?
             .0)
     }
 
@@ -270,7 +260,7 @@ impl<Conn: Connection> Display<Conn> {
         self.connection.read_packet(&mut bytes)?;
 
         match bytes[0] {
-            0 | 2 => return Err(crate::Error::FailedToConnect),
+            0 | 2 => return Err(crate::BreadError::FailedToConnect),
             _ => (),
         }
 
@@ -279,11 +269,8 @@ impl<Conn: Connection> Display<Conn> {
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
- 
 
-        let (setup, slen) = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::Error::BadObjectRead)?
-            ;
+        let (setup, slen) = Setup::from_bytes(&bytes).ok_or_else(|| crate::BreadError::BadObjectRead)?;
         self.setup = setup;
         debug_assert_eq!(slen, length);
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);

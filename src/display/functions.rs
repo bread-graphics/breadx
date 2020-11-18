@@ -3,7 +3,7 @@
 use super::{Connection, Display};
 use crate::{
     auto::{
-        xproto::{CreateWindowRequest, Visualid, Window, WindowClass, CW},
+        xproto::{CreateWindowRequest, Visualid, Window, WindowClass, Cw},
         AsByteSequence,
     },
     XidType, XID,
@@ -38,7 +38,7 @@ impl Default for WindowParameter {
 }
 
 #[inline]
-fn wp_map_to_mask_and_values<T>(map: T) -> (u32, Vec<u32>)
+fn wp_map_to_mask_and_values<T>(map: T) -> (Cw, Vec<u32>)
 where
     T: IntoIterator<Item = (WindowParameter, u32)>,
 {
@@ -47,7 +47,7 @@ where
     values.sort_by_key(|(w, v)| w.clone());
 
     // create the mask and list of values
-    let mut cw: CW = Default::default();
+    let mut cw: Cw = Default::default();
     let values = values
         .into_iter()
         .map(|(w, v)| {
@@ -103,11 +103,7 @@ where
         })
         .collect();
 
-    let mut bytes: [u8; 4] = [0; 4];
-    cw.as_bytes(&mut bytes);
-    let mask = u32::from_ne_bytes(bytes);
-
-    (mask, values)
+    (cw, values)
 }
 
 impl<Conn: Connection> Display<Conn> {

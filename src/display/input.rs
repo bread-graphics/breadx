@@ -37,7 +37,7 @@ impl<Conn: Connection> super::Display<Conn> {
         } else if bytes[0] == TYPE_ERROR {
             // XCB has some convoluted machinery for errors
             // thank god Rust has better error handling
-            return Err(crate::Error::from_x_error(bytes));
+            return Err(crate::BreadError::from_x_error(bytes));
         } else {
             log::info!("Received bytes of type EVENT");
             // this is an event

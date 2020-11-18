@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use flutterbug::{WindowClass, DisplayConnection};
+use breadx::{WindowClass, DisplayConnection};
 use std::env;
 
 fn main() {

@@ -57,6 +57,7 @@ authorization from the authors.
     <type>GCONTEXT</type>
   </xidunion>
   
+  <typedef oldname="CARD32" newname="BOOL32" />
   <typedef oldname="CARD32" newname="VISUALID" />
 
   <typedef oldname="CARD32" newname="TIMESTAMP" />
@@ -64,6 +65,8 @@ authorization from the authors.
   <typedef oldname="CARD32" newname="KEYSYM" />
 
   <typedef oldname="CARD8" newname="KEYCODE" />
+ 
+  <typedef oldname="CARD32" newname="KEYCODE32" />
 
   <typedef oldname="CARD8" newname="BUTTON" />
 
@@ -195,9 +198,11 @@ authorization from the authors.
     <list type="char" name="authorization_protocol_name">
       <fieldref>authorization_protocol_name_len</fieldref>
     </list>
+    <pad align="4" />
     <list type="char" name="authorization_protocol_data">
       <fieldref>authorization_protocol_data_len</fieldref>
     </list>
+    <pad align="4" />
   </struct>
 
   <struct name="SetupFailed">
@@ -252,6 +257,7 @@ authorization from the authors.
     <list type="char" name="vendor">
       <fieldref>vendor_len</fieldref>
     </list>
+    <pad align="4" />
     <list type="FORMAT" name="pixmap_formats">
       <fieldref>pixmap_formats_len</fieldref>
     </list>
@@ -506,11 +512,11 @@ event.
     <doc>
       <brief>the pointer is in a different window</brief>
       <field name="event"><![CDATA[
-The reconfigured window or its parent, depending on whether `StructureNotify`
-or `SubstructureNotify` was selected.
+The window on which the event was generated.
       ]]></field>
-      <field name="window"><![CDATA[
-The window that was unmapped.
+      <field name="child"><![CDATA[
+If the `event` window has subwindows and the final pointer position is in one
+of them, then `child` is set to that subwindow, `XCB_WINDOW_NONE` otherwise.
       ]]></field>
       <field name="root"><![CDATA[
 The root window for the final cursor position.
@@ -889,74 +895,74 @@ A timestamp of the server time when the property was changed.
   <enum name="Atom">
     <item name="None"> <value>0</value></item>
     <item name="Any">  <value>0</value></item>
-    <item name="PRIMARY" />
-    <item name="SECONDARY" />
-    <item name="ARC" />
-    <item name="ATOM" />
-    <item name="BITMAP" />
-    <item name="CARDINAL" />
-    <item name="COLORMAP" />
-    <item name="CURSOR" />
-    <item name="CUT_BUFFER0" />
-    <item name="CUT_BUFFER1" />
-    <item name="CUT_BUFFER2" />
-    <item name="CUT_BUFFER3" />
-    <item name="CUT_BUFFER4" />
-    <item name="CUT_BUFFER5" />
-    <item name="CUT_BUFFER6" />
-    <item name="CUT_BUFFER7" />
-    <item name="DRAWABLE" />
-    <item name="FONT" />
-    <item name="INTEGER" />
-    <item name="PIXMAP" />
-    <item name="POINT" />
-    <item name="RECTANGLE" />
-    <item name="RESOURCE_MANAGER" />
-    <item name="RGB_COLOR_MAP" />
-    <item name="RGB_BEST_MAP" />
-    <item name="RGB_BLUE_MAP" />
-    <item name="RGB_DEFAULT_MAP" />
-    <item name="RGB_GRAY_MAP" />
-    <item name="RGB_GREEN_MAP" />
-    <item name="RGB_RED_MAP" />
-    <item name="STRING" />
-    <item name="VISUALID" />
-    <item name="WINDOW" />
-    <item name="WM_COMMAND" />
-    <item name="WM_HINTS" />
-    <item name="WM_CLIENT_MACHINE" />
-    <item name="WM_ICON_NAME" />
-    <item name="WM_ICON_SIZE" />
-    <item name="WM_NAME" />
-    <item name="WM_NORMAL_HINTS" />
-    <item name="WM_SIZE_HINTS" />
-    <item name="WM_ZOOM_HINTS" />
-    <item name="MIN_SPACE" />
-    <item name="NORM_SPACE" />
-    <item name="MAX_SPACE" />
-    <item name="END_SPACE" />
-    <item name="SUPERSCRIPT_X" />
-    <item name="SUPERSCRIPT_Y" />
-    <item name="SUBSCRIPT_X" />
-    <item name="SUBSCRIPT_Y" />
-    <item name="UNDERLINE_POSITION" />
-    <item name="UNDERLINE_THICKNESS" />
-    <item name="STRIKEOUT_ASCENT" />
-    <item name="STRIKEOUT_DESCENT" />
-    <item name="ITALIC_ANGLE" />
-    <item name="X_HEIGHT" />
-    <item name="QUAD_WIDTH" />
-    <item name="WEIGHT" />
-    <item name="POINT_SIZE" />
-    <item name="RESOLUTION" />
-    <item name="COPYRIGHT" />
-    <item name="NOTICE" />
-    <item name="FONT_NAME" />
-    <item name="FAMILY_NAME" />
-    <item name="FULL_NAME" />
-    <item name="CAP_HEIGHT" />
-    <item name="WM_CLASS" />
-    <item name="WM_TRANSIENT_FOR" />
+    <item name="PRIMARY">              <value>1</value> </item>
+    <item name="SECONDARY">            <value>2</value> </item>
+    <item name="ARC">                  <value>3</value> </item>
+    <item name="ATOM">                 <value>4</value> </item>
+    <item name="BITMAP">               <value>5</value> </item>
+    <item name="CARDINAL">             <value>6</value> </item>
+    <item name="COLORMAP">             <value>7</value> </item>
+    <item name="CURSOR">               <value>8</value> </item>
+    <item name="CUT_BUFFER0">          <value>9</value> </item>
+    <item name="CUT_BUFFER1">          <value>10</value> </item>
+    <item name="CUT_BUFFER2">          <value>11</value> </item>
+    <item name="CUT_BUFFER3">          <value>12</value> </item>
+    <item name="CUT_BUFFER4">          <value>13</value> </item>
+    <item name="CUT_BUFFER5">          <value>14</value> </item>
+    <item name="CUT_BUFFER6">          <value>15</value> </item>
+    <item name="CUT_BUFFER7">          <value>16</value> </item>
+    <item name="DRAWABLE">             <value>17</value> </item>
+    <item name="FONT">                 <value>18</value> </item>
+    <item name="INTEGER">              <value>19</value> </item>
+    <item name="PIXMAP">               <value>20</value> </item>
+    <item name="POINT">                <value>21</value> </item>
+    <item name="RECTANGLE">            <value>22</value> </item>
+    <item name="RESOURCE_MANAGER">     <value>23</value> </item>
+    <item name="RGB_COLOR_MAP">        <value>24</value> </item>
+    <item name="RGB_BEST_MAP">         <value>25</value> </item>
+    <item name="RGB_BLUE_MAP">         <value>26</value> </item>
+    <item name="RGB_DEFAULT_MAP">      <value>27</value> </item>
+    <item name="RGB_GRAY_MAP">         <value>28</value> </item>
+    <item name="RGB_GREEN_MAP">        <value>29</value> </item>
+    <item name="RGB_RED_MAP">          <value>30</value> </item>
+    <item name="STRING">               <value>31</value> </item>
+    <item name="VISUALID">             <value>32</value> </item>
+    <item name="WINDOW">               <value>33</value> </item>
+    <item name="WM_COMMAND">           <value>34</value> </item>
+    <item name="WM_HINTS">             <value>35</value> </item>
+    <item name="WM_CLIENT_MACHINE">    <value>36</value> </item>
+    <item name="WM_ICON_NAME">         <value>37</value> </item>
+    <item name="WM_ICON_SIZE">         <value>38</value> </item>
+    <item name="WM_NAME">              <value>39</value> </item>
+    <item name="WM_NORMAL_HINTS">      <value>40</value> </item>
+    <item name="WM_SIZE_HINTS">        <value>41</value> </item>
+    <item name="WM_ZOOM_HINTS">        <value>42</value> </item>
+    <item name="MIN_SPACE">            <value>43</value> </item>
+    <item name="NORM_SPACE">           <value>44</value> </item>
+    <item name="MAX_SPACE">            <value>45</value> </item>
+    <item name="END_SPACE">            <value>46</value> </item>
+    <item name="SUPERSCRIPT_X">        <value>47</value> </item>
+    <item name="SUPERSCRIPT_Y">        <value>48</value> </item>
+    <item name="SUBSCRIPT_X">          <value>49</value> </item>
+    <item name="SUBSCRIPT_Y">          <value>50</value> </item>
+    <item name="UNDERLINE_POSITION">   <value>51</value> </item>
+    <item name="UNDERLINE_THICKNESS">  <value>52</value> </item>
+    <item name="STRIKEOUT_ASCENT">     <value>53</value> </item>
+    <item name="STRIKEOUT_DESCENT">    <value>54</value> </item>
+    <item name="ITALIC_ANGLE">         <value>55</value> </item>
+    <item name="X_HEIGHT">             <value>56</value> </item>
+    <item name="QUAD_WIDTH">           <value>57</value> </item>
+    <item name="WEIGHT">               <value>58</value> </item>
+    <item name="POINT_SIZE">           <value>59</value> </item>
+    <item name="RESOLUTION">           <value>60</value> </item>
+    <item name="COPYRIGHT">            <value>61</value> </item>
+    <item name="NOTICE">               <value>62</value> </item>
+    <item name="FONT_NAME">            <value>63</value> </item>
+    <item name="FAMILY_NAME">          <value>64</value> </item>
+    <item name="FULL_NAME">            <value>65</value> </item>
+    <item name="CAP_HEIGHT">           <value>66</value> </item>
+    <item name="WM_CLASS">             <value>67</value> </item>
+    <item name="WM_TRANSIENT_FOR">     <value>68</value> </item>
   </enum>
 
   <event name="SelectionRequest" number="30">
@@ -1080,7 +1086,21 @@ The number of keycodes altered.
     </doc>
   </event>
 
-
+  <event name="GeGeneric" number="35" xge="true">
+    <pad bytes="22" />
+    <doc>
+      <brief>generic event (with length)</brief>
+      <field name="extension"><![CDATA[
+The major opcode of the extension creating this event
+      ]]></field>
+      <field name="length"><![CDATA[
+The amount (in 4-byte units) of data beyond 32 bytes
+      ]]></field>
+      <field name="evtype"><![CDATA[
+The extension-specific event type
+      ]]></field>
+    </doc>
+  </event>
 
   <!-- Core error types -->
 
@@ -1279,9 +1299,71 @@ parent's cursor will cause an immediate change in the displayed cursor.
     <field type="CARD16" name="border_width" />
     <field type="CARD16" name="class" enum="WindowClass" />
     <field type="VISUALID" name="visual" />
-    <valueparam value-mask-type="CARD32"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <field type="CARD32" name="value_mask" mask="CW" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="CW">BackPixmap</enumref>
+          <field type="PIXMAP" name="background_pixmap" altenum="BackPixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackPixel</enumref>
+          <field type="CARD32" name="background_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BorderPixmap</enumref>
+          <field type="PIXMAP" name="border_pixmap" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BorderPixel</enumref>
+          <field type="CARD32" name="border_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BitGravity</enumref>
+          <field type="CARD32" name="bit_gravity" enum="Gravity"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">WinGravity</enumref>
+          <field type="CARD32" name="win_gravity" enum="Gravity"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingStore</enumref>
+          <field type="CARD32" name="backing_store" enum="BackingStore"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingPlanes</enumref>
+          <field type="CARD32" name="backing_planes" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingPixel</enumref>
+          <field type="CARD32" name="backing_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">OverrideRedirect</enumref>
+          <field type="BOOL32" name="override_redirect" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">SaveUnder</enumref>
+          <field type="BOOL32" name="save_under" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">EventMask</enumref>
+          <field type="CARD32" name="event_mask" mask="EventMask"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">DontPropagate</enumref>
+          <field type="CARD32" name="do_not_propogate_mask" mask="EventMask"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">Colormap</enumref>
+          <field type="COLORMAP" name="colormap" altenum="Colormap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">Cursor</enumref>
+          <field type="CURSOR" name="cursor" altenum="Cursor"/>
+        </bitcase>
+    </switch>
+
     <doc>
       <brief>Creates a window</brief>
       <description><![CDATA[
@@ -1360,9 +1442,71 @@ The X server could not allocate the requested resources (no memory?).
   <request name="ChangeWindowAttributes" opcode="2">
     <pad bytes="1" />
     <field type="WINDOW" name="window" />
-    <valueparam value-mask-type="CARD32"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <field type="CARD32" name="value_mask" mask="CW" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="CW">BackPixmap</enumref>
+          <field type="PIXMAP" name="background_pixmap" altenum="BackPixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackPixel</enumref>
+          <field type="CARD32" name="background_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BorderPixmap</enumref>
+          <field type="PIXMAP" name="border_pixmap" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BorderPixel</enumref>
+          <field type="CARD32" name="border_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BitGravity</enumref>
+          <field type="CARD32" name="bit_gravity" enum="Gravity"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">WinGravity</enumref>
+          <field type="CARD32" name="win_gravity" enum="Gravity"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingStore</enumref>
+          <field type="CARD32" name="backing_store" enum="BackingStore"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingPlanes</enumref>
+          <field type="CARD32" name="backing_planes" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">BackingPixel</enumref>
+          <field type="CARD32" name="backing_pixel" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">OverrideRedirect</enumref>
+          <field type="BOOL32" name="override_redirect" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">SaveUnder</enumref>
+          <field type="BOOL32" name="save_under" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">EventMask</enumref>
+          <field type="CARD32" name="event_mask" mask="EventMask"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">DontPropagate</enumref>
+          <field type="CARD32" name="do_not_propogate_mask" mask="EventMask"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">Colormap</enumref>
+          <field type="COLORMAP" name="colormap" altenum="Colormap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="CW">Cursor</enumref>
+          <field type="CURSOR" name="cursor" altenum="Cursor"/>
+        </bitcase>
+    </switch>
+
     <doc>
       <brief>change window attributes</brief>
       <description><![CDATA[
@@ -1675,11 +1819,40 @@ The specified window does not exist.
   <request name="ConfigureWindow" opcode="12">
     <pad bytes="1" />
     <field type="WINDOW" name="window" />
-    <field type="CARD16" name="value_mask" />
+    <field type="CARD16" name="value_mask" mask="ConfigWindow" />
     <pad bytes="2" />
-    <valueparam value-mask-type="CARD16"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="ConfigWindow">X</enumref>
+          <field type="INT32" name="x" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">Y</enumref>
+          <field type="INT32" name="y" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">Width</enumref>
+          <field type="CARD32" name="width" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">Height</enumref>
+          <field type="CARD32" name="height" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">BorderWidth</enumref>
+          <field type="CARD32" name="border_width" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">Sibling</enumref>
+          <field type="WINDOW" name="sibling" altenum="Window"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="ConfigWindow">StackMode</enumref>
+          <field type="CARD32" name="stack_mode" enum="StackMode"/>
+        </bitcase>
+    </switch>
+   
     <doc>
       <brief>Configures window attributes</brief>
       <description><![CDATA[
@@ -1691,7 +1864,7 @@ Configures a window's size, position, border width and stacking order.
  * with a size of 1024x768 pixels.
  *
  */
-void my_example(xcb_connection *c, xcb_window_t window) {
+void my_example(xcb_connection_t *c, xcb_window_t window) {
     uint16_t mask = 0;
 
     mask |= XCB_CONFIG_WINDOW_X;
@@ -1812,7 +1985,7 @@ Gets the current geometry of the specified drawable (either `Window` or `Pixmap`
  * Displays the x and y position of the given window.
  *
  */
-void my_example(xcb_connection *c, xcb_window_t window) {
+void my_example(xcb_connection_t *c, xcb_window_t window) {
     xcb_get_geometry_cookie_t cookie;
     xcb_get_geometry_reply_t *reply;
 
@@ -1872,7 +2045,7 @@ specified `window`. The children are listed in bottom-to-top stacking order.
  * Displays the root, parent and children of the specified window.
  *
  */
-void my_example(xcb_connection *conn, xcb_window_t window) {
+void my_example(xcb_connection_t *conn, xcb_window_t window) {
     xcb_query_tree_cookie_t cookie;
     xcb_query_tree_reply_t *reply;
 
@@ -1923,7 +2096,7 @@ not yet exist.
  * Resolves the _NET_WM_NAME atom.
  *
  */
-void my_example(xcb_connection *c) {
+void my_example(xcb_connection_t *c) {
     xcb_intern_atom_cookie_t cookie;
     xcb_intern_atom_reply_t *reply;
 
@@ -2020,7 +2193,7 @@ window title, encoded as UTF-8 string, in the `_NET_WM_NAME` property.
  * Sets the WM_NAME property of the window to "XCB Example".
  *
  */
-void my_example(xcb_connection *conn, xcb_window_t window) {
+void my_example(xcb_connection_t *conn, xcb_window_t window) {
     xcb_change_property(conn,
         XCB_PROP_MODE_REPLACE,
         window,
@@ -2144,7 +2317,7 @@ TODO: talk about the offset/length thing. what's a valid use case?
  * Prints the WM_NAME property of the window.
  *
  */
-void my_example(xcb_connection *c, xcb_window_t window) {
+void my_example(xcb_connection_t *c, xcb_window_t window) {
     xcb_get_property_cookie_t cookie;
     xcb_get_property_reply_t *reply;
 
@@ -2432,7 +2605,7 @@ Actively grabs control of the pointer. Further pointer events are reported only 
  * Grabs the pointer actively
  *
  */
-void my_example(xcb_connection *conn, xcb_screen_t *screen, xcb_cursor_t cursor) {
+void my_example(xcb_connection_t *conn, xcb_screen_t *screen, xcb_cursor_t cursor) {
     xcb_grab_pointer_cookie_t cookie;
     xcb_grab_pointer_reply_t *reply;
 
@@ -2451,7 +2624,7 @@ void my_example(xcb_connection *conn, xcb_screen_t *screen, xcb_cursor_t cursor)
     if ((reply = xcb_grab_pointer_reply(conn, cookie, NULL))) {
         if (reply->status == XCB_GRAB_STATUS_SUCCESS)
             printf("successfully grabbed the pointer\\n");
-        free(preply);
+        free(reply);
     }
 }
       ]]></example>
@@ -2707,7 +2880,7 @@ last-keyboard-grab time is set to the specified time.
  * Grabs the keyboard actively
  *
  */
-void my_example(xcb_connection *conn, xcb_screen_t *screen) {
+void my_example(xcb_connection_t *conn, xcb_screen_t *screen) {
     xcb_grab_keyboard_cookie_t cookie;
     xcb_grab_keyboard_reply_t *reply;
 
@@ -3404,7 +3577,7 @@ The number of characters in `string`.
       <field name="string"><![CDATA[
 The text to get text extents for.
       ]]></field>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
       <error type="Font"><![CDATA[
@@ -3869,9 +4042,102 @@ TODO
     <pad bytes="1" />
     <field type="GCONTEXT" name="cid" />
     <field type="DRAWABLE" name="drawable" />
-    <valueparam value-mask-type="CARD32"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <field type="CARD32" name="value_mask" mask="GC" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="GC">Function</enumref>
+          <field type="CARD32" name="function" enum="GX"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">PlaneMask</enumref>
+          <field type="CARD32" name="plane_mask" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Foreground</enumref>
+          <field type="CARD32" name="foreground" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Background</enumref>
+          <field type="CARD32" name="background" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">LineWidth</enumref>
+          <field type="CARD32" name="line_width" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">LineStyle</enumref>
+          <field type="CARD32" name="line_style" enum="LineStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">CapStyle</enumref>
+          <field type="CARD32" name="cap_style" enum="CapStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">JoinStyle</enumref>
+          <field type="CARD32" name="join_style" enum="JoinStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">FillStyle</enumref>
+          <field type="CARD32" name="fill_style" enum="FillStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">FillRule</enumref>
+          <field type="CARD32" name="fill_rule" enum="FillRule"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Tile</enumref>
+          <field type="PIXMAP" name="tile" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Stipple</enumref>
+          <field type="PIXMAP" name="stipple" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">TileStippleOriginX</enumref>
+          <field type="INT32" name="tile_stipple_x_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">TileStippleOriginY</enumref>
+          <field type="INT32" name="tile_stipple_y_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Font</enumref>
+          <field type="FONT" name="font" altenum="Font"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">SubwindowMode</enumref>
+          <field type="CARD32" name="subwindow_mode" enum="SubwindowMode"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">GraphicsExposures</enumref>
+          <field type="BOOL32" name="graphics_exposures" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipOriginX</enumref>
+          <field type="INT32" name="clip_x_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipOriginY</enumref>
+          <field type="INT32" name="clip_y_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipMask</enumref>
+          <field type="PIXMAP" name="clip_mask" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">DashOffset</enumref>
+          <field type="CARD32" name="dash_offset" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">DashList</enumref>
+          <field type="CARD32" name="dashes" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ArcMode</enumref>
+          <field type="CARD32" name="arc_mode" enum="ArcMode"/>
+        </bitcase>
+    </switch>
     <doc>
       <brief>Creates a graphics context</brief>
       <description><![CDATA[
@@ -3910,9 +4176,102 @@ The X server could not allocate the requested resources (no memory?).
   <request name="ChangeGC" opcode="56">
     <pad bytes="1" />
     <field type="GCONTEXT" name="gc" />
-    <valueparam value-mask-type="CARD32"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <field type="CARD32" name="value_mask" mask="GC" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="GC">Function</enumref>
+          <field type="CARD32" name="function" enum="GX"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">PlaneMask</enumref>
+          <field type="CARD32" name="plane_mask" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Foreground</enumref>
+          <field type="CARD32" name="foreground" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Background</enumref>
+          <field type="CARD32" name="background" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">LineWidth</enumref>
+          <field type="CARD32" name="line_width" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">LineStyle</enumref>
+          <field type="CARD32" name="line_style" enum="LineStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">CapStyle</enumref>
+          <field type="CARD32" name="cap_style" enum="CapStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">JoinStyle</enumref>
+          <field type="CARD32" name="join_style" enum="JoinStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">FillStyle</enumref>
+          <field type="CARD32" name="fill_style" enum="FillStyle"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">FillRule</enumref>
+          <field type="CARD32" name="fill_rule" enum="FillRule"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Tile</enumref>
+          <field type="PIXMAP" name="tile" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Stipple</enumref>
+          <field type="PIXMAP" name="stipple" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">TileStippleOriginX</enumref>
+          <field type="INT32" name="tile_stipple_x_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">TileStippleOriginY</enumref>
+          <field type="INT32" name="tile_stipple_y_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">Font</enumref>
+          <field type="FONT" name="font" altenum="Font"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">SubwindowMode</enumref>
+          <field type="CARD32" name="subwindow_mode" enum="SubwindowMode"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">GraphicsExposures</enumref>
+          <field type="BOOL32" name="graphics_exposures" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipOriginX</enumref>
+          <field type="INT32" name="clip_x_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipOriginY</enumref>
+          <field type="INT32" name="clip_y_origin" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ClipMask</enumref>
+          <field type="PIXMAP" name="clip_mask" altenum="Pixmap"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">DashOffset</enumref>
+          <field type="CARD32" name="dash_offset" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">DashList</enumref>
+          <field type="CARD32" name="dashes" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="GC">ArcMode</enumref>
+          <field type="CARD32" name="arc_mode" enum="ArcMode"/>
+        </bitcase>
+    </switch>
     <doc>
       <brief>change graphics context components</brief>
       <description><![CDATA[
@@ -3923,7 +4282,7 @@ Changes the components specified by `value_mask` for the specified graphics cont
  * Changes the foreground color component of the specified graphics context.
  *
  */
-void my_example(xcb_connection *conn, xcb_gcontext_t gc, uint32_t fg, uint32_t bg) {
+void my_example(xcb_connection_t *conn, xcb_gcontext_t gc, uint32_t fg, uint32_t bg) {
     /* C99 allows us to use a compact way of changing a single component: */
     xcb_change_gc(conn, gc, XCB_GC_FOREGROUND, (uint32_t[]){ fg });
 
@@ -3953,7 +4312,7 @@ example.
       <error type="Font"><![CDATA[
 TODO: reasons?
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 TODO: reasons?
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4012,7 +4371,7 @@ The X server could not allocate the requested resources (no memory?).
 Destroys the specified `gc` and all associated storage.
       ]]></description>
       <field name="gc"><![CDATA[The graphics context to destroy.]]></field>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
     </doc>
@@ -4073,7 +4432,7 @@ The height of the area to copy (in pixels).
       <error type="Drawable"><![CDATA[
 The specified `drawable` (Window or Pixmap) does not exist.
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4139,7 +4498,7 @@ request were a single, filled shape.
  * Draw a straight line.
  *
  */
-void my_example(xcb_connection *conn, xcb_drawable_t drawable, xcb_gcontext_t gc) {
+void my_example(xcb_connection_t *conn, xcb_drawable_t drawable, xcb_gcontext_t gc) {
     xcb_poly_line(conn, XCB_COORD_MODE_ORIGIN, drawable, gc, 2,
                   (xcb_point_t[]) { {10, 10}, {100, 10} });
     xcb_flush(conn);
@@ -4162,7 +4521,7 @@ An array of points.
       <error type="Drawable"><![CDATA[
 TODO: reasons?
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 TODO: reasons?
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4216,7 +4575,7 @@ An array of `xcb_segment_t` structures.
       <error type="Drawable"><![CDATA[
 The specified `drawable` does not exist.
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified `gc` does not exist.
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4294,7 +4653,7 @@ The rectangles to fill.
       <error type="Drawable"><![CDATA[
 The specified `drawable` (Window or Pixmap) does not exist.
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4417,7 +4776,7 @@ background, font, subwindow-mode, clip-x-origin, clip-y-origin, and clip-mask.
       <error type="Drawable"><![CDATA[
 The specified `drawable` (Window or Pixmap) does not exist.
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4475,7 +4834,7 @@ background, font, subwindow-mode, clip-x-origin, clip-y-origin, and clip-mask.
       <error type="Drawable"><![CDATA[
 The specified `drawable` (Window or Pixmap) does not exist.
       ]]></error>
-      <error type="GC"><![CDATA[
+      <error type="GContext"><![CDATA[
 The specified graphics context does not exist.
       ]]></error>
       <error type="Match"><![CDATA[
@@ -4968,9 +5327,43 @@ sensitive!
 
   <request name="ChangeKeyboardControl" opcode="102">
     <pad bytes="1" />
-    <valueparam value-mask-type="CARD32"
-                value-mask-name="value_mask"
-                value-list-name="value_list" />
+    <field type="CARD32" name="value_mask" mask="KB" />
+    <switch name="value_list">
+        <fieldref>value_mask</fieldref>
+        <bitcase>
+          <enumref ref="KB">KeyClickPercent</enumref>
+          <field type="INT32" name="key_click_percent" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">BellPercent</enumref>
+          <field type="INT32" name="bell_percent" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">BellPitch</enumref>
+          <field type="INT32" name="bell_pitch" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">BellDuration</enumref>
+          <field type="INT32" name="bell_duration" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">Led</enumref>
+          <field type="CARD32" name="led" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">LedMode</enumref>
+          <field type="CARD32" name="led_mode" enum="LedMode"/>
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">Key</enumref>
+          <field type="KEYCODE32" name="key" />
+        </bitcase>
+        <bitcase>
+          <enumref ref="KB">AutoRepeatMode</enumref>
+          <field type="CARD32" name="auto_repeat_mode" enum="AutoRepeatMode"/>
+        </bitcase>
+    </switch>
+
   </request>
 
   <request name="GetKeyboardControl" opcode="103">
@@ -5074,6 +5467,7 @@ sensitive!
     <list type="BYTE" name="address">
       <fieldref>address_len</fieldref>
     </list>
+    <pad align="4" />
   </struct>
 
   <request name="ListHosts" opcode="110">

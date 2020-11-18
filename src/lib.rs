@@ -22,7 +22,9 @@ pub(crate) mod util;
 pub mod window;
 pub mod xid;
 
+pub use display::*;
 pub use error::*;
+pub use window::*;
 
 /// A request.
 pub trait Request: auto::AsByteSequence {
@@ -30,10 +32,20 @@ pub trait Request: auto::AsByteSequence {
     // Excerpt from the X Window System Protocol:
     //
     // Every request contains an 8-bit major opcode
-    fn opcode(&self) -> u8;
+    const OPCODE: u8; 
 }
 
-pub use display::*;
+//pub use display::*;
 pub use xid::{XidType, XID};
 
 pub use auto::xproto::{Visualid, Window, WindowClass};
+
+/// An error.
+pub trait Error: auto::AsByteSequence {
+    const OPCODE: u8;
+}
+
+/// An event.
+pub trait Event: auto::AsByteSequence {
+    const OPCODE: u8;
+}

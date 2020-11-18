@@ -46,14 +46,14 @@ impl ClientMessageData {
 
 impl AsByteSequence for ClientMessageData {
     #[inline]
-    fn size() -> usize {
-        mem::size_of::<c_long>() * LONG_LEN
+    fn size(&self) -> usize {
+        BYTE_LEN
     }
 
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         bytes.copy_from_slice(bytemuck::cast_slice(&self.data));
-        Self::size()
+        BYTE_LEN
     }
 
     #[inline]
@@ -63,12 +63,7 @@ impl AsByteSequence for ClientMessageData {
         } else {
             let mut res: [c_long; LONG_LEN] = [0; LONG_LEN];
             res.copy_from_slice(bytemuck::cast_slice(bytes));
-            Some((ClientMessageData { data: res }, Self::size()))
+            Some((ClientMessageData { data: res }, BYTE_LEN))
         }
-    }
-
-    #[inline]
-    fn includes_optimization() -> bool {
-        false
     }
 }
