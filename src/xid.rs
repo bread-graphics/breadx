@@ -13,8 +13,8 @@ pub trait XidType {
 
 impl<T: XidType> auto::AsByteSequence for T {
     #[inline]
-    fn size() -> usize {
-        XID::size()
+    fn size(&self) -> usize {
+        self.xid().size()
     }
 
     #[inline]
@@ -34,20 +34,42 @@ impl<T: XidType> auto::AsByteSequence for T {
 pub(crate) struct XidGenerator {
     pub last: XID,
     pub max: XID,
-    pub base: XID,
     pub inc: XID,
+    pub base: XID,
+    mask: XID,
 }
 
 impl XidGenerator {
     #[inline]
     pub const fn new(base: XID, mask: XID) -> Self {
-        let inc = mask & (-(mask as i32)) as XID;
-
         Self {
             last: 0,
             max: 0,
             base,
             inc: mask & mask.wrapping_neg(),
+            mask,
         }
+    }
+
+    #[inline]
+    pub const fn eval_in_place(&self) -> XID {
+        self.last | self.base
+    }
+
+    #[inline]
+    pub fn next(&mut self) -> Option<XID> {
+        if self.last >= self.max.wrapping_sub(self.inc).wrapping_add(1) {
+            assert_eq!(self.last, self.max);
+            if self.last == 0 {
+                self.max = self.mask;
+                self.last = self.inc;
+            } else {
+                return None;
+            }
+        } else {
+            self.last = self.last.wrapping_add(self.inc);
+        }
+
+        Some(self.eval_in_place())
     }
 }

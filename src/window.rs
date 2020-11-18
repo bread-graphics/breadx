@@ -9,7 +9,7 @@ impl Window {
     /// Map this window to the screen.
     #[inline]
     pub fn map<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
-        let mw = MapWindowRequest { window: *self };
+        let mw = MapWindowRequest { window: *self, ..Default::default() };
 
         log::debug!("Sending MapWindowRequest to server");
         let tok = dpy.send_request(mw)?;

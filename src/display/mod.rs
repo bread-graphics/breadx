@@ -3,7 +3,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xc_misc::GetXIDRangeRequest,
+        xc_misc::GetXidRangeRequest,
         xproto::{
             CreateWindowRequest, QueryExtensionRequest, Setup, SetupRequest, Visualid, Window,
             WindowClass,
@@ -31,7 +31,7 @@ use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
 #[cfg(feature = "async")]
-use futures_io::{AsyncRead, AsyncWrite}; 
+use futures_io::{AsyncRead, AsyncWrite};
 
 mod connection;
 pub use connection::*;
@@ -119,28 +119,33 @@ impl<Conn> fmt::Debug for Display<Conn> {
 }
 
 #[inline]
-fn endian_byte() -> u8 {
-    const TEST: u32 = 0xABCD;
-    const NATURAL_ENDIAN: [u8; 4] = TEST.to_ne_bytes();
-    const BE: [u8; 4] = TEST.to_be_bytes();
-    const LE: [u8; 4] = TEST.to_le_bytes();
+const fn endian_byte() -> u8 {
     // Excerpt from the X Window System Protocol
     //
     // The client must send an initial byte of data to identify the byte order to be employed.
     // The value of the byte must be octal 102 or 154. The value 102 (ASCII uppercase B) means
     // values are transmitted most significant byte first, and value 154 (ASCII lowercase l)
     // means values are transmitted least significant byte first.
-    const BE_SIGNIFIER: u8 = b'B';
-    const LE_SIGNIFIER: u8 = b'l';
-
-    if NATURAL_ENDIAN == BE {
-        BE_SIGNIFIER
-    } else {
-        LE_SIGNIFIER
+    #[cfg(not(target_endian = "little"))]
+    {
+      const BE_SIGNIFIER: u8 = b'B';
+      BE_SIGNIFIER
+    }
+    #[cfg(target_endian = "little")]
+    {
+      const LE_SIGNIFIER: u8 = b'l';
+      LE_SIGNIFIER
     }
 }
 
 impl<Conn: Connection> Display<Conn> {
+    #[inline]
+    fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
+        Ok(R::Reply::from_bytes(&reply)
+            .ok_or_else(|| crate::BreadError::BadObjectRead)?
+            .0)
+    }
+
     #[inline]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
         self.send_request_internal(req)
@@ -161,11 +166,7 @@ impl<Conn: Connection> Display<Conn> {
 
         loop {
             match self.pending_replies.remove(&token.sequence) {
-                Some(reply) => {
-                    break Ok(R::Reply::from_bytes(&reply)
-                        .ok_or_else(|| crate::Error::BadObjectRead)?
-                        .0)
-                }
+                Some(reply) => break Self::decode_reply::<R>(reply),
                 None => self.wait()?,
             }
         }
@@ -196,9 +197,7 @@ impl<Conn: Connection> Display<Conn> {
         loop {
             match self.pending_replies.remove(&token.sequence) {
                 Some(reply) => {
-                    break Ok(R::Reply::from_bytes(&reply)
-                        .ok_or_else(|| crate::Error::BadObjectRead)?
-                        .0)
+                    break Self::decode_reply::<R>(reply);
                 }
                 None => self.wait_async().await?,
             }
@@ -261,7 +260,7 @@ impl<Conn: Connection> Display<Conn> {
         self.connection.read_packet(&mut bytes)?;
 
         match bytes[0] {
-            0 | 2 => return Err(crate::Error::FailedToConnect),
+            0 | 2 => return Err(crate::BreadError::FailedToConnect),
             _ => (),
         }
 
@@ -271,10 +270,17 @@ impl<Conn: Connection> Display<Conn> {
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
 
-        self.setup = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::Error::BadObjectRead)?
-            .0;
+        let (setup, slen) = Setup::from_bytes(&bytes).ok_or_else(|| crate::BreadError::BadObjectRead)?;
+        self.setup = setup;
+        debug_assert_eq!(slen, length);
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
+
+        log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
+        log::debug!("resource_id_mask is {:#032b}", self.setup.resource_id_mask);
+        log::debug!(
+            "resource_id inc. is {:#032b}",
+            self.setup.resource_id_mask & self.setup.resource_id_mask.wrapping_neg()
+        );
 
         Ok(())
     }
@@ -314,93 +320,17 @@ impl<Conn: Connection> Display<Conn> {
         self.setup.roots[self.default_screen].root
     }
 
-    #[inline]
-    fn eval_xid(&mut self) -> XID {
-        self.xid.last | self.xid.base
-    }
-
     /// Create another XID.
     #[inline]
     pub fn generate_xid(&mut self) -> crate::Result<XID> {
-        // Algorithm based on: https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_xid.c
-        if self.xid.last >= self.xid.max.wrapping_sub(self.xid.inc).wrapping_add(1) {
-            // we need to set up the initial range
-            assert_eq!(self.xid.last, self.xid.max);
-            if self.xid.last == 0 {
-                self.xid.max = self.setup.resource_id_mask;
-            } else {
-                // query for the XC_MISC extension
-                let query_for_xc_misc = QueryExtensionRequest {
-                    name: "XC-MISC".to_owned(),
-                };
-                let tok = self.send_request(query_for_xc_misc)?;
-                let query_for_xc_misc = self.resolve_request(tok)?;
-
-                if (query_for_xc_misc.present == 0) {
-                    return Err(crate::Error::ExtensionNotPresent("XcMisc"));
-                }
-
-                // now that we know XC_MISC exists, get the range reply
-                let tok = self.send_request(GetXIDRangeRequest)?;
-                let range = self.resolve_request(tok)?;
-
-                if range.start_id == 0 && range.count == 1 {
-                    return Err(crate::Error::StaticMsg("Unable to get XID range"));
-                }
-
-                self.xid.last = range.start_id;
-                self.xid.max = range.start_id + (range.count - 1) * self.xid.inc;
-            }
-        } else {
-            self.xid.last = self.xid.last.wrapping_add(self.xid.inc);
-        }
-
-        Ok(self.eval_xid())
+        Ok(self.xid.next().unwrap())
     }
 
     /// Create an XID, async redox
     #[cfg(feature = "async")]
     #[inline]
     pub async fn generate_xid_async(&mut self) -> crate::Result<XID> {
-        // Algorithm based on: https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_xid.c
-        if self.xid.last >= self.xid.max.wrapping_sub(self.xid.inc).wrapping_add(1) {
-            // we need to set up the initial range
-            assert_eq!(self.xid.last, self.xid.max);
-            if self.xid.last == 0 {
-                self.xid.max = self.setup.resource_id_mask;
-            } else {
-                // query for the XC_MISC extension
-                let query_for_xc_misc = QueryExtensionRequest {
-                    name: "XC-MISC".to_owned(),
-                };
-
-                log::debug!("Sending QueryExtensionRequest to server");
-                let tok = self.send_request_async(query_for_xc_misc).await?;
-                let query_for_xc_misc = self.resolve_request_async(tok).await?;
-                log::debug!("Sent QueryExtensionRequest to server");
-
-                if (query_for_xc_misc.present == 0) {
-                    return Err(crate::Error::ExtensionNotPresent("XcMisc"));
-                }
-
-                // now that we know XC_MISC exists, get the range reply
-                log::debug!("Sending GetXIDRangeRequest to server");
-                let tok = self.send_request_async(GetXIDRangeRequest).await?;
-                let range = self.resolve_request_async(tok).await?;
-                log::debug!("Sent GetXIDRangeRequest to server");
-
-                if range.start_id == 0 && range.count == 1 {
-                    return Err(crate::Error::StaticMsg("Unable to get XID range"));
-                }
-
-                self.xid.last = range.start_id;
-                self.xid.max = range.start_id + (range.count - 1) * self.xid.inc;
-            }
-        } else {
-            self.xid.last += self.xid.inc;
-        }
-
-        Ok(self.eval_xid())
+        Ok(self.xid.next().unwrap())
     }
 
     /// Wait for an event.

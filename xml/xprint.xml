@@ -41,12 +41,12 @@ authorization from the authors.
         <list type="STRING8" name="name">
             <fieldref>nameLen</fieldref>
         </list>
-        <!-- Padding -->
+        <pad align="4" />
         <field type="CARD32" name="descLen" />
         <list type="STRING8" name="description">
             <fieldref>descLen</fieldref>
         </list>
-        <!-- More padding -->
+        <pad align="4" />
     </struct>
 
     <!--<typedef oldname="CARD32" newname="PCONTEXT" />-->
@@ -178,9 +178,13 @@ authorization from the authors.
             <fieldref>len_data</fieldref>
         </list>
         <!-- padding -->
-        <list type="STRING8" name="doc_format" />
+        <list type="STRING8" name="doc_format">
+            <fieldref>len_fmt</fieldref>
+        </list>
         <!-- padding -->
-        <list type="STRING8" name="options" />
+        <list type="STRING8" name="options">
+            <fieldref>len_options</fieldref>
+        </list>
     </request>
 
     <request name="PrintGetDocumentData" opcode="12">
@@ -209,21 +213,15 @@ authorization from the authors.
 
     <request name="PrintSelectInput" opcode="15">
         <field type="PCONTEXT" name="context" />
-        <valueparam value-mask-type="CARD32"
-                    value-mask-name="event_mask"
-                    value-list-name="event_list" />
+        <field type="CARD32" name="event_mask" />
     </request>
 
     <request name="PrintInputSelected" opcode="16">
         <field type="PCONTEXT" name="context" />
         <reply>
-            <pad bytes="1" />
-            <valueparam value-mask-type="CARD32"
-                            value-mask-name="event_mask"
-                            value-list-name="event_list" />
-            <valueparam value-mask-type="CARD32"
-                            value-mask-name="all_events_mask"
-                            value-list-name="all_events_list" />
+           <pad bytes="1" />
+           <field type="CARD32" name="event_mask" />
+           <field type="CARD32" name="all_events_mask" />
         </reply>
     </request>
 
@@ -235,7 +233,9 @@ authorization from the authors.
             <pad bytes="1" />
             <field type="CARD32" name="stringLen" />
             <pad bytes="20" />
-            <field type="STRING8" name="attributes" />
+            <list type="STRING8" name="attributes">
+                <fieldref>stringLen</fieldref>
+            </list>
         </reply>
     </request>
 

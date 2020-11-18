@@ -5,7 +5,7 @@ use core::{fmt, ops::Deref};
 use std::io::Error as IoError;
 
 #[derive(Debug)]
-pub enum Error {
+pub enum BreadError {
     StaticMsg(&'static str),
     /// Unable to parse connection name.
     UnableToParseConnection,
@@ -29,7 +29,7 @@ pub enum Error {
     },
 }
 
-impl Error {
+impl BreadError {
     #[inline]
     pub(crate) fn from_x_error<T: Deref<Target = [u8]>>(bytes: T) -> Self {
         let b = &*bytes;
@@ -43,14 +43,14 @@ impl Error {
 }
 
 #[cfg(feature = "std")]
-impl From<IoError> for Error {
+impl From<IoError> for BreadError {
     #[inline]
     fn from(io: IoError) -> Self {
         Self::Io(io)
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for BreadError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -113,4 +113,4 @@ impl fmt::Debug for ErrorCode {
     }
 }
 
-pub type Result<Success = ()> = core::result::Result<Success, Error>;
+pub type Result<Success = ()> = core::result::Result<Success, BreadError>;

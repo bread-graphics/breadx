@@ -155,7 +155,7 @@ impl<'a> XConnection<'a> {
         let name = match name {
             Some(name) => name,
             None => {
-                Cow::Owned(env::var("DISPLAY").map_err(|_| crate::Error::UnableToParseConnection)?)
+                Cow::Owned(env::var("DISPLAY").map_err(|_| crate::BreadError::UnableToParseConnection)?)
             }
         };
 
@@ -185,7 +185,7 @@ impl<'a> XConnection<'a> {
 
         // now find the host
         let host = match memrchr(b':', name.as_bytes()) {
-            None => return Err(crate::Error::UnableToParseConnection),
+            None => return Err(crate::BreadError::UnableToParseConnection),
             Some(0) => None,
             Some(brek) => Some(match name {
                 Cow::Borrowed(s) => Cow::Borrowed(&s[brek..]),
@@ -218,11 +218,11 @@ impl<'a> XConnection<'a> {
         }
 
         let display: u16 = if display.is_empty() {
-            return Err(crate::Error::UnableToParseConnection);
+            return Err(crate::BreadError::UnableToParseConnection);
         } else {
             display
                 .parse()
-                .map_err(|_| crate::Error::UnableToParseConnection)?
+                .map_err(|_| crate::BreadError::UnableToParseConnection)?
         };
 
         let screen = if screen.is_empty() {
@@ -230,7 +230,7 @@ impl<'a> XConnection<'a> {
         } else {
             screen
                 .parse()
-                .map_err(|_| crate::Error::UnableToParseConnection)?
+                .map_err(|_| crate::BreadError::UnableToParseConnection)?
         };
 
         Ok(XConnection {
@@ -279,7 +279,7 @@ impl<'a> XConnection<'a> {
         } = self;
         match host {
             Some(host) => Ok(host),
-            None => Err(crate::Error::UnableToOpenConnection),
+            None => Err(crate::BreadError::UnableToOpenConnection),
         }
     }
 
@@ -317,7 +317,7 @@ impl<'a> XConnection<'a> {
 
         // something wrong happened
         #[cfg(not(unix))]
-        Err(crate::Error::UnableToOpenConnection)
+        Err(crate::BreadError::UnableToOpenConnection)
     }
 
     /// Open the connection via TCP, async redox.
@@ -364,7 +364,7 @@ impl<'a> XConnection<'a> {
 
         // something wrong happened
         #[cfg(not(unix))]
-        Err(crate::Error::UnableToOpenConnection)
+        Err(crate::BreadError::UnableToOpenConnection)
     }
 }
 

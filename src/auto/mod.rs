@@ -7,13 +7,16 @@ use alloc::{
 use core::mem;
 use cstr_core::CString;
 use cty::c_char;
+use tinyvec::TinyVec;
 
 pub mod prelude {
     pub use super::{
-        string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes, AsByteSequence,
+        buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes, AsByteSequence,
     };
-    pub use crate::{client_message_data::ClientMessageData, Request, XidType, XID};
+    pub use crate::{client_message_data::ClientMessageData, Error, Event, Request, XidType, XID};
     pub use alloc::{string::String, vec::Vec};
+    pub use cty::c_char;
+    pub use tinyvec::TinyVec;
     pub type Card8 = u8;
     pub type Card16 = u16;
     pub type Card32 = u32;
@@ -21,14 +24,15 @@ pub mod prelude {
     pub type Int8 = i8;
     pub type Int16 = i16;
     pub type Int32 = i32;
+    pub type Void = u32;
 }
 
 /// Internal use helper trait. This represents an item that can be converted to and from a series
 /// of bytes.
 pub trait AsByteSequence: Sized {
-    /// The number of bytes needed to contain this item.
-    /// Not guaranteed to be exact for allocated types.
-    fn size() -> usize;
+    /// Get the size needed to store this item in terms of bytes. Higher is better than lower here,
+    /// since this is mostly used to allocate buffers for items.
+    fn size(&self) -> usize;
     /// Append this item to a sequence of bytes.
     fn as_bytes(&self, bytes: &mut [u8]) -> usize;
     /// Convert a sequence of bytes into this item.
@@ -98,7 +102,7 @@ pub fn vector_as_bytes<T: AsByteSequence>(vector: &[T], bytes: &mut [u8]) -> usi
 
     vector.iter().for_each(|item| {
         item.as_bytes(&mut bytes[current_index..]);
-        current_index += T::size();
+        current_index += item.size();
     });
 
     current_index
@@ -110,9 +114,16 @@ pub fn string_as_bytes(string: &str, bytes: &mut [u8]) -> usize {
     vector_as_bytes(string.as_bytes(), bytes)
 }
 
+/// The addition necessary to pad out the buffer, given the align and the current block length.
+#[const_fn::const_fn("1.47")]
+#[inline]
+pub const fn buffer_pad(block_len: usize, align_to: usize) -> usize {
+    block_len.wrapping_neg() & align_to.wrapping_sub(1)
+}
+
 impl AsByteSequence for u8 {
     #[inline]
-    fn size() -> usize {
+    fn size(&self) -> usize {
         1
     }
 
@@ -130,7 +141,7 @@ impl AsByteSequence for u8 {
 
 impl AsByteSequence for i8 {
     #[inline]
-    fn size() -> usize {
+    fn size(&self) -> usize {
         1
     }
 
@@ -148,7 +159,7 @@ impl AsByteSequence for i8 {
 
 impl AsByteSequence for bool {
     #[inline]
-    fn size() -> usize {
+    fn size(&self) -> usize {
         1
     }
 
@@ -169,7 +180,7 @@ impl AsByteSequence for bool {
 
 impl AsByteSequence for () {
     #[inline]
-    fn size() -> usize {
+    fn size(&self) -> usize {
         0
     }
 
@@ -188,7 +199,7 @@ macro_rules! impl_fundamental_num {
     ($(($t:ty, $sz:expr))*) => {$(
         impl AsByteSequence for $t {
             #[inline]
-            fn size() -> usize {
+            fn size(&self) -> usize {
                 $sz
             }
 
@@ -231,8 +242,8 @@ macro_rules! impl_array {
     ($($len:expr),*) => {$(
         impl<T: AsByteSequence + Default> AsByteSequence for [T; $len] {
             #[inline]
-            fn size() -> usize {
-                T::size() * ($len)
+            fn size(&self) -> usize {
+                self.iter().map(|i| i.size()).sum()
             }
 
             #[inline]
@@ -250,11 +261,10 @@ macro_rules! impl_array {
                 let mut v: tinyvec::ArrayVec<Self> = Default::default();
                 log::trace!("Deserializing an array of length {}", $len);
 
-                for i in 0..($len) {
+                for _ in 0..($len) {
                     let (item, sz) = T::from_bytes(&bytes[index..])?;
                     if let Some(_) = v.try_push(item) {
-                        const SZ: usize = $len;
-                        log::error!("Array of {} elements overflowed", SZ);
+                        log::error!("Array of {} elements overflowed", $len);
                         return None;
                     }
                     index += sz;
@@ -272,18 +282,13 @@ impl_array! {
 
 impl AsByteSequence for String {
     #[inline]
-    fn size() -> usize {
-        // the idea of sizing kind of breaks down here
-        // so just assume all strings are at least 64 characters long. this shouldn't cause significant
-        // issues except on embedded systems
-        // note: this isn't used for as_bytes or from_bytes so
-        // it shouldn't cause significant breakage
-        <c_char>::size() * 64
+    fn size(&self) -> usize {
+        self.len()
     }
 
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        bytes.copy_from_slice(self.as_bytes());
+        bytes.copy_from_slice(String::as_bytes(self));
         bytes[self.len()] = 0;
         self.len() + 1
     }
