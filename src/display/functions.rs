@@ -54,7 +54,7 @@ impl<Conn: Connection> Display<Conn> {
 
         let mut cwr = CreateWindowRequest {
             wid,
-            parent: parent.unwrap_or(Window::const_from_xid(0)),
+            parent: parent.unwrap_or_else(|| self.default_root()),
             class: class,
             visual: visual.unwrap_or(INHERITED_VISUAL),
             depth: depth.unwrap_or(INHERITED_DEPTH),
