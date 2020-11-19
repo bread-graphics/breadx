@@ -7,9 +7,9 @@ use super::{
     },
     Type,
 };
-use crate::lvl2::MaybeString;
+use crate::lvl2::{Expression, MaybeString, UseCondition};
 use proc_macro2::Span;
-use std::{borrow::Cow, fmt, iter};
+use std::{borrow::Cow, fmt, iter, rc::Rc};
 
 mod list;
 pub use list::*;
@@ -58,24 +58,39 @@ impl Statement for ReturnIndexStatement {
 
 /// A statement to call `index += self.[0].as_bytes(&mut bytes[index..]);`
 #[derive(Clone, Debug)]
-#[repr(transparent)]
-pub struct AppendToIndexStatement(pub Cow<'static, str>);
+pub struct AppendToIndexStatement {
+    pub name: Box<str>,
+    pub condition: Option<(Rc<UseCondition>, Box<str>)>,
+}
 
 impl Statement for AppendToIndexStatement {
     #[inline]
     fn to_syn_statement(&self) -> Vec<syn::Stmt> {
-        vec![syn::Stmt::Semi(
+        let inn = syn::Stmt::Semi(
             index_plus_equal(syn::Expr::Call(syn::ExprCall {
                 attrs: vec![],
                 func: Box::new(item_field(
-                    item_field(str_to_exprpath("self"), &self.0),
+                    item_field(str_to_exprpath("self"), &self.name),
                     "as_bytes",
                 )),
                 paren_token: Default::default(),
                 args: iter::once(bytes_slice(true)).collect(),
             })),
             Default::default(),
-        )]
+        );
+        vec![match self.condition {
+            Some((ref condition, ref condname)) => syn::Stmt::Expr(syn::Expr::If(syn::ExprIf {
+                attrs: vec![],
+                if_token: Default::default(),
+                cond: Box::new(condition.to_cond_expr(condname)),
+                then_branch: syn::Block {
+                    brace_token: Default::default(),
+                    stmts: vec![inn],
+                },
+                else_branch: None,
+            })),
+            None => inn,
+        }]
     }
 }
 
@@ -133,18 +148,51 @@ impl Statement for CreateIndexVariable {
     }
 }
 
+/// A statement to initialize a condition variable.
+#[derive(Debug, Clone)]
+pub struct InitializeCondition {
+    pub name: Box<str>,
+    pub expression: Rc<Expression>,
+    pub has_self: bool,
+}
+
+impl Statement for InitializeCondition {
+    #[inline]
+    fn to_syn_statement(&self) -> Vec<syn::Stmt> {
+        let b = self.expression.to_length_expr(self.has_self, false);
+
+        vec![syn::Stmt::Semi(
+            syn::Expr::Let(syn::ExprLet {
+                attrs: vec![],
+                let_token: Default::default(),
+                pat: syn::Pat::Ident(syn::PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident: syn::Ident::new(&self.name, Span::call_site()),
+                    subpat: None,
+                }),
+                eq_token: Default::default(),
+                expr: Box::new(b),
+            }),
+            Default::default(),
+        )]
+    }
+}
+
 /// A statement to create two variables: an item and a size, from a type and the index.
 #[derive(Clone, Debug)]
 pub struct LoadStatementVariable {
-    pub name: Cow<'static, str>,
+    pub name: Box<str>,
     pub ty: Type,
     pub use_slice: bool,
+    pub condition: Option<(Rc<UseCondition>, Box<str>)>,
 }
 
 impl Statement for LoadStatementVariable {
     #[inline]
     fn to_syn_statement(&self) -> Vec<syn::Stmt> {
-        vec![syn::Stmt::Semi(
+        let inn = syn::Stmt::Semi(
             syn::Expr::Let(syn::ExprLet {
                 attrs: vec![],
                 let_token: Default::default(),
@@ -212,7 +260,64 @@ impl Statement for LoadStatementVariable {
                 }),
             }),
             Default::default(),
-        )]
+        );
+
+        let do_increment = match self.use_slice {
+            true => IncrementIndex::Sz.to_syn_statement(),
+            false => vec![],
+        };
+
+        match self.condition {
+            Some((ref condition, ref condname)) => vec![syn::Stmt::Semi(
+                let_statement(
+                    &self.name,
+                    self.ty.clone(),
+                    syn::Expr::If(syn::ExprIf {
+                        attrs: vec![],
+                        if_token: Default::default(),
+                        cond: Box::new(condition.to_cond_expr(&condname)),
+                        then_branch: syn::Block {
+                            brace_token: Default::default(),
+                            stmts: iter::once(inn)
+                                .chain(do_increment)
+                                .chain(iter::once(syn::Stmt::Expr(str_to_exprpath(&self.name))))
+                                .collect(),
+                        },
+                        else_branch: Some((
+                            Default::default(),
+                            Box::new(syn::Expr::Block(syn::ExprBlock {
+                                attrs: vec![],
+                                label: None,
+                                block: syn::Block {
+                                    brace_token: Default::default(),
+                                    stmts: vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
+                                        attrs: vec![],
+                                        func: Box::new(syn::Expr::Path(syn::ExprPath {
+                                            attrs: vec![],
+                                            qself: None,
+                                            path: syn::Path {
+                                                segments: vec![
+                                                    str_to_pathseg("Default"),
+                                                    str_to_pathseg("default"),
+                                                ]
+                                                .into_iter()
+                                                .collect(),
+                                                leading_colon: None,
+                                            },
+                                        })),
+                                        paren_token: Default::default(),
+                                        args: syn::punctuated::Punctuated::new(),
+                                    }))],
+                                },
+                            })),
+                        )),
+                    }),
+                    false,
+                ),
+                Default::default(),
+            )],
+            None => iter::once(inn).chain(do_increment).collect(),
+        }
     }
 }
 
@@ -361,6 +466,7 @@ impl Statement for MatchBytesToEnum {
             name: "underlying".into(),
             ty: Type::Basic(self.underlying.clone()),
             use_slice: false,
+            condition: None,
         }
         .to_syn_statement();
 
@@ -866,6 +972,7 @@ impl Statement for ForwardFromBytes {
             name: "inner".into(),
             ty: self.inner_ty.clone(),
             use_slice: false,
+            condition: None,
         }
         .to_syn_statement();
 
@@ -879,6 +986,35 @@ impl Statement for ForwardFromBytes {
                 .to_syn_statement(),
             )
             .collect()
+    }
+}
+
+#[derive(Debug, Clone)]
+#[repr(transparent)]
+pub struct DeserTraceMarker(pub Box<str>);
+
+impl Statement for DeserTraceMarker {
+    #[inline]
+    fn to_syn_statement(&self) -> Vec<syn::Stmt> {
+        vec![syn::Stmt::Semi(
+            syn::Expr::Macro(syn::ExprMacro {
+                attrs: vec![],
+                mac: syn::Macro {
+                    path: syn::Path {
+                        leading_colon: None,
+                        segments: vec![str_to_pathseg("log"), str_to_pathseg("trace")]
+                            .into_iter()
+                            .collect(),
+                    },
+                    bang_token: Default::default(),
+                    delimiter: syn::MacroDelimiter::Paren(Default::default()),
+                    tokens: format!("\"Deserializing {} from byte buffer\"", &self.0)
+                        .parse()
+                        .unwrap(),
+                },
+            }),
+            Default::default(),
+        )]
     }
 }
 
@@ -910,6 +1046,8 @@ pub enum SumStatement {
     FromBytesList(FromBytesList),
     AsBytesList(AsBytesList),
     AppendLengthToIndex(AppendLengthToIndex),
+    InitializeCondition(InitializeCondition),
+    DeserTraceMarker(DeserTraceMarker),
 }
 
 macro_rules! sst_from_impl {
@@ -949,6 +1087,8 @@ sst_from_impl! { SetAlignAndAddPadding, SetAlignAndAddPadding }
 sst_from_impl! { FromBytesList, FromBytesList }
 sst_from_impl! { AsBytesList, AsBytesList }
 sst_from_impl! { AppendLengthToIndex, AppendLengthToIndex }
+sst_from_impl! { InitializeCondition, InitializeCondition }
+sst_from_impl! { DeserTraceMarker, DeserTraceMarker }
 
 impl Statement for SumStatement {
     #[inline]
@@ -980,6 +1120,8 @@ impl Statement for SumStatement {
             Self::FromBytesList(fbl) => fbl.to_syn_statement(),
             Self::AsBytesList(asl) => asl.to_syn_statement(),
             Self::AppendLengthToIndex(ai) => ai.to_syn_statement(),
+            Self::InitializeCondition(ic) => ic.to_syn_statement(),
+            Self::DeserTraceMarker(dtm) => dtm.to_syn_statement(),
         }
     }
 }

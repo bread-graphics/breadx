@@ -3,112 +3,39 @@
 use super::{Connection, Display};
 use crate::{
     auto::{
-        xproto::{CreateWindowRequest, Visualid, Window, WindowClass, Cw},
+        xproto::{
+            BackingStore, Colormap, CreateWindowRequest, Cursor, Cw, EventMask, Gravity, Pixmap,
+            Visualid, Window, WindowClass,
+        },
         AsByteSequence,
     },
     XidType, XID,
 };
 use alloc::vec::Vec;
 
-/// Parameters for a window.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub enum WindowParameter {
-    BackPixmap,
-    BackPixel,
-    BorderPixmap,
-    BorderPixel,
-    BitGravity,
-    WinGravity,
-    BackingStore,
-    BackingPlanes,
-    BackingPixel,
-    OverrideRedirect,
-    SaveUnder,
-    EventMask,
-    DontPropagate,
-    Colormap,
-    Cursor,
-}
-
-impl Default for WindowParameter {
-    #[inline]
-    fn default() -> Self {
-        Self::BackPixmap
+crate::create_paramaterizer! {
+    pub struct CreateWindowParameters : (Cw, CreateWindowRequest) {
+        background_pixmap (set_back_pixmap,       background_pixmap):     Pixmap,
+        background_pixel  (set_back_pixel,        background_pixel):      u32,
+        border_pixmap     (set_border_pixmap,     border_pixmap):         Pixmap,
+        border_pixel      (set_border_pixel,      border_pixel):          u32,
+        bit_gravity       (set_bit_gravity,       bit_gravity):           Gravity,
+        win_gravity       (set_win_gravity,       win_gravity):           Gravity,
+        backing_store     (set_backing_store,     backing_store):         BackingStore,
+        backing_planes    (set_backing_planes,    backing_planes):        u32,
+        backing_pixel     (set_backing_pixel,     backing_pixel):         u32,
+        override_redirect (set_override_redirect, override_redirect):     u32,
+        save_under        (set_save_under,        save_under):            u32,
+        event_mask        (set_event_mask,        event_mask):            EventMask,
+        dont_propogate    (set_dont_propagate,    do_not_propogate_mask): EventMask,
+        colormap          (set_colormap,          colormap):              Colormap,
+        cursor            (set_cursor,            cursor):                Cursor
     }
-}
-
-#[inline]
-fn wp_map_to_mask_and_values<T>(map: T) -> (Cw, Vec<u32>)
-where
-    T: IntoIterator<Item = (WindowParameter, u32)>,
-{
-    // collect into a tinyvec and sort
-    let mut values: Vec<(WindowParameter, u32)> = map.into_iter().collect();
-    values.sort_by_key(|(w, v)| w.clone());
-
-    // create the mask and list of values
-    let mut cw: Cw = Default::default();
-    let values = values
-        .into_iter()
-        .map(|(w, v)| {
-            match w {
-                WindowParameter::BackPixmap => {
-                    cw.back_pixmap = true;
-                }
-                WindowParameter::BackPixel => {
-                    cw.back_pixel = true;
-                }
-                WindowParameter::BorderPixmap => {
-                    cw.border_pixmap = true;
-                }
-                WindowParameter::BorderPixel => {
-                    cw.border_pixel = true;
-                }
-                WindowParameter::BitGravity => {
-                    cw.bit_gravity = true;
-                }
-                WindowParameter::WinGravity => {
-                    cw.win_gravity = true;
-                }
-                WindowParameter::BackingStore => {
-                    cw.backing_store = true;
-                }
-                WindowParameter::BackingPlanes => {
-                    cw.backing_planes = true;
-                }
-                WindowParameter::BackingPixel => {
-                    cw.backing_pixel = true;
-                }
-                WindowParameter::OverrideRedirect => {
-                    cw.override_redirect = true;
-                }
-                WindowParameter::SaveUnder => {
-                    cw.save_under = true;
-                }
-                WindowParameter::EventMask => {
-                    cw.event_mask = true;
-                }
-                WindowParameter::DontPropagate => {
-                    cw.dont_propagate = true;
-                }
-                WindowParameter::Colormap => {
-                    cw.colormap = true;
-                }
-                WindowParameter::Cursor => {
-                    cw.cursor = true;
-                }
-            }
-
-            v
-        })
-        .collect();
-
-    (cw, values)
 }
 
 impl<Conn: Connection> Display<Conn> {
     #[inline]
-    fn create_window_request<T>(
+    fn create_window_request(
         &mut self,
         wid: Window,
         parent: Option<Window>,
@@ -120,21 +47,15 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: T,
-    ) -> CreateWindowRequest
-    where
-        T: IntoIterator<Item = (WindowParameter, u32)>,
-    {
+        props: CreateWindowParameters,
+    ) -> CreateWindowRequest {
         const INHERITED_DEPTH: u8 = 0;
         const INHERITED_VISUAL: Visualid = 0;
 
-        let (value_mask, value_list) = wp_map_to_mask_and_values(props);
-        let parent = parent.unwrap_or_else(|| self.default_root());
-
-        CreateWindowRequest {
+        let mut cwr = CreateWindowRequest {
             wid,
-            parent,
-            class: class as u16,
+            parent: parent.unwrap_or(Window::const_from_xid(0)),
+            class: class,
             visual: visual.unwrap_or(INHERITED_VISUAL),
             depth: depth.unwrap_or(INHERITED_DEPTH),
             x,
@@ -142,13 +63,16 @@ impl<Conn: Connection> Display<Conn> {
             width,
             height,
             border_width,
-            value_mask,
-            value_list,
-        }
+            ..Default::default()
+        };
+
+        let cw = props.convert_to_flags(&mut cwr);
+        cwr.value_mask = cw;
+        cwr
     }
 
     #[inline]
-    pub fn create_window<T>(
+    pub fn create_window(
         &mut self,
         parent: Option<Window>,
         class: WindowClass,
@@ -159,11 +83,8 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: T,
-    ) -> crate::Result<Window>
-    where
-        T: IntoIterator<Item = (WindowParameter, u32)>,
-    {
+        props: CreateWindowParameters,
+    ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
         log::debug!("Generate {:#032b}", wid.xid());
         let cw = self.create_window_request(
@@ -189,7 +110,7 @@ impl<Conn: Connection> Display<Conn> {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn create_window_async<T>(
+    pub async fn create_window_async(
         &mut self,
         parent: Option<Window>,
         class: WindowClass,
@@ -200,7 +121,7 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: T,
+        props: CreateWindowParameters,
     ) -> crate::Result<Window>
     where
         T: IntoIterator<Item = (WindowParameter, u32)>,

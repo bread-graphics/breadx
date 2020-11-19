@@ -18,6 +18,7 @@ pub mod client_message_data;
 pub mod display;
 pub mod error;
 pub mod event;
+pub(crate) mod paramatizer;
 pub(crate) mod util;
 pub mod window;
 pub mod xid;
@@ -26,13 +27,15 @@ pub use display::*;
 pub use error::*;
 pub use window::*;
 
+pub(crate) use paramatizer::*;
+
 /// A request.
 pub trait Request: auto::AsByteSequence {
     type Reply: auto::AsByteSequence;
     // Excerpt from the X Window System Protocol:
     //
     // Every request contains an 8-bit major opcode
-    const OPCODE: u8; 
+    const OPCODE: u8;
 }
 
 //pub use display::*;

@@ -1,10 +1,21 @@
 // MIT/Apache2 License
 
 use super::xml::get_attributes;
-use crate::lvl1::{Docs, EnumVariant, Item, ListLength, StructureItem, XStruct};
+use crate::lvl1::{
+    Case, Docs, EnumVariant, Expression, Field, Item, List, StructureItem, Switch, XStruct,
+};
 use quick_xml::events::{attributes::Attribute, BytesStart, Event};
 use std::{mem, ops::DerefMut};
 use tinyvec::{tiny_vec, TinyVec};
+
+/// The purpose of the expression
+#[derive(Debug, Clone)]
+pub enum ExprPurpose {
+    /// Calculating the length of a list. Name, type, and handle to the previous item.
+    ListField(String, String),
+    /// Calculating the case for a switch.
+    Switch,
+}
 
 /// The current state of the parser. Describes which element is currently being parsed.
 #[derive(Debug)]
@@ -25,21 +36,33 @@ pub enum Lvl0State {
     EnumItemValue(bool, Box<Lvl0State>),
     /// Reading in structural fields for anything that needs that.
     StructLike(StructLike, TinyVec<[StructureItem; 6]>, Option<Docs>),
-    /// Calculating the length of a list. Name, type, and handle to the previous item.
-    ListField(String, String, Option<ListLength>, Box<Lvl0State>),
-    /// Calculating the length of a list, given a fieldref.
-    ListLengthFieldRef(Box<Lvl0State>),
-    /// Calculating the length of a list, given a value.
-    ListLengthValue(Box<Lvl0State>),
-    /// Calculating the length of a list, given a unary operation.
-    ListLengthUnary(String, Option<ListLength>, Box<Lvl0State>),
-    /// Calculating the length of a list, given a binary operation.
-    ListLengthBinary(
+    /// Calculating the value of an expression.
+    Expr(ExprPurpose, Option<Expression>, Box<Lvl0State>),
+    /// Calculating the expression, given a fieldref.
+    ExprFieldRef(Box<Lvl0State>),
+    /// Calculating the expression, given a value.
+    ExprValue(Box<Lvl0State>),
+    /// Calculating the expression, given a unary operation.
+    ExprUnary(String, Option<Expression>, Box<Lvl0State>),
+    /// Calculating the expression, given a binary operation.
+    ExprBinary(
         String,
-        Option<ListLength>,
-        Option<ListLength>,
+        Option<Expression>,
+        Option<Expression>,
         Box<Lvl0State>,
     ),
+    /// Creating a switch field.
+    SwitchField(String, Vec<Case>, Option<Expression>, Box<Lvl0State>),
+    /// Creating the case for a switch field.
+    SwitchFieldCase(
+        bool,
+        String,
+        String,
+        TinyVec<[StructureItem; 6]>,
+        Box<Lvl0State>,
+    ),
+    /// Globbing the text for a switch field's enumref.
+    SwitchFieldGlobbingEnumref(Box<Lvl0State>),
     /// Beginning documentation of an item.
     Docs(Docs, Box<Lvl0State>),
 }
@@ -81,13 +104,13 @@ impl StructLike {
 }
 
 impl Lvl0State {
-    /// Get the mutable reference to the list length variable.
+    /// Get the mutable reference to the base expression.
     #[inline]
-    fn list_length_ref(&mut self) -> &mut Option<ListLength> {
+    fn list_length_ref(&mut self) -> &mut Option<Expression> {
         match self {
-            Self::ListField(_, _, ll, _) => ll,
-            Self::ListLengthUnary(_, ll, _) => ll,
-            Self::ListLengthBinary(_, ll1, ll2, _) => {
+            Self::Expr(_, ll, _) => ll,
+            Self::ExprUnary(_, ll, _) => ll,
+            Self::ExprBinary(_, ll1, ll2, _) => {
                 if ll1.is_none() {
                     ll1
                 } else {
@@ -95,6 +118,43 @@ impl Lvl0State {
                 }
             }
             _ => unreachable!("Called list_length_ref on non LL-item"),
+        }
+    }
+
+    /// Get the reference to the field container.
+    #[inline]
+    fn fields_ref(&mut self) -> Option<&mut TinyVec<[StructureItem; 6]>> {
+        match self {
+            Self::StructLike(_, fields, _) => Some(fields),
+            Self::SwitchFieldCase(_, _, _, fields, _) => Some(fields),
+            _ => None,
+        }
+    }
+
+    /// Try to resolve a list.
+    #[inline]
+    fn try_resolve_expr(&mut self) {
+        if let Self::Expr(purpose, Some(expr), base) = self {
+            let mut base = *mem::take(base);
+            match purpose.clone() {
+                ExprPurpose::ListField(name, ty) => {
+                    if let Some(fields) = base.fields_ref() {
+                        let expr = mem::take(expr);
+
+                        fields.push(StructureItem::List(List {
+                            name,
+                            ty,
+                            list_length: expr,
+                        }));
+                    }
+                }
+                ExprPurpose::Switch => {
+                    if let Lvl0State::SwitchField(_, _, ref mut expr_slot, _) = base {
+                        *expr_slot = Some(mem::take(expr));
+                    }
+                }
+            }
+            *self = base;
         }
     }
 
@@ -338,48 +398,32 @@ impl Lvl0State {
 
                 self.struct_like(event)
             }
-            Self::ListField(name, ty, ll, base) => {
+            Self::Expr(purpose, ll, base) => {
                 // we are constructing a list field
                 match event {
-                    Event::Start(b) => self.handle_list_item(b)?,
-                    Event::End(e) => {
-                        if e.name() == b"list" {
-                            let mut base = mem::take(base);
-                            let ll = ll.take().expect("Failed to construct list");
-
-                            let listfield = StructureItem::List(crate::lvl1::List {
-                                name: mem::take(name),
-                                ty: mem::take(ty),
-                                list_length: ll,
-                            });
-
-                            if let Self::StructLike(_, fields, _) = &mut *base {
-                                fields.push(listfield);
-                            }
-
-                            *self = *base;
-                        }
-                    }
+                    Event::Start(b) => self.handle_expr_item(b)?,
+                    Event::End(_) => self.try_resolve_expr(),
                     _ => (),
                 }
 
                 None
             }
-            Self::ListLengthFieldRef(base) => {
+            Self::ExprFieldRef(base) => {
                 // check for text
                 match event {
                     Event::Text(t) => {
                         let t = std::str::from_utf8(&*t.unescaped().ok()?).ok()?.to_owned();
                         let mut base = mem::take(base);
-                        *base.list_length_ref() = Some(crate::lvl1::ListLength::FieldReference(t));
+                        *base.list_length_ref() = Some(crate::lvl1::Expression::FieldReference(t));
                         *self = *base;
+                        self.try_resolve_expr();
                     }
                     _ => (),
                 }
 
                 None
             }
-            Self::ListLengthValue(base) => {
+            Self::ExprValue(base) => {
                 // check for a number
                 match event {
                     Event::Text(t) => {
@@ -388,17 +432,18 @@ impl Lvl0State {
                             .parse()
                             .ok()?;
                         let mut base = mem::take(base);
-                        *base.list_length_ref() = Some(crate::lvl1::ListLength::Value(v));
+                        *base.list_length_ref() = Some(crate::lvl1::Expression::Value(v));
                         *self = *base;
+                        self.try_resolve_expr();
                     }
                     _ => (),
                 }
 
                 None
             }
-            Self::ListLengthBinary(op, ll1, ll2, base) => {
+            Self::ExprBinary(op, ll1, ll2, base) => {
                 match event {
-                    Event::Start(b) => self.handle_list_item(b)?,
+                    Event::Start(b) => self.handle_expr_item(b)?,
                     Event::End(e) => {
                         if e.name() == b"op" {
                             if ll2.is_some() {
@@ -408,14 +453,14 @@ impl Lvl0State {
                                 let mut base = mem::take(base);
 
                                 // read our operation into the base
-
-                                *base.list_length_ref() = Some(crate::lvl1::ListLength::BinaryOp {
+                                *base.list_length_ref() = Some(crate::lvl1::Expression::BinaryOp {
                                     op,
                                     left: Box::new(ll1),
                                     right: Box::new(ll2),
                                 });
 
                                 *self = *base;
+                                self.try_resolve_expr();
                             } else {
                                 log::error!("Failed to construct binary LL operation");
                                 return None;
@@ -427,9 +472,9 @@ impl Lvl0State {
 
                 None
             }
-            Self::ListLengthUnary(op, ll, base) => {
+            Self::ExprUnary(op, ll, base) => {
                 match event {
-                    Event::Start(b) => self.handle_list_item(b)?,
+                    Event::Start(b) => self.handle_expr_item(b)?,
                     Event::End(e) => {
                         if e.name() == b"unop" {
                             let op = mem::take(op);
@@ -437,7 +482,7 @@ impl Lvl0State {
                             let mut base = mem::take(base);
 
                             // read out operation into the base
-                            *base.list_length_ref() = Some(crate::lvl1::ListLength::UnaryOp {
+                            *base.list_length_ref() = Some(crate::lvl1::Expression::UnaryOp {
                                 op,
                                 target: Box::new(ll),
                             });
@@ -450,6 +495,102 @@ impl Lvl0State {
 
                 None
             }
+            Self::SwitchField(name, cases, expr, base) => {
+                match event {
+                    Event::End(e) => {
+                        if e.name() == b"switch" {
+                            let name = mem::take(name);
+                            let cases = mem::take(cases);
+                            let expr = expr.take().expect("Failed to create switch expr");
+                            let mut base = *mem::take(base);
+
+                            if let Some(fields) = base.fields_ref() {
+                                fields.push(StructureItem::Switch(Switch { name, cases, expr }));
+                            }
+
+                            *self = base;
+                        }
+                    }
+                    Event::Start(b) => {
+                        let is_bitcase = match b.name() {
+                            b"bitcase" => true,
+                            b"case" => false,
+                            _ => return None,
+                        };
+
+                        let base = Box::new(mem::take(self));
+                        *self = Self::SwitchFieldCase(
+                            is_bitcase,
+                            String::new(),
+                            String::new(),
+                            tiny_vec![],
+                            base,
+                        );
+                    }
+                    _ => (),
+                }
+
+                None
+            }
+            Self::SwitchFieldCase(is_bitcase, enum_ref, enum_base, fields, base) => {
+                match event {
+                    Event::Start(ref b) | Event::Empty(ref b) => {
+                        if b.name() == b"enumref" {
+                            *enum_ref = get_attributes(b, &[b"ref".as_ref()], &[true])?
+                                .remove(b"ref".as_ref())
+                                .unwrap();
+                            let base = Box::new(mem::take(self));
+                            *self = Self::SwitchFieldGlobbingEnumref(base);
+                        } else {
+                            return self.struct_like(event);
+                        }
+                    }
+                    Event::End(e) => {
+                        if let b"case" | b"bitcase" = e.name() {
+                            let enum_ref = mem::take(enum_ref);
+                            let enum_item = mem::take(enum_base);
+                            let mut fields = mem::take(fields);
+                            fields.move_to_the_heap();
+                            let fields = match fields {
+                                TinyVec::Heap(v) => v,
+                                _ => unreachable!(),
+                            };
+                            let mut base = *mem::take(base);
+
+                            if let Self::SwitchField(_, ref mut cases, _, _) = base {
+                                cases.push(Case {
+                                    enum_ref,
+                                    enum_item,
+                                    fields,
+                                    is_bitcase: *is_bitcase,
+                                });
+                            }
+
+                            *self = base;
+                        }
+                    }
+                    _ => (),
+                }
+
+                None
+            }
+            Self::SwitchFieldGlobbingEnumref(base) => {
+                match event {
+                    Event::Text(t) => {
+                        let t = std::str::from_utf8(&*t.unescaped().ok()?).ok()?.to_string();
+                        let mut base = *mem::take(base);
+                        if let Self::SwitchFieldCase(_, _, ref mut enum_item, _, _) = base {
+                            *enum_item = t;
+                        }
+
+                        *self = base;
+                    }
+                    _ => (),
+                }
+
+                None
+            }
+
             Self::Docs(docs, base) => {
                 // TODO: not skip the docs
                 match event {
@@ -470,7 +611,7 @@ impl Lvl0State {
 
     #[inline]
     fn struct_like<'a>(&mut self, event: Event<'a>) -> Option<Item> {
-        if let Self::StructLike(_, fields, _) = self {
+        if let Some(fields) = self.fields_ref() {
             // see if this is a field or padding
             match event {
                 Event::Start(ref b) | Event::Empty(ref b) => {
@@ -568,8 +709,18 @@ impl Lvl0State {
                                 }));
                             } else {
                                 let base = Box::new(mem::take(self));
-                                *self = Self::ListField(name, ty, None, base);
+                                *self = Self::Expr(ExprPurpose::ListField(name, ty), None, base);
                             }
+                        }
+                        b"switch" => {
+                            // switches and bitcases
+                            let name = get_attributes(&b, &[b"name".as_ref()], &[true])?
+                                .remove(b"name".as_ref())
+                                .unwrap();
+
+                            let base1 = Box::new(mem::take(self));
+                            let base2 = Box::new(Self::SwitchField(name, vec![], None, base1));
+                            *self = Self::Expr(ExprPurpose::Switch, None, base2);
                         }
                         b"doc" => {
                             // begin documentation mode
@@ -592,20 +743,18 @@ impl Lvl0State {
     }
 
     #[inline]
-    fn handle_list_item<'a>(&mut self, b: BytesStart<'a>) -> Option<()> {
+    fn handle_expr_item<'a>(&mut self, b: BytesStart<'a>) -> Option<()> {
         match b.name() {
             // replace self with various list types
             b"fieldref" => {
-                let mut base =
-                    mem::replace(self, Self::ListLengthFieldRef(Box::new(Default::default())));
-                if let Self::ListLengthFieldRef(sbase) = self {
+                let mut base = mem::replace(self, Self::ExprFieldRef(Box::new(Default::default())));
+                if let Self::ExprFieldRef(sbase) = self {
                     mem::swap(&mut base, &mut *sbase);
                 }
             }
             b"value" => {
-                let mut base =
-                    mem::replace(self, Self::ListLengthValue(Box::new(Default::default())));
-                if let Self::ListLengthValue(sbase) = self {
+                let mut base = mem::replace(self, Self::ExprValue(Box::new(Default::default())));
+                if let Self::ExprValue(sbase) = self {
                     mem::swap(&mut base, &mut *sbase);
                 }
             }
@@ -615,9 +764,9 @@ impl Lvl0State {
                     .unwrap();
                 let mut base = mem::replace(
                     self,
-                    Self::ListLengthBinary(op, None, None, Box::new(Default::default())),
+                    Self::ExprBinary(op, None, None, Box::new(Default::default())),
                 );
-                if let Self::ListLengthBinary(_, _, _, sbase) = self {
+                if let Self::ExprBinary(_, _, _, sbase) = self {
                     mem::swap(&mut base, &mut *sbase);
                 }
             }
@@ -627,9 +776,9 @@ impl Lvl0State {
                     .unwrap();
                 let mut base = mem::replace(
                     self,
-                    Self::ListLengthUnary(op, None, Box::new(Default::default())),
+                    Self::ExprUnary(op, None, Box::new(Default::default())),
                 );
-                if let Self::ListLengthUnary(_, _, sbase) = self {
+                if let Self::ExprUnary(_, _, sbase) = self {
                     mem::swap(&mut base, &mut *sbase);
                 }
             }

@@ -12,6 +12,7 @@ use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
     mem,
+    rc::Rc,
 };
 use tinyvec::{tiny_vec, TinyVec};
 

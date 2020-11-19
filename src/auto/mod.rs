@@ -11,7 +11,8 @@ use tinyvec::TinyVec;
 
 pub mod prelude {
     pub use super::{
-        buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes, AsByteSequence,
+        buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
+        AsByteSequence,
     };
     pub use crate::{client_message_data::ClientMessageData, Error, Event, Request, XidType, XID};
     pub use alloc::{string::String, vec::Vec};

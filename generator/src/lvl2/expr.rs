@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::lvl1::ListLength as Lvl1ListLength;
+use crate::lvl1::Expression as Lvl1Expression;
 use std::str::FromStr;
 use tinyvec::{tiny_vec, TinyVec};
 
@@ -48,14 +48,14 @@ impl FromStr for UnaryOp {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ListLengthItem {
+pub enum ExpressionItem {
     FieldRef(Box<str>),
     Value(i64),
     BinaryOp(BinaryOp),
     UnaryOp(UnaryOp),
 }
 
-impl Default for ListLengthItem {
+impl Default for ExpressionItem {
     #[inline]
     fn default() -> Self {
         Self::Value(0)
@@ -64,16 +64,16 @@ impl Default for ListLengthItem {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct ListLength {
-    postfix: TinyVec<[ListLengthItem; 1]>,
+pub struct Expression {
+    postfix: TinyVec<[ExpressionItem; 1]>,
 }
 
-impl ListLength {
+impl Expression {
     /// Generate a list length based on the number of 1's in another field.
     #[inline]
     pub fn one_count(field: String) -> Self {
         Self {
-            postfix: tiny_vec!([ListLengthItem; 1] => ListLengthItem::UnaryOp(UnaryOp::OneCount), ListLengthItem::FieldRef(field.into_boxed_str())),
+            postfix: tiny_vec!([ExpressionItem; 1] => ExpressionItem::UnaryOp(UnaryOp::OneCount), ExpressionItem::FieldRef(field.into_boxed_str())),
         }
     }
 
@@ -84,7 +84,7 @@ impl ListLength {
             None
         } else {
             match &self.postfix[0] {
-                ListLengthItem::FieldRef(s) => Some(s),
+                ExpressionItem::FieldRef(s) => Some(s),
                 _ => None,
             }
         }
@@ -97,7 +97,7 @@ impl ListLength {
             None
         } else {
             match &self.postfix[0] {
-                ListLengthItem::Value(v) => Some(*v),
+                ExpressionItem::Value(v) => Some(*v),
                 _ => None,
             }
         }
@@ -105,14 +105,14 @@ impl ListLength {
 
     /// Iterate over items in postfix notation.
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &ListLengthItem> {
+    pub fn iter(&self) -> impl Iterator<Item = &ExpressionItem> {
         self.postfix.iter()
     }
 }
 
-impl From<Lvl1ListLength> for ListLength {
+impl From<Lvl1Expression> for Expression {
     #[inline]
-    fn from(ll: Lvl1ListLength) -> ListLength {
+    fn from(ll: Lvl1Expression) -> Expression {
         Self {
             postfix: convert_ll(ll),
         }
@@ -121,31 +121,31 @@ impl From<Lvl1ListLength> for ListLength {
 
 // helper recursive function to build a list from the lvl1 tree
 #[inline]
-fn convert_ll(length: Lvl1ListLength) -> TinyVec<[ListLengthItem; 1]> {
+fn convert_ll(length: Lvl1Expression) -> TinyVec<[ExpressionItem; 1]> {
     match length {
-        Lvl1ListLength::Value(v) => TinyVec::from([ListLengthItem::Value(v)]),
-        Lvl1ListLength::FieldReference(f) => {
-            TinyVec::from([ListLengthItem::FieldRef(f.into_boxed_str())])
+        Lvl1Expression::Value(v) => TinyVec::from([ExpressionItem::Value(v)]),
+        Lvl1Expression::FieldReference(f) => {
+            TinyVec::from([ExpressionItem::FieldRef(f.into_boxed_str())])
         }
-        Lvl1ListLength::BinaryOp { op, left, right } => {
+        Lvl1Expression::BinaryOp { op, left, right } => {
             // parse the op
             let op: BinaryOp = op.parse().unwrap();
             let left = convert_ll(*left);
             let right = convert_ll(*right);
 
-            let mut res = TinyVec::Heap(Vec::with_capacity(1 + left.len() + right.len()));
-            res.push(ListLengthItem::BinaryOp(op));
+            let mut res = Vec::with_capacity(1 + left.len() + right.len());
+            res.push(ExpressionItem::BinaryOp(op));
             res.extend(left);
             res.extend(right);
-            res
+            TinyVec::Heap(res)
         }
-        Lvl1ListLength::UnaryOp { op, target } => {
+        Lvl1Expression::UnaryOp { op, target } => {
             // parse the op
             let op: UnaryOp = op.parse().unwrap();
             let target = convert_ll(*target);
 
             let mut res = TinyVec::Heap(Vec::with_capacity(1 + target.len()));
-            res.push(ListLengthItem::UnaryOp(op));
+            res.push(ExpressionItem::UnaryOp(op));
             res.extend(target);
             res
         }

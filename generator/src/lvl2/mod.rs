@@ -1,9 +1,9 @@
 // MIT/Apache2 License
 
 mod enumeration;
+mod expr;
 mod field;
 mod item;
-mod length;
 mod specific_field;
 mod state;
 mod structure;
@@ -11,9 +11,9 @@ mod ty;
 mod xidtype;
 
 pub use enumeration::*;
+pub use expr::*;
 pub use field::*;
 pub use item::*;
-pub use length::*;
 pub use specific_field::*;
 pub use state::*;
 pub use structure::*;

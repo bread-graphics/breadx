@@ -1,10 +1,27 @@
 // MIT/Apache2 License
 
-use super::{safe_name, ListLength, Type};
+use super::{safe_name, Expression, Type};
 use crate::lvl1::StructureItem as Lvl1StructureItem;
 use heck::{CamelCase, SnakeCase};
-use std::borrow::Cow;
+use std::{borrow::Cow, rc::Rc};
 use tinyvec::TinyVec;
+
+/// Check variant or ==
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ConditionVariant {
+    BitflagVariant,
+    Equal,
+}
+
+/// A condition to use to tell whether or not to serialize or deserialize a certain
+/// value.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct UseCondition {
+    pub expr: Rc<Expression>,
+    pub variant: ConditionVariant,
+    pub enum_name: String,
+    pub enum_value: String,
+}
 
 /// An ordinary data field.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -12,6 +29,7 @@ pub struct Field {
     pub name: String,
     pub ty: Type,
     pub doc: Option<String>,
+    pub condition: Option<Rc<UseCondition>>,
 }
 
 /// The list might be a string in disguise!
@@ -27,7 +45,7 @@ pub struct List {
     pub name: String,
     pub ty: MaybeString,
     pub doc: Option<String>,
-    pub list_length: ListLength,
+    pub list_length: Expression,
     pub padding: Option<usize>,
 }
 
@@ -87,6 +105,7 @@ impl StructureItem {
                         name,
                         ty: Type::BasicType(ty.into()),
                         doc: None,
+                        condition: None,
                     }
                 })])
             }
@@ -100,7 +119,7 @@ impl StructureItem {
                     } = l;
 
                     // conver the list length to a postfix-oriented version rather than a linked list version
-                    let list_length: ListLength = list_length.into();
+                    let list_length: Expression = list_length.into();
                     let name = safe_name(name.clone());
 
                     List {
@@ -131,11 +150,52 @@ impl StructureItem {
                     StructureItem::List(List {
                         name: list_name,
                         ty: MaybeString::NotAString(Type::BasicType("u32".into())),
-                        list_length: ListLength::one_count(mask_name),
+                        list_length: Expression::one_count(mask_name),
                         doc: None,
                         padding: None,
                     }),
                 ])
+            }
+            Lvl1StructureItem::Switch(crate::lvl1::Switch { name, cases, expr }) => {
+                let expr: Rc<Expression> = Rc::new(expr.into());
+                cases
+                    .into_iter()
+                    .flat_map(|c| {
+                        // create an item for the condition
+                        let crate::lvl1::Case {
+                            is_bitcase,
+                            enum_ref,
+                            enum_item,
+                            fields,
+                        } = c;
+                        let cond = Rc::new(UseCondition {
+                            expr: expr.clone(),
+                            variant: if is_bitcase {
+                                ConditionVariant::BitflagVariant
+                            } else {
+                                ConditionVariant::Equal
+                            },
+                            enum_name: enum_ref,
+                            enum_value: enum_item,
+                        });
+
+                        fields.into_iter().flat_map(move |f| {
+                            let cond = cond.clone();
+                            StructureItem::from_lvl1(f, &mut Default::default())
+                                .into_iter()
+                                .map(move |mut f| {
+                                    if let StructureItem::Field(Field {
+                                        ref mut condition, ..
+                                    }) = f
+                                    {
+                                        *condition = Some(cond.clone());
+                                    }
+
+                                    f
+                                })
+                        })
+                    })
+                    .collect()
             }
         }
     }

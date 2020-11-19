@@ -8,6 +8,9 @@ use core::mem;
 use memchr::memrchr;
 use std::{env, io::prelude::*, net, path::Path};
 
+#[cfg(test)]
+use std::borrow::ToOwned;
+
 #[cfg(unix)]
 use std::os::unix::net as unet;
 
@@ -154,9 +157,9 @@ impl<'a> XConnection<'a> {
     pub fn parse(name: Option<Cow<'a, str>>) -> crate::Result<XConnection> {
         let name = match name {
             Some(name) => name,
-            None => {
-                Cow::Owned(env::var("DISPLAY").map_err(|_| crate::BreadError::UnableToParseConnection)?)
-            }
+            None => Cow::Owned(
+                env::var("DISPLAY").map_err(|_| crate::BreadError::UnableToParseConnection)?,
+            ),
         };
 
         // check if it is a socket first

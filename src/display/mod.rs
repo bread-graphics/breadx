@@ -128,13 +128,13 @@ const fn endian_byte() -> u8 {
     // means values are transmitted least significant byte first.
     #[cfg(not(target_endian = "little"))]
     {
-      const BE_SIGNIFIER: u8 = b'B';
-      BE_SIGNIFIER
+        const BE_SIGNIFIER: u8 = b'B';
+        BE_SIGNIFIER
     }
     #[cfg(target_endian = "little")]
     {
-      const LE_SIGNIFIER: u8 = b'l';
-      LE_SIGNIFIER
+        const LE_SIGNIFIER: u8 = b'l';
+        LE_SIGNIFIER
     }
 }
 
@@ -142,12 +142,13 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
         Ok(R::Reply::from_bytes(&reply)
-            .ok_or_else(|| crate::BreadError::BadObjectRead)?
+            .ok_or_else(|| crate::BreadError::BadObjectRead(None))?
             .0)
     }
 
     #[inline]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
+        log::debug!("Sending request {}", stringify!(R));
         self.send_request_internal(req)
     }
 
@@ -214,7 +215,7 @@ impl<Conn: Connection> Display<Conn> {
             event_queue: VecDeque::new(),
             pending_requests: VecDeque::new(),
             pending_replies: HashMap::new(),
-            request_number: 1,
+            request_number: 0,
         }
     }
 
@@ -255,8 +256,9 @@ impl<Conn: Connection> Display<Conn> {
         let setup = Self::setup(auth);
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let len = setup.as_bytes(&mut bytes);
+        bytes.truncate(len);
         self.connection.send_packet(&bytes[0..len])?;
-        let mut bytes: TinyVec<[u8; 8]> = cycled_zeroes(8);
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
         self.connection.read_packet(&mut bytes)?;
 
         match bytes[0] {
@@ -267,12 +269,14 @@ impl<Conn: Connection> Display<Conn> {
         // read in the rest of the bytes
         let mut length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
+        log::debug!("Setup is of length {}", length);
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
 
-        let (setup, slen) = Setup::from_bytes(&bytes).ok_or_else(|| crate::BreadError::BadObjectRead)?;
+        let (setup, slen) = Setup::from_bytes(&bytes)
+            .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
         self.setup = setup;
-        debug_assert_eq!(slen, length);
+        //        debug_assert_eq!(slen, length);
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
 
         log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
@@ -308,7 +312,7 @@ impl<Conn: Connection> Display<Conn> {
         self.connection.read_packet_async(&mut bytes[8..]).await?;
 
         self.setup = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::Error::BadObjectRead)?
+            .ok_or_else(|| crate::Error::BadObjectRead(Some("Setup")))?
             .0;
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
 

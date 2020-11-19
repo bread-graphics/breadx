@@ -7,7 +7,7 @@ use tinyvec::TinyVec;
 
 impl<Conn: Connection> super::Display<Conn> {
     #[inline]
-    fn encode_request<R: Request>(&mut self,  req: R) -> (u64, TinyVec<[u8; 32]>) {
+    fn encode_request<R: Request>(&mut self, req: R) -> (u64, TinyVec<[u8; 32]>) {
         self.request_number += 1;
         let sequence = self.request_number;
 
@@ -18,12 +18,14 @@ impl<Conn: Connection> super::Display<Conn> {
         // First byte is opcode
         // Second byte is minor opcode (ignored for now)
         // Third and fourth are length
+        log::debug!("Request has opcode {}", R::OPCODE);
         bytes[0] = R::OPCODE;
 
         let xlen = len / 4;
         let len_bytes = xlen.to_ne_bytes();
         bytes[2] = len_bytes[0];
         bytes[3] = len_bytes[1];
+        bytes.truncate(len);
 
         self.expect_reply(sequence, Default::default());
 
@@ -33,6 +35,7 @@ impl<Conn: Connection> super::Display<Conn> {
     #[inline]
     pub fn send_request_internal<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
         let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(req);
+        log::debug!("Request has opcode {}", bytes[0]);
 
         self.connection.send_packet(&bytes)?;
         Ok(RequestCookie::from_sequence(sequence))

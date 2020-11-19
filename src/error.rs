@@ -17,7 +17,7 @@ pub enum BreadError {
     /// Unable to open connection to the X11 server.
     FailedToConnect,
     /// BadReadError
-    BadObjectRead,
+    BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
     ExtensionNotPresent(&'static str),
     /// An errorp propogated by the X11 server.
@@ -33,11 +33,17 @@ impl BreadError {
     #[inline]
     pub(crate) fn from_x_error<T: Deref<Target = [u8]>>(bytes: T) -> Self {
         let b = &*bytes;
+        let mut sequence: [u8; 2] = [0; 2];
+        sequence.copy_from_slice(&bytes[2..=3]);
+        let sequence = u16::from_ne_bytes(sequence);
+        let mut minor_code: [u8; 2] = [0; 2];
+        minor_code.copy_from_slice(&bytes[8..=9]);
+        let minor_code = u16::from_ne_bytes(minor_code);
         Self::XProtocol {
             error_code: ErrorCode(b[1]),
-            major_code: b[2],
-            minor_code: b[3],
-            sequence: 0,
+            major_code: b[10],
+            minor_code: minor_code as _,
+            sequence,
         }
     }
 }
@@ -58,7 +64,11 @@ impl fmt::Display for BreadError {
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
             Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
-            Self::BadObjectRead => write!(f, "Unable to read object of type from bytes"),
+            Self::BadObjectRead(name) => write!(
+                f,
+                "Unable to read object of type from bytes: {}",
+                name.unwrap_or("Unknown")
+            ),
             Self::ExtensionNotPresent(ext) => write!(f, "Unable to load extension {}", ext),
             Self::XProtocol {
                 error_code,

@@ -9,7 +9,7 @@ impl StructureItem {
     #[inline]
     pub fn to_syn_field(&self) -> Option<syn::Field> {
         match self {
-            StructureItem::Field(Field { name, ty, doc }) => Some(syn::Field {
+            StructureItem::Field(Field { name, ty, doc, .. }) => Some(syn::Field {
                 attrs: vec![],
                 vis: pub_vis(),
                 ident: Some(syn::Ident::new(name, Span::call_site())),

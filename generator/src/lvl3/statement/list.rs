@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use proc_macro2::Span;
-use std::{fmt, iter};
+use std::{borrow::Cow, fmt, iter};
 
 #[derive(Debug, Clone)]
 pub struct AsBytesList {
@@ -35,7 +35,10 @@ impl fmt::Debug for FromBytesList {
 }
 
 #[derive(Debug, Clone)]
-pub struct AppendLengthToIndex(pub Box<str>);
+pub struct AppendLengthToIndex {
+    pub owner: Box<str>,
+    pub ty: Type,
+}
 
 #[inline]
 fn pad_statement(ms: &MaybeString, pad: Option<usize>) -> super::SetAlignAndAddPadding {
@@ -182,14 +185,23 @@ impl Statement for AppendLengthToIndex {
             index_plus_equal(syn::Expr::Call(syn::ExprCall {
                 attrs: vec![],
                 func: Box::new(item_field(
-                    syn::Expr::Call(syn::ExprCall {
+                    syn::Expr::Paren(syn::ExprParen {
                         attrs: vec![],
-                        func: Box::new(item_field(
-                            item_field(str_to_exprpath("self"), &self.0),
-                            "len",
-                        )),
                         paren_token: Default::default(),
-                        args: syn::punctuated::Punctuated::new(),
+                        expr: Box::new(syn::Expr::Cast(syn::ExprCast {
+                            attrs: vec![],
+                            expr: Box::new(syn::Expr::Call(syn::ExprCall {
+                                attrs: vec![],
+                                func: Box::new(item_field(
+                                    item_field(str_to_exprpath("self"), &self.owner),
+                                    "len",
+                                )),
+                                paren_token: Default::default(),
+                                args: syn::punctuated::Punctuated::new(),
+                            })),
+                            as_token: Default::default(),
+                            ty: Box::new(self.ty.to_syn_ty()),
+                        })),
                     }),
                     "as_bytes",
                 )),

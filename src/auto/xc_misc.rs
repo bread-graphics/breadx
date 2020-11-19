@@ -32,6 +32,7 @@ impl AsByteSequence for GetVersionRequest {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
+        log::trace!("Deserializing GetVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
@@ -97,6 +98,7 @@ impl AsByteSequence for GetXidRangeRequest {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
+        log::trace!("Deserializing GetXidRangeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
@@ -143,7 +145,7 @@ impl AsByteSequence for GetXidListRequest {
         index += self.length.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
         index += 1;
-        index += self.ids.len().as_bytes(&mut bytes[index..]);
+        index += (self.ids.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 20;
         let block_len: usize = vector_as_bytes(&self.ids, &mut bytes[index..]);
         index += block_len;
@@ -153,6 +155,7 @@ impl AsByteSequence for GetXidListRequest {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
+        log::trace!("Deserializing GetXidListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;

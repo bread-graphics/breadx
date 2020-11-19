@@ -5,7 +5,8 @@ use super::{
     Asb, Method, SizeSumPart, Statement, SumOfSizes, SumStatement, ToSyn, Trait, Type,
 };
 use crate::lvl2::{
-    Field, List, MaybeString, Struct as Lvl2Struct, StructSpecial, StructureItem, Type as Lvl2Type,
+    Expression, Field, List, MaybeString, Struct as Lvl2Struct, StructSpecial, StructureItem,
+    Type as Lvl2Type, UseCondition,
 };
 use proc_macro2::Span;
 use std::{
@@ -13,6 +14,7 @@ use std::{
     hash::{Hash, Hasher},
     iter,
     ops::Deref,
+    rc::Rc,
 };
 use tinyvec::ArrayVec;
 
@@ -26,6 +28,38 @@ pub struct RStruct {
     pub methods: Vec<Method>,
     pub traits: Vec<Trait>,
     pub asb: Asb,
+}
+
+#[inline]
+fn cond_vars(
+    condition: &Option<Rc<UseCondition>>,
+    conds: &mut HashMap<Rc<Expression>, Box<str>>,
+    last_cond_index: &mut usize,
+    use_self: bool,
+) -> (Option<(Rc<UseCondition>, Box<str>)>, Option<SumStatement>) {
+    match condition {
+        None => (None, None),
+        Some(condition) => {
+            if let Some(condname) = conds.get(&condition.expr) {
+                (Some((condition.clone(), condname.clone())), None)
+            } else {
+                let condname = format!("cond{}", *last_cond_index).into_boxed_str();
+                *last_cond_index += 1;
+                conds.insert(condition.expr.clone(), condname.clone());
+                (
+                    Some((condition.clone(), condname.clone())),
+                    Some(
+                        super::InitializeCondition {
+                            name: condname,
+                            expression: condition.expr.clone(),
+                            has_self: use_self,
+                        }
+                        .into(),
+                    ),
+                )
+            }
+        }
+    }
 }
 
 impl RStruct {
@@ -62,29 +96,46 @@ impl RStruct {
     /// Populate the as_bytes statements.
     #[inline]
     pub fn populate_as_bytes(&mut self) {
+        let mut last_cond_index: usize = 0;
+        let mut conds: HashMap<Rc<Expression>, Box<str>> = HashMap::new();
         let stmts = iter::once(super::CreateIndexVariable.into())
-            .chain(self.fields.iter().filter_map(|f| {
-                match f {
-                    StructureItem::Field(Field { name, .. }) => {
-                        Some(super::AppendToIndexStatement(name.clone().into()).into())
+            .chain(self.fields.iter().flat_map(|f| match f {
+                StructureItem::Field(Field {
+                    name, condition, ..
+                }) => {
+                    let (cond_pass, cond_init) =
+                        cond_vars(condition, &mut conds, &mut last_cond_index, true);
+
+                    cond_init
+                        .into_iter()
+                        .chain(iter::once(
+                            super::AppendToIndexStatement {
+                                name: name.clone().into_boxed_str(),
+                                condition: cond_pass,
+                            }
+                            .into(),
+                        ))
+                        .collect()
+                }
+                StructureItem::Padding { bytes } => {
+                    vec![super::PadIndexStatement(*bytes).into()]
+                }
+                StructureItem::LenSlot { owning_list, ty } => {
+                    vec![super::AppendLengthToIndex {
+                        owner: owning_list.clone().into_boxed_str(),
+                        ty: Type::from_lvl2(ty.clone()),
                     }
-                    StructureItem::Padding { bytes } => {
-                        Some(super::PadIndexStatement(*bytes).into())
-                    }
-                    StructureItem::LenSlot { owning_list, .. } => Some(
-                        super::AppendLengthToIndex(owning_list.clone().into_boxed_str()).into(),
-                    ),
-                    StructureItem::List(List {
-                        name, ty, padding, ..
-                    }) => Some(
-                        super::AsBytesList {
+                    .into()]
+                }
+
+                StructureItem::List(List {
+                    name, ty, padding, ..
+                }) => vec![super::AsBytesList {
                             name: name.clone().into_boxed_str(),
                             ty: ty.clone(),
                             pad: *padding,
                         }
-                        .into(),
-                    ),
-                }
+                        .into()],
             }))
             .chain(iter::once(super::ReturnIndexStatement.into()))
             .collect();
@@ -96,86 +147,99 @@ impl RStruct {
     pub fn populate_from_bytes(&mut self) {
         let mut len_map = HashMap::<String, Box<str>>::with_capacity(self.fields.len());
         let mut i: u32 = 0;
+        let mut cond_map = HashMap::<Rc<Expression>, Box<str>>::new();
+        let mut last_cond_index: usize = 0;
 
-        let stmts = iter::once(super::CreateIndexVariable.into())
-            .chain(
-                self.fields
+        let stmts = vec![
+            super::CreateIndexVariable.into(),
+            super::DeserTraceMarker(self.name.clone()).into(),
+        ]
+        .into_iter()
+        .chain(self.fields.iter().flat_map(|f| match f {
+            StructureItem::Field(Field {
+                name,
+                ty,
+                condition,
+                ..
+            }) => {
+                let (cond_pass, cond_init) =
+                    cond_vars(condition, &mut cond_map, &mut last_cond_index, false);
+
+                cond_init
+                    .into_iter()
+                    .chain(iter::once(
+                        super::LoadStatementVariable {
+                            name: name.clone().into(),
+                            ty: Type::from_lvl2(ty.clone()),
+                            use_slice: true,
+                            condition: cond_pass,
+                        }
+                        .into(),
+                    ))
+                    .collect()
+            }
+            StructureItem::Padding { bytes } => {
+                vec![super::IncrementIndex::Number(*bytes).into()]
+            }
+            StructureItem::LenSlot { ty, owning_list } => {
+                // create a random name
+                let len_name = format!("len{}", i);
+                i += 1;
+
+                len_map.insert(owning_list.clone(), len_name.clone().into_boxed_str());
+
+                vec![super::LoadStatementVariable {
+                    name: len_name.into(),
+                    ty: Type::from_lvl2(ty.clone()),
+                    use_slice: true,
+                    condition: None,
+                }
+                .into()]
+            }
+            StructureItem::List(List {
+                name,
+                ty,
+                list_length,
+                padding,
+                ..
+            }) => {
+                // if the list length is a single item, get that length slot
+                let length_expr =
+                    if let Some(_) = list_length.single_item() {
+                        str_to_exprpath(&len_map.remove(name).unwrap_or_else(|| {
+                            panic!("Bad len map: Cannot find len for {}", &name)
+                        }))
+                    } else {
+                        // just get the length expr
+                        list_length.to_length_expr(false, true)
+                    };
+
+                vec![super::FromBytesList {
+                    name: name.clone().into_boxed_str(),
+                    ty: ty.clone(),
+                    len: length_expr,
+                    pad: padding.clone(),
+                }
+                .into()]
+            }
+        }))
+        .chain(iter::once(
+            super::ReturnStruct {
+                last_index: "index",
+                sname: self.name.clone(),
+                fields: self
+                    .fields
                     .iter()
                     .filter_map(|f| match f {
-                        StructureItem::Field(Field { name, ty, .. }) => Some(vec![
-                            super::LoadStatementVariable {
-                                name: name.clone().into(),
-                                ty: Type::from_lvl2(ty.clone()),
-                                use_slice: true,
-                            }
-                            .into(),
-                            super::IncrementIndex::Sz.into(),
-                        ]),
-                        StructureItem::Padding { bytes } => {
-                            Some(vec![super::IncrementIndex::Number(*bytes).into()])
-                        }
-                        StructureItem::LenSlot { ty, owning_list } => {
-                            // create a random name
-                            let len_name = format!("len{}", i);
-                            i += 1;
-
-                            len_map.insert(owning_list.clone(), len_name.clone().into_boxed_str());
-
-                            Some(vec![
-                                super::LoadStatementVariable {
-                                    name: len_name.into(),
-                                    ty: Type::from_lvl2(ty.clone()),
-                                    use_slice: true,
-                                }
-                                .into(),
-                                super::IncrementIndex::Sz.into(),
-                            ])
-                        }
-                        StructureItem::List(List {
-                            name,
-                            ty,
-                            list_length,
-                            padding,
-                            ..
-                        }) => {
-                            // if the list length is a single item, get that length slot
-                            let length_expr = if let Some(_) = list_length.single_item() {
-                                str_to_exprpath(&len_map.remove(name).unwrap_or_else(|| {
-                                    panic!("Bad len map: Cannot find len for {}", &name)
-                                }))
-                            } else {
-                                // just get the length expr
-                                list_length.to_length_expr()
-                            };
-
-                            Some(vec![super::FromBytesList {
-                                name: name.clone().into_boxed_str(),
-                                ty: ty.clone(),
-                                len: length_expr,
-                                pad: padding.clone(),
-                            }
-                            .into()])
-                        }
+                        StructureItem::Field(Field { name, .. }) => Some(name.clone().into()),
+                        StructureItem::List(List { name, .. }) => Some(name.clone().into()),
+                        _ => None,
                     })
-                    .flatten(),
-            )
-            .chain(iter::once(
-                super::ReturnStruct {
-                    last_index: "index",
-                    sname: self.name.clone(),
-                    fields: self
-                        .fields
-                        .iter()
-                        .filter_map(|f| match f {
-                            StructureItem::Field(Field { name, .. }) => Some(name.clone().into()),
-                            StructureItem::List(List { name, .. }) => Some(name.clone().into()),
-                            _ => None,
-                        })
-                        .collect(),
-                }
-                .into(),
-            ))
-            .collect();
+                    .collect(),
+            }
+            .into(),
+        ))
+        .collect();
         self.asb.from_bytes_stmts = stmts;
     }
 }
