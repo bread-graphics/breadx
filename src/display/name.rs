@@ -1,5 +1,8 @@
 // MIT/Apache2 License
 
+//! This module defines the `NameConnection` type, which is the default connection used for `Display` objects.
+//! See the `NameConnection` object for more information.
+
 #![cfg(feature = "std")]
 
 use super::Connection;
@@ -20,14 +23,20 @@ use futures_io::{AsyncRead, AsyncWrite};
 #[cfg(all(feature = "async", unix))]
 use async_net::unix as async_unet;
 
-/// Connection wrapper.
+/// This is a wrapper around the connection created by `DisplayConnection::create()`. It implements
+/// `Connection` for a variety of connections that X11 usually transmits itself over. You rarely
+/// have to worry about this type of connection.
 pub enum NameConnection {
+    #[doc(hidden)]
     Tcp(net::TcpStream),
     #[cfg(unix)]
+    #[doc(hidden)]
     Socket(unet::UnixStream),
     #[cfg(feature = "async")]
+    #[doc(hidden)]
     AsyncTcp(async_net::TcpStream),
     #[cfg(all(feature = "async", unix))]
+    #[doc(hidden)]
     AsyncSocket(async_unet::UnixStream),
 }
 
@@ -374,7 +383,7 @@ impl<'a> XConnection<'a> {
 impl NameConnection {
     /// Open a new connection.
     #[inline]
-    pub fn connect_internal(name: Option<Cow<'_, str>>) -> crate::Result<NameConnection> {
+    pub(crate) fn connect_internal(name: Option<Cow<'_, str>>) -> crate::Result<NameConnection> {
         let connection = XConnection::parse(name)?;
         connection.open()
     }
@@ -382,7 +391,7 @@ impl NameConnection {
     /// Open a new asynchronous connection.
     #[inline]
     #[cfg(feature = "async")]
-    pub async fn connect_internal_async(
+    pub(crate) async fn connect_internal_async(
         name: Option<Cow<'_, str>>,
     ) -> crate::Result<NameConnection> {
         let connection = XConnection::parse(name)?;

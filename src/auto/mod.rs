@@ -1,5 +1,10 @@
 // MIT/Apache2 License
 
+//! This module contains data formats and functions that were automatically generated from the XmlXcb
+//! description of the X11 protocol. If you want direct access to the X11 protocol's internals, it's
+//! recommended to use these functions, as well as the `Display` object's `send_request`,
+//! `resolve_request` and `wait_for_event` functions.
+
 use alloc::{
     string::{String, ToString},
     vec::Vec,
@@ -8,8 +13,8 @@ use core::mem;
 use cty::c_char;
 use tinyvec::TinyVec;
 
-pub mod prelude {
-    pub use super::{
+pub(crate) mod prelude {
+    pub(crate) use super::{
         buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
         AsByteSequence,
     };
@@ -43,7 +48,7 @@ pub trait AsByteSequence: Sized {
 /// desired length.
 /// TODO: specialize this somewhat
 #[inline]
-pub fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<(Vec<T>, usize)> {
+pub(crate) fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<(Vec<T>, usize)> {
     log::trace!("Deserializing vector of byte length {} from bytes", len);
 
     // allocate the vector
@@ -62,7 +67,7 @@ pub fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<
 
 /// Internal use function to make it easier to convert the c-equivalent string to a Rust string.
 #[inline]
-pub fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
+pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
     log::trace!("Deserializing string of length {} from bytes", len);
 
     let chars: Vec<u8> = bytes.iter().take(len).copied().collect();
@@ -86,7 +91,7 @@ pub fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
 /// Internal use function to convert a vector of AsByteSequence types to bytes.
 /// TODO: specialization
 #[inline]
-pub fn vector_as_bytes<T: AsByteSequence>(vector: &[T], bytes: &mut [u8]) -> usize {
+pub(crate) fn vector_as_bytes<T: AsByteSequence>(vector: &[T], bytes: &mut [u8]) -> usize {
     let mut current_index = 0;
 
     vector.iter().for_each(|item| {
@@ -99,14 +104,14 @@ pub fn vector_as_bytes<T: AsByteSequence>(vector: &[T], bytes: &mut [u8]) -> usi
 
 /// Internal use function to convert a String to bytes.
 #[inline]
-pub fn string_as_bytes(string: &str, bytes: &mut [u8]) -> usize {
+pub(crate) fn string_as_bytes(string: &str, bytes: &mut [u8]) -> usize {
     vector_as_bytes(string.as_bytes(), bytes)
 }
 
 /// The addition necessary to pad out the buffer, given the align and the current block length.
 #[const_fn::const_fn("1.47")]
 #[inline]
-pub const fn buffer_pad(block_len: usize, align_to: usize) -> usize {
+pub(crate) const fn buffer_pad(block_len: usize, align_to: usize) -> usize {
     block_len.wrapping_neg() & align_to.wrapping_sub(1)
 }
 
@@ -302,5 +307,7 @@ impl AsByteSequence for String {
 //pub mod render;
 //pub mod shape;
 //pub mod xfixes;
+/// Miscellaneous additions to the X11 protocol.
 pub mod xc_misc;
+/// The core X11 protocol.
 pub mod xproto;

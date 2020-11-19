@@ -1,5 +1,9 @@
 // MIT/Apache2 License
 
+//! This module defines the `Display` object, which acts as a connection to the X11 server, and the
+//! `Connection` trait, which the `Display` object abstracts itself over. See the documentation for
+//! these objects for more information.
+
 use crate::{
     auth_info::AuthInfo,
     auto::{
@@ -41,7 +45,17 @@ pub use functions::*;
 
 const UNINIT_ERR: &str = "Display was not yet initialized. This is most likely an internal error.";
 
-/// Connection to the X11 server.
+/// The connection to the X11 server. Most operations done in breadx revolve around this object
+/// in some way, shape or form.
+/// 
+/// Internally, this acts as a layer of abstraction over the inner `Conn` object that keeps track
+/// of the setup, outgoing and pending requests and replies, the event queue, et cetera. Orthodoxically,
+/// X11 usually takes place over a TCP stream or a Unix socket connection; however, `Display` is able
+/// to use any object implementing the `Connection` trait as a vehicle for the X11 protocol.
+///
+/// Upon its instantiation, the `Display` sends bytes to the server requesting the setup information, and
+/// then stores it for later use. Afterwards, it awaits commands from the programmer to send requests,
+/// receive replies or process events.
 pub struct Display<Conn> {
     // the connection to the server
     pub(crate) connection: Conn,
@@ -64,7 +78,10 @@ pub struct Display<Conn> {
     request_number: u64,
 }
 
-/// Request cookie.
+/// A cookie for a request.
+/// 
+/// Requests usually take time to resolve into replies. Therefore, the `Display::send_request` method returns
+/// the `RequestCookie`, which is later used to block (or await) for the request's eventual result.
 #[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct RequestCookie<R: Request> {
@@ -141,11 +158,22 @@ impl<Conn: Connection> Display<Conn> {
             .0)
     }
 
+    /// Send a request object to the X11 server.
+    /// 
+    /// Given a request object, this function sends it across the connection to the X11 server and returns
+    /// a cookie used to determine when this request will resolve. Usually, the `Display` object has functions
+    /// that act as a wrapper around this object; however, if you'd like to circumvent those, this is usually
+    /// the best option.
     #[inline(always)]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
         self.send_request_internal(req)
     }
 
+    /// Wait for a request from the X11 server.
+    /// 
+    /// This function checks the `Display`'s queues to see if a reply matching the given `RequestCookie`
+    /// has been processed by the X11 server. If not, it polls the server for new events until it has
+    /// determined that the request has resolved. 
     #[inline]
     pub fn resolve_request<R: Request>(
         &mut self,
@@ -167,6 +195,8 @@ impl<Conn: Connection> Display<Conn> {
         }
     }
 
+    /// Send a request object to the X11 server, async redox. See the `send_request` function for more
+    /// information.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn send_request_async<R: Request>(
@@ -176,6 +206,8 @@ impl<Conn: Connection> Display<Conn> {
         self.send_request_internal_async(req).await
     }
 
+    /// Wait for a request from the X11 server, async redox. See the `resolve_request` function for more
+    /// information.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn resolve_request_async<R: Request>(
@@ -213,6 +245,11 @@ impl<Conn: Connection> Display<Conn> {
         }
     }
 
+    /// Creates a new `Display` from a connection and authentication info.
+    /// 
+    /// It is expected that the connection passed in has not had any information sent into it aside from
+    /// what is necessary for the underlying protocol. After the object is created, the `Display` will poll
+    /// the server for setup information.
     #[inline]
     pub fn from_connection(connection: Conn, auth: Option<AuthInfo>) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
@@ -220,6 +257,8 @@ impl<Conn: Connection> Display<Conn> {
         Ok(d)
     }
 
+    /// Creates a new `Display` from a connection and authentication info, async redox. See the `from_connection`
+    /// function for more information.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn from_connection_async(
@@ -281,7 +320,9 @@ impl<Conn: Connection> Display<Conn> {
         Ok(())
     }
 
-    /// Initialize the setup.
+    /// Initialize the setup, async redox.
+    /// 
+    /// TODO; lots of copy-pasted code, redo this at some point
     #[cfg(feature = "async")]
     #[inline]
     async fn init_async(&mut self, auth: AuthInfo) -> crate::Result {
@@ -324,20 +365,17 @@ impl<Conn: Connection> Display<Conn> {
         self.setup.roots[self.default_screen].root
     }
 
-    /// Create another XID.
+    /// Generate a unique X ID for a window, colormap, or other object. Usually, `Display`'s helper functions
+    /// will generate this for you. If you'd like to circumvent them, this will generate ID's for you.
     #[inline]
     pub fn generate_xid(&mut self) -> crate::Result<XID> {
         Ok(self.xid.next().unwrap())
     }
 
-    /// Create an XID, async redox
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn generate_xid_async(&mut self) -> crate::Result<XID> {
-        Ok(self.xid.next().unwrap())
-    }
-
-    /// Wait for an event.
+    /// Wait for an event to be generated by the X server.
+    /// 
+    /// This checks the event queue for a new event. If the queue is empty, the `Display` will poll the
+    /// server for new events.
     #[inline]
     pub fn wait_for_event(&mut self) -> crate::Result<Event> {
         log::debug!("Beginning event wait...");
@@ -349,7 +387,8 @@ impl<Conn: Connection> Display<Conn> {
         }
     }
 
-    /// Wait for an event, async redox.
+    /// Wait for an event to be generated by the X server, async redox. See the `wait_for_event` function for
+    /// more information.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn wait_for_event_async(&mut self) -> crate::Result<Event> {
@@ -362,19 +401,22 @@ impl<Conn: Connection> Display<Conn> {
     }
 }
 
+/// A variant of `Display` that uses X11's default connection mechanisms to connect to the server. In
+/// most cases, you should be using this over any variant of `Display`.
 #[cfg(feature = "std")]
 pub type DisplayConnection = Display<name::NameConnection>;
 
 #[cfg(feature = "std")]
 impl DisplayConnection {
-    /// Create a new connection from a name.
+    /// Create a new connection to the X server, given an optional name and authorization information.
     #[inline]
     pub fn create(name: Option<Cow<'_, str>>, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
         let connection = name::NameConnection::connect_internal(name)?;
         Self::from_connection(connection, auth_info)
     }
 
-    /// Create a new connection from a name.
+    /// Create a new connection to the X server, given an optional name and authorization information, async
+    /// redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn create_async(

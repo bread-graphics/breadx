@@ -2,45 +2,59 @@
 
 use crate::auto::AsByteSequence;
 use core::mem;
-use cty::{c_char, c_long, c_short};
 use tinyvec::ArrayVec;
 
 /// The data returned from a client message.
 #[derive(Default, Debug, Clone)]
 #[repr(transparent)]
 pub struct ClientMessageData {
-    // convention states that it should be at least 5 c longs
+    // convention states that it should be at least 5 u32's
     // wide
-    data: [c_long; LONG_LEN],
+    data: [u32; LONG_LEN],
 }
 
 // constants that make things easier
 pub const LONG_LEN: usize = 5;
 pub const SHORT_LEN: usize = LONG_LEN * SHORT_INTERVAL;
-pub const SHORT_INTERVAL: usize = mem::size_of::<c_long>() / mem::size_of::<c_short>();
+pub const SHORT_INTERVAL: usize = mem::size_of::<u32>() / mem::size_of::<u16>();
 pub const BYTE_LEN: usize = LONG_LEN * BYTE_INTERVAL;
-pub const BYTE_INTERVAL: usize = mem::size_of::<c_long>() / mem::size_of::<c_char>();
+pub const BYTE_INTERVAL: usize = mem::size_of::<u32>() / mem::size_of::<u8>();
 
 impl ClientMessageData {
     /// Get the bytes assocated with this sequence.
     #[inline]
-    pub fn bytes(&self) -> [c_char; BYTE_LEN] {
-        let s = bytemuck::cast_slice::<c_long, c_char>(&self.data);
-        let mut res = [0; BYTE_LEN];
-        res.copy_from_slice(s);
-        res
+    pub fn bytes(&self) -> &[u8] {
+        bytemuck::cast_slice::<u32, u8>(&self.data)
     }
 
-    /// Get the shorts assocated with this sequence.
+    /// Get the short integers assocated with this sequence.
     #[inline]
-    pub fn shorts(&self) -> [c_short; SHORT_LEN] {
-        bytemuck::cast(self.data.clone())
+    pub fn shorts(&self) -> &[u16] {
+        bytemuck::cast_slice::<u32, u16>(&self.data)
     }
 
-    /// Get the longs associated with this sequence.
+    /// Get the long integers associated with this sequence.
     #[inline]
-    pub fn longs(&self) -> [c_long; LONG_LEN] {
-        self.data.clone()
+    pub fn longs(&self) -> &[u32] {
+        &self.data
+    }
+
+    /// Get a mutable reference to the bytes associated with this sequence.
+    #[inline]
+    pub fn bytes_mut(&mut self) -> &mut [u8] {
+        bytemuck::cast_slice_mut::<u32, u8>(&mut self.data)
+    }
+
+    /// Get a mutable reference to the short integers associated with this sequence.
+    #[inline]
+    pub fn shorts_mut(&mut self) -> &mut [u16] {
+        bytemuck::cast_slice_mut::<u32, u16>(&mut self.data)
+    }
+
+    /// Get a mutable reference to the long integers associated with this sequence.
+    #[inline]
+    pub fn longs_mut(&mut self) -> &mut [u32] {
+        &mut self.data
     }
 }
 
@@ -61,7 +75,7 @@ impl AsByteSequence for ClientMessageData {
         if bytes.len() <= BYTE_LEN {
             None
         } else {
-            let mut res: [c_long; LONG_LEN] = [0; LONG_LEN];
+            let mut res: [u32; LONG_LEN] = [0; LONG_LEN];
             res.copy_from_slice(bytemuck::cast_slice(bytes));
             Some((ClientMessageData { data: res }, BYTE_LEN))
         }

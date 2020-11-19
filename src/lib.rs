@@ -12,7 +12,7 @@ extern crate core;
 #[macro_use]
 extern crate scopeguard;
 
-pub mod auth_info;
+mod auth_info;
 pub mod auto;
 pub mod client_message_data;
 pub mod display;
@@ -23,6 +23,7 @@ pub(crate) mod util;
 pub mod window;
 pub mod xid;
 
+pub use auth_info::*;
 pub use display::*;
 pub use error::*;
 pub use window::*;

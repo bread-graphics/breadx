@@ -109,6 +109,7 @@ impl<Conn: Connection> Display<Conn> {
         Ok(wid)
     }
 
+    /// Create a new window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn create_window_async(
@@ -125,7 +126,7 @@ impl<Conn: Connection> Display<Conn> {
         props: CreateWindowParameters,
     ) -> crate::Result<Window>
     {
-        let wid = Window::const_from_xid(self.generate_xid_async().await?);
+        let wid = Window::const_from_xid(self.generate_xid()?);
         let cw = self.create_window_request(
             wid,
             parent,
