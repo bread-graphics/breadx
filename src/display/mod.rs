@@ -24,7 +24,7 @@ use alloc::{
 use core::{
     fmt, iter,
     marker::PhantomData,
-    mem::{self, MaybeUninit},
+    mem,
     task::Waker,
 };
 use hashbrown::HashMap;
@@ -74,7 +74,7 @@ pub struct Display<Conn> {
 #[repr(transparent)]
 pub struct RequestCookie<R: Request> {
     sequence: u64,
-    _phantom: PhantomData<MaybeUninit<R::Reply>>,
+    _phantom: PhantomData<Option<R::Reply>>,
 }
 
 impl<R: Request> RequestCookie<R> {
@@ -146,9 +146,8 @@ impl<Conn: Connection> Display<Conn> {
             .0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
-        log::debug!("Sending request {}", stringify!(R));
         self.send_request_internal(req)
     }
 
@@ -276,7 +275,6 @@ impl<Conn: Connection> Display<Conn> {
         let (setup, slen) = Setup::from_bytes(&bytes)
             .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
         self.setup = setup;
-        //        debug_assert_eq!(slen, length);
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
 
         log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
@@ -385,249 +383,3 @@ impl DisplayConnection {
     }
 }
 
-// old stuff:
-/*
-    #[inline]
-    fn write_object_blocking<O: AsByteSequence>(&mut self, o: &O) -> crate::Result {
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(O::size());
-        o.as_bytes(&mut bytes);
-        self.connection.send_packet(&bytes)?;
-        Ok(())
-    }
-
-    #[inline]
-    fn read_object_blocking<O: AsByteSequence>(&mut self) -> crate::Result<O> {
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(O::size());
-        self.connection.read_packet(&mut bytes)?;
-        let (object, _) = O::from_bytes(&bytes).ok_or_else(|| crate::Error::BadObjectRead)?;
-        Ok(object)
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    async fn write_object_async<O: AsByteSequence>(&mut self, o: &O) -> crate::Result {
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(O::size());
-        o.as_bytes(&mut bytes);
-        self.connection.send_packet_async(&bytes).await?;
-        Ok(())
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    async fn read_object_async<O: AsByteSequence>(&mut self) -> crate::Result<O> {
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(O::size());
-        self.connection.read_packet_async(&mut bytes).await?;
-        let (object, _) = O::from_bytes(&bytes).ok_or_else(|| crate::Error::BadObjectRead)?;
-        Ok(())
-    }
-
-    /// Create a new display from a connection object.
-    #[inline]
-    pub fn from_connection(conn: Conn, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
-        let mut s = Self {
-            connection: conn,
-            setup: None,
-            xid: None,
-            default_screen: 0,
-            event_queue: VecDeque::new(),
-        };
-        s.init(match auth_info {
-            Some(ai) => ai,
-            None => Default::default(),
-        })?;
-        Ok(s)
-    }
-
-    /// Create a new display from a connection object, async redox.
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn from_connection_async(
-        conn: Conn,
-        auth_info: Option<AuthInfo>,
-    ) -> crate::Result<Self> {
-        let mut s = Self {
-            connection: conn,
-            setup: None,
-            xid: None,
-            default_screen: 0,
-            event_deque: VecDeque::new(),
-        };
-        s.init_async(match auth_info {
-            Some(ai) => ai,
-            None => Default::default(),
-        })
-        .await?;
-        Ok(s)
-    }
-
-    /// Encode a request into bytes format.
-    #[inline]
-    fn encode_request<R: Request>(request: &R) -> TinyVec<[u8; 64]> {
-        // Excerpt from the X Protocol Specification:
-        //
-        // Every request contains an 8-bit major opcode and a 16-bit length field expressed
-        // in units of four bytes. Every request consists of four bytes of a header (containing
-        // the major opcode, the length field, and a data byte) followed by zero or more additional
-        // bytes of data. The length field defines the total length of the request, including
-        // the header. The length field in a request must equal the minimum length required
-        // to contain the request. If the specified length is smaller or larger than the
-        // required length, an error is generated. Unused bytes in a request are not required
-        // to be zero. Major opcodes 128 through 255 are reserved for extensions. Extensions
-        // are intended to contain multiple requests, so extension requests typically have an
-        // additional minor opcode encoded in the second data byte in the request header
-        let mut bytes: TinyVec<[u8; 64]> = cycled_zeroes(R::size() + 4);
-        bytes[0] = request.opcode();
-        let len = request.as_bytes(&mut bytes[4..]) as u16;
-        let len_bytes = len.to_ne_bytes();
-        bytes[1] = len_bytes[0];
-        bytes[2] = len_bytes[1];
-        // TODO: implement minor opcode
-        bytes
-    }
-
-    /// Decode bytes into a reply.
-    #[inline]
-    fn decode_reply_header(bytes: &[u8]) -> (u8, u16, u32) {
-        // Excerpt from the X Protocol Specification:
-        //
-        // Every reply contains a 32-bit length field expressed in units of four bytes.
-        // Every reply consists of 32 bytes followed by zero or more additional bytes of data,
-        // as specified in the length field. Unused bytes within a reply are not guaranteed to be
-        // zero. Every reply also contains the least significant 16 bits of the sequence number
-        // of the corresponding request.
-
-        // first byte is the opcode, second is padding
-        let opcode = bytes[0];
-        // next two bytes are the sequence
-        let mut sequence_bytes: [u8; 2] = [0, 0];
-        sequence_bytes.copy_from_slice(&bytes[2..3]);
-        let sequence = u16::from_ne_bytes(sequence_bytes);
-
-        // next four bytes are the length
-        let mut length_bytes: [u8; 4] = [0; 4];
-        length_bytes.copy_from_slice(&bytes[4..8]);
-        let length = u32::from_ne_bytes(length_bytes);
-
-        (opcode, sequence, length)
-    }
-
-    /// Decode bytes into a reply.
-    #[inline]
-    fn decode_reply<O: AsByteSequence>(bytes: &[u8]) -> crate::Result<O> {
-        match O::from_bytes(bytes) {
-            Some((bytes, _)) => Ok(bytes),
-            None => Err(crate::Error::BadObjectRead),
-        }
-    }
-
-    /// Send a request.
-    #[inline]
-    pub fn send_request<R: Request>(&mut self, request: &R) -> crate::Result<R::Reply>
-    where
-        R::Reply: Default,
-    {
-        let mut bytes = Self::encode_request(request);
-
-        // send the bytes than block for receive
-        self.connection.send_packet(&bytes)?;
-
-        // a zero-sized reply indicates we're done here
-        if core::mem::size_of::<R::Reply>() == 0 {
-            return Ok(Default::default());
-        }
-
-        // read the bytes
-        bytes.clear();
-        bytes.extend(iter::once(0).cycle().take(32));
-
-        self.connection.read_packet(&mut bytes)?;
-
-        // decode the sequence
-        let (opcode, sequence, length) = Self::decode_reply_header(&bytes);
-
-        // read the remaining bytes
-        if length > 0 {
-            bytes.extend(iter::once(0).cycle().take(length as _));
-            self.connection.read_packet(&mut bytes[32..])?;
-        }
-
-        Self::decode_reply(&bytes[2..])
-    }
-
-    /// Send a request.
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn send_request_async<R: Request>(&mut self, request: &R) -> crate::Result<R::Reply> {
-        let mut bytes = Self::encode_request(request);
-
-        // send the bytes than block for receive
-        self.connection.send_packet_async(&bytes).await?;
-
-        // a zero-sized reply indicates we're done here
-        if core::mem::size_of::<R::Reply>() == 0 {
-            return Ok(Default::default());
-        }
-
-        // read the bytes
-        bytes.clear();
-        bytes.extend(iter::once(0).cycle().take(32));
-
-        self.connection.read_packet_async(&mut bytes).await?;
-
-        // decode the sequence
-        let (opcode, sequence, length) = Self::decode_reply_header(&bytes);
-
-        // read the remaining bytes
-        if length > 0 {
-            bytes.extend(iter::once(0).cycle().take(length as _));
-            self.connection.read_packet_async(&mut bytes[32..]).await?;
-        }
-
-        Self::decode_reply(&bytes[2..])
-    }
-
-
-    /// Create a new window.
-    #[inline]
-    pub fn create_window(
-        &mut self,
-        parent: Option<Window>,
-        depth: Option<u8>,
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
-        border_width: u16,
-        class: WindowClass,
-        visual: Visualid,
-    ) -> crate::Result<Window> {
-        let wid = self.next_xid()?;
-        let create_window = CreateWindowRequest {
-            depth: depth.unwrap(),
-            x,
-            y,
-            wid: Window::const_from_xid(wid),
-            parent: parent.unwrap_or(Window::const_from_xid(0)),
-            width,
-            height,
-            border_width,
-            class: class as _,
-            visual,
-        };
-        self.send_request(&create_window)?;
-        Ok(Window::const_from_xid(wid))
-    }
-
-    /// Wait for the next event.
-    #[inline]
-    pub fn wait_for_event(&mut self) -> crate::Result<Event> {
-        // Events are 32 bytes long.
-        let mut evbytes: ArrayVec<[u8; 32]> = [0; 32].into();
-        self.connection.read_packet(&mut evbytes)?;
-        Event::read_from_bytes(&evbytes)
-    }
-
-    /// Wait for the next event, async redox.
-    #[inline]
-
-*/

@@ -106,7 +106,7 @@ impl Trait {
                     );
                     method.statements = vec![super::ReturnEnumVariant(
                         tyname.to_string().into_boxed_str(),
-                        variant.clone(),
+                        variant,
                     )
                     .into()];
                     method.to_syn_impl_item(true)

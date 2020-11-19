@@ -54,7 +54,7 @@ impl<Conn: Connection> Display<Conn> {
 
         let mut cwr = CreateWindowRequest {
             wid,
-            parent: parent.unwrap_or_else(|| self.default_root()),
+            parent: parent.unwrap_or_else(|| self.default_root()), 
             class: class,
             visual: visual.unwrap_or(INHERITED_VISUAL),
             depth: depth.unwrap_or(INHERITED_DEPTH),
@@ -71,6 +71,7 @@ impl<Conn: Connection> Display<Conn> {
         cwr
     }
 
+    /// Create a new window.
     #[inline]
     pub fn create_window(
         &mut self,
@@ -86,7 +87,7 @@ impl<Conn: Connection> Display<Conn> {
         props: CreateWindowParameters,
     ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
-        log::debug!("Generate {:#032b}", wid.xid());
+        log::debug!("Generate {}", wid.xid());
         let cw = self.create_window_request(
             wid,
             parent,

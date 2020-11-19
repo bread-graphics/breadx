@@ -73,24 +73,6 @@ pub fn pub_vis() -> syn::Visibility {
     })
 }
 
-/// Call a method.
-#[inline]
-pub fn method_call<I: Into<syn::Expr>, T: IntoIterator<Item = I>>(
-    name: syn::Path,
-    args: T,
-) -> syn::Expr {
-    syn::Expr::Call(syn::ExprCall {
-        attrs: vec![],
-        func: Box::new(syn::Expr::Path(syn::ExprPath {
-            attrs: vec![],
-            qself: None,
-            path: name,
-        })),
-        paren_token: Default::default(),
-        args: args.into_iter().map(|m| m.into()).collect(),
-    })
-}
-
 /// Get a field of an item.
 #[inline]
 pub fn item_field(name: Expr, fieldname: &str) -> syn::Expr {
@@ -102,12 +84,6 @@ pub fn item_field(name: Expr, fieldname: &str) -> syn::Expr {
     })
 }
 
-/// Get a field of self.
-#[inline]
-pub fn self_field(fieldname: &str) -> syn::Expr {
-    item_field(str_to_exprpath("self"), fieldname)
-}
-
 #[inline]
 pub fn derive_attrs(d: &[&'static str]) -> syn::Attribute {
     let mut tokens = String::from("(");
@@ -115,7 +91,7 @@ pub fn derive_attrs(d: &[&'static str]) -> syn::Attribute {
         tokens.push_str(de);
         tokens.push_str(", ");
     });
-    tokens.push_str(")");
+    tokens.push(')');
     syn::Attribute {
         pound_token: Default::default(),
         style: syn::AttrStyle::Outer,

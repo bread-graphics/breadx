@@ -24,7 +24,7 @@ impl<Conn: Connection> super::Display<Conn> {
         let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
 
         if bytes[0] == TYPE_REPLY {
-            log::info!("Received bytes of type REPLY");
+            log::debug!("Received bytes of type REPLY");
 
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
@@ -36,10 +36,10 @@ impl<Conn: Connection> super::Display<Conn> {
             self.pending_replies.insert(sequence as u64, bytes);
         } else if bytes[0] == TYPE_ERROR {
             // XCB has some convoluted machinery for errors
-            // thank god Rust has better error handling
+            // thank God Rust has better error handling
             return Err(crate::BreadError::from_x_error(bytes));
         } else {
-            log::info!("Received bytes of type EVENT");
+            log::debug!("Received bytes of type EVENT");
             // this is an event
             let event = Event::from_bytes(bytes)?;
             self.event_queue.push_back(event);
@@ -62,12 +62,9 @@ impl<Conn: Connection> super::Display<Conn> {
     // wait for bytes to appear
     #[inline]
     pub fn wait(&mut self) -> crate::Result {
-        log::debug!("Beginning wait...");
-
         // replies, errors, and events are all in units of 32 bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         self.connection.read_packet(&mut bytes)?;
-        log::debug!("Ending wait with 32 bytes");
 
         // in certain cases, we may have to read more bytes
         if let Some(ab) = additional_bytes(&bytes[..8]) {

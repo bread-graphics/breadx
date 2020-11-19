@@ -89,20 +89,6 @@ pub enum StructLike {
     Reply(Box<Lvl0State>),
 }
 
-impl StructLike {
-    /// Get the end tag we're waiting for.
-    #[inline]
-    pub fn end_tag(&self) -> &'static [u8] {
-        match self {
-            Self::Struct(_) => b"struct",
-            Self::Event(_, _) => b"event",
-            Self::Error(_, _) => b"error",
-            Self::Request(_, _, _) => b"request",
-            Self::Reply(_) => b"reply",
-        }
-    }
-}
-
 impl Lvl0State {
     /// Get the mutable reference to the base expression.
     #[inline]

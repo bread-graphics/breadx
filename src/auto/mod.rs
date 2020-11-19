@@ -52,7 +52,7 @@ pub fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<
 
     // pull items from the bytes vector and create elements
     let mut current_index = 0;
-    while current_index < len {
+    for _ in 0..len {
         let (item, sz) = T::from_bytes(&bytes[current_index..])?;
         items.push(item);
         current_index += sz;

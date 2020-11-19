@@ -23,7 +23,3 @@ impl Event {
         unimplemented!()
     }
 }
-
-pub trait EventType {
-    fn tycode() -> u32;
-}

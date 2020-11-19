@@ -1,0 +1,106 @@
+   Compiling breadx v0.1.0 (/home/jtnunley/Programming/Projects/breadx)
+warning: unused import: `cty::c_char`
+ --> src/auto/mod.rs:9:5
+  |
+9 | use cty::c_char;
+  |     ^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `tinyvec::TinyVec`
+  --> src/auto/mod.rs:10:5
+   |
+10 | use tinyvec::TinyVec;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `tinyvec::ArrayVec`
+ --> src/client_message_data.rs:6:5
+  |
+6 | use tinyvec::ArrayVec;
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `CreateWindowRequest`, `QueryExtensionRequest`, `Visualid`, `WindowClass`, `xc_misc::GetXidRangeRequest`
+ --> src/display/mod.rs:6:9
+  |
+6 |         xc_misc::GetXidRangeRequest,
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |         xproto::{
+8 |             CreateWindowRequest, QueryExtensionRequest, Setup, SetupRequest, Visualid, Window,
+  |             ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^                       ^^^^^^^^
+9 |             WindowClass,
+  |             ^^^^^^^^^^^
+
+warning: unused imports: `ToOwned`, `vec::Vec`
+  --> src/display/mod.rs:19:19
+   |
+19 |     borrow::{Cow, ToOwned},
+   |                   ^^^^^^^
+...
+22 |     vec::Vec,
+   |     ^^^^^^^^
+
+warning: unused import: `task::Waker`
+  --> src/display/mod.rs:28:5
+   |
+28 |     task::Waker,
+   |     ^^^^^^^^^^^
+
+warning: unused imports: `ArrayVec`, `tiny_vec`
+  --> src/display/mod.rs:31:15
+   |
+31 | use tinyvec::{tiny_vec, ArrayVec, TinyVec};
+   |               ^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `alloc::boxed::Box`
+  --> src/display/connection.rs:20:5
+   |
+20 | use alloc::boxed::Box;
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `boxed::Box`
+ --> src/display/name.rs:6:26
+  |
+6 | use alloc::{borrow::Cow, boxed::Box, format, string::String};
+  |                          ^^^^^^^^^^
+
+warning: unused import: `io::prelude::*`
+ --> src/display/name.rs:9:16
+  |
+9 | use std::{env, io::prelude::*, net, path::Path};
+  |                ^^^^^^^^^^^^^^
+
+warning: unused imports: `AsByteSequence`, `XID`
+  --> src/display/functions.rs:10:9
+   |
+10 |         AsByteSequence,
+   |         ^^^^^^^^^^^^^^
+11 |     },
+12 |     XidType, XID,
+   |              ^^^
+
+warning: unused import: `alloc::vec::Vec`
+  --> src/display/functions.rs:14:5
+   |
+14 | use alloc::vec::Vec;
+   |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `core::mem`
+ --> src/display/output.rs:5:5
+  |
+5 | use core::mem;
+  |     ^^^^^^^^^
+
+warning: unused import: `paramatizer::*`
+  --> src/lib.rs:30:16
+   |
+30 | pub(crate) use paramatizer::*;
+   |                ^^^^^^^^^^^^^^
+
+warning: `#[inline]` is ignored on function prototypes
+ --> src/util.rs:8:5
+  |
+8 |     #[inline]
+  |     ^^^^^^^^^
+  |
+  = note: `#[warn(unused_attributes)]` on by default
+

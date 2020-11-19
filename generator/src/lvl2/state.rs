@@ -236,13 +236,13 @@ impl Lvl2State {
                 opcode,
                 reply,
             }) => {
-                let (mut fields, mut se) = self.convert_fields(fields, StructVariant::Request);
+                let (fields, mut se) = self.convert_fields(fields, StructVariant::Request);
                 let (brief, desc) = (None, None);
                 let name = name.to_camel_case();
 
                 let reply = match reply {
                     Some(XStruct { name, fields, docs }) => {
-                        let (mut fields, se2) = self.convert_fields(fields, StructVariant::Reply);
+                        let (fields, se2) = self.convert_fields(fields, StructVariant::Reply);
                         let (brief, desc) = (None, None);
 
                         se.extend(se2);

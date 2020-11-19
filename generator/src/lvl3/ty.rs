@@ -96,11 +96,6 @@ impl Type {
 }
 
 #[inline]
-fn syn_container_type(name: &str, inner: &str) -> syn::Type {
-    syn_container_type_ty(name, str_to_ty(inner))
-}
-
-#[inline]
 fn syn_container_type_ty(name: &str, inner: syn::Type) -> syn::Type {
     syn::Type::Path(syn::TypePath {
         qself: None,

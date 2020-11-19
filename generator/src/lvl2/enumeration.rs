@@ -40,7 +40,7 @@ pub enum EnumRepr {
 pub type EnumReprGenerator = Box<dyn FnOnce(Type) -> EnumRepr>;
 
 /// Create a new EnumReprGenerator from a level 1 enum.
-pub fn create_generator(state: &Lvl2State, mut lvl1: Lvl1Enum) -> (String, EnumReprGenerator) {
+pub fn create_generator(state: &Lvl2State, lvl1: Lvl1Enum) -> (String, EnumReprGenerator) {
     let matching_name = lvl1.name.clone();
     let capsname = lvl1.name.to_uppercase();
 

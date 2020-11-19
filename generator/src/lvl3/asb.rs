@@ -32,8 +32,8 @@ impl Asb {
     pub fn to_syn_item(self, tyname: &str) -> Vec<syn::Item> {
         let Self {
             is_none,
-            mut as_bytes_stmts,
-            mut from_bytes_stmts,
+            as_bytes_stmts,
+            from_bytes_stmts,
             size,
         } = self;
 

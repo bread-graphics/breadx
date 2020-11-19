@@ -2,7 +2,7 @@
 
 use super::{
     syn_util::{
-        int_litexpr_int, item_field, method_call, self_field, str_to_exprpath, str_to_path,
+        int_litexpr_int, item_field, str_to_exprpath, str_to_path,
         str_to_pathseg,
     },
     Type,
@@ -107,16 +107,6 @@ impl Statement for PadIndexStatement {
             Default::default(),
         )]
     }
-}
-
-#[inline]
-fn block_len_plus_equal(e: syn::Expr) -> syn::Expr {
-    syn::Expr::AssignOp(syn::ExprAssignOp {
-        attrs: vec![],
-        left: Box::new(str_to_exprpath("block_len")),
-        op: syn::BinOp::AddEq(Default::default()),
-        right: Box::new(e),
-    })
 }
 
 #[inline]

@@ -3,20 +3,7 @@
 use core::iter;
 use tinyvec::{Array, TinyVec};
 
-// equality isn't supported in where clauses yet
-pub(crate) trait IsAU8: Default + Clone {
-    #[inline]
-    fn zero() -> Self;
-}
-
-impl IsAU8 for u8 {
-    #[inline]
-    fn zero() -> Self {
-        0
-    }
-}
-
 #[inline]
-pub(crate) fn cycled_zeroes<U: IsAU8, A: Array<Item = U>>(len: usize) -> TinyVec<A> {
-    iter::once(U::zero()).cycle().take(len).collect()
+pub(crate) fn cycled_zeroes<A: Array<Item = u8>>(len: usize) -> TinyVec<A> {
+    iter::once(0).cycle().take(len).collect()
 }

@@ -309,7 +309,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
         mut name,
         brief,
         desc,
-        mut fields,
+        fields,
         special,
     } = s;
     let mut traits = vec![];
@@ -335,8 +335,8 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
                 traits.push(Trait::Request(
                     opcode,
                     match reply {
-                        Some(box Lvl2Struct { ref name, .. }) => {
-                            Type::Basic(format!("{}Reply", &name).into())
+                        Some(ref reply) => {
+                            Type::Basic(format!("{}Reply", &reply.name).into())
                         }
                         None => Type::Tuple(vec![]),
                     },

@@ -23,7 +23,6 @@ fn main() {
         )
         .unwrap();
     window.map(&mut conn).unwrap();
-    println!("{:?}", &conn);
 
     loop {
         let ev = conn.wait_for_event().unwrap();
