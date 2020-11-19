@@ -338,6 +338,7 @@ impl<Conn: Connection> Display<Conn> {
     /// Wait for an event.
     #[inline]
     pub fn wait_for_event(&mut self) -> crate::Result<Event> {
+        log::debug!("Beginning event wait...");
         loop {
             match self.event_queue.pop_front() {
                 Some(event) => break Ok(event),

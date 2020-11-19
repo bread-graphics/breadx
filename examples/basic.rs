@@ -4,7 +4,7 @@ use breadx::{DisplayConnection, WindowClass};
 use std::env;
 
 fn main() {
-    env::set_var("RUST_LOG", "breadx=trace");
+    env::set_var("RUST_LOG", "breadx=debug");
     env_logger::init();
 
     let mut conn = DisplayConnection::create(None, None).unwrap();

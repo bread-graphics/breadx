@@ -1727,6 +1727,7 @@ The specified window does not exist.
   </request>
 
   <request name="MapWindow" opcode="8">
+    <pad bytes="1" />
     <field type="WINDOW" name="window" />
     <doc>
       <brief>Makes a window visible</brief>
