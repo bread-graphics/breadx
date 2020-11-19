@@ -21,12 +21,7 @@ use alloc::{
     collections::VecDeque,
     vec::Vec,
 };
-use core::{
-    fmt, iter,
-    marker::PhantomData,
-    mem,
-    task::Waker,
-};
+use core::{fmt, iter, marker::PhantomData, mem, task::Waker};
 use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
@@ -268,7 +263,6 @@ impl<Conn: Connection> Display<Conn> {
         // read in the rest of the bytes
         let mut length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
-        log::debug!("Setup is of length {}", length);
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
 
@@ -294,12 +288,13 @@ impl<Conn: Connection> Display<Conn> {
         let setup = Self::setup(auth);
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let len = setup.as_bytes(&mut bytes);
+        bytes.truncate(len);
         self.connection.send_packet_async(&bytes[0..len]).await?;
-        let mut bytes: TinyVec<[u8; 8]> = cycled_zeroes(8);
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
         self.connection.read_packet_async(&mut bytes).await?;
 
         match bytes[0] {
-            0 | 2 => return Err(crate::Error::FailedToConnect),
+            0 | 2 => return Err(crate::BreadError::FailedToConnect),
             _ => (),
         }
 
@@ -309,10 +304,17 @@ impl<Conn: Connection> Display<Conn> {
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet_async(&mut bytes[8..]).await?;
 
-        self.setup = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::Error::BadObjectRead(Some("Setup")))?
-            .0;
+        let (setup, slen) = Setup::from_bytes(&bytes)
+            .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
+        self.setup = setup;
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
+
+        log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
+        log::debug!("resource_id_mask is {:#032b}", self.setup.resource_id_mask);
+        log::debug!(
+            "resource_id inc. is {:#032b}",
+            self.setup.resource_id_mask & self.setup.resource_id_mask.wrapping_neg()
+        );
 
         Ok(())
     }
@@ -383,4 +385,3 @@ impl DisplayConnection {
         Self::from_connection_async(connection, auth_info).await
     }
 }
-

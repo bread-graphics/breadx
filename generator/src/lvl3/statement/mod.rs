@@ -1,10 +1,7 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{
-        int_litexpr_int, item_field, str_to_exprpath, str_to_path,
-        str_to_pathseg,
-    },
+    syn_util::{int_litexpr_int, item_field, str_to_exprpath, str_to_path, str_to_pathseg},
     Type,
 };
 use crate::lvl2::{Expression, MaybeString, UseCondition};

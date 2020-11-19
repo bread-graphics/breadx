@@ -90,7 +90,6 @@ impl AsByteSequence for GetXidRangeRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += 1;
         index += self.start_id.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
         index
@@ -104,7 +103,6 @@ impl AsByteSequence for GetXidRangeRequest {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 1;
         let (start_id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -121,7 +119,7 @@ impl AsByteSequence for GetXidRangeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + 1 + self.length.size() + 1 + self.start_id.size() + self.count.size()
+        self.req_type.size() + 1 + self.length.size() + self.start_id.size() + self.count.size()
     }
 }
 impl Request for GetXidRangeRequest {

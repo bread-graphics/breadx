@@ -335,9 +335,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
                 traits.push(Trait::Request(
                     opcode,
                     match reply {
-                        Some(ref reply) => {
-                            Type::Basic(format!("{}Reply", &reply.name).into())
-                        }
+                        Some(ref reply) => Type::Basic(format!("{}Reply", &reply.name).into()),
                         None => Type::Tuple(vec![]),
                     },
                 ));

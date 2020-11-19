@@ -5,7 +5,6 @@ use alloc::{
     vec::Vec,
 };
 use core::mem;
-use cstr_core::CString;
 use cty::c_char;
 use tinyvec::TinyVec;
 
@@ -68,29 +67,18 @@ pub fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
 
     let chars: Vec<u8> = bytes.iter().take(len).copied().collect();
 
-    // convert this vector to the equivalent CString item
-    let cstr: CString = match CString::new(chars) {
-        Ok(cstr) => cstr,
-        Err(e) => {
-            // strip all zeroes and try again
-            let mut chars = e.into_vec();
-            chars.retain(|x| *x != 0);
-            CString::new(chars).ok()?
-        }
-    };
-
-    // convert the cstring into a real string
-    match cstr.into_string() {
+    // convert bytes into a real string
+    match String::from_utf8(chars) {
         Ok(s) => Some((s, len)),
         Err(estr) => {
             log::warn!("Encountered invalid UTF-8, redoing with substitution.");
-            let mut cstr = estr.into_cstring().into_bytes();
+            let mut cstr = estr.into_bytes();
             cstr.iter_mut().for_each(|b| {
                 if *b > 127 {
                     *b = b'?';
                 }
             });
-            Some((CString::new(cstr).ok()?.into_string().ok()?, len as usize))
+            Some((String::from_utf8(cstr).ok()?, len as usize))
         }
     }
 }

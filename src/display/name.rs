@@ -343,7 +343,7 @@ impl<'a> XConnection<'a> {
         } = self;
         let host = match host {
             Some(host) => host,
-            None => return Err(crate::Error::UnableToOpenConnection),
+            None => return Err(crate::BreadError::UnableToOpenConnection),
         };
 
         unimplemented!()

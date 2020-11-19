@@ -62,6 +62,7 @@ impl<Conn: Connection> super::Display<Conn> {
     // wait for bytes to appear
     #[inline]
     pub fn wait(&mut self) -> crate::Result {
+        log::debug!("Running wait cycle");
         // replies, errors, and events are all in units of 32 bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         self.connection.read_packet(&mut bytes)?;

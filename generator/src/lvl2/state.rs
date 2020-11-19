@@ -148,17 +148,29 @@ impl Lvl2State {
         let mut fields = fields
             .into_iter()
             .enumerate()
-            .flat_map(|(i, f)| {
+            .filter_map(|(i, f)| {
                 let mut resolution = None;
                 let res = StructureItem::from_lvl1(f, &mut resolution);
+
+                // if the first element is a padding item, ignore it
+                if i == 0 && matches!(variant, StructVariant::Request) {
+                    if res
+                        .iter()
+                        .any(|s| matches!(s, StructureItem::Padding { .. }))
+                    {
+                        return None;
+                    }
+                }
+
                 if let Some((idname, ty)) = resolution {
                     if let Some(gen) = self.unresolved_enums.remove(&idname) {
                         side_effect_enums
                             .push(Item::Enum((gen)(Type::BasicType(enum_repr_conv(ty)))));
                     }
                 }
-                res.into_iter().map(move |r| (i, r))
+                Some(res.into_iter().map(move |r| (i, r)))
             })
+            .flatten()
             .map(|(i, mut f)| {
                 if let StructureItem::List(ref mut l) = f {
                     if let Some(b) = align_indices.get(&i) {

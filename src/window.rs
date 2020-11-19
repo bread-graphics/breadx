@@ -26,7 +26,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn map_async<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
-        let mw = MapWindowRequest { window: *self };
+        let mw = MapWindowRequest { window: *self, ..Default::default() };
         let tok = dpy.send_request_async(mw).await?;
         dpy.resolve_request_async(tok).await
     }
