@@ -35,26 +35,19 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
     });
 
     // secondly, if the first field has a size of one, we could potentially optimize it
-    let opt_field = if let Some(StructureItem::Field(Field {
-        ty: Type::BasicType(ref ty),
-        ..
-    })) = fields.get(0)
-    {
-        if let "bool" | "u8" | "char" | "card8" = ty.to_lowercase().as_str() {
-            Some(fields.remove(0))
+    let opt_field =
+        if let StructVariant::Request | StructVariant::Reply | StructVariant::Event = variant {
+            if fields.is_empty() {
+                Some(StructureItem::Padding { bytes: 1 })
+            } else {
+                Some(fields.remove(0))
+            }
         } else {
             None
-        }
-    } else {
-        None
-    };
+        };
 
     match variant {
-        StructVariant::No => {
-            if let Some(opt_field) = opt_field {
-                fields.insert(0, opt_field);
-            }
-        }
+        StructVariant::No => (),
         StructVariant::Reply => {
             let header: ArrayVec<[StructureItem; 4]> = ArrayVec::from([
                 // type field, this is always X_Reply
@@ -64,11 +57,7 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
                     ..Default::default()
                 }),
                 // either a padding field or the optimized byte
-                if let Some(opt_field) = opt_field {
-                    opt_field
-                } else {
-                    StructureItem::Padding { bytes: 1 }
-                },
+                opt_field.unwrap(),
                 // sequence number
                 StructureItem::Field(Field {
                     name: "sequence".to_string(),
@@ -86,17 +75,26 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
             *fields = header.into_iter().chain(f.into_iter()).collect();
         }
         StructVariant::Event => {
-            // add four bytes of padding to the front
-            if let Some(opt_field) = opt_field {
-                fields.insert(0, opt_field);
-            }
-
-            fields.insert(0, StructureItem::Padding { bytes: 4 });
+            let header: ArrayVec<[StructureItem; 3]> = ArrayVec::from([
+                // type field, as always
+                StructureItem::Field(Field {
+                    name: "event_type".to_string(),
+                    ty: Type::BasicType("u8".into()),
+                    ..Default::default()
+                }),
+                opt_field.unwrap(),
+                // sequence number
+                // sequence number
+                StructureItem::Field(Field {
+                    name: "sequence".to_string(),
+                    ty: Type::BasicType("u16".into()),
+                    ..Default::default()
+                }),
+            ]);
+            let f = mem::take(fields);
+            *fields = header.into_iter().chain(f.into_iter()).collect();
         }
         StructVariant::Error => {
-            if let Some(opt_field) = opt_field {
-                fields.insert(0, opt_field);
-            }
             fields.insert(
                 0,
                 StructureItem::Field(Field {
@@ -147,11 +145,7 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
                     ..Default::default()
                 }),
                 // either the optimized data or a byte of padding
-                if let Some(opt_field) = opt_field {
-                    opt_field
-                } else {
-                    StructureItem::Padding { bytes: 1 }
-                },
+                opt_field.unwrap(),
                 // length of the request
                 StructureItem::Field(Field {
                     name: "length".into(),

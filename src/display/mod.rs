@@ -29,7 +29,7 @@ use core::{
     fmt, iter,
     marker::PhantomData,
     mem,
-    num::{NonZeroU16, NonZeroU64},
+    num::{NonZeroU16, NonZeroU32, NonZeroU64},
     task::Waker,
 };
 use hashbrown::HashMap;
@@ -82,6 +82,9 @@ pub struct Display<Conn> {
 
     // output variables
     request_number: NonZeroU64,
+
+    // store the interned atoms
+    pub(crate) wm_protocols_atom: Option<NonZeroU32>,
 }
 
 /// A cookie for a request.
@@ -250,6 +253,7 @@ impl<Conn: Connection> Display<Conn> {
             pending_requests: VecDeque::new(),
             pending_replies: HashMap::new(),
             request_number: NonZeroU64::new(1).unwrap(),
+            wm_protocols_atom: None,
         }
     }
 

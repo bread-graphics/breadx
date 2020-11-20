@@ -173,6 +173,7 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     /// Intern an atom, async redox. See function `intern_atom` for more information.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn intern_atom_async(
         &mut self,
@@ -195,6 +196,7 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     /// Intern an atom, but try to resolve the request immediately, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn intern_atom_immediate_async(
         &mut self,

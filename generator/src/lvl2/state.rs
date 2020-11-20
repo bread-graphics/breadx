@@ -152,16 +152,6 @@ impl Lvl2State {
                 let mut resolution = None;
                 let res = StructureItem::from_lvl1(f, &mut resolution);
 
-                // if the first element is a padding item, ignore it
-                if i == 0 && matches!(variant, StructVariant::Request) {
-                    if res
-                        .iter()
-                        .any(|s| matches!(s, StructureItem::Padding { .. }))
-                    {
-                        return None;
-                    }
-                }
-
                 if let Some((idname, ty)) = resolution {
                     if let Some(gen) = self.unresolved_enums.remove(&idname) {
                         side_effect_enums

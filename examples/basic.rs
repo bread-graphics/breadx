@@ -1,7 +1,10 @@
 // MIT/Apache2 License
 
-use breadx::{CreateWindowParameters, DisplayConnection, EventMask, WindowClass, BreadError};
-use std::env;
+use breadx::{
+    event::Event, BreadError, CreateWindowParameters, DisplayConnection, EventMask, WindowClass,
+    XidType,
+};
+use std::{env, process};
 
 fn main() {
     env::set_var("RUST_LOG", "breadx=debug");
@@ -33,9 +36,15 @@ fn main() {
         .unwrap();
 
     window.map(&mut conn).unwrap();
+    window.set_title(&mut conn, "breadx Example").unwrap();
 
     // set up an exit atom
-    let wm_delete_window = conn.intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false).unwrap();
+    let wm_delete_window = conn
+        .intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false)
+        .unwrap();
+    window
+        .set_wm_protocols(&mut conn, &[wm_delete_window])
+        .unwrap();
 
     loop {
         let ev = match conn.wait_for_event() {
@@ -43,8 +52,19 @@ fn main() {
             Err(BreadError::ClosedConnection) => break,
             Err(e) => {
                 eprintln!("Program closed with error: {:?}", e);
-                break;
+                process::exit(1);
             }
         };
+
+        println!("{:?}", &ev);
+
+        match ev {
+            Event::ClientMessage(cme) => {
+                if cme.data.longs()[0] == wm_delete_window.xid() {
+                    process::exit(0);
+                }
+            }
+            _ => (),
+        }
     }
 }

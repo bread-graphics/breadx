@@ -16,9 +16,9 @@ use tinyvec::TinyVec;
 pub(crate) mod prelude {
     pub(crate) use super::{
         buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
-        AsByteSequence,
+        AsByteSequence, Error, Event,
     };
-    pub use crate::{client_message_data::ClientMessageData, Error, Event, Request, XidType, XID};
+    pub use crate::{client_message_data::ClientMessageData, Request, XidType, XID};
     pub use alloc::{string::String, vec::Vec};
     pub use cty::c_char;
     pub use tinyvec::TinyVec;
@@ -29,7 +29,7 @@ pub(crate) mod prelude {
     pub type Int8 = i8;
     pub type Int16 = i16;
     pub type Int32 = i32;
-    pub type Void = u32;
+    pub type Void = u8;
 }
 
 /// Internal use helper trait. This represents an item that can be converted to and from a series
@@ -42,6 +42,16 @@ pub trait AsByteSequence: Sized {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize;
     /// Convert a sequence of bytes into this item.
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)>;
+}
+
+/// An error.
+pub trait Error: AsByteSequence {
+    const OPCODE: u8;
+}
+
+/// An event.
+pub trait Event: AsByteSequence {
+    const OPCODE: u8;
 }
 
 /// Internal use helper functions to build a vector of elements from a pointer to the bytes and the

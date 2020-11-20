@@ -26,6 +26,7 @@ pub mod xid;
 pub use auth_info::*;
 pub use display::*;
 pub use error::*;
+pub use event::Event;
 pub use window::*;
 
 pub(crate) use paramatizer::*;
@@ -43,13 +44,3 @@ pub trait Request: auto::AsByteSequence {
 pub use xid::{XidType, XID};
 
 pub use auto::xproto::{EventMask, Visualid, Window, WindowClass};
-
-/// An error.
-pub trait Error: auto::AsByteSequence {
-    const OPCODE: u8;
-}
-
-/// An event.
-pub trait Event: auto::AsByteSequence {
-    const OPCODE: u8;
-}

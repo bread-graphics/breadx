@@ -72,7 +72,7 @@ impl AsByteSequence for ClientMessageData {
 
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        if bytes.len() <= BYTE_LEN {
+        if bytes.len() < BYTE_LEN {
             None
         } else {
             let mut res: [u32; LONG_LEN] = [0; LONG_LEN];
