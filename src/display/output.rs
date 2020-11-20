@@ -14,6 +14,7 @@ impl<Conn: Connection> super::Display<Conn> {
         // write to bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(req.size());
         let len = req.as_bytes(&mut bytes);
+        log::debug!("Request has bytes {:?}", &bytes);
 
         // First byte is opcode
         // Second byte is minor opcode (ignored for now)
