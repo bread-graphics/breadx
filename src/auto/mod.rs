@@ -202,8 +202,8 @@ macro_rules! impl_fundamental_num {
 
             #[inline]
             fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-                let slice_with_singular_number = bytemuck::cast_slice_mut::<u8, $t>(&mut bytes[0..$sz]);
-                slice_with_singular_number[0] = *self;
+                let bytes_array = self.to_ne_bytes();
+                (&mut bytes[0..$sz]).copy_from_slice(&bytes_array);
                 $sz
             }
 
@@ -220,8 +220,9 @@ macro_rules! impl_fundamental_num {
                     }
                 }
 
-                let slice_with_singular_number = bytemuck::cast_slice::<u8, $t>(&bytes[0..$sz]);
-                Some((slice_with_singular_number[0], $sz))
+                let mut bytes_array: [u8; $sz] = [0; $sz];
+                bytes_array.copy_from_slice(&bytes[0..$sz]);
+                Some((Self::from_ne_bytes(bytes_array), $sz))
             }
         }
     )*}

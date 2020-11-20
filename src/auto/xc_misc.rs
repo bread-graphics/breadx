@@ -11,8 +11,6 @@ pub struct GetVersionRequest {
     pub length: u16,
     pub client_major_version: Card16,
     pub client_minor_version: Card16,
-    pub server_major_version: Card16,
-    pub server_minor_version: Card16,
 }
 impl GetVersionRequest {}
 impl AsByteSequence for GetVersionRequest {
@@ -24,9 +22,6 @@ impl AsByteSequence for GetVersionRequest {
         index += self.length.as_bytes(&mut bytes[index..]);
         index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.server_major_version.as_bytes(&mut bytes[index..]);
-        index += self.server_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -42,19 +37,12 @@ impl AsByteSequence for GetVersionRequest {
         index += sz;
         let (client_minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 1;
-        let (server_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (server_minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
         Some((
             GetVersionRequest {
                 req_type: req_type,
                 length: length,
                 client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
-                server_major_version: server_major_version,
-                server_minor_version: server_minor_version,
             },
             index,
         ))
@@ -66,21 +54,76 @@ impl AsByteSequence for GetVersionRequest {
             + self.length.size()
             + self.client_major_version.size()
             + self.client_minor_version.size()
+    }
+}
+impl Request for GetVersionRequest {
+    const OPCODE: u8 = 0;
+    type Reply = GetVersionReply;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GetVersionReply {
+    pub reply_type: u8,
+    pub sequence: u16,
+    pub length: u32,
+    pub server_major_version: Card16,
+    pub server_minor_version: Card16,
+}
+impl GetVersionReply {}
+impl AsByteSequence for GetVersionReply {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.reply_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.server_major_version.as_bytes(&mut bytes[index..]);
+        index += self.server_minor_version.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GetVersionReply from byte buffer");
+        let (reply_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (server_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (server_minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            GetVersionReply {
+                reply_type: reply_type,
+                sequence: sequence,
+                length: length,
+                server_major_version: server_major_version,
+                server_minor_version: server_minor_version,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.reply_type.size()
+            + 1
+            + self.sequence.size()
+            + self.length.size()
             + 1
             + self.server_major_version.size()
             + self.server_minor_version.size()
     }
 }
-impl Request for GetVersionRequest {
-    const OPCODE: u8 = 0;
-    type Reply = ();
-}
 #[derive(Clone, Debug, Default)]
 pub struct GetXidRangeRequest {
     pub req_type: u8,
     pub length: u16,
-    pub start_id: Card32,
-    pub count: Card32,
 }
 impl GetXidRangeRequest {}
 impl AsByteSequence for GetXidRangeRequest {
@@ -90,8 +133,6 @@ impl AsByteSequence for GetXidRangeRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.start_id.as_bytes(&mut bytes[index..]);
-        index += self.count.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -103,13 +144,65 @@ impl AsByteSequence for GetXidRangeRequest {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
+        Some((
+            GetXidRangeRequest {
+                req_type: req_type,
+                length: length,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.req_type.size() + 1 + self.length.size()
+    }
+}
+impl Request for GetXidRangeRequest {
+    const OPCODE: u8 = 1;
+    type Reply = GetXidRangeReply;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GetXidRangeReply {
+    pub reply_type: u8,
+    pub sequence: u16,
+    pub length: u32,
+    pub start_id: Card32,
+    pub count: Card32,
+}
+impl GetXidRangeReply {}
+impl AsByteSequence for GetXidRangeReply {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.reply_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.start_id.as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GetXidRangeReply from byte buffer");
+        let (reply_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
         let (start_id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
-            GetXidRangeRequest {
-                req_type: req_type,
+            GetXidRangeReply {
+                reply_type: reply_type,
+                sequence: sequence,
                 length: length,
                 start_id: start_id,
                 count: count,
@@ -119,19 +212,20 @@ impl AsByteSequence for GetXidRangeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + 1 + self.length.size() + self.start_id.size() + self.count.size()
+        self.reply_type.size()
+            + 1
+            + self.sequence.size()
+            + self.length.size()
+            + 1
+            + self.start_id.size()
+            + self.count.size()
     }
-}
-impl Request for GetXidRangeRequest {
-    const OPCODE: u8 = 1;
-    type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
 pub struct GetXidListRequest {
     pub req_type: u8,
     pub length: u16,
     pub count: Card32,
-    pub ids: Vec<Card32>,
 }
 impl GetXidListRequest {}
 impl AsByteSequence for GetXidListRequest {
@@ -142,12 +236,6 @@ impl AsByteSequence for GetXidListRequest {
         index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += (self.ids.len() as Card32).as_bytes(&mut bytes[index..]);
-        index += 20;
-        let block_len: usize = vector_as_bytes(&self.ids, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         index
     }
     #[inline]
@@ -161,6 +249,59 @@ impl AsByteSequence for GetXidListRequest {
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
+        Some((
+            GetXidListRequest {
+                req_type: req_type,
+                length: length,
+                count: count,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.req_type.size() + 1 + self.length.size() + self.count.size()
+    }
+}
+impl Request for GetXidListRequest {
+    const OPCODE: u8 = 2;
+    type Reply = GetXidListReply;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GetXidListReply {
+    pub reply_type: u8,
+    pub sequence: u16,
+    pub length: u32,
+    pub ids: Vec<Card32>,
+}
+impl GetXidListReply {}
+impl AsByteSequence for GetXidListReply {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.reply_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += (self.ids.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 20;
+        let block_len: usize = vector_as_bytes(&self.ids, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GetXidListReply from byte buffer");
+        let (reply_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        index += sz;
         index += 1;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -170,10 +311,10 @@ impl AsByteSequence for GetXidListRequest {
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
-            GetXidListRequest {
-                req_type: req_type,
+            GetXidListReply {
+                reply_type: reply_type,
+                sequence: sequence,
                 length: length,
-                count: count,
                 ids: ids,
             },
             index,
@@ -181,10 +322,10 @@ impl AsByteSequence for GetXidListRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size()
+        self.reply_type.size()
             + 1
+            + self.sequence.size()
             + self.length.size()
-            + self.count.size()
             + 1
             + ::core::mem::size_of::<Card32>()
             + 20
@@ -194,8 +335,4 @@ impl AsByteSequence for GetXidListRequest {
                 block_len + pad
             }
     }
-}
-impl Request for GetXidListRequest {
-    const OPCODE: u8 = 2;
-    type Reply = ();
 }

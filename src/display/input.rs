@@ -22,6 +22,7 @@ impl<Conn: Connection> super::Display<Conn> {
     fn process_bytes(&mut self, mut bytes: TinyVec<[u8; 32]>) -> crate::Result {
         // get the sequence number
         let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
+        log::trace!("Found response bytes: {}", &bytes);
 
         if bytes[0] == TYPE_REPLY {
             log::debug!("Received bytes of type REPLY");
@@ -33,7 +34,7 @@ impl<Conn: Connection> super::Display<Conn> {
                 _ => unreachable!(),
             };
 
-            self.pending_replies.insert(sequence as u64, bytes);
+            self.pending_replies.insert(sequence, bytes);
         } else if bytes[0] == TYPE_ERROR {
             // if it's all zeroes, the X connection has closed and the programmer
             // forgot to check for the close message
@@ -57,13 +58,13 @@ impl<Conn: Connection> super::Display<Conn> {
 
     // add an entry to the pending elements linked list
     #[inline]
-    pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
-        let pereq = PendingRequest {
+    pub(crate) fn expect_reply(&mut self, req: core::num::NonZeroU64, flags: PendingRequestFlags) {
+        /*        let pereq = PendingRequest {
             first_request: req,
             last_request: req,
             flags,
         };
-        self.pending_requests.push_back(pereq);
+        self.pending_requests.push_back(pereq);*/
     }
 
     // wait for bytes to appear

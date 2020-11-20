@@ -2,19 +2,30 @@
 
 use super::{Connection, RequestCookie};
 use crate::{util::cycled_zeroes, Request};
-use core::mem;
+use core::{iter, mem, num::NonZeroU64};
 use tinyvec::TinyVec;
 
 impl<Conn: Connection> super::Display<Conn> {
     #[inline]
-    fn encode_request<R: Request>(&mut self, req: R) -> (u64, TinyVec<[u8; 32]>) {
-        self.request_number += 1;
+    fn encode_request<R: Request>(&mut self, req: R) -> (NonZeroU64, TinyVec<[u8; 32]>) {
         let sequence = self.request_number;
+        self.request_number = NonZeroU64::new(self.request_number.get() + 1).unwrap();
 
         // write to bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(req.size());
-        let len = req.as_bytes(&mut bytes);
-        log::debug!("Request has bytes {:?}", &bytes);
+
+        let mut len = req.as_bytes(&mut bytes);
+        log::trace!("len is {} bytes long", len);
+
+        // pad to a multiple of four bytes if we can
+        let rem = len % 4;
+        if (rem != 0) {
+            let extend_by = 4 - rem;
+            bytes.extend(iter::once(0).cycle().take(extend_by));
+            len += extend_by;
+            debug_assert_eq!(len % 4, 0);
+            log::trace!("Extended length is now {}", len);
+        }
 
         // First byte is opcode
         // Second byte is minor opcode (ignored for now)
@@ -23,10 +34,14 @@ impl<Conn: Connection> super::Display<Conn> {
         bytes[0] = R::OPCODE;
 
         let xlen = len / 4;
+        log::trace!("xlen is {}", xlen);
         let len_bytes = xlen.to_ne_bytes();
         bytes[2] = len_bytes[0];
         bytes[3] = len_bytes[1];
+
         bytes.truncate(len);
+
+        log::trace!("Request has bytes {:?}", &bytes);
 
         self.expect_reply(sequence, Default::default());
 
@@ -35,11 +50,10 @@ impl<Conn: Connection> super::Display<Conn> {
 
     #[inline]
     pub fn send_request_internal<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
-        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(req);
-        log::debug!("Request has opcode {}", bytes[0]);
+        let (sequence, bytes): (NonZeroU64, TinyVec<[u8; 32]>) = self.encode_request(req);
 
         self.connection.send_packet(&bytes)?;
-        Ok(RequestCookie::from_sequence(sequence))
+        Ok(RequestCookie::from_sequence(sequence.get()))
     }
 
     #[cfg(feature = "async")]
@@ -51,6 +65,6 @@ impl<Conn: Connection> super::Display<Conn> {
         let (sequence, bytes) = self.encode_request(req);
 
         self.connection.send_packet_async(&bytes).await?;
-        Ok(RequestCookie::from_sequence(sequence))
+        Ok(RequestCookie::from_sequence(sequence.get()))
     }
 }

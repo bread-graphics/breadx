@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use breadx::{CreateWindowParameters, DisplayConnection, EventMask, WindowClass};
+use breadx::{CreateWindowParameters, DisplayConnection, EventMask, WindowClass, BreadError};
 use std::env;
 
 fn main() {
@@ -31,11 +31,16 @@ fn main() {
             cwp,
         )
         .unwrap();
+
     window.map(&mut conn).unwrap();
+
+    // set up an exit atom
+    let wm_delete_window = conn.intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false).unwrap();
 
     loop {
         let ev = match conn.wait_for_event() {
             Ok(ev) => ev,
+            Err(BreadError::ClosedConnection) => break,
             Err(e) => {
                 eprintln!("Program closed with error: {:?}", e);
                 break;

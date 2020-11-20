@@ -708,6 +708,18 @@ impl Lvl0State {
                             let base2 = Box::new(Self::SwitchField(name, vec![], None, base1));
                             *self = Self::Expr(ExprPurpose::Switch, None, base2);
                         }
+                        b"reply" => {
+                            // begin reply generation, if this is a request
+                            if let Self::StructLike(StructLike::Request(_, _, _), _, _) = self {
+                                // take self and box it
+                                let base = Box::new(mem::take(self));
+                                // create a new reply
+                                *self =
+                                    Self::StructLike(StructLike::Reply(base), tiny_vec![], None);
+                            } else {
+                                log::warn!("Found reply in non-request item");
+                            }
+                        }
                         b"doc" => {
                             // begin documentation mode
                             let mut base = mem::replace(

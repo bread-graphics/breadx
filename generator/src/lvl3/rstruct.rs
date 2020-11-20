@@ -316,7 +316,6 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
 
     // special-dependent stuff
     let other: Option<RStruct> = if is_reply {
-        name = format!("{}Reply", name).into_boxed_str();
         None
     } else {
         match special {
@@ -332,16 +331,18 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
                 None
             }
             StructSpecial::Request(opcode, reply) => {
+                let reply_name = format!("{}Reply", &name);
                 traits.push(Trait::Request(
                     opcode,
                     match reply {
-                        Some(ref reply) => Type::Basic(format!("{}Reply", &reply.name).into()),
+                        Some(ref reply) => Type::Basic(reply_name.clone().into()),
                         None => Type::Tuple(vec![]),
                     },
                 ));
                 name = format!("{}Request", name).into_boxed_str();
                 match reply {
-                    Some(reply) => {
+                    Some(mut reply) => {
+                        reply.name = reply_name.into_boxed_str();
                         let (reply, _) = from_lvl2(*reply, true);
                         Some(reply)
                     }

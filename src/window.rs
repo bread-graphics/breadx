@@ -14,8 +14,6 @@ impl Window {
             ..Default::default()
         };
 
-        log::debug!("Mapping: {:?}", &mw);
-
         log::debug!("Sending MapWindowRequest to server");
         let tok = dpy.send_request(mw)?;
         defer!(log::debug!("Sent MapWindowRequest to server"));

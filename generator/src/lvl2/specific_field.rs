@@ -40,7 +40,7 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
         ..
     })) = fields.get(0)
     {
-        if let "u8" | "char" | "Card8" = ty.deref() {
+        if let "bool" | "u8" | "char" | "card8" = ty.to_lowercase().as_str() {
             Some(fields.remove(0))
         } else {
             None
@@ -59,7 +59,7 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
             let header: ArrayVec<[StructureItem; 4]> = ArrayVec::from([
                 // type field, this is always X_Reply
                 StructureItem::Field(Field {
-                    name: "ty".to_string(),
+                    name: "reply_type".to_string(),
                     ty: Type::BasicType("u8".into()),
                     ..Default::default()
                 }),

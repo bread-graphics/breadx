@@ -1,17 +1,17 @@
 // MIT/Apache2 License
 
-use super::{Connection, Display};
+use super::{Connection, Display, RequestCookie};
 use crate::{
     auto::{
         xproto::{
-            BackingStore, Colormap, CreateWindowRequest, Cursor, Cw, EventMask, Gravity, Pixmap,
-            Visualid, Window, WindowClass,
+            Atom, BackingStore, Colormap, CreateWindowRequest, Cursor, Cw, EventMask, Gravity,
+            InternAtomReply, InternAtomRequest, Pixmap, Visualid, Window, WindowClass,
         },
         AsByteSequence,
     },
     XidType, XID,
 };
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 crate::create_paramaterizer! {
     pub struct CreateWindowParameters : (Cw, CreateWindowRequest) {
@@ -147,5 +147,61 @@ impl<Conn: Connection> Display<Conn> {
         let tok = self.send_request_async(cw).await?;
         self.resolve_request_async(tok).await?;
         Ok(wid)
+    }
+
+    /// Create an InternAtomRequest for our use.
+    #[inline]
+    fn intern_atom_request(name: String, exists: bool) -> InternAtomRequest {
+        InternAtomRequest {
+            only_if_exists: exists,
+            name,
+            ..Default::default()
+        }
+    }
+
+    /// Intern a string and get a corresponding atom for that string.
+    #[inline]
+    pub fn intern_atom(
+        &mut self,
+        name: String,
+        only_if_exists: bool,
+    ) -> crate::Result<RequestCookie<InternAtomRequest>> {
+        log::debug!("Sending InternAtomRequest to server");
+        let tok = self.send_request(Self::intern_atom_request(name, only_if_exists))?;
+        log::debug!("Sent InternAtomRequest to server");
+        Ok(tok)
+    }
+
+    /// Intern an atom, async redox. See function `intern_atom` for more information.
+    #[inline]
+    pub async fn intern_atom_async(
+        &mut self,
+        name: String,
+        only_if_exists: bool,
+    ) -> crate::Result<RequestCookie<InternAtomRequest>> {
+        self.send_request_async(Self::intern_atom_request(name, only_if_exists))
+            .await
+    }
+
+    /// Intern an atom, but try to resolve the request immediately.
+    #[inline]
+    pub fn intern_atom_immediate(
+        &mut self,
+        name: String,
+        only_if_exists: bool,
+    ) -> crate::Result<Atom> {
+        let r = self.intern_atom(name, only_if_exists)?;
+        Ok(self.resolve_request(r)?.atom)
+    }
+
+    /// Intern an atom, but try to resolve the request immediately, async redox.
+    #[inline]
+    pub async fn intern_atom_immediate_async(
+        &mut self,
+        name: String,
+        only_if_exists: bool,
+    ) -> crate::Result<Atom> {
+        let r = self.intern_atom_async(name, only_if_exists).await?;
+        Ok(self.resolve_request_async(r).await?.atom)
     }
 }

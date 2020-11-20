@@ -25,7 +25,13 @@ use alloc::{
     collections::VecDeque,
     vec::Vec,
 };
-use core::{fmt, iter, marker::PhantomData, mem, task::Waker};
+use core::{
+    fmt, iter,
+    marker::PhantomData,
+    mem,
+    num::{NonZeroU16, NonZeroU64},
+    task::Waker,
+};
 use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
@@ -72,20 +78,20 @@ pub struct Display<Conn> {
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
     pub(crate) pending_requests: VecDeque<input::PendingRequest>,
-    pub(crate) pending_replies: HashMap<u64, Box<[u8]>>,
+    pub(crate) pending_replies: HashMap<u16, Box<[u8]>>,
 
     // output variables
-    request_number: u64,
+    request_number: NonZeroU64,
 }
 
 /// A cookie for a request.
 ///
 /// Requests usually take time to resolve into replies. Therefore, the `Display::send_request` method returns
 /// the `RequestCookie`, which is later used to block (or await) for the request's eventual result.
-#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Default, Eq, Hash)]
 #[repr(transparent)]
 pub struct RequestCookie<R: Request> {
-    sequence: u64,
+    sequence: u16,
     _phantom: PhantomData<Option<R::Reply>>,
 }
 
@@ -93,7 +99,7 @@ impl<R: Request> RequestCookie<R> {
     #[inline]
     pub(crate) fn from_sequence(sequence: u64) -> Self {
         Self {
-            sequence,
+            sequence: sequence as u16, // truncate to lower bits
             _phantom: PhantomData,
         }
     }
@@ -188,6 +194,8 @@ impl<Conn: Connection> Display<Conn> {
         }
 
         loop {
+            log::trace!("Current replies: {:?}", &self.pending_replies);
+
             match self.pending_replies.remove(&token.sequence) {
                 Some(reply) => break Self::decode_reply::<R>(reply),
                 None => self.wait()?,
@@ -241,7 +249,7 @@ impl<Conn: Connection> Display<Conn> {
             event_queue: VecDeque::new(),
             pending_requests: VecDeque::new(),
             pending_replies: HashMap::new(),
-            request_number: 0,
+            request_number: NonZeroU64::new(1).unwrap(),
         }
     }
 
