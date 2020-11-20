@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use breadx::{DisplayConnection, WindowClass, EventMask, CreateWindowParameters};
+use breadx::{CreateWindowParameters, DisplayConnection, EventMask, WindowClass};
 use std::env;
 
 fn main() {
@@ -25,8 +25,8 @@ fn main() {
             None,
             0,
             0,
-            100,
-            100,
+            600,
+            400,
             0,
             cwp,
         )
@@ -34,6 +34,12 @@ fn main() {
     window.map(&mut conn).unwrap();
 
     loop {
-        let ev = conn.wait_for_event().unwrap();
+        let ev = match conn.wait_for_event() {
+            Ok(ev) => ev,
+            Err(e) => {
+                eprintln!("Program closed with error: {:?}", e);
+                break;
+            }
+        };
     }
 }
