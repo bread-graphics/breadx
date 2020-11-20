@@ -20,13 +20,15 @@ pub enum BreadError {
     BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
     ExtensionNotPresent(&'static str),
-    /// An errorp propogated by the X11 server.
+    /// An error propogated by the X11 server.
     XProtocol {
         error_code: ErrorCode,
         minor_code: u8,
         major_code: u8,
         sequence: u16,
     },
+    /// The X connection closed without telling us.
+    ClosedConnection,
 }
 
 impl BreadError {
@@ -80,6 +82,7 @@ impl fmt::Display for BreadError {
                 "An X11 error of type {} occurred on a request of opcode {}:{} and sequence {}",
                 error_code, major_code, minor_code, sequence
             ),
+            Self::ClosedConnection => f.write_str("The X connection closed without our end of the connection closing. Did you forget to listen for WM_DELTE_WINDOW?"),
             #[cfg(feature = "std")]
             Self::Io(i) => write!(f, "{}", i),
         }

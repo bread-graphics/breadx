@@ -47,10 +47,14 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: CreateWindowParameters,
+        mut props: CreateWindowParameters,
     ) -> CreateWindowRequest {
         const INHERITED_DEPTH: u8 = 0;
         const INHERITED_VISUAL: Visualid = 0;
+
+        if let None = props.background_pixel {
+            props.background_pixel = Some(self.default_white_pixel());
+        }
 
         let mut cwr = CreateWindowRequest {
             wid,
@@ -124,8 +128,7 @@ impl<Conn: Connection> Display<Conn> {
         height: u16,
         border_width: u16,
         props: CreateWindowParameters,
-    ) -> crate::Result<Window>
-    {
+    ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
         let cw = self.create_window_request(
             wid,

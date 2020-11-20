@@ -35,6 +35,13 @@ impl<Conn: Connection> super::Display<Conn> {
 
             self.pending_replies.insert(sequence as u64, bytes);
         } else if bytes[0] == TYPE_ERROR {
+            // if it's all zeroes, the X connection has closed and the programmer
+            // forgot to check for the close message
+            // we're fine to error out here
+            if !bytes.iter().copied().any(|x| x != 0) {
+                return Err(crate::BreadError::ClosedConnection);
+            }
+
             // XCB has some convoluted machinery for errors
             // thank God Rust has better error handling
             return Err(crate::BreadError::from_x_error(bytes));
@@ -61,7 +68,7 @@ impl<Conn: Connection> super::Display<Conn> {
 
     // wait for bytes to appear
     #[inline]
-    pub fn wait(&mut self) -> crate::Result {
+    pub(crate) fn wait(&mut self) -> crate::Result {
         log::debug!("Running wait cycle");
         // replies, errors, and events are all in units of 32 bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
@@ -84,7 +91,7 @@ impl<Conn: Connection> super::Display<Conn> {
     // wait for bytes to appear, async redox
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn wait_async(&mut self) -> crate::Result {
+    pub(crate) async fn wait_async(&mut self) -> crate::Result {
         // see above function for more information
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         self.connection.read_packet_async(&mut bytes).await?;

@@ -48,7 +48,10 @@ pub trait AsByteSequence: Sized {
 /// desired length.
 /// TODO: specialize this somewhat
 #[inline]
-pub(crate) fn vector_from_bytes<T: AsByteSequence>(bytes: &[u8], len: usize) -> Option<(Vec<T>, usize)> {
+pub(crate) fn vector_from_bytes<T: AsByteSequence>(
+    bytes: &[u8],
+    len: usize,
+) -> Option<(Vec<T>, usize)> {
     log::trace!("Deserializing vector of byte length {} from bytes", len);
 
     // allocate the vector
