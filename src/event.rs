@@ -40,7 +40,6 @@ impl Event {
                 })?;
                 *self = Self::ConfigureNotify(cne.0);
             } else if opcode == ClientMessageEvent::OPCODE {
-                log::debug!("Event bytes len = {}", bytes.len());
                 let cme = ClientMessageEvent::from_bytes(bytes)
                     .ok_or_else(|| crate::BreadError::BadObjectRead(Some("ClientMessageEvent")))?;
                 *self = Self::ClientMessage(cme.0);
