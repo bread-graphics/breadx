@@ -247,6 +247,7 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     /// Create a new graphics context, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn create_gc_async<Target: Into<Drawable>>(
         &mut self,

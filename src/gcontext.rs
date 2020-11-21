@@ -86,6 +86,7 @@ impl Gcontext {
     }
 
     /// Draw a set of lines, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_lines_async<Conn: Connection, Target: Into<Drawable>>(
         &self,
@@ -116,6 +117,7 @@ impl Gcontext {
     }
 
     /// Draw a singular line, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_line_async<Conn: Connection, Target: Into<Drawable>>(
         &self,
@@ -373,6 +375,7 @@ impl Gcontext {
     }
 
     /// Fill a set of one or more rectangles, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_rectangles_async<Conn: Connection, Target: Into<Drawable>>(
         &self,

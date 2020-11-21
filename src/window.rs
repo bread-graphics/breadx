@@ -2,10 +2,15 @@
 
 pub use crate::{
     auto::{
-        xproto::{Atom, ChangePropertyRequest, MapWindowRequest, PropMode, Window, ATOM_WM_NAME},
+        xproto::{
+            Atom, BackingStore, ChangePropertyRequest, Colormap, EventMask, GetGeometryRequest,
+            GetWindowAttributesReply, GetWindowAttributesRequest, Gravity, MapState,
+            MapWindowRequest, PropMode, Visualid, Window, WindowClass, ATOM_WM_NAME,
+        },
         AsByteSequence,
     },
-    display::{Connection, Display},
+    display::{Connection, Display, RequestCookie},
+    drawable::{self, Geometry as DrawableGeomtry},
     xid::XidType,
 };
 use alloc::{string::ToString, vec::Vec};
@@ -48,6 +53,45 @@ macro_rules! retrieve_atom_async {
             }
         }
     }};
+}
+
+/// The return type of `Window::window_attributes_immediate`.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct WindowAttributes {
+    pub backing_store: BackingStore,
+    pub visual: Visualid,
+    pub class: WindowClass,
+    pub bit_gravity: Gravity,
+    pub win_gravity: Gravity,
+    pub backing_planes: u32,
+    pub backing_pixel: u32,
+    pub save_under: bool,
+    pub map_is_installed: bool,
+    pub map_state: MapState,
+    pub override_redirect: bool,
+    pub colormap: Colormap,
+    pub all_event_masks: EventMask,
+    pub your_event_mask: EventMask,
+    pub do_not_propagate_mask: EventMask,
+}
+
+impl From<GetWindowAttributesReply> for WindowAttributes {
+    #[inline]
+    fn from(gwar: GetWindowAttributesReply) -> Self {
+        convert_get_window_attributes_reply(gwar)
+    }
+}
+
+/// The return type of `Window::geometry_immediate`.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct WindowGeometry {
+    pub depth: u8,
+    pub root: Window,
+    pub x: i16,
+    pub y: i16,
+    pub width: u16,
+    pub height: u16,
+    pub border_width: u16,
 }
 
 impl Window {
@@ -234,6 +278,127 @@ impl Window {
         )
         .await
     }
+
+    /// GetWindowAttributesRequest
+    #[inline]
+    fn get_window_attributes_request(&self) -> GetWindowAttributesRequest {
+        GetWindowAttributesRequest {
+            window: *self,
+            ..Default::default()
+        }
+    }
+
+    /// Get the current set of window attributes for this window.
+    #[inline]
+    pub fn window_attributes<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
+        let gwar = self.get_window_attributes_request();
+        log::debug!("Sending GetWindowAttributesRequest to server.");
+        let tok = dpy.send_request(gwar)?;
+        log::debug!("Sent GetWindowAttributesRequest to server.");
+        Ok(tok)
+    }
+
+    /// Get the current set of window attributes for this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn window_attributes_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
+        let gwar = self.get_window_attributes_request();
+        log::debug!("Sending GetWindowAttributesRequest to server.");
+        let tok = dpy.send_request_async(gwar).await?;
+        log::debug!("Sent GetWindowAttributesRequest to server.");
+        Ok(tok)
+    }
+
+    /// Immediately get the current set of window attributes for this window.
+    #[inline]
+    pub fn window_attributes_immediate<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<WindowAttributes> {
+        let tok = self.window_attributes(dpy)?;
+        Ok(convert_get_window_attributes_reply(
+            dpy.resolve_request(tok)?,
+        ))
+    }
+
+    /// Immediately get the current set of window attributes for this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn window_attributes_immediate_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<WindowAttributes> {
+        let tok = self.window_attributes_async(dpy).await?;
+        Ok(convert_get_window_attributes_reply(
+            dpy.resolve_request_async(tok).await?,
+        ))
+    }
+
+    /// Get the geometry of this window.
+    #[inline]
+    pub fn geometry<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
+        drawable::get_geometry(dpy, *self)
+    }
+
+    /// Get the geometry of this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn geometry_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
+        drawable::get_geometry_async(dpy, *self).await
+    }
+
+    /// Immediately get the geometry of this window.
+    #[inline]
+    pub fn geometry_immediate<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<DrawableGeomtry> {
+        drawable::get_geometry_immediate(dpy, *self)
+    }
+
+    /// Immediately get the geometry of this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn geometry_immediate_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result<DrawableGeomtry> {
+        drawable::get_geometry_immediate_async(dpy, *self).await
+    }
+}
+
+/// Convert a GetWindowAttributesReply to a WindowAttributes struct.
+#[inline]
+fn convert_get_window_attributes_reply(reply: GetWindowAttributesReply) -> WindowAttributes {
+    let mut wa: WindowAttributes = Default::default();
+    wa.backing_store = reply.backing_store;
+    wa.visual = reply.visual;
+    wa.class = reply.class;
+    wa.bit_gravity = reply.bit_gravity;
+    wa.win_gravity = reply.win_gravity;
+    wa.backing_planes = reply.backing_planes;
+    wa.backing_pixel = reply.backing_pixel;
+    wa.save_under = reply.save_under;
+    wa.map_is_installed = reply.map_is_installed;
+    wa.map_state = reply.map_state;
+    wa.override_redirect = reply.override_redirect;
+    wa.colormap = reply.colormap;
+    wa.all_event_masks = reply.all_event_masks;
+    wa.your_event_mask = reply.your_event_mask;
+    wa.do_not_propagate_mask = reply.do_not_propagate_mask;
+    wa
 }
 
 /// The type of the property being changed.

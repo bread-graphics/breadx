@@ -7,7 +7,7 @@ use breadx::{
 use std::{env, process};
 
 fn main() {
-    env::set_var("RUST_LOG", "breadx=debug");
+    env::set_var("RUST_LOG", "breadx=warn");
     env_logger::init();
 
     let mut conn = DisplayConnection::create(None, None).unwrap();
@@ -72,6 +72,9 @@ fn main() {
                 }
             }
             Event::Expose(_) => {
+                let geometry = window.geometry_immediate(&mut conn).unwrap();
+                println!("Window is [{} x {}]", geometry.width, geometry.height);
+
                 let mut gc_params: GcParameters = Default::default();
                 gc_params.foreground = Some(conn.default_black_pixel());
                 gc.change(&mut conn, gc_params).unwrap();
@@ -105,7 +108,7 @@ fn main() {
                         width: 150,
                         height: 150,
                         angle1: 0,
-                        angle2: 90 * 64,
+                        angle2: 270 * 64,
                     },
                 )
                 .unwrap();
