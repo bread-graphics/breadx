@@ -45,4 +45,4 @@ pub trait Request: auto::AsByteSequence {
 //pub use display::*;
 pub use xid::{XidType, XID};
 
-pub use auto::xproto::{EventMask, Visualid, Window, WindowClass};
+pub use auto::xproto::{Arc, EventMask, Rectangle, Segment, Visualid, Window, WindowClass};

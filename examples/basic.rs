@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use breadx::{
-    event::Event, BreadError, CreateWindowParameters, DisplayConnection, EventMask, WindowClass,
-    XidType, GcParameters,
+    event::Event, Arc, BreadError, CreateWindowParameters, DisplayConnection, EventMask,
+    GcParameters, Segment, WindowClass, XidType,
 };
 use std::{env, process};
 
@@ -40,9 +40,10 @@ fn main() {
 
     // set up a graphics context for our window
     let mut gc_parameters: GcParameters = Default::default();
-    gc_parameters.foreground = Some(conn.default_white_pixel());
+    gc_parameters.foreground = Some(conn.default_black_pixel());
     gc_parameters.graphics_exposures = Some(0);
-    let gc = conn.create_gc(window, gc_parameters);
+    gc_parameters.line_width = Some(10);
+    let gc = conn.create_gc(window, gc_parameters).unwrap();
 
     // set up an exit atom
     let wm_delete_window = conn
@@ -69,6 +70,45 @@ fn main() {
                 if cme.data.longs()[0] == wm_delete_window.xid() {
                     process::exit(0);
                 }
+            }
+            Event::Expose(_) => {
+                let mut gc_params: GcParameters = Default::default();
+                gc_params.foreground = Some(conn.default_black_pixel());
+                gc.change(&mut conn, gc_params).unwrap();
+
+                gc.draw_lines(
+                    &mut conn,
+                    window,
+                    &[
+                        Segment {
+                            x1: 10,
+                            y1: 10,
+                            x2: 150,
+                            y2: 150,
+                        },
+                        Segment {
+                            x1: 150,
+                            y1: 10,
+                            x2: 10,
+                            y2: 150,
+                        },
+                    ],
+                )
+                .unwrap();
+
+                gc.fill_arc(
+                    &mut conn,
+                    window,
+                    Arc {
+                        x: 200,
+                        y: 10,
+                        width: 150,
+                        height: 150,
+                        angle1: 0,
+                        angle2: 90 * 64,
+                    },
+                )
+                .unwrap();
             }
             _ => (),
         }

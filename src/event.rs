@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use crate::auto::{
-    xproto::{ClientMessageEvent, ConfigureNotifyEvent},
+    xproto::{ClientMessageEvent, ConfigureNotifyEvent, ExposeEvent},
     AsByteSequence, Event as AutoEvent,
 };
 use core::fmt;
@@ -13,6 +13,7 @@ const OPCODE_MASK: u8 = !0x80;
 pub enum Event {
     ConfigureNotify(ConfigureNotifyEvent),
     ClientMessage(ClientMessageEvent),
+    Expose(ExposeEvent),
     NoneOfTheAbove {
         opcode: u8,
         bytes: TinyVec<[u8; 32]>,
@@ -43,6 +44,10 @@ impl Event {
                 let cme = ClientMessageEvent::from_bytes(bytes)
                     .ok_or_else(|| crate::BreadError::BadObjectRead(Some("ClientMessageEvent")))?;
                 *self = Self::ClientMessage(cme.0);
+            } else if opcode == ExposeEvent::OPCODE {
+                let ee = ExposeEvent::from_bytes(bytes)
+                    .ok_or_else(|| crate::BreadError::BadObjectRead(Some("ExposeEvent")))?;
+                *self = Self::Expose(ee.0);
             }
         }
 
@@ -55,6 +60,7 @@ impl Event {
         match self {
             Self::ConfigureNotify(_) => ConfigureNotifyEvent::OPCODE,
             Self::ClientMessage(_) => ClientMessageEvent::OPCODE,
+            Self::Expose(_) => ExposeEvent::OPCODE,
             Self::NoneOfTheAbove { opcode, .. } => *opcode,
         }
     }
