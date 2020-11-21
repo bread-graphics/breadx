@@ -2,7 +2,7 @@
 
 use breadx::{
     event::Event, BreadError, CreateWindowParameters, DisplayConnection, EventMask, WindowClass,
-    XidType,
+    XidType, GcParameters,
 };
 use std::{env, process};
 
@@ -37,6 +37,12 @@ fn main() {
 
     window.map(&mut conn).unwrap();
     window.set_title(&mut conn, "breadx Example").unwrap();
+
+    // set up a graphics context for our window
+    let mut gc_parameters: GcParameters = Default::default();
+    gc_parameters.foreground = Some(conn.default_white_pixel());
+    gc_parameters.graphics_exposures = Some(0);
+    let gc = conn.create_gc(window, gc_parameters);
 
     // set up an exit atom
     let wm_delete_window = conn

@@ -51,6 +51,8 @@ impl From<XidType> for RStruct {
         rstr.methods.push(method);
 
         rstr.traits.push(Trait::Xid);
+        rstr.traits
+            .extend(from_impls.into_iter().map(|f| Trait::FromXid(f.unwrap())));
 
         rstr
     }

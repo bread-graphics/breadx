@@ -1,8 +1,9 @@
 // MIT/Apache2 License
 
 use super::{
-    configure_fields, create_generator, EnumRepr, EnumReprGenerator, Field, Item as Lvl2Item, Item,
-    List, MaybeString, Struct, StructSpecial, StructVariant, StructureItem, Type, XidType,
+    configure_fields, create_generator, EnumRepr, EnumReprGenerator, Expression, Field,
+    Item as Lvl2Item, Item, List, MaybeString, Struct, StructSpecial, StructVariant, StructureItem,
+    Type, XidType,
 };
 use crate::lvl1::{
     Item as Lvl1Item, NonenumTypenames, StructureItem as Lvl1StructureItem, XStruct,
@@ -341,27 +342,31 @@ impl Lvl2State {
 #[inline]
 fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
     for i in 0..fields.len() {
-        // if the item is a fixed-size list, replace it with an array type
+        // if the item is a non-zero fixed-size list, replace it with an array type
         if let StructureItem::List(l) = &mut fields[i] {
             if let Some(array_length) = l.list_length.fixed_size() {
-                let list = if let StructureItem::List(list) = mem::take(&mut fields[i]) {
-                    list
+                if array_length != 0 {
+                    let list = if let StructureItem::List(list) = mem::take(&mut fields[i]) {
+                        list
+                    } else {
+                        unreachable!()
+                    };
+                    let List { name, ty, .. } = list;
+                    fields[i] = StructureItem::Field(Field {
+                        name,
+                        ty: Type::Array(
+                            match ty {
+                                MaybeString::NotAString(Type::BasicType(t)) => t,
+                                MaybeString::IsAString => "c_char".into(),
+                                _ => unreachable!("Should be a normal field"),
+                            },
+                            array_length as u64,
+                        ),
+                        ..Default::default()
+                    });
                 } else {
-                    unreachable!()
-                };
-                let List { name, ty, .. } = list;
-                fields[i] = StructureItem::Field(Field {
-                    name,
-                    ty: Type::Array(
-                        match ty {
-                            MaybeString::NotAString(Type::BasicType(t)) => t,
-                            MaybeString::IsAString => "c_char".into(),
-                            _ => unreachable!("Should be a normal field"),
-                        },
-                        array_length as u64,
-                    ),
-                    ..Default::default()
-                });
+                    l.list_length = Expression::remainder();
+                }
             } else if let Some(item) = l.list_length.single_item() {
                 let lname = l.name.clone();
                 let item = item.to_owned();

@@ -5,7 +5,7 @@ use super::{
     InputParameter, Method, ParameterUsage, ToSyn, Type,
 };
 use proc_macro2::Span;
-use std::borrow::Cow;
+use std::{borrow::Cow, iter, ops::Deref};
 
 #[derive(Debug)]
 pub enum Trait {
@@ -14,6 +14,7 @@ pub enum Trait {
     Request(u64, Type),
     Xid,
     EnumDefault(Box<str>),
+    FromXid(Box<str>),
 }
 
 #[inline]
@@ -49,6 +50,23 @@ impl Trait {
                     Self::Request(_, _) => str_to_path("Request"),
                     Self::Xid => str_to_path("XidType"),
                     Self::EnumDefault(_) => str_to_path("Default"),
+                    Self::FromXid(ref from) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![syn::PathSegment {
+                            ident: syn::Ident::new("From", Span::call_site()),
+                            arguments: syn::PathArguments::AngleBracketed(
+                                syn::AngleBracketedGenericArguments {
+                                    colon2_token: None,
+                                    lt_token: Default::default(),
+                                    args: iter::once(syn::GenericArgument::Type(str_to_ty(from)))
+                                        .collect(),
+                                    gt_token: Default::default(),
+                                },
+                            ),
+                        }]
+                        .into_iter()
+                        .collect(),
+                    },
                 },
                 Default::default(),
             )),
@@ -108,6 +126,24 @@ impl Trait {
                         tyname.to_string().into_boxed_str(),
                         variant,
                     )
+                    .into()];
+                    method.to_syn_impl_item(true)
+                }],
+                Self::FromXid(from) => vec![{
+                    let mut method = Method::new(
+                        "from".into(),
+                        None,
+                        vec![InputParameter {
+                            name: "base".into(),
+                            ty: Type::Basic(from.deref().to_string().into()),
+                            usage: ParameterUsage::Owned,
+                        }],
+                        Some(Type::Basic("Self".into())),
+                    );
+                    method.statements = vec![super::ConvertXids {
+                        oldname: from.clone(),
+                        newname: tyname.to_string().into_boxed_str(),
+                    }
                     .into()];
                     method.to_syn_impl_item(true)
                 }],

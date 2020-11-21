@@ -80,6 +80,21 @@ impl Expression {
                             },
                         }),
                     },
+                    Some(ExpressionItem::Remainder) => syn::Expr::Binary(syn::ExprBinary {
+                        attrs: vec![],
+                        left: Box::new(syn::Expr::Paren(syn::ExprParen {
+                            attrs: vec![],
+                            paren_token: Default::default(),
+                            expr: Box::new(syn::Expr::Binary(syn::ExprBinary {
+                                attrs: vec![],
+                                left: Box::new(cast_to_usize(str_to_exprpath("length"))),
+                                op: syn::BinOp::Mul(Default::default()),
+                                right: Box::new(int_litexpr_int(4)),
+                            })),
+                        })),
+                        op: syn::BinOp::Sub(Default::default()),
+                        right: Box::new(str_to_exprpath("index")),
+                    }),
                 }),
             })
         }

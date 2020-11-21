@@ -18,6 +18,7 @@ pub mod client_message_data;
 pub mod display;
 pub mod error;
 pub mod event;
+pub mod gcontext;
 pub(crate) mod paramatizer;
 pub(crate) mod util;
 pub mod window;
@@ -27,6 +28,7 @@ pub use auth_info::*;
 pub use display::*;
 pub use error::*;
 pub use event::Event;
+pub use gcontext::*;
 pub use window::*;
 
 pub(crate) use paramatizer::*;

@@ -6,7 +6,7 @@ use super::{
 };
 use crate::lvl2::{Expression, MaybeString, UseCondition};
 use proc_macro2::Span;
-use std::{borrow::Cow, fmt, iter, rc::Rc};
+use std::{borrow::Cow, fmt, iter, ops::Deref, rc::Rc};
 
 mod list;
 pub use list::*;
@@ -1006,6 +1006,37 @@ impl Statement for DeserTraceMarker {
 }
 
 #[derive(Debug, Clone)]
+pub struct ConvertXids {
+    pub oldname: Box<str>,
+    pub newname: Box<str>,
+}
+
+impl Statement for ConvertXids {
+    #[inline]
+    fn to_syn_statement(&self) -> Vec<syn::Stmt> {
+        vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
+            attrs: vec![],
+            func: Box::new(syn::Expr::Path(syn::ExprPath {
+                attrs: vec![],
+                qself: Some(syn::QSelf {
+                    lt_token: Default::default(),
+                    ty: Box::new(Type::Basic(self.newname.deref().to_string().into()).to_syn_ty()),
+                    position: 0,
+                    as_token: None,
+                    gt_token: Default::default(),
+                }),
+                path: syn::Path {
+                    leading_colon: Some(Default::default()),
+                    segments: iter::once(str_to_pathseg("const_from_xid")).collect(),
+                },
+            })),
+            paren_token: Default::default(),
+            args: iter::once(item_field(str_to_exprpath("base"), "xid")).collect(),
+        }))]
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum SumStatement {
     ReturnIndex(ReturnIndexStatement),
     AppendToIndex(AppendToIndexStatement),
@@ -1035,6 +1066,7 @@ pub enum SumStatement {
     AppendLengthToIndex(AppendLengthToIndex),
     InitializeCondition(InitializeCondition),
     DeserTraceMarker(DeserTraceMarker),
+    ConvertXids(ConvertXids),
 }
 
 macro_rules! sst_from_impl {
@@ -1076,6 +1108,7 @@ sst_from_impl! { AsBytesList, AsBytesList }
 sst_from_impl! { AppendLengthToIndex, AppendLengthToIndex }
 sst_from_impl! { InitializeCondition, InitializeCondition }
 sst_from_impl! { DeserTraceMarker, DeserTraceMarker }
+sst_from_impl! { ConvertXids, ConvertXids }
 
 impl Statement for SumStatement {
     #[inline]
@@ -1109,6 +1142,7 @@ impl Statement for SumStatement {
             Self::AppendLengthToIndex(ai) => ai.to_syn_statement(),
             Self::InitializeCondition(ic) => ic.to_syn_statement(),
             Self::DeserTraceMarker(dtm) => dtm.to_syn_statement(),
+            Self::ConvertXids(cx) => cx.to_syn_statement(),
         }
     }
 }

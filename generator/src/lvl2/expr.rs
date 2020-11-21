@@ -32,6 +32,7 @@ impl FromStr for BinaryOp {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnaryOp {
     Not,
+    /// Count the ones in this item.
     OneCount,
 }
 
@@ -53,6 +54,8 @@ pub enum ExpressionItem {
     Value(i64),
     BinaryOp(BinaryOp),
     UnaryOp(UnaryOp),
+    /// ((length as usize) * 4) - index
+    Remainder,
 }
 
 impl Default for ExpressionItem {
@@ -74,6 +77,14 @@ impl Expression {
     pub fn one_count(field: String) -> Self {
         Self {
             postfix: tiny_vec!([ExpressionItem; 1] => ExpressionItem::UnaryOp(UnaryOp::OneCount), ExpressionItem::FieldRef(field.into_boxed_str())),
+        }
+    }
+
+    /// An expression dedicated to the remainder.
+    #[inline]
+    pub fn remainder() -> Self {
+        Self {
+            postfix: tiny_vec!([ExpressionItem; 1] => ExpressionItem::Remainder),
         }
     }
 
