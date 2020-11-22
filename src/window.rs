@@ -3,10 +3,12 @@
 pub use crate::{
     auto::{
         xproto::{
-            Atom, BackingStore, ChangePropertyRequest, ChangeWindowAttributesRequest, Colormap,
-            ConfigWindow, ConfigureWindowRequest, EventMask, Gcontext, GetGeometryRequest,
-            GetWindowAttributesReply, GetWindowAttributesRequest, Gravity, MapState,
-            MapWindowRequest, PropMode, StackMode, Visualid, Window, WindowClass, ATOM_WM_NAME,
+            Atom, BackingStore, ChangePropertyRequest, ChangeSaveSetRequest,
+            ChangeWindowAttributesRequest, Circulate, CirculateWindowRequest, ClearAreaRequest,
+            Colormap, ConfigWindow, ConfigureWindowRequest, EventMask, Gcontext,
+            GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest, Gravity,
+            MapState, MapWindowRequest, PropMode, SetMode, StackMode, Visualid, Window,
+            WindowClass, ATOM_WM_NAME,
         },
         AsByteSequence,
     },
@@ -550,6 +552,214 @@ impl Window {
         let mut props: WindowParameters = Default::default();
         props.colormap = Some(colormap);
         self.change_attributes_async(dpy, props).await
+    }
+
+    #[inline]
+    fn change_save_set_request(&self, mode: SetMode) -> ChangeSaveSetRequest {
+        ChangeSaveSetRequest {
+            mode,
+            window: *self,
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn change_save_set<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        mode: SetMode,
+    ) -> crate::Result {
+        let cssr = self.change_save_set_request(mode);
+        log::debug!("Sending ChangeSaveSetRequest to server.");
+        let tok = dpy.send_request(cssr)?;
+        log::debug!("Sent ChangeSaveSetRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn change_save_set_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        mode: SetMode,
+    ) -> crate::Result {
+        let cssr = self.change_save_set_request(mode);
+        log::debug!("Sending ChangeSaveSetRequest to server.");
+        let tok = dpy.send_request_async(cssr).await?;
+        log::debug!("Sent ChangeSaveSetRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Resize the window.
+    #[inline]
+    pub fn resize<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        width: u32,
+        height: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.width = Some(width);
+        props.height = Some(height);
+        self.configure(dpy, props)
+    }
+
+    /// Resize the window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn resize_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        width: u32,
+        height: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.width = Some(width);
+        props.height = Some(height);
+        self.configure_async(dpy, props).await
+    }
+
+    /// Move and resize the window.
+    #[inline]
+    pub fn move_resize<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.x = Some(x);
+        props.y = Some(y);
+        props.width = Some(width);
+        props.height = Some(height);
+        self.configure(dpy, props)
+    }
+
+    /// Move and resize the window, async redox.
+    #[inline]
+    pub async fn move_resize_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.x = Some(x);
+        props.y = Some(y);
+        props.width = Some(width);
+        props.height = Some(height);
+        self.configure_async(dpy, props).await
+    }
+
+    #[inline]
+    fn circulate_window_request(&self, direction: Circulate) -> CirculateWindowRequest {
+        CirculateWindowRequest {
+            window: *self,
+            direction,
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn circulate<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        direction: Circulate,
+    ) -> crate::Result {
+        let cwr = self.circulate_window_request(direction);
+        log::debug!("Sending CirculateWindowRequest to server.");
+        let tok = dpy.send_request(cwr)?;
+        log::debug!("Sent CirculateWindowRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn circulate_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        direction: Circulate,
+    ) -> crate::Result {
+        let cwr = self.circulate_window_request(direction);
+        log::debug!("Sending CirculateWindowRequest to server.");
+        let tok = dpy.send_request_async(cwr).await?;
+        log::debug!("Sent CirculateWindowRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Clear Window Request
+    #[inline]
+    fn clear_area_request(
+        &self,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        exposures: bool,
+    ) -> ClearAreaRequest {
+        ClearAreaRequest {
+            exposures,
+            x,
+            y,
+            width,
+            height,
+            window: *self,
+            ..Default::default()
+        }
+    }
+
+    /// Clear an area of the window.
+    #[inline]
+    pub fn clear_area<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        exposures: bool,
+    ) -> crate::Result {
+        let car = self.clear_area_request(x, y, width, height, exposures);
+        log::debug!("Sending ClearAreaRequest to server.");
+        let tok = dpy.send_request(car)?;
+        log::debug!("Sent ClearAreaRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Clear an area of the window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn clear_area_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        exposures: bool,
+    ) -> crate::Result {
+        let car = self.clear_area_request(x, y, width, height, exposures);
+        log::debug!("Sending ClearAreaRequest to server.");
+        let tok = dpy.send_request_async(car).await?;
+        log::debug!("Sent ClearAreaRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Clear the entire window.
+    #[inline]
+    pub fn clear<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+        self.clear_area(dpy, 0, 0, 0, 0, false) // means: clear the whole dang thing
+    }
+
+    /// Clear the entire window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn clear_async<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+        self.clear_area_async(dpy, 0, 0, 0, 0, false).await
     }
 }
 

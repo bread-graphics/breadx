@@ -6,11 +6,11 @@ use crate::{
         xproto::{
             AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
             ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
-            ChangeWindowAttributesRequest, CloseDown, Colormap, CreateGcRequest,
-            CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font, Gc,
-            Gcontext, Gravity, Gx, InternAtomReply, InternAtomRequest, JoinStyle, Kb, LedMode,
-            LineStyle, Pixmap, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode,
-            Timestamp, Visualid, Window, WindowClass,
+            ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
+            CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule,
+            FillStyle, Font, Gc, Gcontext, Gravity, Gx, InternAtomReply, InternAtomRequest,
+            JoinStyle, Kb, LedMode, LineStyle, Pixmap, SetAccessControlRequest,
+            SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid, Window, WindowClass,
         },
         AsByteSequence,
     },
@@ -509,6 +509,69 @@ impl<Conn: Connection> Display<Conn> {
         log::debug!("Sending SetCloseDownModeRequest to server.");
         let tok = self.send_request_async(scdmr).await?;
         log::debug!("Sent SetCloseDownModeRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    fn change_pointer_control_request(
+        accel_numer: i16,
+        accel_denom: i16,
+        threshold: i16,
+        do_accel: bool,
+        do_threshold: bool,
+    ) -> ChangePointerControlRequest {
+        ChangePointerControlRequest {
+            acceleration_numerator: accel_numer,
+            acceleration_denominator: accel_denom,
+            threshold,
+            do_acceleration: do_accel,
+            do_threshold,
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn change_pointer_control(
+        &mut self,
+        accel_numerator: i16,
+        accel_denominator: i16,
+        threshold: i16,
+        do_acceleration: bool,
+        do_threshold: bool,
+    ) -> crate::Result {
+        let cpcr = Self::change_pointer_control_request(
+            accel_numerator,
+            accel_denominator,
+            threshold,
+            do_acceleration,
+            do_threshold,
+        );
+        log::debug!("Sending ChangePointerControlRequest to server.");
+        let tok = self.send_request(cpcr)?;
+        log::debug!("Sent ChangePointerControlRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn change_pointer_control_async(
+        &mut self,
+        accel_numerator: i16,
+        accel_denominator: i16,
+        threshold: i16,
+        do_acceleration: bool,
+        do_threshold: bool,
+    ) -> crate::Result {
+        let cpcr = Self::change_pointer_control_request(
+            accel_numerator,
+            accel_denominator,
+            threshold,
+            do_acceleration,
+            do_threshold,
+        );
+        log::debug!("Sending ChangePointerControlRequest to server.");
+        let tok = self.send_request_async(cpcr).await?;
+        log::debug!("Sent ChangePointerControlRequest to server.");
         self.resolve_request_async(tok).await
     }
 }

@@ -56,6 +56,11 @@ fn main() {
         .alloc_color_immediate(&mut conn, 0, 0, u16::MAX)
         .unwrap()
         .pixel();
+    let green_clr = conn
+        .default_colormap()
+        .alloc_color_immediate(&mut conn, 0, u16::MAX, 0)
+        .unwrap()
+        .pixel();
 
     // set up an exit atom
     let wm_delete_window = conn
@@ -108,6 +113,23 @@ fn main() {
                             y2: 150,
                         },
                     ],
+                )
+                .unwrap();
+
+                gc_params.foreground = Some(green_clr);
+                gc.change(&mut conn, gc_params.clone()).unwrap();
+
+                gc.fill_arc(
+                    &mut conn,
+                    window,
+                    Arc {
+                        x: 200,
+                        y: 10,
+                        width: 150,
+                        height: 150,
+                        angle1: 0,
+                        angle2: 360 * 64,
+                    },
                 )
                 .unwrap();
 

@@ -437,6 +437,12 @@ impl<Conn: Connection> Display<Conn> {
             }
         }
     }
+
+    /// If there is an event currently in the queue that matches the predicate, returns true.
+    #[inline]
+    pub fn check_if_event<F: FnMut(&Event) -> bool>(&self, predicate: F) -> bool {
+        self.event_queue.iter().any(predicate)
+    }
 }
 
 /// A variant of `Display` that uses X11's default connection mechanisms to connect to the server. In
