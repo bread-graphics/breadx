@@ -7,9 +7,9 @@ use tinyvec::TinyVec;
 
 impl<Conn: Connection> super::Display<Conn> {
     #[inline]
-    fn encode_request<R: Request>(&mut self, req: R) -> (NonZeroU64, TinyVec<[u8; 32]>) {
+    fn encode_request<R: Request>(&mut self, req: R) -> (u64, TinyVec<[u8; 32]>) {
         let sequence = self.request_number;
-        self.request_number = NonZeroU64::new(self.request_number.get() + 1).unwrap();
+        self.request_number += 1;
 
         // write to bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(req.size());
@@ -50,10 +50,10 @@ impl<Conn: Connection> super::Display<Conn> {
 
     #[inline]
     pub fn send_request_internal<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
-        let (sequence, bytes): (NonZeroU64, TinyVec<[u8; 32]>) = self.encode_request(req);
+        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(req);
 
         self.connection.send_packet(&bytes)?;
-        Ok(RequestCookie::from_sequence(sequence.get()))
+        Ok(RequestCookie::from_sequence(sequence))
     }
 
     #[cfg(feature = "async")]
@@ -65,6 +65,6 @@ impl<Conn: Connection> super::Display<Conn> {
         let (sequence, bytes) = self.encode_request(req);
 
         self.connection.send_packet_async(&bytes).await?;
-        Ok(RequestCookie::from_sequence(sequence.get()))
+        Ok(RequestCookie::from_sequence(sequence))
     }
 }

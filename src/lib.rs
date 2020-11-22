@@ -21,6 +21,7 @@ pub mod drawable;
 pub mod error;
 pub mod event;
 pub mod gcontext;
+pub mod image;
 pub(crate) mod paramatizer;
 pub(crate) mod util;
 pub mod window;
@@ -32,6 +33,7 @@ pub use display::*;
 pub use error::*;
 pub use event::Event;
 pub use gcontext::*;
+pub use image::Image;
 pub use window::*;
 
 pub(crate) use paramatizer::*;

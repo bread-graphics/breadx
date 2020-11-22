@@ -58,7 +58,7 @@ impl<Conn: Connection> super::Display<Conn> {
 
     // add an entry to the pending elements linked list
     #[inline]
-    pub(crate) fn expect_reply(&mut self, req: core::num::NonZeroU64, flags: PendingRequestFlags) {
+    pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
         /*        let pereq = PendingRequest {
             first_request: req,
             last_request: req,

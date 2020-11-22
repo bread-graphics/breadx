@@ -30,8 +30,10 @@ use core::{
     marker::PhantomData,
     mem,
     num::{NonZeroU16, NonZeroU32, NonZeroU64},
+    ptr::NonNull,
     task::Waker,
 };
+use cty::{c_int, c_void};
 use hashbrown::HashMap;
 use tinyvec::{tiny_vec, ArrayVec, TinyVec};
 
@@ -81,11 +83,17 @@ pub struct Display<Conn> {
     pub(crate) pending_replies: HashMap<u16, Box<[u8]>>,
 
     // output variables
-    request_number: NonZeroU64,
+    request_number: u64,
 
     // store the interned atoms
     pub(crate) wm_protocols_atom: Option<NonZeroU32>,
+
+    // context db
+    context: HashMap<(XID, ContextID), NonNull<c_void>>,
 }
+
+/// Unique identifier for a context.
+pub type ContextID = c_int;
 
 /// A cookie for a request.
 ///
@@ -252,8 +260,9 @@ impl<Conn: Connection> Display<Conn> {
             event_queue: VecDeque::new(),
             pending_requests: VecDeque::new(),
             pending_replies: HashMap::new(),
-            request_number: NonZeroU64::new(1).unwrap(),
+            request_number: 1,
             wm_protocols_atom: None,
+            context: HashMap::new(),
         }
     }
 
@@ -442,6 +451,24 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn check_if_event<F: FnMut(&Event) -> bool>(&self, predicate: F) -> bool {
         self.event_queue.iter().any(predicate)
+    }
+
+    /// Save a pointer into this display's map of contexts.
+    #[inline]
+    pub fn save_context(&mut self, xid: XID, context: ContextID, data: NonNull<c_void>) {
+        self.context.insert((xid, context), data);
+    }
+
+    /// Retrieve a pointer from the context.
+    #[inline]
+    pub fn find_context(&mut self, xid: XID, context: ContextID) -> Option<NonNull<c_void>> {
+        self.context.get(&(xid, context)).map(|p| *p)
+    }
+
+    /// Delete an entry in the context.
+    #[inline]
+    pub fn delete_context(&mut self, xid: XID, context: ContextID) {
+        self.context.remove(&(xid, context));
     }
 }
 

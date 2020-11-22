@@ -5,10 +5,10 @@ pub use crate::{
         xproto::{
             Atom, BackingStore, ChangePropertyRequest, ChangeSaveSetRequest,
             ChangeWindowAttributesRequest, Circulate, CirculateWindowRequest, ClearAreaRequest,
-            Colormap, ConfigWindow, ConfigureWindowRequest, EventMask, Gcontext,
-            GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest, Gravity,
-            MapState, MapWindowRequest, PropMode, SetMode, StackMode, Visualid, Window,
-            WindowClass, ATOM_WM_NAME,
+            Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, EventMask,
+            Gcontext, GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest,
+            Gravity, MapState, MapWindowRequest, PropMode, SetMode, StackMode, Timestamp, Visualid,
+            Window, WindowClass, ATOM_WM_NAME,
         },
         AsByteSequence,
     },
@@ -638,6 +638,7 @@ impl Window {
     }
 
     /// Move and resize the window, async redox.
+    #[cfg(feature = "async")]
     #[inline]
     pub async fn move_resize_async<Conn: Connection>(
         &self,
@@ -760,6 +761,57 @@ impl Window {
     #[inline]
     pub async fn clear_async<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
         self.clear_area_async(dpy, 0, 0, 0, 0, false).await
+    }
+
+    #[inline]
+    fn convert_selection_request(
+        &self,
+        selection: Atom,
+        target: Atom,
+        property: Atom,
+        time: Timestamp,
+    ) -> ConvertSelectionRequest {
+        ConvertSelectionRequest {
+            requestor: *self,
+            selection,
+            target,
+            property,
+            time,
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn convert_selection<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        selection: Atom,
+        target: Atom,
+        property: Atom,
+        time: Timestamp,
+    ) -> crate::Result {
+        let csr = self.convert_selection_request(selection, target, property, time);
+        log::debug!("Sending ConvertSelectionRequest to server.");
+        let tok = dpy.send_request(csr)?;
+        log::debug!("Sent ConvertSelectionRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn convert_selection_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        selection: Atom,
+        target: Atom,
+        property: Atom,
+        time: Timestamp,
+    ) -> crate::Result {
+        let csr = self.convert_selection_request(selection, target, property, time);
+        log::debug!("Sending ConvertSelectionRequest to server.");
+        let tok = dpy.send_request_async(csr).await?;
+        log::debug!("Sent ConvertSelectionRequest to server.");
+        dpy.resolve_request_async(tok).await
     }
 }
 
