@@ -13,7 +13,7 @@ jobs:
         toolchain: stable
     - script: rustup component add rustfmt
       displayName: "Add Rustfmt"
-    - bash: rustfmt --edititon 2018 --check src/lib.rs
+    - bash: rustfmt --edition 2018 --check src/lib.rs
       displayName: "Check for properly formatted code"
  - job:
    displayName: "Clippy Warnings"
