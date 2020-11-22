@@ -4,12 +4,45 @@ trigger:
 
 jobs:
  - job:
+   displayName: "Check Formatting"
+   pool:
+     vmImage: ubuntu-latest
+   steps: 
+    - template: ci/install-rust.yml
+      parameters:
+        toolchain: stable
+    - script: rustup component add rustfmt
+      displayName: "Add Rustfmt"
+    - bash: rustfmt --edititon 2018 --check src/lib.rs
+      displayName: "Check for properly formatted code"
+ - job:
+   displayName: "Clippy Warnings"
+   pool:
+    vmImage: ubuntu-latest
+   steps:
+    - template: ci/install-rust.yml
+      parameters:
+        toolchain: stable
+    - script: rustup component add clippy
+      displayName: "Add Clippy"
+    - bash: cargo clippy -- -Dwarnings
+      displayName: "Clippy"
+ - job:
    displayName: "Build & Test"
    strategy:
      matrix:
-       Linux:
+       LinuxNightly:
          toolchain: nightly
          vmImage: ubuntu-latest
+       LinuxBeta:
+         toolchain: beta
+         vmImage: ubuntu-latest
+       LinuxStable:
+         toolchain: stable
+         vmImage: ubuntu-latest
+       OSX:
+         toolchain: stable
+         vmImage: macOS-latest
    pool:
      vmImage: $(vmImage)
    steps:
@@ -18,10 +51,6 @@ jobs:
         toolchain: $(toolchain)
     - script: rustup component add clippy
       displayName: "Add Clippy"
-    - script: rustup component add rustfmt
-      displayName: "Add Rustfmt"
-    - bash: rustfmt --edititon 2018 --check src/lib.rs
-      displayName: "Check for properly formatted code"
     - bash: cargo test
       displayName: "Basic Test"
     - bash: cargo build --no-default-features
@@ -30,5 +59,3 @@ jobs:
       displayName: "Async Test"
     - bash: cargo build --examples
       displayName: "Build Examples"
-    - bash: cargo clippy -- -Dwarnings
-      displayName: "Clippy"
