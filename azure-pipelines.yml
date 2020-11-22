@@ -40,15 +40,23 @@ jobs:
        LinuxStable:
          toolchain: stable
          vmImage: ubuntu-latest
-       OSX:
-         toolchain: stable
-         vmImage: macOS-latest
+#       OSX:
+#         toolchain: stable
+#         vmImage: macOS-latest
    pool:
      vmImage: $(vmImage)
    steps:
     - template: ci/install-rust.yml
       parameters:
         toolchain: $(toolchain)
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
+    - script: python ci/prepare_vm.py
+      displayName: "Installing Required Packages"
+    - bash: startx
+      displayName: "Starting X server"
+      condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
     - script: rustup component add clippy
       displayName: "Add Clippy"
     - bash: cargo test

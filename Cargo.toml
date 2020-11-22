@@ -5,6 +5,8 @@ authors = ["not_a_seagull <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
 license = "MIT OR Apache-2.0"
+homepage = "https://github.com/not-a-seagull/breadx"
+repository = "https://github.com/not-a-seagull/breadx#readme"
 
 [dependencies]
 async-io = { version = "1.1.0", optional = true }
