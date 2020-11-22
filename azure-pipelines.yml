@@ -1,0 +1,34 @@
+trigger:
+  branches:
+    include: ['*']
+
+jobs:
+ - job:
+   displayName: "Build & Test"
+   strategy:
+     matrix:
+       Linux:
+         toolchain: nightly
+         vmImage: ubuntu-latest
+   pool:
+     vmImage: $(vmImage)
+   steps:
+    - template: ci/install-rust.yml
+      parameters:
+        toolchain: $(toolchain)
+    - script: rustup component add clippy
+      displayName: "Add Clippy"
+    - script: rustup component add rustfmt
+      displayName: "Add Rustfmt"
+    - bash: rustfmt --check src/lib.rs
+      displayName: "Check for properly formatted code"
+    - bash: cargo test
+      displayName: "Basic Test"
+    - bash: cargo build --no-default-features
+      displayName: "No-Std Build"
+    - bash: cargo test --features async
+      displayName: "Async Test"
+    - bash: cargo build --examples
+      displayName: "Build Examples"
+    - bash: cargo clippy -- -Dwarnings
+      displayName: "Clippy"

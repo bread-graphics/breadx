@@ -2,21 +2,18 @@
 
 use super::{Connection, Display, RequestCookie};
 use crate::{
-    auto::{
-        xproto::{
-            AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
-            ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
-            ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
-            CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule,
-            FillStyle, Font, Gc, Gcontext, Gravity, Gx, InternAtomReply, InternAtomRequest,
-            JoinStyle, Kb, LedMode, LineStyle, Pixmap, SetAccessControlRequest,
-            SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid, Window, WindowClass,
-        },
-        AsByteSequence,
+    auto::xproto::{
+        AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
+        ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
+        ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
+        CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle,
+        Font, Gc, Gcontext, Gravity, Gx, InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle,
+        Pixmap, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
+        Visualid, Window, WindowClass,
     },
-    XidType, XID,
+    XidType,
 };
-use alloc::{string::String, vec::Vec};
+use alloc::string::String;
 
 crate::create_paramaterizer! {
     pub struct WindowParameters : (Cw, CreateWindowRequest) {
@@ -158,14 +155,14 @@ impl<Conn: Connection> Display<Conn> {
         const INHERITED_DEPTH: u8 = 0;
         const INHERITED_VISUAL: Visualid = 0;
 
-        if let None = props.background_pixel {
+        if props.background_pixel.is_none() {
             props.background_pixel = Some(self.default_white_pixel());
         }
 
         let mut cwr = CreateWindowRequest {
             wid,
             parent: parent.unwrap_or_else(|| self.default_root()),
-            class: class,
+            class,
             visual: visual.unwrap_or(INHERITED_VISUAL),
             depth: depth.unwrap_or(INHERITED_DEPTH),
             x,
@@ -255,10 +252,9 @@ impl<Conn: Connection> Display<Conn> {
         Ok(wid)
     }
 
-    /// Create a CreateGcRequest.
+    /// Create a `CreateGcRequest`.
     #[inline]
     fn create_gc_request<Target: Into<Drawable>>(
-        &mut self,
         cid: Gcontext,
         drawable: Target,
         props: GcParameters,
@@ -282,7 +278,7 @@ impl<Conn: Connection> Display<Conn> {
         props: GcParameters,
     ) -> crate::Result<Gcontext> {
         let gid = Gcontext::const_from_xid(self.generate_xid()?);
-        let gcr = self.create_gc_request(gid, target, props);
+        let gcr = Self::create_gc_request(gid, target, props);
         let tok = self.send_request(gcr)?;
         self.resolve_request(tok)?;
         Ok(gid)
@@ -297,13 +293,13 @@ impl<Conn: Connection> Display<Conn> {
         props: GcParameters,
     ) -> crate::Result<Gcontext> {
         let gid = Gcontext::const_from_xid(self.generate_xid()?);
-        let gcr = self.create_gc_request(gid, target, props);
+        let gcr = Self::create_gc_request(gid, target, props);
         let tok = self.send_request_async(gcr).await?;
         self.resolve_request_async(tok).await?;
         Ok(gid)
     }
 
-    /// Create an InternAtomRequest for our use.
+    /// Create an `InternAtomRequest` for our use.
     #[inline]
     fn intern_atom_request(name: String, exists: bool) -> InternAtomRequest {
         InternAtomRequest {

@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use breadx::{
-    event::Event, rgb, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
+    event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
     WindowClass, WindowParameters, XidType,
 };
 use std::{env, process};

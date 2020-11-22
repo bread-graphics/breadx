@@ -2,7 +2,7 @@
 
 use super::{Connection, RequestCookie};
 use crate::{util::cycled_zeroes, Request};
-use core::{iter, mem, num::NonZeroU64};
+use core::iter;
 use tinyvec::TinyVec;
 
 impl<Conn: Connection> super::Display<Conn> {
@@ -18,9 +18,9 @@ impl<Conn: Connection> super::Display<Conn> {
         log::trace!("len is {} bytes long", len);
 
         // pad to a multiple of four bytes if we can
-        let rem = len % 4;
-        if (rem != 0) {
-            let extend_by = 4 - rem;
+        let remainder = len % 4;
+        if remainder != 0 {
+            let extend_by = 4 - remainder;
             bytes.extend(iter::once(0).cycle().take(extend_by));
             len += extend_by;
             debug_assert_eq!(len % 4, 0);
@@ -33,9 +33,9 @@ impl<Conn: Connection> super::Display<Conn> {
         log::debug!("Request has opcode {}", R::OPCODE);
         bytes[0] = R::OPCODE;
 
-        let xlen = len / 4;
-        log::trace!("xlen is {}", xlen);
-        let len_bytes = xlen.to_ne_bytes();
+        let x_len = len / 4;
+        log::trace!("xlen is {}", x_len);
+        let len_bytes = x_len.to_ne_bytes();
         bytes[2] = len_bytes[0];
         bytes[3] = len_bytes[1];
 

@@ -4,7 +4,6 @@ use crate::auto::{
     xproto::{ClientMessageEvent, ConfigureNotifyEvent, ExposeEvent},
     AsByteSequence, Event as AutoEvent,
 };
-use core::fmt;
 use tinyvec::TinyVec;
 
 const OPCODE_MASK: u8 = !0x80;
@@ -22,7 +21,7 @@ pub enum Event {
 
 impl Event {
     #[inline]
-    pub(crate) fn from_bytes(mut bytes: TinyVec<[u8; 32]>) -> crate::Result<Self> {
+    pub(crate) fn from_bytes(bytes: TinyVec<[u8; 32]>) -> crate::Result<Self> {
         let mut e = Event::NoneOfTheAbove {
             opcode: bytes[0] & OPCODE_MASK,
             bytes,
@@ -36,17 +35,17 @@ impl Event {
         if let Event::NoneOfTheAbove { opcode, ref bytes } = self {
             let opcode = *opcode;
             if opcode == ConfigureNotifyEvent::OPCODE {
-                let cne = ConfigureNotifyEvent::from_bytes(bytes).ok_or_else(|| {
-                    crate::BreadError::BadObjectRead(Some("ConfigureNotifyEvent"))
-                })?;
+                let cne = ConfigureNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("ConfigureNotifyEvent")),
+                )?;
                 *self = Self::ConfigureNotify(cne.0);
             } else if opcode == ClientMessageEvent::OPCODE {
                 let cme = ClientMessageEvent::from_bytes(bytes)
-                    .ok_or_else(|| crate::BreadError::BadObjectRead(Some("ClientMessageEvent")))?;
+                    .ok_or(crate::BreadError::BadObjectRead(Some("ClientMessageEvent")))?;
                 *self = Self::ClientMessage(cme.0);
             } else if opcode == ExposeEvent::OPCODE {
                 let ee = ExposeEvent::from_bytes(bytes)
-                    .ok_or_else(|| crate::BreadError::BadObjectRead(Some("ExposeEvent")))?;
+                    .ok_or(crate::BreadError::BadObjectRead(Some("ExposeEvent")))?;
                 *self = Self::Expose(ee.0);
             }
         }
@@ -56,6 +55,7 @@ impl Event {
 
     /// Get the opcode of this event.
     #[inline]
+    #[must_use]
     pub fn opcode(&self) -> u8 {
         match self {
             Self::ConfigureNotify(_) => ConfigureNotifyEvent::OPCODE,

@@ -7,11 +7,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xc_misc::GetXidRangeRequest,
-        xproto::{
-            Colormap, CreateWindowRequest, QueryExtensionRequest, Screen, Setup, SetupRequest,
-            Visualid, Window, WindowClass,
-        },
+        xproto::{Colormap, Screen, Setup, SetupRequest, Window},
         AsByteSequence,
     },
     event::Event,
@@ -19,26 +15,11 @@ use crate::{
     xid::XidGenerator,
     Request, XID,
 };
-use alloc::{
-    borrow::{Cow, ToOwned},
-    boxed::Box,
-    collections::VecDeque,
-    vec::Vec,
-};
-use core::{
-    fmt, iter,
-    marker::PhantomData,
-    mem,
-    num::{NonZeroU16, NonZeroU32, NonZeroU64},
-    ptr::NonNull,
-    task::Waker,
-};
+use alloc::{borrow::Cow, boxed::Box, collections::VecDeque};
+use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32, ptr::NonNull};
 use cty::{c_int, c_void};
 use hashbrown::HashMap;
-use tinyvec::{tiny_vec, ArrayVec, TinyVec};
-
-#[cfg(feature = "async")]
-use futures_io::{AsyncRead, AsyncWrite};
+use tinyvec::TinyVec;
 
 mod connection;
 pub use connection::*;
@@ -50,8 +31,6 @@ mod input;
 mod output;
 
 pub use functions::*;
-
-const UNINIT_ERR: &str = "Display was not yet initialized. This is most likely an internal error.";
 
 /// The connection to the X11 server. Most operations done in breadx revolve around this object
 /// in some way, shape or form.
@@ -171,7 +150,7 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
         Ok(R::Reply::from_bytes(&reply)
-            .ok_or_else(|| crate::BreadError::BadObjectRead(None))?
+            .ok_or(crate::BreadError::BadObjectRead(None))?
             .0)
     }
 
@@ -181,7 +160,7 @@ impl<Conn: Connection> Display<Conn> {
     /// a cookie used to determine when this request will resolve. Usually, the `Display` object has functions
     /// that act as a wrapper around this object; however, if you'd like to circumvent those, this is usually
     /// the best option.
-    #[inline(always)]
+    #[inline]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
         self.send_request_internal(req)
     }
@@ -274,7 +253,7 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn from_connection(connection: Conn, auth: Option<AuthInfo>) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
-        d.init(auth.unwrap_or(Default::default()))?;
+        d.init(auth.unwrap_or_default())?;
         Ok(d)
     }
 
@@ -321,13 +300,13 @@ impl<Conn: Connection> Display<Conn> {
         }
 
         // read in the rest of the bytes
-        let mut length_bytes: [u8; 2] = [bytes[6], bytes[7]];
+        let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet(&mut bytes[8..])?;
 
-        let (setup, slen) = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
+        let (setup, _) =
+            Setup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
         self.setup = setup;
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
 
@@ -361,12 +340,12 @@ impl<Conn: Connection> Display<Conn> {
         }
 
         // read in the rest of the bytes
-        let mut length_bytes: [u8; 2] = [bytes[6], bytes[7]];
+        let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
         self.connection.read_packet_async(&mut bytes[8..]).await?;
 
-        let (setup, slen) = Setup::from_bytes(&bytes)
+        let (setup, _) = Setup::from_bytes(&bytes)
             .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
         self.setup = setup;
         self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
@@ -382,7 +361,7 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     /// Get the setup associates with this display.
-    #[inline(always)]
+    #[inline]
     pub fn setup(&self) -> &Setup {
         &self.setup
     }
@@ -462,7 +441,7 @@ impl<Conn: Connection> Display<Conn> {
     /// Retrieve a pointer from the context.
     #[inline]
     pub fn find_context(&mut self, xid: XID, context: ContextID) -> Option<NonNull<c_void>> {
-        self.context.get(&(xid, context)).map(|p| *p)
+        self.context.get(&(xid, context)).copied()
     }
 
     /// Delete an entry in the context.

@@ -38,6 +38,7 @@ macro_rules! retrieve_atom {
     }};
 }
 
+#[cfg(feature = "async")]
 macro_rules! retrieve_atom_async {
     ($dpy: expr, $dfield: ident, $name: expr) => {{
         match $dpy.$dfield {
@@ -112,9 +113,9 @@ pub struct WindowGeometry {
 impl Window {
     /// Map this window to the screen.
     #[inline]
-    pub fn map<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub fn map<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
         let mw = MapWindowRequest {
-            window: *self,
+            window: self,
             ..Default::default()
         };
 
@@ -127,9 +128,9 @@ impl Window {
     /// Map this window to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn map_async<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn map_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
         let mw = MapWindowRequest {
-            window: *self,
+            window: self,
             ..Default::default()
         };
         let tok = dpy.send_request_async(mw).await?;
@@ -139,7 +140,7 @@ impl Window {
     /// Request struct to change the property of a window.
     #[inline]
     fn change_property_request<T: AsByteSequence>(
-        &self,
+        self,
         property: Atom,
         property_type: PropertyType,
         format: PropertyFormat,
@@ -150,7 +151,7 @@ impl Window {
         let mut data_bytes: Vec<u8> = iter::repeat(0)
             .take(mem::size_of::<T>() * data.len())
             .collect();
-        let len = data.iter().fold(0, |mut index, item| {
+        let len = data.iter().fold(0, |index, item| {
             item.as_bytes(&mut data_bytes[index..]) + index
         });
         data_bytes.truncate(len);
@@ -159,7 +160,7 @@ impl Window {
 
         ChangePropertyRequest {
             mode,
-            window: *self,
+            window: self,
             property,
             ty: Atom::const_from_xid(property_type as u32),
             format,
@@ -172,7 +173,7 @@ impl Window {
     /// Change a property of the window, given an atom that identifies that property.
     #[inline]
     pub fn change_property<Conn: Connection, T: AsByteSequence>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         property: Atom,
         property_type: PropertyType,
@@ -196,7 +197,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn change_property_async<Conn: Connection, T: AsByteSequence>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         property: Atom,
         property_type: PropertyType,
@@ -221,7 +222,7 @@ impl Window {
     /// Set the protocols for the WM in regards to this window.
     #[inline]
     pub fn set_wm_protocols<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         protocols: &[Atom],
     ) -> crate::Result<()> {
@@ -241,7 +242,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn set_wm_protocols_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         protocols: &[Atom],
     ) -> crate::Result<()> {
@@ -261,7 +262,7 @@ impl Window {
     /// Set the title for this window.
     #[inline]
     pub fn set_title<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         title: &str,
     ) -> crate::Result<()> {
@@ -279,7 +280,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn set_title_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         title: &str,
     ) -> crate::Result<()> {
@@ -294,11 +295,11 @@ impl Window {
         .await
     }
 
-    /// GetWindowAttributesRequest
+    /// `GetWindowAttributesRequest`
     #[inline]
-    fn get_window_attributes_request(&self) -> GetWindowAttributesRequest {
+    fn get_window_attributes_request(self) -> GetWindowAttributesRequest {
         GetWindowAttributesRequest {
-            window: *self,
+            window: self,
             ..Default::default()
         }
     }
@@ -306,7 +307,7 @@ impl Window {
     /// Get the current set of window attributes for this window.
     #[inline]
     pub fn window_attributes<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
         let gwar = self.get_window_attributes_request();
@@ -320,7 +321,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn window_attributes_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
         let gwar = self.get_window_attributes_request();
@@ -333,7 +334,7 @@ impl Window {
     /// Immediately get the current set of window attributes for this window.
     #[inline]
     pub fn window_attributes_immediate<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<WindowAttributes> {
         let tok = self.window_attributes(dpy)?;
@@ -346,7 +347,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn window_attributes_immediate_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<WindowAttributes> {
         let tok = self.window_attributes_async(dpy).await?;
@@ -358,49 +359,46 @@ impl Window {
     /// Get the geometry of this window.
     #[inline]
     pub fn geometry<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        drawable::get_geometry(dpy, *self)
+        drawable::get_geometry(dpy, self)
     }
 
     /// Get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn geometry_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        drawable::get_geometry_async(dpy, *self).await
+        drawable::get_geometry_async(dpy, self).await
     }
 
     /// Immediately get the geometry of this window.
     #[inline]
     pub fn geometry_immediate<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<DrawableGeomtry> {
-        drawable::get_geometry_immediate(dpy, *self)
+        drawable::get_geometry_immediate(dpy, self)
     }
 
     /// Immediately get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn geometry_immediate_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<DrawableGeomtry> {
-        drawable::get_geometry_immediate_async(dpy, *self).await
+        drawable::get_geometry_immediate_async(dpy, self).await
     }
 
     /// Request to change this window's parameters.
     #[inline]
-    fn change_window_attrs_request(
-        &self,
-        props: WindowParameters,
-    ) -> ChangeWindowAttributesRequest {
+    fn change_window_attrs_request(self, props: WindowParameters) -> ChangeWindowAttributesRequest {
         let mut cwar = ChangeWindowAttributesRequest {
-            window: *self,
+            window: self,
             ..Default::default()
         };
 
@@ -412,7 +410,7 @@ impl Window {
     /// Change the properties of this window.
     #[inline]
     pub fn change_attributes<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         props: WindowParameters,
     ) -> crate::Result {
@@ -427,7 +425,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn change_attributes_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         props: WindowParameters,
     ) -> crate::Result {
@@ -441,7 +439,7 @@ impl Window {
     /// Set this window's background color.
     #[inline]
     pub fn set_background_color<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         clr: u32,
     ) -> crate::Result<()> {
@@ -454,7 +452,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn set_background_color_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         clr: u32,
     ) -> crate::Result<()> {
@@ -465,9 +463,9 @@ impl Window {
 
     /// Request to configure window.
     #[inline]
-    fn configure_window_request(&self, props: ConfigureWindowParameters) -> ConfigureWindowRequest {
+    fn configure_window_request(self, props: ConfigureWindowParameters) -> ConfigureWindowRequest {
         let mut cwr = ConfigureWindowRequest {
-            window: *self,
+            window: self,
             ..Default::default()
         };
         let c = props.convert_to_flags(&mut cwr);
@@ -478,7 +476,7 @@ impl Window {
     /// Configure the window's physical properties.
     #[inline]
     pub fn configure<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         props: ConfigureWindowParameters,
     ) -> crate::Result {
@@ -493,7 +491,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn configure_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         props: ConfigureWindowParameters,
     ) -> crate::Result {
@@ -507,7 +505,7 @@ impl Window {
     /// Set the border of this window.
     #[inline]
     pub fn set_border_width<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         width: u32,
     ) -> crate::Result {
@@ -520,7 +518,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn set_border_width_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         width: u32,
     ) -> crate::Result {
@@ -532,7 +530,7 @@ impl Window {
     /// Change the colormap associated with this window.
     #[inline]
     pub fn set_colormap<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         colormap: Colormap,
     ) -> crate::Result {
@@ -545,7 +543,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn set_colormap_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         colormap: Colormap,
     ) -> crate::Result {
@@ -555,17 +553,17 @@ impl Window {
     }
 
     #[inline]
-    fn change_save_set_request(&self, mode: SetMode) -> ChangeSaveSetRequest {
+    fn change_save_set_request(self, mode: SetMode) -> ChangeSaveSetRequest {
         ChangeSaveSetRequest {
             mode,
-            window: *self,
+            window: self,
             ..Default::default()
         }
     }
 
     #[inline]
     pub fn change_save_set<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         mode: SetMode,
     ) -> crate::Result {
@@ -579,7 +577,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn change_save_set_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         mode: SetMode,
     ) -> crate::Result {
@@ -593,7 +591,7 @@ impl Window {
     /// Resize the window.
     #[inline]
     pub fn resize<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         width: u32,
         height: u32,
@@ -608,7 +606,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn resize_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         width: u32,
         height: u32,
@@ -622,7 +620,7 @@ impl Window {
     /// Move and resize the window.
     #[inline]
     pub fn move_resize<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         x: i32,
         y: i32,
@@ -641,7 +639,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn move_resize_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         x: i32,
         y: i32,
@@ -657,9 +655,9 @@ impl Window {
     }
 
     #[inline]
-    fn circulate_window_request(&self, direction: Circulate) -> CirculateWindowRequest {
+    fn circulate_window_request(self, direction: Circulate) -> CirculateWindowRequest {
         CirculateWindowRequest {
-            window: *self,
+            window: self,
             direction,
             ..Default::default()
         }
@@ -667,7 +665,7 @@ impl Window {
 
     #[inline]
     pub fn circulate<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         direction: Circulate,
     ) -> crate::Result {
@@ -681,7 +679,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn circulate_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         direction: Circulate,
     ) -> crate::Result {
@@ -695,7 +693,7 @@ impl Window {
     /// Clear Window Request
     #[inline]
     fn clear_area_request(
-        &self,
+        self,
         x: i16,
         y: i16,
         width: u16,
@@ -708,7 +706,7 @@ impl Window {
             y,
             width,
             height,
-            window: *self,
+            window: self,
             ..Default::default()
         }
     }
@@ -716,7 +714,7 @@ impl Window {
     /// Clear an area of the window.
     #[inline]
     pub fn clear_area<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         x: i16,
         y: i16,
@@ -735,7 +733,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn clear_area_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         x: i16,
         y: i16,
@@ -752,27 +750,27 @@ impl Window {
 
     /// Clear the entire window.
     #[inline]
-    pub fn clear<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub fn clear<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
         self.clear_area(dpy, 0, 0, 0, 0, false) // means: clear the whole dang thing
     }
 
     /// Clear the entire window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn clear_async<Conn: Connection>(&self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn clear_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
         self.clear_area_async(dpy, 0, 0, 0, 0, false).await
     }
 
     #[inline]
     fn convert_selection_request(
-        &self,
+        self,
         selection: Atom,
         target: Atom,
         property: Atom,
         time: Timestamp,
     ) -> ConvertSelectionRequest {
         ConvertSelectionRequest {
-            requestor: *self,
+            requestor: self,
             selection,
             target,
             property,
@@ -783,7 +781,7 @@ impl Window {
 
     #[inline]
     pub fn convert_selection<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         selection: Atom,
         target: Atom,
@@ -800,7 +798,7 @@ impl Window {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn convert_selection_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         selection: Atom,
         target: Atom,
@@ -815,7 +813,7 @@ impl Window {
     }
 }
 
-/// Convert a GetWindowAttributesReply to a WindowAttributes struct.
+/// Convert a `GetWindowAttributesReply` to a `WindowAttributes` struct.
 #[inline]
 fn convert_get_window_attributes_reply(reply: GetWindowAttributesReply) -> WindowAttributes {
     let mut wa: WindowAttributes = Default::default();

@@ -1,17 +1,17 @@
 // MIT/Apache2 License
 
-//! This module contains data formats and functions that were automatically generated from the XmlXcb
+//! This module contains data formats and functions that were automatically generated from the `XmlXcb`
 //! description of the X11 protocol. If you want direct access to the X11 protocol's internals, it's
 //! recommended to use these functions, as well as the `Display` object's `send_request`,
 //! `resolve_request` and `wait_for_event` functions.
+
+#![allow(clippy::cast_sign_loss, clippy::cast_possible_wrap)]
 
 use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
 use core::mem;
-use cty::c_char;
-use tinyvec::TinyVec;
 
 pub(crate) mod prelude {
     pub(crate) use super::{
@@ -21,7 +21,6 @@ pub(crate) mod prelude {
     pub use crate::{client_message_data::ClientMessageData, Request, XidType, XID};
     pub use alloc::{string::String, vec::Vec};
     pub use cty::c_char;
-    pub use tinyvec::TinyVec;
     pub type Card8 = u8;
     pub type Card16 = u16;
     pub type Card32 = u32;
@@ -90,18 +89,18 @@ pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usi
         Ok(s) => Some((s, len)),
         Err(estr) => {
             log::warn!("Encountered invalid UTF-8, redoing with substitution.");
-            let mut cstr = estr.into_bytes();
-            cstr.iter_mut().for_each(|b| {
+            let mut bytes = estr.into_bytes();
+            bytes.iter_mut().for_each(|b| {
                 if *b > 127 {
                     *b = b'?';
                 }
             });
-            Some((String::from_utf8(cstr).ok()?, len as usize))
+            Some((String::from_utf8(bytes).ok()?, len as usize))
         }
     }
 }
 
-/// Internal use function to convert a vector of AsByteSequence types to bytes.
+/// Internal use function to convert a vector of `AsByteSequence` types to bytes.
 /// TODO: specialization
 #[inline]
 pub(crate) fn vector_as_bytes<T: AsByteSequence>(vector: &[T], bytes: &mut [u8]) -> usize {
@@ -284,7 +283,7 @@ macro_rules! impl_array {
 }
 
 impl_array! {
-    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
+    1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
 }
 
 impl AsByteSequence for String {

@@ -11,13 +11,9 @@ use super::{
 
 impl Gcontext {
     #[inline]
-    fn change_request<Conn: Connection>(
-        &self,
-        dpy: &mut Display<Conn>,
-        params: GcParameters,
-    ) -> ChangeGcRequest {
+    fn change_request(self, params: GcParameters) -> ChangeGcRequest {
         let mut cgcr = ChangeGcRequest {
-            gc: *self,
+            gc: self,
             ..Default::default()
         };
 
@@ -29,12 +25,12 @@ impl Gcontext {
     /// Change the properties of this GC.
     #[inline]
     pub fn change<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         params: GcParameters,
     ) -> crate::Result<()> {
         log::debug!("Sending ChangeGcRequest to server");
-        let req = self.change_request(dpy, params);
+        let req = self.change_request(params);
         let tok = dpy.send_request(req)?;
         log::debug!("Send ChangeGcRequest to server");
         dpy.resolve_request(tok)
@@ -44,12 +40,12 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn change_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         params: GcParameters,
     ) -> crate::Result<()> {
         log::debug!("Sending ChangeGcRequest to server");
-        let req = self.change_request(dpy, params);
+        let req = self.change_request(params);
         let tok = dpy.send_request_async(req).await?;
         log::debug!("Send ChangeGcRequest to server");
         dpy.resolve_request_async(tok).await
@@ -57,11 +53,11 @@ impl Gcontext {
 
     /// Request to draw a line.
     #[inline]
-    fn poly_segment_request(&self, drawable: Drawable, line: &[Segment]) -> PolySegmentRequest {
+    fn poly_segment_request(self, drawable: Drawable, line: &[Segment]) -> PolySegmentRequest {
         PolySegmentRequest {
             drawable,
-            gc: *self,
-            segments: line.iter().cloned().collect(),
+            gc: self,
+            segments: line.to_vec(),
             ..Default::default()
         }
     }
@@ -69,7 +65,7 @@ impl Gcontext {
     /// Draw a set of lines.
     #[inline]
     pub fn draw_lines<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         line: &[Segment],
@@ -89,7 +85,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_lines_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         line: &[Segment],
@@ -108,7 +104,7 @@ impl Gcontext {
     /// Draw a singular line.
     #[inline]
     pub fn draw_line<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         line: Segment,
@@ -120,7 +116,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_line_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         line: Segment,
@@ -131,14 +127,14 @@ impl Gcontext {
     /// Rectangle drawing request.
     #[inline]
     fn poly_rectangle_request(
-        &self,
+        self,
         target: Drawable,
         rectangles: &[Rectangle],
     ) -> PolyRectangleRequest {
         PolyRectangleRequest {
             drawable: target,
-            gc: *self,
-            rectangles: rectangles.iter().cloned().collect(),
+            gc: self,
+            rectangles: rectangles.to_vec(),
             ..Default::default()
         }
     }
@@ -146,7 +142,7 @@ impl Gcontext {
     /// Draw one or more rectangles to the screen.
     #[inline]
     pub fn draw_rectangles<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangles: &[Rectangle],
@@ -166,7 +162,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_rectangles_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangles: &[Rectangle],
@@ -185,7 +181,7 @@ impl Gcontext {
     /// Draw a rectangle to the screen.
     #[inline]
     pub fn draw_rectangle<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangle: Rectangle,
@@ -197,7 +193,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_rectangle_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangle: Rectangle,
@@ -207,11 +203,11 @@ impl Gcontext {
 
     /// Arc drawing request.
     #[inline]
-    fn poly_arc_request(&self, target: Drawable, arcs: &[Arc]) -> PolyArcRequest {
+    fn poly_arc_request(self, target: Drawable, arcs: &[Arc]) -> PolyArcRequest {
         PolyArcRequest {
             drawable: target,
-            gc: *self,
-            arcs: arcs.iter().cloned().collect(),
+            gc: self,
+            arcs: arcs.to_vec(),
             ..Default::default()
         }
     }
@@ -219,7 +215,7 @@ impl Gcontext {
     /// Draw one or more arcs to the screen.
     #[inline]
     pub fn draw_arcs<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arcs: &[Arc],
@@ -239,7 +235,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_arcs_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arcs: &[Arc],
@@ -258,7 +254,7 @@ impl Gcontext {
     /// Draw an arc to the screen.
     #[inline]
     pub fn draw_arc<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arc: Arc,
@@ -270,7 +266,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn draw_arc_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arc: Arc,
@@ -281,7 +277,7 @@ impl Gcontext {
     /// Request to fill a polygon.
     #[inline]
     fn fill_poly_request(
-        &self,
+        self,
         drawable: Drawable,
         shape: PolyShape,
         mode: CoordMode,
@@ -289,10 +285,10 @@ impl Gcontext {
     ) -> FillPolyRequest {
         FillPolyRequest {
             drawable,
-            gc: *self,
+            gc: self,
             shape,
             coordinate_mode: mode,
-            points: points.iter().cloned().collect(),
+            points: points.to_vec(),
             ..Default::default()
         }
     }
@@ -300,7 +296,7 @@ impl Gcontext {
     /// Fill a polygon specified by the given points.
     #[inline]
     pub fn fill_polygon<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         shape: PolyShape,
@@ -322,7 +318,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_polygon_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         shape: PolyShape,
@@ -343,14 +339,14 @@ impl Gcontext {
     /// Request to fill rectangles.
     #[inline]
     fn poly_fill_rectangle_request(
-        &self,
+        self,
         drawable: Drawable,
         rectangles: &[Rectangle],
     ) -> PolyFillRectangleRequest {
         PolyFillRectangleRequest {
             drawable,
-            gc: *self,
-            rectangles: rectangles.iter().cloned().collect(),
+            gc: self,
+            rectangles: rectangles.to_vec(),
             ..Default::default()
         }
     }
@@ -358,7 +354,7 @@ impl Gcontext {
     /// Fill a set of one or more rectangles.
     #[inline]
     pub fn fill_rectangles<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangles: &[Rectangle],
@@ -378,7 +374,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_rectangles_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangles: &[Rectangle],
@@ -397,7 +393,7 @@ impl Gcontext {
     /// Fill a single rectangle.
     #[inline]
     pub fn fill_rectangle<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangle: Rectangle,
@@ -409,7 +405,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_rectangle_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         rectangle: Rectangle,
@@ -419,11 +415,11 @@ impl Gcontext {
 
     /// Request to fill a series of arcs.
     #[inline]
-    fn poly_fill_arc_request(&self, drawable: Drawable, arcs: &[Arc]) -> PolyFillArcRequest {
+    fn poly_fill_arc_request(self, drawable: Drawable, arcs: &[Arc]) -> PolyFillArcRequest {
         PolyFillArcRequest {
             drawable,
-            gc: *self,
-            arcs: arcs.iter().cloned().collect(),
+            gc: self,
+            arcs: arcs.to_vec(),
             ..Default::default()
         }
     }
@@ -431,7 +427,7 @@ impl Gcontext {
     /// Fill a set of one or more arcs.
     #[inline]
     pub fn fill_arcs<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arcs: &[Arc],
@@ -451,7 +447,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_arcs_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arcs: &[Arc],
@@ -470,7 +466,7 @@ impl Gcontext {
     /// Fill an arc.
     #[inline]
     pub fn fill_arc<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arc: Arc,
@@ -482,7 +478,7 @@ impl Gcontext {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn fill_arc_async<Conn: Connection, Target: Into<Drawable>>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         target: Target,
         arc: Arc,

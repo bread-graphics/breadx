@@ -7,6 +7,7 @@ use crate::{
 
 /// Convenience function for producing an RGB pixel value for supported monitors.
 #[const_fn::const_fn("1.47")]
+#[must_use]
 pub const fn rgb(r: u8, g: u8, b: u8) -> u32 {
     let r = r as u32;
     let g = g as u32;
@@ -31,15 +32,16 @@ pub enum ColorAllocation {
 impl ColorAllocation {
     /// Get the pixel for this result.
     #[inline]
+    #[must_use]
     pub fn pixel(&self) -> u32 {
         match self {
-            Self::NoChange(pixel) => *pixel,
-            Self::Changed { pixel, .. } => *pixel,
+            Self::NoChange(pixel) | Self::Changed { pixel, .. } => *pixel,
         }
     }
 
     /// Convert an alloc color reply to the result.
     #[inline]
+    #[must_use]
     pub fn from_alloc_color_reply(acr: AllocColorReply, r: u16, g: u16, b: u16) -> Self {
         if acr.red == r && acr.green == g && acr.blue == b {
             Self::NoChange(acr.pixel)
@@ -64,9 +66,9 @@ impl From<ColorAllocation> for u32 {
 impl Colormap {
     /// Alloc color request.
     #[inline]
-    fn alloc_color_request(&self, r: u16, g: u16, b: u16) -> AllocColorRequest {
+    fn alloc_color_request(self, r: u16, g: u16, b: u16) -> AllocColorRequest {
         AllocColorRequest {
-            cmap: *self,
+            cmap: self,
             red: r,
             green: g,
             blue: b,
@@ -77,7 +79,7 @@ impl Colormap {
     /// Allocate a new color in the colormap.
     #[inline]
     pub fn alloc_color<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         r: u16,
         g: u16,
@@ -94,7 +96,7 @@ impl Colormap {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn alloc_color_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         r: u16,
         g: u16,
@@ -110,7 +112,7 @@ impl Colormap {
     /// Immediately allocate a new color in the colormap.
     #[inline]
     pub fn alloc_color_immediate<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         r: u16,
         g: u16,
@@ -129,7 +131,7 @@ impl Colormap {
     #[cfg(feature = "async")]
     #[inline]
     pub async fn alloc_color_immediate_async<Conn: Connection>(
-        &self,
+        self,
         dpy: &mut Display<Conn>,
         r: u16,
         g: u16,

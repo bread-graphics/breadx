@@ -8,7 +8,7 @@ use crate::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
         GetGeometryRequest, Pixmap, Window,
     },
-    Connection, Display, Gcontext, RequestCookie, Image,
+    Connection, Display, Gcontext, RequestCookie,
 };
 
 /// The return type of `drawable::get_geometry_immediate`.

@@ -5,7 +5,6 @@ use crate::{event::Event, util::cycled_zeroes};
 use core::iter;
 use tinyvec::TinyVec;
 
-const DET_TYPE_MASK: u8 = 0x7f;
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
 
@@ -31,7 +30,7 @@ impl<Conn: Connection> super::Display<Conn> {
             bytes.move_to_the_heap();
             let bytes = match bytes {
                 TinyVec::Heap(h) => h.into_boxed_slice(),
-                _ => unreachable!(),
+                TinyVec::Inline(_) => unreachable!(),
             };
 
             self.pending_replies.insert(sequence, bytes);
@@ -57,8 +56,9 @@ impl<Conn: Connection> super::Display<Conn> {
     }
 
     // add an entry to the pending elements linked list
+    #[allow(clippy::unused_self)]
     #[inline]
-    pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
+    pub(crate) fn expect_reply(&mut self, _req: u64, _flags: PendingRequestFlags) {
         /*        let pereq = PendingRequest {
             first_request: req,
             last_request: req,

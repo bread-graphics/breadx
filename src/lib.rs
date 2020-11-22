@@ -2,6 +2,17 @@
 
 #![forbid(unsafe_code)]
 #![no_std]
+#![warn(clippy::pedantic)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::default_trait_access,
+    clippy::map_err_ignore,
+    clippy::missing_errors_doc,
+    clippy::module_name_repetitions,
+    clippy::needless_pass_by_value,
+    clippy::too_many_arguments,
+    clippy::used_underscore_binding
+)]
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -35,8 +46,6 @@ pub use event::Event;
 pub use gcontext::*;
 pub use image::Image;
 pub use window::*;
-
-pub(crate) use paramatizer::*;
 
 /// A request.
 pub trait Request: auto::AsByteSequence {

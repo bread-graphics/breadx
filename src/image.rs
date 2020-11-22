@@ -3,7 +3,6 @@
 //! This module defines the Image struct, as well as procedures for manipulating images.
 
 use crate::auto::xproto::{ImageFormat, ImageOrder};
-use alloc::{boxed::Box, vec::Vec};
 
 /// An image. This acts as a wrapper around data that represents an image.
 #[repr(C)]
