@@ -54,16 +54,12 @@ jobs:
         versionSpec: '3.6'
     - script: python ci/prepare_vm.py
       displayName: "Installing Required Packages"
-    - bash: startx
-      displayName: "Starting X server"
       condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
-    - script: rustup component add clippy
-      displayName: "Add Clippy"
-    - bash: cargo test
+    - bash: cargo build
       displayName: "Basic Test"
     - bash: cargo build --no-default-features
       displayName: "No-Std Build"
-    - bash: cargo test --features async
+    - bash: cargo build --features async
       displayName: "Async Test"
     - bash: cargo build --examples
       displayName: "Build Examples"
