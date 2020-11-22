@@ -52,9 +52,9 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.6'
-    - script: python ci/prepare_vm.py
-      displayName: "Installing Required Packages"
-      condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
+#    - script: python ci/prepare_vm.py
+#      displayName: "Installing Required Packages"
+#      condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
     - bash: cargo build
       displayName: "Basic Test"
     - bash: cargo build --no-default-features
