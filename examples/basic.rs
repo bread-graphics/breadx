@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use breadx::{
-    event::Event, Arc, BreadError, CreateWindowParameters, DisplayConnection, EventMask,
+    event::Event, rgb, Arc, BreadError, CreateWindowParameters, DisplayConnection, EventMask,
     GcParameters, Segment, WindowClass, XidType,
 };
 use std::{env, process};
@@ -45,6 +45,18 @@ fn main() {
     gc_parameters.line_width = Some(10);
     let gc = conn.create_gc(window, gc_parameters).unwrap();
 
+    // allocate a red color
+    let red_clr = conn
+        .default_colormap()
+        .alloc_color_immediate(&mut conn, u16::MAX, 0, 0)
+        .unwrap()
+        .pixel();
+    let blue_clr = conn
+        .default_colormap()
+        .alloc_color_immediate(&mut conn, 0, 0, u16::MAX)
+        .unwrap()
+        .pixel();
+
     // set up an exit atom
     let wm_delete_window = conn
         .intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false)
@@ -76,8 +88,8 @@ fn main() {
                 println!("Window is [{} x {}]", geometry.width, geometry.height);
 
                 let mut gc_params: GcParameters = Default::default();
-                gc_params.foreground = Some(conn.default_black_pixel());
-                gc.change(&mut conn, gc_params).unwrap();
+                gc_params.foreground = Some(red_clr);
+                gc.change(&mut conn, gc_params.clone()).unwrap();
 
                 gc.draw_lines(
                     &mut conn,
@@ -99,6 +111,9 @@ fn main() {
                 )
                 .unwrap();
 
+                gc_params.foreground = Some(blue_clr);
+                gc.change(&mut conn, gc_params.clone()).unwrap();
+
                 gc.fill_arc(
                     &mut conn,
                     window,
@@ -109,6 +124,23 @@ fn main() {
                         height: 150,
                         angle1: 0,
                         angle2: 270 * 64,
+                    },
+                )
+                .unwrap();
+
+                gc_params.foreground = Some(conn.default_black_pixel());
+                gc.change(&mut conn, gc_params.clone()).unwrap();
+
+                gc.draw_arc(
+                    &mut conn,
+                    window,
+                    Arc {
+                        x: 200,
+                        y: 10,
+                        width: 150,
+                        height: 150,
+                        angle1: 0,
+                        angle2: 360 * 64,
                     },
                 )
                 .unwrap();

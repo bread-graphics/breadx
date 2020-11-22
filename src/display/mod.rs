@@ -9,8 +9,8 @@ use crate::{
     auto::{
         xc_misc::GetXidRangeRequest,
         xproto::{
-            CreateWindowRequest, QueryExtensionRequest, Screen, Setup, SetupRequest, Visualid,
-            Window, WindowClass,
+            Colormap, CreateWindowRequest, QueryExtensionRequest, Screen, Setup, SetupRequest,
+            Visualid, Window, WindowClass,
         },
         AsByteSequence,
     },
@@ -396,6 +396,11 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub(crate) fn default_root(&self) -> Window {
         self.setup.roots[self.default_screen].root
+    }
+
+    #[inline]
+    pub fn default_colormap(&self) -> Colormap {
+        self.default_screen().default_colormap
     }
 
     /// Generate a unique X ID for a window, colormap, or other object. Usually, `Display`'s helper functions

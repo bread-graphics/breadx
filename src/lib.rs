@@ -15,6 +15,7 @@ extern crate scopeguard;
 mod auth_info;
 pub mod auto;
 pub mod client_message_data;
+pub mod colormap;
 pub mod display;
 pub mod drawable;
 pub mod error;
@@ -26,6 +27,7 @@ pub mod window;
 pub mod xid;
 
 pub use auth_info::*;
+pub use colormap::*;
 pub use display::*;
 pub use error::*;
 pub use event::Event;
