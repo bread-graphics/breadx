@@ -20,7 +20,7 @@ jobs:
       displayName: "Add Clippy"
     - script: rustup component add rustfmt
       displayName: "Add Rustfmt"
-    - bash: rustfmt --check src/lib.rs
+    - bash: rustfmt --edititon 2018 --check src/lib.rs
       displayName: "Check for properly formatted code"
     - bash: cargo test
       displayName: "Basic Test"
