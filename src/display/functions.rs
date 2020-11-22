@@ -4,10 +4,13 @@ use super::{Connection, Display, RequestCookie};
 use crate::{
     auto::{
         xproto::{
-            ArcMode, Atom, BackingStore, CapStyle, ChangeGcRequest, Colormap, CreateGcRequest,
+            AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
+            ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
+            ChangeWindowAttributesRequest, CloseDown, Colormap, CreateGcRequest,
             CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font, Gc,
-            Gcontext, Gravity, Gx, InternAtomReply, InternAtomRequest, JoinStyle, LineStyle,
-            Pixmap, SubwindowMode, Visualid, Window, WindowClass,
+            Gcontext, Gravity, Gx, InternAtomReply, InternAtomRequest, JoinStyle, Kb, LedMode,
+            LineStyle, Pixmap, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode,
+            Timestamp, Visualid, Window, WindowClass,
         },
         AsByteSequence,
     },
@@ -16,7 +19,7 @@ use crate::{
 use alloc::{string::String, vec::Vec};
 
 crate::create_paramaterizer! {
-    pub struct CreateWindowParameters : (Cw, CreateWindowRequest) {
+    pub struct WindowParameters : (Cw, CreateWindowRequest) {
         background_pixmap (set_back_pixmap,       background_pixmap):     Pixmap,
         background_pixel  (set_back_pixel,        background_pixel):      u32,
         border_pixmap     (set_border_pixmap,     border_pixmap):         Pixmap,
@@ -32,6 +35,32 @@ crate::create_paramaterizer! {
         dont_propogate    (set_dont_propagate,    do_not_propogate_mask): EventMask,
         colormap          (set_colormap,          colormap):              Colormap,
         cursor            (set_cursor,            cursor):                Cursor
+    }
+}
+
+impl WindowParameters {
+    #[inline]
+    pub(crate) fn mask_to_change_attrs_request(&self, o: &mut ChangeWindowAttributesRequest) -> Cw {
+        let mut c: CreateWindowRequest = Default::default();
+        let mask = self.convert_to_flags(&mut c);
+
+        o.background_pixmap = c.background_pixmap;
+        o.background_pixel = c.background_pixel;
+        o.border_pixmap = c.border_pixmap;
+        o.border_pixel = c.border_pixel;
+        o.bit_gravity = c.bit_gravity;
+        o.win_gravity = c.win_gravity;
+        o.backing_store = c.backing_store;
+        o.backing_planes = c.backing_planes;
+        o.backing_pixel = c.backing_pixel;
+        o.override_redirect = c.override_redirect;
+        o.save_under = c.save_under;
+        o.event_mask = c.event_mask;
+        o.do_not_propogate_mask = c.do_not_propogate_mask;
+        o.colormap = c.colormap;
+        o.cursor = c.cursor;
+
+        mask
     }
 }
 
@@ -60,6 +89,19 @@ crate::create_paramaterizer! {
         dash_offset           (set_dash_offset,           dash_offset):           u32,
         dashes                (set_dash_list,             dashes):                u32,
         arc_mode              (set_arc_mode,              arc_mode):              ArcMode
+    }
+}
+
+crate::create_paramaterizer! {
+    pub struct KbParameters : (Kb, ChangeKeyboardControlRequest) {
+        key_click_percent (set_key_click_percent, key_click_percent): i32,
+        bell_percent      (set_bell_percent,      bell_percent):      i32,
+        bell_pitch        (set_bell_pitch,        bell_pitch):        i32,
+        bell_duration     (set_bell_duration,     bell_duration):     i32,
+        led               (set_led,               led):               u32,
+        led_mode          (set_led_mode,          led_mode):          LedMode,
+        key               (set_key,               key):               u32,
+        auto_repeat_mode  (set_auto_repeat_mode,  auto_repeat_mode):  AutoRepeatMode
     }
 }
 
@@ -111,7 +153,7 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        mut props: CreateWindowParameters,
+        mut props: WindowParameters,
     ) -> CreateWindowRequest {
         const INHERITED_DEPTH: u8 = 0;
         const INHERITED_VISUAL: Visualid = 0;
@@ -152,7 +194,7 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: CreateWindowParameters,
+        props: WindowParameters,
     ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
         log::debug!("Generate {}", wid.xid());
@@ -191,7 +233,7 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        props: CreateWindowParameters,
+        props: WindowParameters,
     ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
         let cw = self.create_window_request(
@@ -317,5 +359,156 @@ impl<Conn: Connection> Display<Conn> {
     ) -> crate::Result<Atom> {
         let r = self.intern_atom_async(name, only_if_exists).await?;
         Ok(self.resolve_request_async(r).await?.atom)
+    }
+
+    /// Change Keyboard Control Request
+    #[inline]
+    fn change_keyboard_control_request(props: KbParameters) -> ChangeKeyboardControlRequest {
+        let mut ckcr: ChangeKeyboardControlRequest = Default::default();
+        let c = props.convert_to_flags(&mut ckcr);
+        ckcr.value_mask = c;
+        ckcr
+    }
+
+    /// Change the keyboard's control properties.
+    #[inline]
+    pub fn change_keyboard_control(&mut self, props: KbParameters) -> crate::Result<()> {
+        let ckcr = Self::change_keyboard_control_request(props);
+        log::debug!("Sending ChangeKeyboardControlRequest to server.");
+        let tok = self.send_request(ckcr)?;
+        log::debug!("Sent ChangeKeyboardControlRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    /// Change the keyboard's control properties, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn change_keyboard_control_async(
+        &mut self,
+        props: KbParameters,
+    ) -> crate::Result<()> {
+        let ckcr = Self::change_keyboard_control_request(props);
+        log::debug!("Sending ChangeKeyboardControlRequest to server.");
+        let tok = self.send_request_async(ckcr).await?;
+        log::debug!("Sent ChangeKeyboardControlRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    pub fn bell(&mut self, percent: i8) -> crate::Result {
+        let bell = BellRequest {
+            percent,
+            ..Default::default()
+        };
+        log::debug!("Sending BellRequest to server.");
+        let tok = self.send_request(bell)?;
+        log::debug!("Sent BellRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn bell_async(&mut self, percent: i8) -> crate::Result {
+        let bell = BellRequest {
+            percent,
+            ..Default::default()
+        };
+        log::debug!("Sending BellRequest to server.");
+        let tok = self.send_request_async(bell).await?;
+        log::debug!("Sent BellRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    pub fn set_access_control(&mut self, mode: AccessControl) -> crate::Result {
+        let sacr = SetAccessControlRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending SetAccessControlRequest to server.");
+        let tok = self.send_request(sacr)?;
+        log::debug!("Sent SetAccessControlRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_access_control_async(&mut self, mode: AccessControl) -> crate::Result {
+        let sacr = SetAccessControlRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending SetAccessControlRequest to server.");
+        let tok = self.send_request_async(sacr).await?;
+        log::debug!("Sent SetAccessControlRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    fn change_active_pointer_grab_request(
+        event_mask: EventMask,
+        cursor: Cursor,
+        time: Option<Timestamp>,
+    ) -> ChangeActivePointerGrabRequest {
+        ChangeActivePointerGrabRequest {
+            cursor,
+            event_mask,
+            time: time.unwrap_or(0),
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn change_active_pointer_grab(
+        &mut self,
+        event_mask: EventMask,
+        cursor: Cursor,
+        time: Option<Timestamp>,
+    ) -> crate::Result {
+        let capgr = Self::change_active_pointer_grab_request(event_mask, cursor, time);
+        log::debug!("Sending ChangeActivePointerGrabRequest to server.");
+        let tok = self.send_request(capgr)?;
+        log::debug!("Sent ChangeActivePointerGrabRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn change_active_pointer_grab_async(
+        &mut self,
+        event_mask: EventMask,
+        cursor: Cursor,
+        time: Option<Timestamp>,
+    ) -> crate::Result {
+        let capgr = Self::change_active_pointer_grab_request(event_mask, cursor, time);
+        log::debug!("Sending ChangeActivePointerGrabRequest to server.");
+        let tok = self.send_request_async(capgr).await?;
+        log::debug!("Sent ChangeActivePointerGrabRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    pub fn set_close_down_mode(&mut self, mode: CloseDown) -> crate::Result {
+        let scdmr = SetCloseDownModeRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending SetCloseDownModeRequest to server.");
+        let tok = self.send_request(scdmr)?;
+        log::debug!("Sent SetCloseDownModeRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_close_down_mode_async(&mut self, mode: CloseDown) -> crate::Result {
+        let scdmr = SetCloseDownModeRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending SetCloseDownModeRequest to server.");
+        let tok = self.send_request_async(scdmr).await?;
+        log::debug!("Sent SetCloseDownModeRequest to server.");
+        self.resolve_request_async(tok).await
     }
 }

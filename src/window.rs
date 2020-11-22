@@ -3,13 +3,14 @@
 pub use crate::{
     auto::{
         xproto::{
-            Atom, BackingStore, ChangePropertyRequest, Colormap, EventMask, GetGeometryRequest,
+            Atom, BackingStore, ChangePropertyRequest, ChangeWindowAttributesRequest, Colormap,
+            ConfigWindow, ConfigureWindowRequest, EventMask, Gcontext, GetGeometryRequest,
             GetWindowAttributesReply, GetWindowAttributesRequest, Gravity, MapState,
-            MapWindowRequest, PropMode, Visualid, Window, WindowClass, ATOM_WM_NAME,
+            MapWindowRequest, PropMode, StackMode, Visualid, Window, WindowClass, ATOM_WM_NAME,
         },
         AsByteSequence,
     },
-    display::{Connection, Display, RequestCookie},
+    display::{Connection, Display, RequestCookie, WindowParameters},
     drawable::{self, Geometry as DrawableGeomtry},
     xid::XidType,
 };
@@ -53,6 +54,18 @@ macro_rules! retrieve_atom_async {
             }
         }
     }};
+}
+
+crate::create_paramaterizer! {
+    pub struct ConfigureWindowParameters : (ConfigWindow, ConfigureWindowRequest) {
+        x            (set_x,            x)            : i32,
+        y            (set_y,            y)            : i32,
+        width        (set_width,        width)        : u32,
+        height       (set_height,       height)       : u32,
+        border_width (set_border_width, border_width) : u32,
+        sibling      (set_sibling,      sibling)       : Window,
+        stack_mode   (set_stack_mode,   stack_mode)   : StackMode
+    }
 }
 
 /// The return type of `Window::window_attributes_immediate`.
@@ -376,6 +389,167 @@ impl Window {
         dpy: &mut Display<Conn>,
     ) -> crate::Result<DrawableGeomtry> {
         drawable::get_geometry_immediate_async(dpy, *self).await
+    }
+
+    /// Request to change this window's parameters.
+    #[inline]
+    fn change_window_attrs_request(
+        &self,
+        props: WindowParameters,
+    ) -> ChangeWindowAttributesRequest {
+        let mut cwar = ChangeWindowAttributesRequest {
+            window: *self,
+            ..Default::default()
+        };
+
+        let c = props.mask_to_change_attrs_request(&mut cwar);
+        cwar.value_mask = c;
+        cwar
+    }
+
+    /// Change the properties of this window.
+    #[inline]
+    pub fn change_attributes<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        props: WindowParameters,
+    ) -> crate::Result {
+        let cwar = self.change_window_attrs_request(props);
+        log::debug!("Sending ChangeWindowAttributesRequest to server.");
+        let tok = dpy.send_request(cwar)?;
+        log::debug!("Sent ChangeWindowAttributesRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Change the properties of this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn change_attributes_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        props: WindowParameters,
+    ) -> crate::Result {
+        let cwar = self.change_window_attrs_request(props);
+        log::debug!("Sending ChangeWindowAttributesRequest to server.");
+        let tok = dpy.send_request_async(cwar).await?;
+        log::debug!("Sent ChangeWindowAttributesRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Set this window's background color.
+    #[inline]
+    pub fn set_background_color<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        clr: u32,
+    ) -> crate::Result<()> {
+        let mut props: WindowParameters = Default::default();
+        props.background_pixel = Some(clr);
+        self.change_attributes(dpy, props)
+    }
+
+    /// Set this window's background color, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_background_color_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        clr: u32,
+    ) -> crate::Result<()> {
+        let mut props: WindowParameters = Default::default();
+        props.background_pixel = Some(clr);
+        self.change_attributes_async(dpy, props).await
+    }
+
+    /// Request to configure window.
+    #[inline]
+    fn configure_window_request(&self, props: ConfigureWindowParameters) -> ConfigureWindowRequest {
+        let mut cwr = ConfigureWindowRequest {
+            window: *self,
+            ..Default::default()
+        };
+        let c = props.convert_to_flags(&mut cwr);
+        cwr.value_mask = c;
+        cwr
+    }
+
+    /// Configure the window's physical properties.
+    #[inline]
+    pub fn configure<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        props: ConfigureWindowParameters,
+    ) -> crate::Result {
+        let cwr = self.configure_window_request(props);
+        log::debug!("Sending ConfigureWindowRequest to server.");
+        let tok = dpy.send_request(cwr)?;
+        log::debug!("Sent ConfigureWindowRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Configure the window's physical properties, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn configure_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        props: ConfigureWindowParameters,
+    ) -> crate::Result {
+        let cwr = self.configure_window_request(props);
+        log::debug!("Sending ConfigureWindowRequest to server.");
+        let tok = dpy.send_request_async(cwr).await?;
+        log::debug!("Sent ConfigureWindowRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Set the border of this window.
+    #[inline]
+    pub fn set_border_width<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        width: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.border_width = Some(width);
+        self.configure(dpy, props)
+    }
+
+    /// Set the border of this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_border_width_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        width: u32,
+    ) -> crate::Result {
+        let mut props: ConfigureWindowParameters = Default::default();
+        props.border_width = Some(width);
+        self.configure_async(dpy, props).await
+    }
+
+    /// Change the colormap associated with this window.
+    #[inline]
+    pub fn set_colormap<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        colormap: Colormap,
+    ) -> crate::Result {
+        let mut props: WindowParameters = Default::default();
+        props.colormap = Some(colormap);
+        self.change_attributes(dpy, props)
+    }
+
+    /// Change the colormap associated with this window.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_colormap_async<Conn: Connection>(
+        &self,
+        dpy: &mut Display<Conn>,
+        colormap: Colormap,
+    ) -> crate::Result {
+        let mut props: WindowParameters = Default::default();
+        props.colormap = Some(colormap);
+        self.change_attributes_async(dpy, props).await
     }
 }
 

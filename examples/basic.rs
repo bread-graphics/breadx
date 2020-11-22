@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use breadx::{
-    event::Event, rgb, Arc, BreadError, CreateWindowParameters, DisplayConnection, EventMask,
-    GcParameters, Segment, WindowClass, XidType,
+    event::Event, rgb, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
+    WindowClass, WindowParameters, XidType,
 };
 use std::{env, process};
 
@@ -17,7 +17,7 @@ fn main() {
     event_mask.set_exposure(true);
 
     // window properties
-    let mut cwp: CreateWindowParameters = Default::default();
+    let mut cwp: WindowParameters = Default::default();
     cwp.event_mask = Some(event_mask);
 
     let window = conn
