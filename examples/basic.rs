@@ -20,9 +20,10 @@ fn main() {
     let mut cwp: WindowParameters = Default::default();
     cwp.event_mask = Some(event_mask);
 
+    let root = conn.default_screen().root;
     let window = conn
         .create_window(
-            None,
+            root,
             WindowClass::CopyFromParent,
             None,
             None,

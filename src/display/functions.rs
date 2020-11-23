@@ -141,7 +141,7 @@ impl<Conn: Connection> Display<Conn> {
     fn create_window_request(
         &mut self,
         wid: Window,
-        parent: Option<Window>,
+        parent: Window,
         class: WindowClass,
         depth: Option<u8>,
         visual: Option<Visualid>,
@@ -161,7 +161,7 @@ impl<Conn: Connection> Display<Conn> {
 
         let mut cwr = CreateWindowRequest {
             wid,
-            parent: parent.unwrap_or_else(|| self.default_root()),
+            parent,
             class,
             visual: visual.unwrap_or(INHERITED_VISUAL),
             depth: depth.unwrap_or(INHERITED_DEPTH),
@@ -182,7 +182,7 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn create_window(
         &mut self,
-        parent: Option<Window>,
+        parent: Window,
         class: WindowClass,
         depth: Option<u8>,
         visual: Option<Visualid>,
@@ -221,7 +221,7 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub async fn create_window_async(
         &mut self,
-        parent: Option<Window>,
+        parent: Window,
         class: WindowClass,
         depth: Option<u8>,
         visual: Option<Visualid>,

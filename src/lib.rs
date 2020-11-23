@@ -41,9 +41,10 @@
 //!     let mut conn = DisplayConnection::create(None, None)?;
 //!    
 //!     // create a 640x400 window.
+//!     let root = conn.default_screen().root;
 //!     let window = conn
 //!         .create_window(
-//!             None, // parent (none means default root)
+//!             root, // parent
 //!             WindowClass::CopyFromParent, // window class
 //!             None, // depth (none means inherit from parent)
 //!             None, // visual (none means "       "    "    )

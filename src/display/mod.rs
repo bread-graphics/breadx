@@ -7,7 +7,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xproto::{Colormap, Screen, Setup, SetupRequest, Window},
+        xproto::{Colormap, Screen, Setup, SetupRequest},
         AsByteSequence,
     },
     event::Event,
@@ -386,11 +386,6 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn default_black_pixel(&self) -> u32 {
         self.default_screen().black_pixel
-    }
-
-    #[inline]
-    pub(crate) fn default_root(&self) -> Window {
-        self.setup.roots[self.default_screen].root
     }
 
     #[inline]
