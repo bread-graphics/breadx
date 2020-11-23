@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+//! This module provides the events used to drive the `breadx` event system.
+
 use crate::auto::{
     xproto::{ClientMessageEvent, ConfigureNotifyEvent, ExposeEvent},
     AsByteSequence, Event as AutoEvent,

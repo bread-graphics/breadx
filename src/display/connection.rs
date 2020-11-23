@@ -17,7 +17,8 @@ use std::os::unix::net::UnixStream;
 #[cfg(feature = "async")]
 use alloc::boxed::Box;
 
-/// A trait that represents the ability to send and receive bytes across a connection.
+/// A trait that represents the ability to send and receive bytes across a connection. This is used as a two-way
+/// stream to send and receive data from the X server.
 #[cfg_attr(feature = "async", async_trait::async_trait)]
 pub trait Connection {
     /// Send bytes in a packet across the connection in a blocking manner.
@@ -49,18 +50,14 @@ impl Connection for TcpStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
-        log::error!("Called send_packet_async for non-async TcpStream");
-        self.write_all(bytes)?;
-        Ok(())
+    async fn send_packet_async(&mut self, _bytes: &[u8]) -> crate::Result {
+        Err(crate::BreadError::WouldBlock)
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
-        log::error!("Called read_packet_async for non-async TcpStream");
-        self.read_exact(bytes)?;
-        Ok(())
+    async fn read_packet_async(&mut self, _bytes: &mut [u8]) -> crate::Result {
+        Err(crate::BreadError::WouldBlock)
     }
 }
 
@@ -69,14 +66,14 @@ impl Connection for TcpStream {
 impl Connection for AsyncTcpStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
-        log::warn!("Called send_packet for async TcpStream");
+        log::warn!("Called blocking send_packet for async TcpStream");
         block_on(self.write(bytes))?;
         Ok(())
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
-        log::warn!("Called read_packet for async TcpStream");
+        log::warn!("Called blocking read_packet for async TcpStream");
         block_on(self.read(bytes))?;
         Ok(())
     }
@@ -111,18 +108,14 @@ impl Connection for UnixStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
-        log::warn!("Called send_packet_async for non-async UnixStream");
-        self.write_all(bytes)?;
-        Ok(())
+    async fn send_packet_async(&mut self, _bytes: &[u8]) -> crate::Result {
+        Err(crate::BreadError::WouldBlock)
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
-        log::warn!("Called read_packet_async for non-async UnixStrean");
-        self.read_exact(bytes)?;
-        Ok(())
+    async fn read_packet_async(&mut self, _bytes: &mut [u8]) -> crate::Result {
+        Err(crate::BreadError::WouldBlock)
     }
 }
 
@@ -131,14 +124,14 @@ impl Connection for UnixStream {
 impl Connection for AsyncUnixStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
-        log::warn!("Called send_packet for async UnixStream");
+        log::warn!("Called blocking send_packet for async UnixStream");
         block_on(self.write(bytes))?;
         Ok(())
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
-        log::warn!("Called read_packet for async UnixStream");
+        log::warn!("Called blocking read_packet for async UnixStream");
         block_on(self.read(bytes))?;
         Ok(())
     }

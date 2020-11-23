@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+//! Provides functionality and structures used to interface with the colormap.
+
 use crate::{
     auto::xproto::{AllocColorReply, AllocColorRequest, Colormap},
     Connection, Display, RequestCookie,
@@ -7,6 +9,7 @@ use crate::{
 
 /// Convenience function for producing an RGB pixel value for supported monitors.
 #[const_fn::const_fn("1.47")]
+#[inline]
 #[must_use]
 pub const fn rgb(r: u8, g: u8, b: u8) -> u32 {
     let r = r as u32;

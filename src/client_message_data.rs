@@ -1,9 +1,15 @@
 // MIT/Apache2 License
 
+//! This module provides the `ClientMessageData` structure, which is the data type returned by the
+//! `ClientMessageEvent` object.
+
 use crate::auto::AsByteSequence;
 use core::mem;
 
-/// The data returned from a client message.
+/// The data returned from a client message. This is dictated by protocol to be five 32-bit integers in length;
+/// however, it could also represent 10 16-bit integers or 20 8-bit integers. It is usually represented as a
+/// union; however, the `bytes`, `shorts`, and `longs` methods can be used to access each of these
+/// representations.
 #[derive(Default, Debug, Clone)]
 #[repr(transparent)]
 pub struct ClientMessageData {

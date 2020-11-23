@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["not_a_seagull <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -21,7 +21,6 @@ futures-lite = { version = "1.11.2", optional = true }
 hashbrown = "0.9.1"
 log = "0.4"
 memchr = "2.3.3"
-scopeguard = "1.1.0"
 tinyvec = { version = "1.1.0-alpha", features = ["alloc"] }
 
 [dev-dependencies]

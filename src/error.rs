@@ -1,9 +1,12 @@
 // MIT/Apache2 License
 
+//! This module provides structures used in error handling of `breadx` functions.
+
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
-use std::io::Error as IoError;
+use std::{error::Error as StdError, io::Error as IoError};
 
+/// The common error type returned by `breadx` functions.
 #[derive(Debug)]
 pub enum BreadError {
     StaticMsg(&'static str),
@@ -29,6 +32,8 @@ pub enum BreadError {
     },
     /// The X connection closed without telling us.
     ClosedConnection,
+    /// Attempted to call an async function on a blocking object.
+    WouldBlock,
 }
 
 impl BreadError {
@@ -66,6 +71,7 @@ impl fmt::Display for BreadError {
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
             Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
+            Self::WouldBlock => f.write_str("Attempted to call async I/O on a blocking connection"),
             Self::BadObjectRead(name) => write!(
                 f,
                 "Unable to read object of type from bytes: {}",
@@ -125,5 +131,8 @@ impl fmt::Debug for ErrorCode {
         fmt::Display::fmt(self, f)
     }
 }
+
+#[cfg(feature = "std")]
+impl StdError for BreadError {}
 
 pub type Result<Success = ()> = core::result::Result<Success, BreadError>;

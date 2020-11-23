@@ -121,7 +121,7 @@ impl Window {
 
         log::debug!("Sending MapWindowRequest to server");
         let tok = dpy.send_request(mw)?;
-        defer!(log::debug!("Sent MapWindowRequest to server"));
+        log::debug!("Sent MapWindowRequest to server");
         dpy.resolve_request(tok)
     }
 

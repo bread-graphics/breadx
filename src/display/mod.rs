@@ -15,11 +15,14 @@ use crate::{
     xid::XidGenerator,
     Request, XID,
 };
-use alloc::{borrow::Cow, boxed::Box, collections::VecDeque};
+use alloc::{boxed::Box, collections::VecDeque};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32, ptr::NonNull};
 use cty::{c_int, c_void};
 use hashbrown::HashMap;
 use tinyvec::TinyVec;
+
+#[cfg(feature = "std")]
+use std::borrow::Cow;
 
 mod connection;
 pub use connection::*;
@@ -43,6 +46,19 @@ pub use functions::*;
 /// Upon its instantiation, the `Display` sends bytes to the server requesting the setup information, and
 /// then stores it for later use. Afterwards, it awaits commands from the programmer to send requests,
 /// receive replies or process events.
+///
+/// # Example
+///
+/// Open a connection to the X11 server and get the screen resolution.
+///
+/// ```rust,no_run
+/// use breadx::DisplayConnection;
+///
+/// let mut conn = DisplayConnection::create(None, None).unwrap();
+///
+/// let default_screen = conn.default_screen();
+/// println!("Default screen is {} x {}", default_screen.width_in_pixels, default_screen.height_in_pixels);
+/// ```
 pub struct Display<Conn> {
     // the connection to the server
     pub(crate) connection: Conn,
@@ -101,20 +117,11 @@ pub(crate) struct PendingRequestFlags {
     pub checked: bool,
 }
 
-impl<Conn> fmt::Debug for Display<Conn> {
+impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct ConnDummy;
-
-        impl fmt::Debug for ConnDummy {
-            #[inline]
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str("X11 Server Connection")
-            }
-        }
-
         f.debug_struct("Display")
-            .field("connection", &ConnDummy)
+            .field("connection", &self.connection)
             .field("setup", &self.setup)
             .field("xid", &self.xid)
             .field("default_screen", &self.default_screen)

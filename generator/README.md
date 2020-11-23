@@ -33,3 +33,5 @@ pub struct <identifier> {
     // struct. contents
 } 
 ```
+
+TODO: finish this
