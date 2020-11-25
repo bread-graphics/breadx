@@ -95,20 +95,27 @@
 //!             to their blocking variants, but they use non-blocking variants of network calls. This uses
 //!             the [`async_net`](https://crates.io/crates/async-net) crate to provide non-blocking calls.
 //!             However, it nearly triples the size of this package's dependency tree.
-//! * `image` - Coming soon.
-//! * `nightly_min_specialization` - Coming soon.
+//! * `image-support` - Coming soon.
+//! * `nightly-min-specialization` - Coming soon.
+//! * `parallel` - Uses the [`rayon`](https://crates.io/crates/rayon) crate to parallelize computationally
+//!                expensive operations.
 
+#![deny(deprecated)]
 #![forbid(unsafe_code)]
+#![warn(missing_copy_implementations)]
+#![warn(unused_qualifications)]
+
 #![no_std]
+
 #![warn(clippy::pedantic)]
 #![allow(
-    clippy::cast_possible_truncation,
-    clippy::default_trait_access,
-    clippy::map_err_ignore,
-    clippy::missing_errors_doc,
-    clippy::module_name_repetitions,
-    clippy::needless_pass_by_value,
-    clippy::too_many_arguments,
+    clippy::cast_possible_truncation, // used on purpose quite abit
+    clippy::default_trait_access, // more readable, IMO
+    clippy::map_err_ignore, // sometimes we just need to drop the error
+    clippy::missing_errors_doc, // lots of "async redox" functions
+    clippy::module_name_repetitions, // doesn't matter IMO
+    clippy::needless_pass_by_value, 
+    clippy::too_many_arguments, // we need this sometimes for compliance
     clippy::used_underscore_binding
 )]
 
@@ -144,8 +151,8 @@ pub use window::*;
 pub use xid::*;
 
 /// A request that can be sent as an instruction to the X server.
-pub trait Request: auto::AsByteSequence {
-    type Reply: auto::AsByteSequence;
+pub trait Request: AsByteSequence {
+    type Reply: AsByteSequence;
     // Excerpt from the X Window System Protocol:
     //
     // Every request contains an 8-bit major opcode

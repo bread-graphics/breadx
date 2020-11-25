@@ -10,7 +10,7 @@ use core::mem;
 /// however, it could also represent 10 16-bit integers or 20 8-bit integers. It is usually represented as a
 /// union; however, the `bytes`, `shorts`, and `longs` methods can be used to access each of these
 /// representations.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct ClientMessageData {
     // convention states that it should be at least 5 u32's

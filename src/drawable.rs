@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// The return type of `drawable::get_geometry_immediate`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct Geometry {
     pub depth: u8,
     pub root: Window,

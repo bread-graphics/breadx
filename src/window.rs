@@ -72,7 +72,7 @@ crate::create_paramaterizer! {
 }
 
 /// The return type of `Window::window_attributes_immediate`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct WindowAttributes {
     pub backing_store: BackingStore,
     pub visual: Visualid,
@@ -99,7 +99,7 @@ impl From<GetWindowAttributesReply> for WindowAttributes {
 }
 
 /// The return type of `Window::geometry_immediate`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct WindowGeometry {
     pub depth: u8,
     pub root: Window,
@@ -627,11 +627,13 @@ impl Window {
         width: u32,
         height: u32,
     ) -> crate::Result {
-        let mut props: ConfigureWindowParameters = Default::default();
-        props.x = Some(x);
-        props.y = Some(y);
-        props.width = Some(width);
-        props.height = Some(height);
+        let props = ConfigureWindowParameters {
+            x: Some(x),
+            y: Some(y),
+            width: Some(width),
+            height: Some(height),
+            ..Default::default()
+        };
         self.configure(dpy, props)
     }
 
@@ -646,11 +648,13 @@ impl Window {
         width: u32,
         height: u32,
     ) -> crate::Result {
-        let mut props: ConfigureWindowParameters = Default::default();
-        props.x = Some(x);
-        props.y = Some(y);
-        props.width = Some(width);
-        props.height = Some(height);
+        let props = ConfigureWindowParameters {
+            x: Some(x),
+            y: Some(y),
+            width: Some(width),
+            height: Some(height),
+            ..Default::default()
+        };
         self.configure_async(dpy, props).await
     }
 
@@ -836,6 +840,7 @@ fn convert_get_window_attributes_reply(reply: GetWindowAttributesReply) -> Windo
 }
 
 /// The type of the property being changed.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum PropertyType {
     Atom = 4,
@@ -843,6 +848,7 @@ pub enum PropertyType {
 }
 
 /// The format of the property being changed.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum PropertyFormat {
     Eight = 8,

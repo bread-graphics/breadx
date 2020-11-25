@@ -9,7 +9,7 @@ macro_rules! create_paramaterizer {
             $($field: ident ($setter: ident, $var: ident) : $fty: ty),*
         }
     ) => {
-        #[derive(Debug, Clone, Default, PartialEq, Eq)]
+        #[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
         $vis struct $sname {
             $(pub $field: Option<$fty>),*
         }

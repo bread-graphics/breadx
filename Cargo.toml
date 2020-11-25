@@ -1,12 +1,12 @@
 [package]
 name = "breadx"
 version = "0.0.3"
-authors = ["not_a_seagull <jtnunley01@gmail.com>"]
+authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/not-a-seagull/breadx"
-repository = "https://github.com/not-a-seagull/breadx#readme"
+homepage = "https://github.com/not-a-seagull/breadx#readme"
+repository = "https://github.com/not-a-seagull/breadx"
 
 [dependencies]
 async-io = { version = "1.1.0", optional = true }
@@ -23,6 +23,7 @@ image = { version = "0.23.12", default-features = false, optional = true }
 log = "0.4"
 memchr = "2.3.3"
 rayon = { version = "1.5.0", optional = true }
+ref_slice = "1.2.0"
 tinyvec = { version = "1.1.0-alpha", features = ["alloc"] }
 
 [dev-dependencies]
@@ -31,6 +32,8 @@ env_logger = "0.8.1"
 [features]
 default = ["std"]
 async = ["std", "async-io", "async-net", "async-trait", "futures-io", "futures-lite"]
-image-support = ["image"]
+image-support = ["image", "std"]
+nightly-const-optimization = []
+nightly-min-specialization = []
 parallel = ["rayon", "std"]
 std = []
