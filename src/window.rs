@@ -443,8 +443,10 @@ impl Window {
         dpy: &mut Display<Conn>,
         clr: u32,
     ) -> crate::Result<()> {
-        let mut props: WindowParameters = Default::default();
-        props.background_pixel = Some(clr);
+        let props = WindowParameters {
+            background_pixel: Some(clr),
+            ..Default::default()
+        };
         self.change_attributes(dpy, props)
     }
 
@@ -509,8 +511,10 @@ impl Window {
         dpy: &mut Display<Conn>,
         width: u32,
     ) -> crate::Result {
-        let mut props: ConfigureWindowParameters = Default::default();
-        props.border_width = Some(width);
+        let props = ConfigureWindowParameters {
+            border_width: Some(width),
+            ..Default::default()
+        };
         self.configure(dpy, props)
     }
 
@@ -522,8 +526,10 @@ impl Window {
         dpy: &mut Display<Conn>,
         width: u32,
     ) -> crate::Result {
-        let mut props: ConfigureWindowParameters = Default::default();
-        props.border_width = Some(width);
+        let props = ConfigureWindowParameters {
+            border_width: Some(width),
+            ..Default::default()
+        };
         self.configure_async(dpy, props).await
     }
 
@@ -534,8 +540,10 @@ impl Window {
         dpy: &mut Display<Conn>,
         colormap: Colormap,
     ) -> crate::Result {
-        let mut props: WindowParameters = Default::default();
-        props.colormap = Some(colormap);
+        let props = WindowParameters {
+            colormap: Some(colormap),
+            ..Default::default()
+        };
         self.change_attributes(dpy, props)
     }
 
@@ -596,9 +604,11 @@ impl Window {
         width: u32,
         height: u32,
     ) -> crate::Result {
-        let mut props: ConfigureWindowParameters = Default::default();
-        props.width = Some(width);
-        props.height = Some(height);
+        let props = ConfigureWindowParameters {
+            width: Some(width),
+            height: Some(height),
+            ..Default::default()
+        };
         self.configure(dpy, props)
     }
 
@@ -820,23 +830,23 @@ impl Window {
 /// Convert a `GetWindowAttributesReply` to a `WindowAttributes` struct.
 #[inline]
 fn convert_get_window_attributes_reply(reply: GetWindowAttributesReply) -> WindowAttributes {
-    let mut wa: WindowAttributes = Default::default();
-    wa.backing_store = reply.backing_store;
-    wa.visual = reply.visual;
-    wa.class = reply.class;
-    wa.bit_gravity = reply.bit_gravity;
-    wa.win_gravity = reply.win_gravity;
-    wa.backing_planes = reply.backing_planes;
-    wa.backing_pixel = reply.backing_pixel;
-    wa.save_under = reply.save_under;
-    wa.map_is_installed = reply.map_is_installed;
-    wa.map_state = reply.map_state;
-    wa.override_redirect = reply.override_redirect;
-    wa.colormap = reply.colormap;
-    wa.all_event_masks = reply.all_event_masks;
-    wa.your_event_mask = reply.your_event_mask;
-    wa.do_not_propagate_mask = reply.do_not_propagate_mask;
-    wa
+    WindowAttributes {
+        backing_store: reply.backing_store,
+        visual: reply.visual,
+        class: reply.class,
+        bit_gravity: reply.bit_gravity,
+        win_gravity: reply.win_gravity,
+        backing_planes: reply.backing_planes,
+        backing_pixel: reply.backing_pixel,
+        save_under: reply.save_under,
+        map_is_installed: reply.map_is_installed,
+        map_state: reply.map_state,
+        override_redirect: reply.override_redirect,
+        colormap: reply.colormap,
+        all_event_masks: reply.all_event_masks,
+        your_event_mask: reply.your_event_mask,
+        do_not_propagate_mask: reply.do_not_propagate_mask,
+    }
 }
 
 /// The type of the property being changed.

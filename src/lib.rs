@@ -108,6 +108,7 @@
 #![warn(clippy::pedantic)]
 #![allow(
     clippy::cast_possible_truncation, // used on purpose quite abit
+    clippy::cast_possible_wrap,
     clippy::default_trait_access, // more readable, IMO
     clippy::map_err_ignore, // sometimes we just need to drop the error
     clippy::missing_errors_doc, // lots of "async redox" functions

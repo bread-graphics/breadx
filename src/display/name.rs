@@ -93,6 +93,7 @@ enum Protocol {
 }
 
 impl Protocol {
+    #[allow(clippy::unnecessary_wraps)]
     #[inline]
     fn from_str(s: String) -> Option<Self> {
         let s = s.to_lowercase();

@@ -4,18 +4,21 @@
 
 use super::{
     fit::{
-        no_swap, shift_nibbles_left, swap_four_bytes, swap_function_table_index, swap_nibbles,
+        no_swap, shift_nibbles_left, swap_four_bytes, swap_function_table_index, swap_nibble,
         swap_three_bytes, swap_two_bytes, HALF_ORDER_TABLE, HALF_WORD_TABLE, SWAP_FUNCTION_TABLE,
     },
     GenericImage, Image,
 };
 use crate::{
-    auto::xproto::{Drawable, Gcontext, ImageFormat, PutImageRequest},
+    auto::{
+        xproto::{Drawable, Gcontext, ImageFormat, ImageOrder, PutImageRequest},
+        AsByteSequence,
+    },
     display::{Connection, Display},
     util::roundup,
 };
-use alloc::{borrow::Cow, vec, vec::Vec};
-use core::{iter, ops::Deref};
+use alloc::{borrow::Cow, boxed::Box, vec, vec::Vec};
+use core::{iter, ops::Deref, ptr};
 
 /// Prepare a request for an XY image.
 fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
@@ -25,24 +28,27 @@ fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
     src_x: usize,
     src_y: usize,
 ) {
-    let total_xoffset = image.x_offset() + src_x;
-    req.left_pad = total_xoffset & (dpy.setup().bitmap_format_scanline_unit - 1);
-    let mut total_xoffset = (total_xoffset - req.left_pad) >> 3;
+    let total_xoffset = image.x_offset() as usize + src_x;
+    req.left_pad = (total_xoffset & (dpy.setup().bitmap_format_scanline_unit as usize - 1)) as u8;
+    let total_xoffset = (total_xoffset - req.left_pad as usize) >> 3;
 
     if req.left_pad != 0 && req.format == ImageFormat::ZPixmap {
         req.format = ImageFormat::XyPixmap;
     }
 
     let bytes_per_dest = roundup(
-        req.width + req.left_pad,
-        dpy.setup().bitmap_format_scanline_pad,
+        req.width as usize + req.left_pad as usize,
+        dpy.setup().bitmap_format_scanline_pad as usize,
     ) >> 3;
-    let bytes_per_dest_plane = bytes_per_dest * req.height;
+    let bytes_per_dest_plane = bytes_per_dest * req.height as usize;
 
-    let sft_index =
-        swap_function_table_index(image.bitmap_unit(), image.bit_order(), image.byte_order());
+    let sft_index = swap_function_table_index(
+        u32::from(image.bitmap_unit()),
+        image.bit_order(),
+        image.byte_order(),
+    );
     let swap_function = SWAP_FUNCTION_TABLE[sft_index][swap_function_table_index(
-        dpy.setup().bitmap_format_scanline_unit,
+        u32::from(dpy.setup().bitmap_format_scanline_unit),
         dpy.setup().bitmap_format_bit_order,
         dpy.setup().image_byte_order,
     )];
@@ -51,30 +57,31 @@ fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
         half_order = HALF_WORD_TABLE[sft_index];
     }
 
-    src_data = &image.data()[(image.bytes_per_line() * src_y) + total_xoffset];
+    let src_data = &image.data()[(image.bytes_per_line() * src_y) + total_xoffset..];
 
     // if we don't need to preform any modifications to the data, just use to_vec() and set it
-    if swap_function as *const _ == no_swap as *const _
-        && image.bytes_per_line() == bytes_per_dest
-        && (total_xoffset == 0 && (image.depth() == 1 || image.height() == req.height))
-        || (image.depth() == 1 && (src_y + req.height) < image.height())
+    if ptr::eq(
+        swap_function as *const _ as *const (),
+        &no_swap as *const _ as *const (),
+    ) && image.bytes_per_line() == bytes_per_dest
+        && (total_xoffset == 0 && (image.depth() == 1 || image.height() == req.height as usize))
+        || (image.depth() == 1 && (src_y + req.height as usize) < image.height())
     {
         req.data = src_data.to_vec();
         return;
     }
 
-    let length = roundup(bytes_per_dest_plane * image.depth(), 4);
+    let length = roundup(bytes_per_dest_plane * image.depth() as usize, 4);
     // allocate a vector for it
-    let mut buffer: Vec<u8> = iter::cycle(0).take(length).collect();
+    let mut buffer: Vec<u8> = iter::repeat(0).take(length).collect();
 
     if total_xoffset > 0 && image.byte_order() != image.bit_order() {
         unimplemented!();
     }
 
-    let bytes_per_src = (req.width + req.left_pad + 7) >> 3;
+    let bytes_per_src = (req.width as usize + req.left_pad as usize + 7) >> 3;
     let bytes_per_line = image.bytes_per_line();
-    let bytes_per_src_plane = bytes_per_src * image.height();
-    total_xoffset &= (image.bitmap_unit() - 1) >> 3;
+    let bytes_per_src_plane = bytes_per_src * image.height() as usize;
 
     buffer
         .chunks_mut(bytes_per_dest_plane)
@@ -83,10 +90,10 @@ fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
             (swap_function)(
                 s,
                 d,
-                bytes_per_src,
+                bytes_per_src as usize,
                 bytes_per_line,
                 bytes_per_dest,
-                req.height,
+                req.height as usize,
                 half_order,
             );
         });
@@ -94,7 +101,7 @@ fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
     req.data = buffer;
 }
 
-/// Prepare a request with a ZImage
+/// Prepare a request with a `ZImage`
 #[inline]
 fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
     dpy: &mut Display<Conn>,
@@ -106,21 +113,25 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
     dest_scanline_pad: usize,
 ) {
     req.left_pad = 0;
-    let bytes_per_src = roundup(req.width * image.bits_per_pixel(), 8) >> 3;
-    let bytes_per_dest = roundup(req.width * dest_bits_per_pixel, dest_scanline_pad) >> 3;
+    let bytes_per_src = roundup(req.width as usize * image.bits_per_pixel() as usize, 8) >> 3;
+    let bytes_per_dest = roundup(
+        req.width as usize * dest_bits_per_pixel,
+        dest_scanline_pad as usize,
+    ) >> 3;
 
-    let mut src_data = Cow::Borrowed(
-        &image.data()[(src_y * image.bytes_per_line()) + ((src_x * image.bits_per_pixel()) >> 3)..],
+    let mut src_data = Cow::Borrowed::<[u8]>(
+        &image.data()
+            [(src_y * image.bytes_per_line()) + ((src_x * image.bits_per_pixel() as usize) >> 3)..],
     );
     if image.bits_per_pixel() == 4 && src_x & 1 != 0 {
-        let mut shifted = iter::cycle(0).take(src_data.len()).collect();
+        let mut shifted: Vec<u8> = iter::repeat(0).take(src_data.len()).collect();
         shift_nibbles_left(
-            src_data,
+            &src_data,
             &mut shifted,
             bytes_per_src,
             image.bytes_per_line(),
             image.bytes_per_line(),
-            req.height,
+            req.height as usize,
             image.byte_order(),
         );
         src_data = Cow::Owned(shifted);
@@ -129,17 +140,19 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
     // we may be alright with our current set
     if (image.byte_order() == dpy.setup().image_byte_order || image.bits_per_pixel() == 8)
         && image.bytes_per_line() == bytes_per_dest
-        && (src_x == 0 || (src_y + req.height) < image.height())
+        && (src_x == 0 || (src_y + req.height as usize) < image.height())
     {
         req.data = match src_data {
             Cow::Borrowed(src_data) => src_data.to_vec(),
             Cow::Owned(src_data) => src_data,
         };
+
+        return;
     }
 
     // determine what kind of shifts we need to do
-    let length = roundup(bytes_per_dest * req.height, 4);
-    let mut buffer: Vec<u8> = iter::cycle(0).take(length).collect();
+    let length = roundup(bytes_per_dest * req.height as usize, 4);
+    let mut buffer: Vec<u8> = iter::repeat(0).take(length).collect();
 
     if image.byte_order() == dpy.setup().image_byte_order || image.bits_per_pixel() == 8 {
         no_swap(
@@ -148,7 +161,7 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
             bytes_per_src,
             image.bytes_per_line(),
             bytes_per_dest,
-            req.height,
+            req.height as usize,
             image.byte_order(),
         );
     } else {
@@ -159,7 +172,7 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
                 bytes_per_src,
                 image.bytes_per_line(),
                 bytes_per_dest,
-                req.height,
+                req.height as usize,
                 image.byte_order(),
             ),
             24 => swap_three_bytes(
@@ -168,7 +181,7 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
                 bytes_per_src,
                 image.bytes_per_line(),
                 bytes_per_dest,
-                req.height,
+                req.height as usize,
                 image.byte_order(),
             ),
             16 => swap_two_bytes(
@@ -177,16 +190,16 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
                 bytes_per_src,
                 image.bytes_per_line(),
                 bytes_per_dest,
-                req.height,
+                req.height as usize,
                 image.byte_order(),
             ),
-            _ => swap_nibles(
+            _ => swap_nibble(
                 &src_data,
                 &mut buffer,
                 bytes_per_src,
                 image.bytes_per_line(),
                 bytes_per_dest,
-                req.height,
+                req.height as usize,
                 image.byte_order(),
             ),
         }
@@ -196,6 +209,7 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
 }
 
 /// Generate a series of requests for a sub-part of an image.
+#[allow(clippy::too_many_lines)] // todo: find good way to split
 #[inline]
 fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
     dpy: &mut Display<Conn>,
@@ -204,41 +218,46 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
     image: &Image<Data>,
     src_x: usize,
     src_y: usize,
-    dst_x: usize,
-    dst_y: usize,
+    dst_x: isize,
+    dst_y: isize,
     width: usize,
     height: usize,
     dest_bits_per_pixel: usize,
     dest_scanline_pad: usize,
-) -> Vec<PutImageReq> {
+) -> Vec<PutImageRequest> {
     // Base Case: Width and height are zero. We can just return an empty vector.
     if width == 0 || height == 0 {
         return vec![];
     }
 
     // How many bits are available to use.
-    let mut req: PutImageReq = Default::default();
-    let available: usize = if dpy.setup().max_request_size > 65535 {
+    let mut req: PutImageRequest = Default::default();
+
+    #[allow(unused_comparisons, clippy::absurd_extreme_comparisons)]
+    let available: usize = if dpy.setup().maximum_request_length > 65535 {
         65536 << 2
     } else {
-        dpy.max_request_size << 2
+        (dpy.setup().maximum_request_length as usize) << 2
     } - req.size();
 
-    let (left_pad, bytes_per_row) = if image.bits_per_pixel() == 1
-        || image.format() != ImageFormat::ZPixmap
-    {
-        let left_pad = (image.x_offset() + src_x) & (dpy.setup().bitmap_format_scanline_unit - 1);
-        (
-            left_pad,
-            (roundup(width + left_pad, dpy.setup().bitmap_format_scanline_pad) >> 3)
-                * image.depth(),
-        )
-    } else {
-        (
-            0,
-            roundup(width * dest_bits_per_pixel, dest_scanline_pad) >> 3,
-        )
-    };
+    let (left_pad, bytes_per_row) =
+        if image.bits_per_pixel() == 1 || image.format() != ImageFormat::ZPixmap {
+            let left_pad =
+                (image.x_offset() + src_x) & (dpy.setup().bitmap_format_scanline_unit as usize - 1);
+            (
+                left_pad,
+                (roundup(
+                    width + left_pad,
+                    dpy.setup().bitmap_format_scanline_pad as usize,
+                ) >> 3)
+                    * image.depth() as usize,
+            )
+        } else {
+            (
+                0,
+                roundup(width * dest_bits_per_pixel, dest_scanline_pad) >> 3,
+            )
+        };
 
     // If we can fit our image in the available bits, create and return the image request.
     if bytes_per_row * height <= available {
@@ -281,6 +300,8 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
             image,
             src_x,
             src_y,
+            dst_x,
+            dst_y,
             width,
             sub_image_height,
             dest_bits_per_pixel,
@@ -293,6 +314,8 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
             image,
             src_x,
             src_y + sub_image_height,
+            dst_x,
+            dst_y + sub_image_height as isize,
             width,
             height - sub_image_height,
             dest_bits_per_pixel,
@@ -311,6 +334,8 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
             image,
             src_x,
             src_y,
+            dst_x,
+            dst_y,
             sub_image_width,
             1,
             dest_bits_per_pixel,
@@ -323,6 +348,8 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
             image,
             src_x + sub_image_width,
             src_y,
+            dst_x + sub_image_width as isize,
+            dst_y,
             width - sub_image_width,
             1,
             dest_bits_per_pixel,
@@ -333,18 +360,121 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
 }
 
 /// Begins the recursion for the image requests.
+#[allow(clippy::cast_sign_loss)]
 #[inline]
-pub(crate) fn put_image<Conn: Connection, Data: Deref<Target = [u8]>>(
+pub(crate) fn put_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
     dpy: &mut Display<Conn>,
     drawable: Drawable,
     gc: Gcontext,
     image: &Image<Data>,
-    src_x: usize,
-    src_y: usize,
-    dst_x: usize,
-    dst_y: usize,
-    width: usize,
-    height: usize,
-) -> Vec<PutImageReq> {
-    unimplemented!()
+    src_x: isize,
+    src_y: isize,
+    dest_x: isize,
+    dest_y: isize,
+    mut width: usize,
+    mut height: usize,
+) -> Vec<PutImageRequest> {
+    let src_x: usize = match src_x {
+        x_offset if x_offset < 0 => {
+            width = width.saturating_sub((-x_offset) as usize);
+            0
+        }
+        src_x => src_x as usize,
+    };
+
+    let src_y: usize = match src_y {
+        y_offset if y_offset < 0 => {
+            height = height.saturating_sub((-y_offset) as usize);
+            0
+        }
+        src_y => src_y as usize,
+    };
+
+    if src_x + width > image.width() {
+        width = image.width().saturating_sub(src_x);
+    }
+    if src_y + width > image.height() {
+        height = image.height().saturating_sub(src_y);
+    }
+
+    if width == 0 || height == 0 {
+        log::error!("Width and height of zero, no drawing could be done.");
+        return vec![]; // no drawing could be done
+    }
+
+    let (dest_bits_per_pixel, dest_scanline_pad) =
+        if image.bits_per_pixel() == 1 || image.format() != ImageFormat::ZPixmap {
+            (1_usize, dpy.setup().bitmap_format_scanline_pad as usize)
+        } else {
+            let mut dest_bits_per_pixel = image.bits_per_pixel() as usize;
+            let mut dest_scanline_pad = image.bitmap_pad() as usize;
+
+            // scan the display's formats
+            dpy.setup().pixmap_formats.iter().for_each(|f| {
+                if f.depth == image.depth() {
+                    dest_bits_per_pixel = f.bits_per_pixel as usize;
+                    dest_scanline_pad = f.scanline_pad as usize;
+                }
+            });
+
+            if dest_bits_per_pixel != image.bits_per_pixel() as _ {
+                let mut new_image = Image {
+                    width,
+                    height,
+                    x_offset: 0,
+                    format: ImageFormat::ZPixmap,
+                    byte_order: dpy.setup().image_byte_order,
+                    bitmap_unit: dpy.setup().bitmap_format_scanline_unit,
+                    bit_order: dpy.setup().bitmap_format_bit_order,
+                    bitmap_pad: dest_scanline_pad as _,
+                    bits_per_pixel: dest_bits_per_pixel as _,
+                    depth: image.depth(),
+                    red_mask: 0,
+                    green_mask: 0,
+                    blue_mask: 0,
+                    bytes_per_line: roundup(dest_bits_per_pixel * width, dest_scanline_pad) >> 3,
+                    data: iter::repeat(0)
+                        .take(height * image.bytes_per_line())
+                        .collect::<Box<[u8]>>(),
+                };
+
+                for j in 0..height {
+                    for i in 0..width {
+                        new_image.set_pixel(i, j, image.pixel(src_x + i, src_y + j));
+                    }
+                }
+
+                // put the new image and return
+                return put_sub_image_req(
+                    dpy,
+                    drawable,
+                    gc,
+                    &new_image,
+                    0,
+                    0,
+                    dest_x,
+                    dest_y,
+                    width,
+                    height,
+                    dest_bits_per_pixel,
+                    dest_scanline_pad,
+                );
+            }
+            (dest_bits_per_pixel, dest_scanline_pad)
+        };
+
+    put_sub_image_req(
+        dpy,
+        drawable,
+        gc,
+        image,
+        src_x,
+        src_y,
+        dest_x,
+        dest_y,
+        width,
+        height,
+        dest_bits_per_pixel,
+        dest_scanline_pad,
+    )
 }

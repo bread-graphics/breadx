@@ -2,19 +2,20 @@
 
 //! This module defines the Image struct, as well as procedures for manipulating images.
 
-#![allow(clippy::similar_names)]
+#![allow(clippy::similar_names, clippy::unreadable_literal)]
 
 // Note: There is a lot of code in this file that's copied from Xlib, and it is going to be messy and
 // unoptimized. Anyone who knows stuff about image processing is encouraged to PR and fix some of this.
 
 pub(crate) mod fit;
-mod put;
+pub(crate) mod put;
 
 use crate::{
     auto::xproto::{ImageFormat, ImageOrder, Visualtype},
     display::{Connection, Display},
     util::{reverse_bytes, roundup},
 };
+use alloc::boxed::Box;
 use core::ops::{Deref, DerefMut};
 
 /// An image. This acts as a wrapper around data that represents an image.
@@ -153,7 +154,7 @@ impl<Data> Image<Data>
 where
     Data: Deref<Target = [u8]>,
 {
-    /// Assuming that this is a 32 bit ZPixmap, get a pixel.
+    /// Assuming that this is a 32 bit `ZPixmap`, get a pixel.
     #[inline]
     fn pixel32(&self, x: usize, y: usize) -> u32 {
         let addr = (y * self.bytes_per_line) + (x << 2); // the address of the first item
@@ -168,16 +169,16 @@ where
             match self.byte_order {
                 ImageOrder::MsbFirst => {
                     // if our system is little endian and the target is big endian, manually convert it
-                    ((byte_slice[0] as u32) << 24)
-                        | ((byte_slice[1] as u32) << 16)
-                        | ((byte_slice[2] as u32) << 8)
-                        | ((byte_slice[3]) as u32)
+                    ((u32::from(byte_slice[0])) << 24)
+                        | ((u32::from(byte_slice[1])) << 16)
+                        | ((u32::from(byte_slice[2])) << 8)
+                        | u32::from(byte_slice[3])
                 }
                 ImageOrder::LsbFirst => {
-                    ((byte_slice[3] as u32) << 24)
-                        | ((byte_slice[2] as u32) << 16)
-                        | ((byte_slice[1] as u32) << 8)
-                        | (byte_slice[0] as u32)
+                    ((u32::from(byte_slice[3])) << 24)
+                        | ((u32::from(byte_slice[2])) << 16)
+                        | ((u32::from(byte_slice[1])) << 8)
+                        | u32::from(byte_slice[0])
                 }
             }
         };
@@ -189,15 +190,15 @@ where
         res
     }
 
-    /// Assuming that this is a 16 bit ZPixmap, get a pixel.
+    /// Assuming that this is a 16 bit `ZPixmap`, get a pixel.
     #[inline]
     fn pixel16(&self, x: usize, y: usize) -> u32 {
         let addr = (y * self.bytes_per_line) + (x << 1);
         let byte_slice = &self.data.deref()[addr..addr + 2];
 
         let mut res = match self.byte_order {
-            ImageOrder::MsbFirst => ((byte_slice[0] as u32) << 8) | byte_slice[1] as u32,
-            ImageOrder::LsbFirst => ((byte_slice[1] as u32) << 8) | byte_slice[0] as u32,
+            ImageOrder::MsbFirst => ((u32::from(byte_slice[0])) << 8) | u32::from(byte_slice[1]),
+            ImageOrder::LsbFirst => ((u32::from(byte_slice[1])) << 8) | u32::from(byte_slice[0]),
         };
 
         if self.depth != 16 {
@@ -207,18 +208,18 @@ where
         res
     }
 
-    /// Assuming that this is an 8 bit ZPixmap, get a pixel.
+    /// Assuming that this is an 8 bit `ZPixmap`, get a pixel.
     #[inline]
     fn pixel8(&self, x: usize, y: usize) -> u32 {
         let addr = (y * self.bytes_per_line) + x;
-        let mut res = self.data.deref()[addr] as u32;
+        let mut res = u32::from(self.data.deref()[addr]);
         if self.depth != 8 {
             res &= LOW_BITS_TABLE[self.depth as usize];
         }
         res
     }
 
-    /// Assuming this is a 1 bit ZPixmap, get a pixel.
+    /// Assuming this is a 1 bit `ZPixmap`, get a pixel.
     #[inline]
     fn pixel1(&self, x: usize, y: usize) -> u32 {
         let mut xoff = x + self.x_offset as usize;
@@ -230,10 +231,10 @@ where
             ImageOrder::LsbFirst => 1 << xoff,
         };
 
-        if self.data[yoff] & bit != 0 {
-            1
-        } else {
+        if self.data[yoff] & bit == 0 {
             0
+        } else {
+            1
         }
     }
 
@@ -248,7 +249,7 @@ where
             let data_slice = &self.data.deref()[addr..addr + copy_len];
             (&mut pixel[0..copy_len]).copy_from_slice(data_slice);
             xy_normalize_bits(&mut pixel[0..copy_len], self);
-            (pixel[bits >> 3] as u32 >> (bits & 7)) & 1
+            u32::from((pixel[bits >> 3]) >> (bits & 7)) & 1
         } else if let ImageFormat::XyPixmap = self.format {
             let mut plane = 0;
             let copy_len = (self.bitmap_unit as usize) >> 3;
@@ -260,7 +261,7 @@ where
                 let data_slice = &self.data.deref()[addr..addr + copy_len];
                 (&mut pixel[0..copy_len]).copy_from_slice(data_slice);
                 xy_normalize_bits(&mut pixel[0..copy_len], self);
-                res = (res << 1) | (((pixel[bits >> 3] as u32) >> (bits & 7)) & 1);
+                res = (res << 1) | (((u32::from(pixel[bits >> 3])) >> (bits & 7)) & 1);
                 plane += self.bytes_per_line * self.height;
             }
 
@@ -276,14 +277,14 @@ where
 
             let mut res: u32 = 0;
             for i in (0..4).rev() {
-                res = (res << 8) | pixel[i] as u32;
+                res = (res << 8) | u32::from(pixel[i]);
             }
 
             if self.bits_per_pixel == 4 {
-                if res & 1 != 0 {
-                    res >>= 4;
-                } else {
+                if res & 1 == 0 {
                     res &= 0x0F;
+                } else {
+                    res >>= 4;
                 }
             }
 
@@ -388,7 +389,29 @@ where
     /// Get a reference to the interior data.
     #[inline]
     pub fn data(&self) -> &[u8] {
-        self.data.deref()
+        &*self.data
+    }
+
+    /// Clone this image to an equivalent but with a boxed slice as its data.
+    #[inline]
+    pub fn clone_to_boxed_slice(&self) -> Image<Box<[u8]>> {
+        Image {
+            width: self.width,
+            height: self.height,
+            format: self.format,
+            byte_order: self.byte_order,
+            bitmap_unit: self.bitmap_unit,
+            bit_order: self.bit_order,
+            red_mask: self.red_mask,
+            green_mask: self.green_mask,
+            blue_mask: self.blue_mask,
+            x_offset: self.x_offset,
+            bitmap_pad: self.bitmap_pad,
+            depth: self.depth,
+            bits_per_pixel: self.bits_per_pixel,
+            bytes_per_line: self.bytes_per_line,
+            data: self.data().into(),
+        }
     }
 }
 
@@ -396,7 +419,7 @@ impl<Data> Image<Data>
 where
     Data: Deref<Target = [u8]> + DerefMut,
 {
-    /// Assuming this is a 32 bit ZPixmap, set a pixel's value.
+    /// Assuming this is a 32 bit `ZPixmap`, set a pixel's value.
     #[inline]
     fn set_pixel32(&mut self, x: usize, y: usize, pixel: u32) {
         let addr = (y * self.bytes_per_line) + (x << 2);
@@ -422,7 +445,7 @@ where
         }
     }
 
-    /// Assuming this is a 16 bit ZPixmap, set a pixel's value.
+    /// Assuming this is a 16 bit `ZPixmap`, set a pixel's value.
     #[inline]
     fn set_pixel16(&mut self, x: usize, y: usize, pixel: u32) {
         let addr = (y * self.bytes_per_line) + (x << 1);
@@ -439,14 +462,14 @@ where
         }
     }
 
-    /// Assuming this is an 8 bit ZPixmap, set a pixel's value.
+    /// Assuming this is an 8 bit `ZPixmap`, set a pixel's value.
     #[inline]
     fn set_pixel8(&mut self, x: usize, y: usize, pixel: u32) {
         let addr = (y * self.bytes_per_line) + x;
         self.data.deref_mut()[addr] = pixel as u8;
     }
 
-    /// Assuming this is a 1 bit ZPixmap, set a pixel's value.
+    /// Assuming this is a 1 bit `ZPixmap`, set a pixel's value.
     #[inline]
     fn set_pixel1(&mut self, x: usize, y: usize, pixel: u32) {
         let mut xoff = x + self.x_offset;
@@ -466,6 +489,7 @@ where
     }
 
     /// Generic function that works for every image.
+    #[allow(clippy::shadow_unrelated)]
     #[inline]
     fn set_pixel_generic(&mut self, x: usize, y: usize, mut pixel: u32) {
         if self.depth == 4 {
@@ -475,8 +499,8 @@ where
         let mut npixel = pixel;
         let mut px = pixel;
         let pixel_bytes = bytemuck::cast_slice_mut::<u32, u8>(ref_slice::ref_slice_mut(&mut pixel));
-        for i in 0..4 {
-            pixel_bytes[i] = px as u8;
+        for pb in pixel_bytes.iter_mut().take(4) {
+            *pb = px as u8;
             px >>= 8;
         }
 
@@ -510,8 +534,8 @@ where
                 let outgoing_data =
                     bytemuck::cast_slice_mut::<u32, u8>(ref_slice::ref_slice_mut(&mut pixel));
                 px = npixel;
-                for i in 0..4 {
-                    outgoing_data[i] = px as u8;
+                for od in outgoing_data.iter_mut().take(4) {
+                    *od = px as u8;
                     px >>= 8;
                 }
 

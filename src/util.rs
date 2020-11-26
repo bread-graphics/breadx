@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+#![allow(clippy::unreadable_literal)]
+
 use core::iter;
 use tinyvec::{Array, TinyVec};
 

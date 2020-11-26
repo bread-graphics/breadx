@@ -4,7 +4,6 @@
 //! of an image to conform to whatever standards it needs to conform to.
 //! Note that much of this is taken from Xlib's implementation of images.
 
-use super::GenericImage;
 use crate::{
     auto::xproto::ImageOrder,
     util::{roundup, REVERSE_BYTES, REVERSE_NIBS},
@@ -17,8 +16,8 @@ pub(crate) fn no_swap(
     linelen: usize,
     srcinc: usize,
     destinc: usize,
-    height: usize,
-    half_order: ImageOrder,
+    _height: usize,
+    _half_order: ImageOrder,
 ) {
     if srcinc == destinc {
         // this operation should be vectorized
@@ -211,11 +210,11 @@ pub(crate) fn swap_words(
 pub(crate) fn swap_nibble(
     source: &[u8],
     dest: &mut [u8],
-    linelen: usize,
-    srcinc: usize,
-    destinc: usize,
-    height: usize,
-    half_order: ImageOrder,
+    _linelen: usize,
+    _srcinc: usize,
+    _destinc: usize,
+    _height: usize,
+    _half_order: ImageOrder,
 ) {
     dest.iter_mut()
         .zip(source.iter())
@@ -229,10 +228,10 @@ pub(crate) fn shift_nibbles_left(
     linelen: usize,
     srcinc: usize,
     destinc: usize,
-    height: usize,
+    _height: usize,
     half_order: ImageOrder,
 ) {
-    let mut shift_operation = move |height: usize, source: &[u8], dest: &mut [u8]| {
+    let shift_operation = move |source: &[u8], dest: &mut [u8]| {
         if let ImageOrder::MsbFirst = half_order {
             dest.iter_mut()
                 .take(linelen)
@@ -250,8 +249,7 @@ pub(crate) fn shift_nibbles_left(
 
     dest.chunks_mut(destinc)
         .zip(source.chunks(srcinc))
-        .enumerate()
-        .for_each(|(i, (d, s))| shift_operation(i, s, d));
+        .for_each(|(d, s)| shift_operation(s, d));
 }
 
 /// Swap bits.
@@ -261,8 +259,8 @@ pub(crate) fn swap_bits(
     linelen: usize,
     srcinc: usize,
     destinc: usize,
-    height: usize,
-    half_order: ImageOrder,
+    _height: usize,
+    _half_order: ImageOrder,
 ) {
     dest.chunks_mut(destinc)
         .zip(source.chunks(srcinc))

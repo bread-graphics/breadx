@@ -8,8 +8,11 @@ use crate::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
         GetGeometryRequest, Pixmap, Window,
     },
+    image::{put::put_image_req, Image},
     Connection, Display, Gcontext, RequestCookie,
 };
+use alloc::vec::Vec;
+use core::ops::Deref;
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -26,15 +29,15 @@ pub struct Geometry {
 impl From<GetGeometryReply> for Geometry {
     #[inline]
     fn from(ggr: GetGeometryReply) -> Self {
-        let mut wg: Self = Default::default();
-        wg.depth = ggr.depth;
-        wg.root = ggr.root;
-        wg.x = ggr.x;
-        wg.y = ggr.y;
-        wg.width = ggr.width;
-        wg.height = ggr.height;
-        wg.border_width = ggr.border_width;
-        wg
+        Self {
+            depth: ggr.depth,
+            root: ggr.root,
+            x: ggr.x,
+            y: ggr.y,
+            width: ggr.width,
+            height: ggr.height,
+            border_width: ggr.border_width,
+        }
     }
 }
 
@@ -343,4 +346,89 @@ pub async fn create_pixmap_async<Conn: Connection, Target: Into<Drawable>>(
     log::debug!("Sent CreatePixmapRequest to server.");
     dpy.resolve_request_async(tok).await?;
     Ok(pixmap)
+}
+
+/// Write an image to a drawable.
+#[inline]
+pub fn put_image<Conn: Connection, Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
+    dpy: &mut Display<Conn>,
+    target: Target,
+    gc: Gcontext,
+    image: &Image<Data>,
+    src_x: isize,
+    src_y: isize,
+    dest_x: isize,
+    dest_y: isize,
+    width: usize,
+    height: usize,
+) -> crate::Result<()> {
+    let reqs = put_image_req(
+        dpy,
+        target.into(),
+        gc,
+        image,
+        src_x,
+        src_y,
+        dest_x,
+        dest_y,
+        width,
+        height,
+    );
+    let toks = reqs
+        .into_iter()
+        .map(|r| {
+            log::debug!("Sending PutImageRequest to server.");
+            let tok = dpy.send_request(r)?;
+            log::debug!("Sent PutImageRequest to server.");
+            Ok(tok)
+        })
+        .collect::<crate::Result<Vec<_>>>()?;
+
+    toks.into_iter().try_for_each(|t| dpy.resolve_request(t))
+}
+
+/// Write an image to a drawable, async redox.
+#[cfg(feature = "async")]
+#[inline]
+pub async fn put_image_async<
+    Conn: Connection,
+    Target: Into<Drawable>,
+    Data: Deref<Target = [u8]>,
+>(
+    dpy: &mut Display<Conn>,
+    target: Target,
+    gc: Gcontext,
+    image: &Image<Data>,
+    src_x: isize,
+    src_y: isize,
+    dest_x: isize,
+    dest_y: isize,
+    width: usize,
+    height: usize,
+) -> crate::Result<()> {
+    let reqs = put_image_req(
+        dpy,
+        target.into(),
+        gc,
+        image,
+        src_x,
+        src_y,
+        dest_x,
+        dest_y,
+        width,
+        height,
+    );
+    let mut toks = Vec::with_capacity(reqs.len());
+    for req in reqs {
+        log::debug!("Sending PutImageRequest to server.");
+        let tok = dpy.send_request_async(req).await?;
+        log::debug!("Sent PutImageRequest to server.");
+        toks.push(tok);
+    }
+
+    for tok in toks {
+        dpy.resolve_request_async(tok).await?;
+    }
+
+    Ok(())
 }
