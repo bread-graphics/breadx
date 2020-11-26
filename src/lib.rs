@@ -25,7 +25,8 @@
 //!
 //! # Tutorials
 //!
-//! Coming soon!
+//! The official tutorial series begins [here](./tutorials/intro/index.html), and covers usage of `breadx`
+//! and the X Window System Protocol. 
 //!
 //! # Example
 //!
@@ -166,3 +167,6 @@ pub trait Request: AsByteSequence {
 pub use xid::{XidType, XID};
 
 pub use auto::xproto::{Arc, EventMask, Rectangle, Segment, Visualid, Window, WindowClass};
+
+#[path = "../tutorials/mod.rs"]
+pub mod tutorials;
