@@ -18,7 +18,12 @@ use crate::{
     util::roundup,
 };
 use alloc::{borrow::Cow, boxed::Box, vec, vec::Vec};
-use core::{iter, ops::Deref, ptr};
+use core::{
+    convert::{TryFrom, TryInto},
+    iter,
+    ops::Deref,
+    ptr,
+};
 
 /// Prepare a request for an XY image.
 fn prepare_xy_image<Conn: Connection, Data: Deref<Target = [u8]>>(
@@ -360,7 +365,6 @@ fn put_sub_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
 }
 
 /// Begins the recursion for the image requests.
-#[allow(clippy::cast_sign_loss)]
 #[inline]
 pub(crate) fn put_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
     dpy: &mut Display<Conn>,
@@ -376,18 +380,18 @@ pub(crate) fn put_image_req<Conn: Connection, Data: Deref<Target = [u8]>>(
 ) -> Vec<PutImageRequest> {
     let src_x: usize = match src_x {
         x_offset if x_offset < 0 => {
-            width = width.saturating_sub((-x_offset) as usize);
+            width = width.saturating_sub(usize::try_from(-x_offset).unwrap());
             0
         }
-        src_x => src_x as usize,
+        src_x => src_x.try_into().unwrap(),
     };
 
     let src_y: usize = match src_y {
         y_offset if y_offset < 0 => {
-            height = height.saturating_sub((-y_offset) as usize);
+            height = height.saturating_sub(usize::try_from(-y_offset).unwrap());
             0
         }
-        src_y => src_y as usize,
+        src_y => src_y.try_into().unwrap(),
     };
 
     if src_x + width > image.width() {

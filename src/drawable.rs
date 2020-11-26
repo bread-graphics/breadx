@@ -12,7 +12,7 @@ use crate::{
     Connection, Display, Gcontext, RequestCookie,
 };
 use alloc::vec::Vec;
-use core::ops::Deref;
+use core::{convert::TryInto, ops::Deref};
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -431,4 +431,94 @@ pub async fn put_image_async<
     }
 
     Ok(())
+}
+
+/// Create a pixmap from an image.
+#[inline]
+pub fn create_pixmap_from_image<
+    Conn: Connection,
+    Target: Clone + Into<Drawable>,
+    Data: Deref<Target = [u8]>,
+>(
+    dpy: &mut Display<Conn>,
+    target: Target,
+    image: &Image<Data>,
+) -> crate::Result<Pixmap> {
+    let pixmap = create_pixmap(
+        dpy,
+        target.clone(),
+        image.width.try_into().unwrap(),
+        image.height.try_into().unwrap(),
+        image.depth,
+    )?;
+    let gc = match dpy.create_gc(target.clone(), Default::default()) {
+        Ok(gc) => gc,
+        Err(e) => {
+            pixmap.free(dpy)?;
+            return Err(e);
+        }
+    };
+
+    put_image(
+        dpy,
+        target,
+        gc,
+        image,
+        0,
+        0,
+        0,
+        0,
+        image.width,
+        image.height,
+    )?;
+    gc.free(dpy)?;
+    Ok(pixmap)
+}
+
+/// Create a pixmap from an image, async redox.
+#[cfg(feature = "async")]
+#[inline]
+pub async fn create_pixmap_from_image_async<
+    Conn: Connection,
+    Target: Clone + Into<Drawable>,
+    Data: Deref<Target = [u8]>,
+>(
+    dpy: &mut Display<Conn>,
+    target: Target,
+    image: &Image<Data>,
+) -> crate::Result<Pixmap> {
+    let pixmap = create_pixmap_async(
+        dpy,
+        target.clone(),
+        image.width.try_into().unwrap(),
+        image.height.try_into().unwrap(),
+        image.depth,
+    )
+    .await?;
+    let gc = match dpy
+        .create_gc_async(target.clone(), Default::default())
+        .await
+    {
+        Ok(gc) => gc,
+        Err(e) => {
+            pixmap.free_async(dpy).await?;
+            return Err(e);
+        }
+    };
+
+    put_image_async(
+        dpy,
+        target,
+        gc,
+        image,
+        0,
+        0,
+        0,
+        0,
+        image.width,
+        image.height,
+    )
+    .await?;
+    gc.free_async(dpy).await?;
+    Ok(pixmap)
 }

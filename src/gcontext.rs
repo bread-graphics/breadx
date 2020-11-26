@@ -2,7 +2,7 @@
 
 use super::{
     auto::xproto::{
-        Arc, ChangeGcRequest, CoordMode, Drawable, FillPolyRequest, Gcontext, Point,
+        Arc, ChangeGcRequest, CoordMode, Drawable, FillPolyRequest, FreeGcRequest, Gcontext, Point,
         PolyArcRequest, PolyFillArcRequest, PolyFillRectangleRequest, PolyRectangleRequest,
         PolySegmentRequest, PolyShape, Rectangle, Segment,
     },
@@ -484,5 +484,33 @@ impl Gcontext {
         arc: Arc,
     ) -> crate::Result {
         self.fill_arcs_async(dpy, target, &[arc]).await
+    }
+
+    /// Free the memory this GC allocates. Note that this will cause future requests involving this GC
+    /// to fail.
+    #[inline]
+    pub fn free<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        let req = FreeGcRequest {
+            gc: self,
+            ..Default::default()
+        };
+        log::debug!("Sending FreeGcRequest to server.");
+        let tok = dpy.send_request(req)?;
+        log::debug!("Sent FreeGcRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Free the memory this GC allocates, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn free_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        let req = FreeGcRequest {
+            gc: self,
+            ..Default::default()
+        };
+        log::debug!("Sending FreeGcRequest to server.");
+        let tok = dpy.send_request_async(req).await?;
+        log::debug!("Sent FreeGcRequest to server.");
+        dpy.resolve_request_async(tok).await
     }
 }

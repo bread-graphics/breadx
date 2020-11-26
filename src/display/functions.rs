@@ -252,6 +252,108 @@ impl<Conn: Connection> Display<Conn> {
         Ok(wid)
     }
 
+    /// Create a `CreateWindowRequest` but with less arguments.
+    #[inline]
+    fn create_simple_window_request(
+        wid: Window,
+        parent: Window,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        border_width: u16,
+        border: u32,
+        background: u32,
+    ) -> CreateWindowRequest {
+        let mut cwr = CreateWindowRequest {
+            parent,
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            depth: 0,
+            class: WindowClass::CopyFromParent,
+            visual: 0,
+            wid,
+            ..Default::default()
+        };
+        let wp = WindowParameters {
+            background_pixel: Some(background),
+            border_pixel: Some(border),
+            ..Default::default()
+        };
+
+        let wpm = wp.convert_to_flags(&mut cwr);
+        cwr.value_mask = wpm;
+        cwr
+    }
+
+    /// Create a window, but assume some parameters from its parents.
+    #[inline]
+    pub fn create_simple_window(
+        &mut self,
+        parent: Window,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        border_width: u16,
+        border: u32,
+        background: u32,
+    ) -> crate::Result<Window> {
+        let wid = Window::const_from_xid(self.generate_xid()?);
+        let cw = Self::create_simple_window_request(
+            wid,
+            parent,
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            border,
+            background,
+        );
+        log::debug!("Sending CreateWindowRequest to server.");
+        let tok = self.send_request(cw)?;
+        log::debug!("Sent CreateWindowRequest to server.");
+        self.resolve_request(tok)?;
+        Ok(wid)
+    }
+
+    /// Create a window, but assume some parameters from its parents, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn create_simple_window_async(
+        &mut self,
+        parent: Window,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+        border_width: u16,
+        border: u32,
+        background: u32,
+    ) -> crate::Result<Window> {
+        let wid = Window::const_from_xid(self.generate_xid()?);
+        let cw = Self::create_simple_window_request(
+            wid,
+            parent,
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            border,
+            background,
+        );
+        log::debug!("Sending CreateWindowRequest to server.");
+        let tok = self.send_request_async(cw).await?;
+        log::debug!("Sent CreateWindowRequest to server.");
+        self.resolve_request_async(tok).await?;
+        Ok(wid)
+    }
+
     /// Create a `CreateGcRequest`.
     #[inline]
     fn create_gc_request<Target: Into<Drawable>>(

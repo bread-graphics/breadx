@@ -115,6 +115,7 @@
     clippy::module_name_repetitions, // doesn't matter IMO
     clippy::needless_pass_by_value,
     clippy::too_many_arguments, // we need this sometimes for compliance
+    clippy::unknown_clippy_lints, // nightly has lints that stable doesn't
     clippy::used_underscore_binding
 )]
 
@@ -135,6 +136,7 @@ pub mod event;
 pub mod gcontext;
 pub mod image;
 pub(crate) mod paramatizer;
+pub mod pixmap;
 pub(crate) mod util;
 pub mod window;
 mod xid;
@@ -146,6 +148,7 @@ pub use error::*;
 pub use event::Event;
 pub use gcontext::*;
 pub use image::Image;
+pub use pixmap::*;
 pub use window::*;
 pub use xid::*;
 
