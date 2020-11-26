@@ -39,4 +39,4 @@ parallel = ["rayon", "std"]
 std = []
 
 [package.metadata.docs.rs]
-features = ["async", "image-support"]
+features = ["async"]
