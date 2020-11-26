@@ -37,3 +37,6 @@ nightly-const-optimization = []
 nightly-min-specialization = []
 parallel = ["rayon", "std"]
 std = []
+
+[package.metadata.docs.rs]
+features = ["async", "image-support"]

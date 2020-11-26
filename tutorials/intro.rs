@@ -27,3 +27,29 @@
 //! In which case, welcome aboard. Let's go over what goes on behind the scenes.
 //! 
 //! # The X Window System Protocol
+//!
+//! (Note: Most information derived from [here](https://en.wikipedia.org/wiki/X_Window_System).) 
+//!
+//! X originated from Jim Gettys and Bob Scheifler at MIT in 1984. At this point, several other display systems
+//! had been proposed, such as Xerox's "Alto", Apple's "Lisa" and "Macintosh" and, most notably, the W Window 
+//! System. X was originally created after Scheifler took code from the W Window System and rewrote it to be
+//! asynchronous rather than synchronous. He called this "X".
+//! 
+//! X takes place over a connection between a client and a server. In your average X program, the "client" is a
+//! program and the server is another program on the same computer. Four principal types of data are sent
+//! across this connection:
+//! 
+//! * **Requests** refer to data sent from the client to the server, and generally act as an invocation of some
+//!   kind of behavior. For instance, creating a window or moving a window all involve requests.
+//! * **Replies** are sent by the server in response to requests. Every request will have either zero or one
+//!   replies associated with it. For instance, a request to get the dimensions of a window will be answered
+//!   with a reply containing those dimensions.
+//! * **Events** are sent by the server in response to the hardware. For instance, the user clicking the mouse
+//!   pressing a key on the keyboard will be translated to an event.
+//! * **Errors** are sent by the server in response to invalid behavior. For instance, if the user sends a
+//!   request using a window that's already been used, the server will send back a `WindowError`.
+//! 
+//! Pretty much everything you need to know for now is that X is a connection to a server that controls
+//! what appears on your screen.
+//! 
+//! [In the next tutorial, we'll learn how to create a connection to the X server and use that to display a window.](../basics/index.html)
