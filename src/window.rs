@@ -1,11 +1,14 @@
 // MIT/Apache2 License
 
+#![allow(clippy::similar_names)]
+
 pub use crate::{
     auto::{
         xproto::{
             Atom, BackingStore, ChangePropertyRequest, ChangeSaveSetRequest,
             ChangeWindowAttributesRequest, Circulate, CirculateWindowRequest, ClearAreaRequest,
-            Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, EventMask,
+            Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, Cursor,
+            DeletePropertyRequest, DestroySubwindowsRequest, DestroyWindowRequest, EventMask,
             Gcontext, GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest,
             Gravity, MapState, MapWindowRequest, PropMode, SetMode, StackMode, Timestamp, Visualid,
             Window, WindowClass, ATOM_WM_NAME,
@@ -216,6 +219,43 @@ impl Window {
             ))
             .await?;
         log::debug!("Sent ChangePropertyRequest to server");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Delete a property of this window.
+    #[inline]
+    pub fn delete_property<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        property: Atom,
+    ) -> crate::Result {
+        let dpr = DeletePropertyRequest {
+            window: self,
+            property,
+            ..Default::default()
+        };
+        log::debug!("Sending DeletePropertyRequest to server.");
+        let tok = dpy.send_request(dpr)?;
+        log::debug!("Sent DeletePropertyRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Delete a property of this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn delete_property_async<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        property: Atom,
+    ) -> crate::Result {
+        let dpr = DeletePropertyRequest {
+            window: self,
+            property,
+            ..Default::default()
+        };
+        log::debug!("Sending DeletePropertyRequest to server.");
+        let tok = dpy.send_request_async(dpr).await?;
+        log::debug!("Sent DeletePropertyRequest to server.");
         dpy.resolve_request_async(tok).await
     }
 
@@ -823,6 +863,92 @@ impl Window {
         log::debug!("Sending ConvertSelectionRequest to server.");
         let tok = dpy.send_request_async(csr).await?;
         log::debug!("Sent ConvertSelectionRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Set the cursor used by this window.
+    #[inline]
+    pub fn set_cursor<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        cursor: Cursor,
+    ) -> crate::Result {
+        let props = WindowParameters {
+            cursor: Some(cursor),
+            ..Default::default()
+        };
+        self.change_attributes(dpy, props)
+    }
+
+    /// Set the cursor used by this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_cursor_async<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        cursor: Cursor,
+    ) -> crate::Result {
+        let props = WindowParameters {
+            cursor: Some(cursor),
+            ..Default::default()
+        };
+        self.change_attributes_async(dpy, props).await
+    }
+
+    /// Destroy this window's subwindows.
+    #[inline]
+    pub fn destroy_subwindows<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        let dsr = DestroySubwindowsRequest {
+            window: self,
+            ..Default::default()
+        };
+        log::debug!("Sending DestroySubwindowsRequest to server.");
+        let tok = dpy.send_request(dsr)?;
+        log::debug!("Sent DestroySubwindowsRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Destroy this window's subwindows, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn destroy_subwindows_async<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
+        let dsr = DestroySubwindowsRequest {
+            window: self,
+            ..Default::default()
+        };
+        log::debug!("Sending DestroySubwindowsRequest to server.");
+        let tok = dpy.send_request_async(dsr).await?;
+        log::debug!("Sent DestroySubwindowsRequest to server.");
+        dpy.resolve_request_async(tok).await
+    }
+
+    /// Free this window.
+    #[inline]
+    pub fn free<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        let dwr = DestroyWindowRequest {
+            window: self,
+            ..Default::default()
+        };
+        log::debug!("Sending DestroyWindowRequest to server.");
+        let tok = dpy.send_request(dwr)?;
+        log::debug!("Sent DestroyWindowRequest to server.");
+        dpy.resolve_request(tok)
+    }
+
+    /// Free this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn free_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        let dwr = DestroyWindowRequest {
+            window: self,
+            ..Default::default()
+        };
+        log::debug!("Sending DestroyWindowRequest to server.");
+        let tok = dpy.send_request_async(dwr).await?;
+        log::debug!("Sent DestroyWindowRequest to server.");
         dpy.resolve_request_async(tok).await
     }
 }

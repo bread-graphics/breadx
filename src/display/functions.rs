@@ -1,15 +1,18 @@
 // MIT/Apache2 License
 
+#![allow(clippy::similar_names)]
+
 use super::{Connection, Display, RequestCookie};
 use crate::{
     auto::xproto::{
         AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
         ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
         ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
-        CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle,
-        Font, Gc, Gcontext, Gravity, Gx, InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle,
-        Pixmap, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
-        Visualid, Window, WindowClass,
+        CreateCursorRequest, CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask,
+        FillRule, FillStyle, Font, ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx,
+        InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle, Pixmap, ScreenSaver,
+        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
+        Window, WindowClass,
     },
     XidType,
 };
@@ -670,6 +673,115 @@ impl<Conn: Connection> Display<Conn> {
         log::debug!("Sending ChangePointerControlRequest to server.");
         let tok = self.send_request_async(cpcr).await?;
         log::debug!("Sent ChangePointerControlRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    /// Create a new cursor request.
+    #[inline]
+    fn create_cursor_request(
+        cid: Cursor,
+        source: Pixmap,
+        mask: Pixmap,
+        fg_red: u16,
+        fg_green: u16,
+        fg_blue: u16,
+        bg_red: u16,
+        bg_green: u16,
+        bg_blue: u16,
+        x: u16,
+        y: u16,
+    ) -> CreateCursorRequest {
+        CreateCursorRequest {
+            cid,
+            source,
+            mask,
+            fore_red: fg_red,
+            fore_blue: fg_blue,
+            fore_green: fg_green,
+            back_red: bg_red,
+            back_blue: bg_blue,
+            back_green: bg_green,
+            x,
+            y,
+            ..Default::default()
+        }
+    }
+
+    /// Create a new cursor.
+    #[inline]
+    pub fn create_cursor(
+        &mut self,
+        source: Pixmap,
+        mask: Pixmap,
+        fg_red: u16,
+        fg_green: u16,
+        fg_blue: u16,
+        bg_red: u16,
+        bg_green: u16,
+        bg_blue: u16,
+        x: u16,
+        y: u16,
+    ) -> crate::Result<Cursor> {
+        let cid = Cursor::const_from_xid(self.generate_xid()?);
+        let ccr = Self::create_cursor_request(
+            cid, source, mask, fg_red, fg_green, fg_blue, bg_red, bg_green, bg_blue, x, y,
+        );
+        log::debug!("Sending CreateCursorRequest to server.");
+        let tok = self.send_request(ccr)?;
+        log::debug!("Sent CreateCursorRequest to server.");
+        self.resolve_request(tok)?;
+        Ok(cid)
+    }
+
+    /// Create a new cursor, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn create_cursor_async(
+        &mut self,
+        source: Pixmap,
+        mask: Pixmap,
+        fg_red: u16,
+        fg_green: u16,
+        fg_blue: u16,
+        bg_red: u16,
+        bg_green: u16,
+        bg_blue: u16,
+        x: u16,
+        y: u16,
+    ) -> crate::Result<Cursor> {
+        let cid = Cursor::const_from_xid(self.generate_xid()?);
+        let ccr = Self::create_cursor_request(
+            cid, source, mask, fg_red, fg_green, fg_blue, bg_red, bg_green, bg_blue, x, y,
+        );
+        log::debug!("Sending CreateCursorRequest to server.");
+        let tok = self.send_request_async(ccr).await?;
+        log::debug!("Sent CreateCursorRequest to server.");
+        self.resolve_request_async(tok).await?;
+        Ok(cid)
+    }
+
+    #[inline]
+    pub fn force_screensaver(&mut self, mode: ScreenSaver) -> crate::Result {
+        let fssr = ForceScreenSaverRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending ForceScreenSaverRequest to server.");
+        let tok = self.send_request(fssr)?;
+        log::debug!("Sent ForceScreenSaverRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn force_screensaver_async(&mut self, mode: ScreenSaver) -> crate::Result {
+        let fssr = ForceScreenSaverRequest {
+            mode,
+            ..Default::default()
+        };
+        log::debug!("Sending ForceScreenSaverRequest to server.");
+        let tok = self.send_request_async(fssr).await?;
+        log::debug!("Sent ForceScreenSaverRequest to server.");
         self.resolve_request_async(tok).await
     }
 }

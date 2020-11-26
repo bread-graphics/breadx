@@ -129,6 +129,7 @@ mod auth_info;
 pub mod auto;
 pub mod client_message_data;
 pub mod colormap;
+mod cursor;
 pub mod display;
 pub mod drawable;
 pub mod error;

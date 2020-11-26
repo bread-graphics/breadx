@@ -15,6 +15,8 @@ fn main() {
     // create the event mask
     let mut event_mask: EventMask = Default::default();
     event_mask.set_exposure(true);
+    event_mask.set_button_press(true);
+    event_mask.set_structure_notify(true);
 
     // window properties
     let mut cwp: WindowParameters = Default::default();

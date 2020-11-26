@@ -3,7 +3,16 @@
 //! This module provides the events used to drive the `breadx` event system.
 
 use crate::auto::{
-    xproto::{ClientMessageEvent, ConfigureNotifyEvent, ExposeEvent},
+    xproto::{
+        ButtonPressEvent, ButtonReleaseEvent, CirculateNotifyEvent, CirculateRequestEvent,
+        ClientMessageEvent, ConfigureNotifyEvent, ConfigureRequestEvent, CreateNotifyEvent,
+        DestroyNotifyEvent, EnterNotifyEvent, ExposeEvent, FocusInEvent, FocusOutEvent,
+        GraphicsExposureEvent, GravityNotifyEvent, KeyPressEvent, KeyReleaseEvent,
+        KeymapNotifyEvent, LeaveNotifyEvent, MapNotifyEvent, MapRequestEvent, MappingNotifyEvent,
+        NoExposureEvent, PropertyNotifyEvent, ReparentNotifyEvent, ResizeRequestEvent,
+        SelectionClearEvent, SelectionNotifyEvent, SelectionRequestEvent, UnmapNotifyEvent,
+        VisibilityNotifyEvent,
+    },
     AsByteSequence, Event as AutoEvent,
 };
 use tinyvec::TinyVec;
@@ -15,6 +24,34 @@ pub enum Event {
     ConfigureNotify(ConfigureNotifyEvent),
     ClientMessage(ClientMessageEvent),
     Expose(ExposeEvent),
+    ButtonPress(ButtonPressEvent),
+    ButtonRelease(ButtonReleaseEvent),
+    CirculateNotify(CirculateNotifyEvent),
+    CirculateRequest(CirculateRequestEvent),
+    ConfigureRequest(ConfigureRequestEvent),
+    CreateNotify(CreateNotifyEvent),
+    DestroyNotify(DestroyNotifyEvent),
+    EnterNotify(EnterNotifyEvent),
+    FocusIn(FocusInEvent),
+    FocusOut(FocusOutEvent),
+    GraphicsExposure(GraphicsExposureEvent),
+    GravityNotify(GravityNotifyEvent),
+    KeyPress(KeyPressEvent),
+    KeyRelease(KeyReleaseEvent),
+    KeymapNotify(KeymapNotifyEvent),
+    LeaveNotify(LeaveNotifyEvent),
+    MapNotify(MapNotifyEvent),
+    MapRequest(MapRequestEvent),
+    MappingNotify(MappingNotifyEvent),
+    NoExposure(NoExposureEvent),
+    PropertyNotify(PropertyNotifyEvent),
+    ReparentNotify(ReparentNotifyEvent),
+    ResizeRequest(ResizeRequestEvent),
+    SelectionClear(SelectionClearEvent),
+    SelectionNotify(SelectionNotifyEvent),
+    SelectionRequest(SelectionRequestEvent),
+    UnmapNotify(UnmapNotifyEvent),
+    VisibilityNotify(VisibilityNotifyEvent),
     NoneOfTheAbove {
         opcode: u8,
         bytes: TinyVec<[u8; 32]>,
@@ -32,6 +69,7 @@ impl Event {
         Ok(e)
     }
 
+    #[allow(clippy::too_many_lines)]
     #[inline]
     pub(crate) fn differentiate(&mut self) -> crate::Result {
         if let Event::NoneOfTheAbove { opcode, ref bytes } = self {
@@ -49,6 +87,128 @@ impl Event {
                 let ee = ExposeEvent::from_bytes(bytes)
                     .ok_or(crate::BreadError::BadObjectRead(Some("ExposeEvent")))?;
                 *self = Self::Expose(ee.0);
+            } else if opcode == ButtonPressEvent::OPCODE {
+                let e = ButtonPressEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("ButtonPressEvent")))?;
+                *self = Self::ButtonPress(e.0);
+            } else if opcode == ButtonReleaseEvent::OPCODE {
+                let e = ButtonReleaseEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("ButtonReleaseEvent")))?;
+                *self = Self::ButtonRelease(e.0);
+            } else if opcode == CirculateNotifyEvent::OPCODE {
+                let e = CirculateNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("CirculateNotifyEvent")),
+                )?;
+                *self = Self::CirculateNotify(e.0);
+            } else if opcode == CirculateRequestEvent::OPCODE {
+                let e = CirculateRequestEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("CirculateRequestEvent")),
+                )?;
+                *self = Self::CirculateRequest(e.0);
+            } else if opcode == ConfigureRequestEvent::OPCODE {
+                let e = ConfigureRequestEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("ConfigureRequestEvent")),
+                )?;
+                *self = Self::ConfigureRequest(e.0);
+            } else if opcode == CreateNotifyEvent::OPCODE {
+                let e = CreateNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("CreateNotifyEvent")))?;
+                *self = Self::CreateNotify(e.0);
+            } else if opcode == DestroyNotifyEvent::OPCODE {
+                let e = DestroyNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("DestroyNotifyEvent")))?;
+                *self = Self::DestroyNotify(e.0);
+            } else if opcode == EnterNotifyEvent::OPCODE {
+                let e = EnterNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("EnterNotifyEvent")))?;
+                *self = Self::EnterNotify(e.0);
+            } else if opcode == FocusInEvent::OPCODE {
+                let e = FocusInEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("FocusInEvent")))?;
+                *self = Self::FocusIn(e.0);
+            } else if opcode == FocusOutEvent::OPCODE {
+                let e = FocusOutEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("FocusOutEvent")))?;
+                *self = Self::FocusOut(e.0);
+            } else if opcode == GraphicsExposureEvent::OPCODE {
+                let e = GraphicsExposureEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("GraphicsExposureEvent")),
+                )?;
+                *self = Self::GraphicsExposure(e.0);
+            } else if opcode == GravityNotifyEvent::OPCODE {
+                let e = GravityNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("GravityNotifyEvent")))?;
+                *self = Self::GravityNotify(e.0);
+            } else if opcode == KeyPressEvent::OPCODE {
+                let e = KeyPressEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("KeyPressEvent")))?;
+                *self = Self::KeyPress(e.0);
+            } else if opcode == KeyReleaseEvent::OPCODE {
+                let e = KeyReleaseEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("KeyReleaseEvent")))?;
+                *self = Self::KeyRelease(e.0);
+            } else if opcode == KeymapNotifyEvent::OPCODE {
+                let e = KeymapNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("KeymapNotifyEvent")))?;
+                *self = Self::KeymapNotify(e.0);
+            } else if opcode == LeaveNotifyEvent::OPCODE {
+                let e = LeaveNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("LeaveNotifyEvent")))?;
+                *self = Self::LeaveNotify(e.0);
+            } else if opcode == MapNotifyEvent::OPCODE {
+                let e = MapNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("MapNotifyEvent")))?;
+                *self = Self::MapNotify(e.0);
+            } else if opcode == MapRequestEvent::OPCODE {
+                let e = MapRequestEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("MapRequestEvent")))?;
+                *self = Self::MapRequest(e.0);
+            } else if opcode == MappingNotifyEvent::OPCODE {
+                let e = MappingNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("MappingNotifyEvent")))?;
+                *self = Self::MappingNotify(e.0);
+            } else if opcode == NoExposureEvent::OPCODE {
+                let e = NoExposureEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("NoExposureEvent")))?;
+                *self = Self::NoExposure(e.0);
+            } else if opcode == PropertyNotifyEvent::OPCODE {
+                let e = PropertyNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("PropertyNotifyEvent")),
+                )?;
+                *self = Self::PropertyNotify(e.0);
+            } else if opcode == ReparentNotifyEvent::OPCODE {
+                let e = ReparentNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("ReparentNotifyEvent")),
+                )?;
+                *self = Self::ReparentNotify(e.0);
+            } else if opcode == ResizeRequestEvent::OPCODE {
+                let e = ResizeRequestEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("ResizeRequestEvent")))?;
+                *self = Self::ResizeRequest(e.0);
+            } else if opcode == SelectionClearEvent::OPCODE {
+                let e = SelectionClearEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("SelectionClearEvent")),
+                )?;
+                *self = Self::SelectionClear(e.0);
+            } else if opcode == SelectionNotifyEvent::OPCODE {
+                let e = SelectionNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("SelectionNotifyEvent")),
+                )?;
+                *self = Self::SelectionNotify(e.0);
+            } else if opcode == SelectionRequestEvent::OPCODE {
+                let e = SelectionRequestEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("SelectionRequestEvent")),
+                )?;
+                *self = Self::SelectionRequest(e.0);
+            } else if opcode == UnmapNotifyEvent::OPCODE {
+                let e = UnmapNotifyEvent::from_bytes(bytes)
+                    .ok_or(crate::BreadError::BadObjectRead(Some("UnmapNotifyEvent")))?;
+                *self = Self::UnmapNotify(e.0);
+            } else if opcode == VisibilityNotifyEvent::OPCODE {
+                let e = VisibilityNotifyEvent::from_bytes(bytes).ok_or(
+                    crate::BreadError::BadObjectRead(Some("VisibilityNotifyEvent")),
+                )?;
+                *self = Self::VisibilityNotify(e.0);
             }
         }
 
@@ -63,6 +223,34 @@ impl Event {
             Self::ConfigureNotify(_) => ConfigureNotifyEvent::OPCODE,
             Self::ClientMessage(_) => ClientMessageEvent::OPCODE,
             Self::Expose(_) => ExposeEvent::OPCODE,
+            Self::ButtonPress(_) => ButtonPressEvent::OPCODE,
+            Self::ButtonRelease(_) => ButtonReleaseEvent::OPCODE,
+            Self::CirculateNotify(_) => CirculateNotifyEvent::OPCODE,
+            Self::CirculateRequest(_) => CirculateRequestEvent::OPCODE,
+            Self::ConfigureRequest(_) => ConfigureRequestEvent::OPCODE,
+            Self::CreateNotify(_) => CreateNotifyEvent::OPCODE,
+            Self::DestroyNotify(_) => DestroyNotifyEvent::OPCODE,
+            Self::EnterNotify(_) => EnterNotifyEvent::OPCODE,
+            Self::FocusIn(_) => FocusInEvent::OPCODE,
+            Self::FocusOut(_) => FocusOutEvent::OPCODE,
+            Self::GraphicsExposure(_) => GraphicsExposureEvent::OPCODE,
+            Self::GravityNotify(_) => GravityNotifyEvent::OPCODE,
+            Self::KeyPress(_) => KeyPressEvent::OPCODE,
+            Self::KeyRelease(_) => KeyReleaseEvent::OPCODE,
+            Self::KeymapNotify(_) => KeymapNotifyEvent::OPCODE,
+            Self::LeaveNotify(_) => LeaveNotifyEvent::OPCODE,
+            Self::MapNotify(_) => MapNotifyEvent::OPCODE,
+            Self::MapRequest(_) => MapRequestEvent::OPCODE,
+            Self::MappingNotify(_) => MappingNotifyEvent::OPCODE,
+            Self::NoExposure(_) => NoExposureEvent::OPCODE,
+            Self::PropertyNotify(_) => PropertyNotifyEvent::OPCODE,
+            Self::ReparentNotify(_) => ReparentNotifyEvent::OPCODE,
+            Self::ResizeRequest(_) => ResizeRequestEvent::OPCODE,
+            Self::SelectionClear(_) => SelectionClearEvent::OPCODE,
+            Self::SelectionNotify(_) => SelectionNotifyEvent::OPCODE,
+            Self::SelectionRequest(_) => SelectionRequestEvent::OPCODE,
+            Self::UnmapNotify(_) => UnmapNotifyEvent::OPCODE,
+            Self::VisibilityNotify(_) => VisibilityNotifyEvent::OPCODE,
             Self::NoneOfTheAbove { opcode, .. } => *opcode,
         }
     }
