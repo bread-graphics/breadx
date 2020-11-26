@@ -26,7 +26,7 @@
 //! # Tutorials
 //!
 //! The official tutorial series begins [here](./tutorials/intro/index.html), and covers usage of `breadx`
-//! and the X Window System Protocol. 
+//! and the X Window System Protocol.
 //!
 //! # Example
 //!
