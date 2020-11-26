@@ -7,11 +7,13 @@
 // Note: There is a lot of code in this file that's copied from Xlib, and it is going to be messy and
 // unoptimized. Anyone who knows stuff about image processing is encouraged to PR and fix some of this.
 
-mod fit;
+pub(crate) mod fit;
+mod put;
 
 use crate::{
-    auto::xproto::{ImageFormat, ImageOrder},
-    util::reverse_bytes,
+    auto::xproto::{ImageFormat, ImageOrder, Visualtype},
+    display::{Connection, Display},
+    util::{reverse_bytes, roundup},
 };
 use core::ops::{Deref, DerefMut};
 
@@ -38,12 +40,19 @@ pub struct Image<Data> {
     pub bytes_per_line: usize,
     pub bits_per_pixel: u8,
 
+    /// Red mask.
+    pub red_mask: u32,
+    /// Green mask.
+    pub green_mask: u32,
+    /// Blue mask.
+    pub blue_mask: u32,
+
     /// The data contained within this image.
     pub data: Data,
 }
 
 /// To prevent monomorphization code bloat, this is a type-erased version of the image.
-trait GenericImage {
+pub(crate) trait GenericImage {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
     fn x_offset(&self) -> usize;
@@ -118,6 +127,27 @@ const LOW_BITS_TABLE: &[u32] = &[
 const OS_BYTE_ORDER: ImageOrder = ImageOrder::LsbFirst;
 #[cfg(not(target_endian = "little"))]
 const OS_BYTE_ORDER: ImageOrder = ImageOrder::MsbFirst;
+
+/// Helper function to get the bits per pixel and scanline pad for a given depth.
+#[inline]
+fn bits_per_pixel<Conn: Connection>(dpy: &Display<Conn>, depth: u8) -> u8 {
+    dpy.setup()
+        .pixmap_formats
+        .iter()
+        .find_map(|f| {
+            if f.depth == depth {
+                Some(f.bits_per_pixel)
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| match depth {
+            i if i <= 4 => 4,
+            i if i <= 8 => 8,
+            i if i <= 16 => 16,
+            _ => 32,
+        })
+}
 
 impl<Data> Image<Data>
 where
@@ -271,13 +301,94 @@ where
     #[inline]
     pub fn pixel(&self, x: usize, y: usize) -> u32 {
         match (self.format, self.bits_per_pixel) {
-            (ImageFormat::XyPixmap, _) => self.pixel_generic(x, y),
-            (_, 32) => self.pixel32(x, y),
-            (_, 16) => self.pixel16(x, y),
-            (_, 8) => self.pixel8(x, y),
-            (_, 1) => self.pixel1(x, y),
+            (ImageFormat::ZPixmap, 32) => self.pixel32(x, y),
+            (ImageFormat::ZPixmap, 16) => self.pixel16(x, y),
+            (ImageFormat::ZPixmap, 8) => self.pixel8(x, y),
+            (ImageFormat::ZPixmap, 1) => self.pixel1(x, y),
             _ => self.pixel_generic(x, y),
         }
+    }
+
+    /// Create a new image, given its associated connection, visual type, depth, format,
+    /// offset (should be zero unless the data starts partway into the collection), width,
+    /// height, scanline quantum (8, 16, or 32) and the number of bytes per line (how many
+    /// bytes between a pixel on one line and a pixel with the same X position on another line?)
+    #[inline]
+    pub fn new<Conn: Connection>(
+        dpy: &Display<Conn>,
+        visual: Option<&Visualtype>,
+        depth: u8,
+        format: ImageFormat,
+        x_offset: usize,
+        data: Data,
+        width: usize,
+        height: usize,
+        quantum: u32,
+        bytes_per_line: Option<usize>,
+    ) -> Option<Self> {
+        // check for data validity
+        if depth == 0
+            || depth > 32
+            || (format == ImageFormat::XyBitmap && depth != 1)
+            || !(&[8, 16, 32].contains(&quantum))
+        {
+            return None;
+        }
+
+        let (red_mask, green_mask, blue_mask) = match visual {
+            Some(Visualtype {
+                red_mask,
+                green_mask,
+                blue_mask,
+                ..
+            }) => (*red_mask, *green_mask, *blue_mask),
+            None => (0, 0, 0),
+        };
+
+        let bits_per_pixel = match format {
+            ImageFormat::ZPixmap => bits_per_pixel(dpy, depth),
+            _ => 1,
+        };
+
+        let min_bytes_per_line = match format {
+            ImageFormat::ZPixmap => roundup(bits_per_pixel as usize * width, quantum as usize),
+            _ => roundup(width + x_offset, quantum as usize),
+        };
+
+        let bytes_per_line = match bytes_per_line {
+            None => min_bytes_per_line,
+            Some(bytes_per_line) => {
+                if bytes_per_line < min_bytes_per_line {
+                    return None;
+                } else {
+                    bytes_per_line
+                }
+            }
+        };
+
+        Some(Self {
+            width,
+            height,
+            format,
+            byte_order: dpy.setup().image_byte_order,
+            bitmap_unit: dpy.setup().bitmap_format_scanline_unit,
+            bit_order: dpy.setup().bitmap_format_bit_order,
+            red_mask,
+            green_mask,
+            blue_mask,
+            x_offset,
+            bitmap_pad: quantum,
+            depth,
+            data,
+            bits_per_pixel,
+            bytes_per_line,
+        })
+    }
+
+    /// Get a reference to the interior data.
+    #[inline]
+    pub fn data(&self) -> &[u8] {
+        self.data.deref()
     }
 }
 
@@ -428,11 +539,10 @@ where
     #[inline]
     pub fn set_pixel(&mut self, x: usize, y: usize, pixel: u32) {
         match (self.format, self.bits_per_pixel) {
-            (ImageFormat::XyPixmap, _) => self.set_pixel_generic(x, y, pixel),
-            (_, 32) => self.set_pixel32(x, y, pixel),
-            (_, 16) => self.set_pixel16(x, y, pixel),
-            (_, 8) => self.set_pixel8(x, y, pixel),
-            (_, 1) => self.set_pixel1(x, y, pixel),
+            (ImageFormat::ZPixmap, 32) => self.set_pixel32(x, y, pixel),
+            (ImageFormat::ZPixmap, 16) => self.set_pixel16(x, y, pixel),
+            (ImageFormat::ZPixmap, 8) => self.set_pixel8(x, y, pixel),
+            (ImageFormat::ZPixmap, 1) => self.set_pixel1(x, y, pixel),
             _ => self.set_pixel_generic(x, y, pixel),
         }
     }

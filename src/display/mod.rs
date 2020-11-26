@@ -7,7 +7,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xproto::{Colormap, Screen, Setup, SetupRequest},
+        xproto::{Colormap, Screen, Setup, SetupRequest, Visualid, Visualtype},
         AsByteSequence,
     },
     event::Event,
@@ -389,8 +389,29 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     #[inline]
+    pub fn default_visual_id(&self) -> Visualid {
+        self.default_screen().root_visual
+    }
+
+    #[inline]
+    pub fn default_visual(&self) -> &Visualtype {
+        self.visual_id_to_visual(self.default_visual_id()).unwrap()
+    }
+
+    #[inline]
     pub fn default_colormap(&self) -> Colormap {
         self.default_screen().default_colormap
+    }
+
+    /// Get a visual type from a visual ID.
+    #[inline]
+    pub fn visual_id_to_visual(&self, id: Visualid) -> Option<&Visualtype> {
+        self.setup
+            .roots
+            .iter()
+            .flat_map(|s| s.allowed_depths.iter())
+            .flat_map(|d| d.visuals.iter())
+            .find(|v| v.visual_id == id)
     }
 
     /// Generate a unique X ID for a window, colormap, or other object. Usually, `Display`'s helper functions

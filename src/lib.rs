@@ -104,9 +104,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_copy_implementations)]
 #![warn(unused_qualifications)]
-
 #![no_std]
-
 #![warn(clippy::pedantic)]
 #![allow(
     clippy::cast_possible_truncation, // used on purpose quite abit
@@ -114,7 +112,7 @@
     clippy::map_err_ignore, // sometimes we just need to drop the error
     clippy::missing_errors_doc, // lots of "async redox" functions
     clippy::module_name_repetitions, // doesn't matter IMO
-    clippy::needless_pass_by_value, 
+    clippy::needless_pass_by_value,
     clippy::too_many_arguments, // we need this sometimes for compliance
     clippy::used_underscore_binding
 )]
