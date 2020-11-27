@@ -951,6 +951,40 @@ impl Window {
         log::debug!("Sent DestroyWindowRequest to server.");
         dpy.resolve_request_async(tok).await
     }
+
+    /// Set the event mask.
+    #[inline]
+    pub fn set_event_mask<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        em: EventMask,
+    ) -> crate::Result {
+        self.change_attributes(
+            dpy,
+            WindowParameters {
+                event_mask: Some(em),
+                ..Default::default()
+            },
+        )
+    }
+
+    /// Set the event mask, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_event_mask_async<Conn: Connection>(
+        self,
+        dpy: &mut Display<Conn>,
+        em: EventMask,
+    ) -> crate::Result {
+        self.change_attributes_async(
+            dpy,
+            WindowParameters {
+                event_mask: Some(em),
+                ..Default::default()
+            },
+        )
+        .await
+    }
 }
 
 /// Convert a `GetWindowAttributesReply` to a `WindowAttributes` struct.

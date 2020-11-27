@@ -7,7 +7,7 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xproto::{Colormap, Screen, Setup, SetupRequest, Visualid, Visualtype},
+        xproto::{Colormap, Screen, Setup, SetupRequest, Visualid, Visualtype, Window},
         AsByteSequence,
     },
     event::Event,
@@ -371,6 +371,11 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn setup(&self) -> &Setup {
         &self.setup
+    }
+
+    #[inline]
+    pub fn default_root(&self) -> Window {
+        self.default_screen().root
     }
 
     #[inline]
