@@ -17,7 +17,7 @@ An implementation of the X Window System Protocol in Rust. 100% safe and mutex-f
 
 * Currently very immature
 * No support for extensions (yet)
-* Not ABI/API compatible with Xlib/XXB
+* Not ABI/API compatible with Xlib/XCB
 
 ## Tutorials/Examples
 
