@@ -2,7 +2,7 @@
 
 use breadx::{
     event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
-    WindowClass, WindowParameters, XidType,
+    WindowClass, WindowParameters, XidType, rgb,
 };
 use std::{env, process};
 
@@ -18,7 +18,7 @@ fn main() {
     event_mask.set_button_press(true);
     event_mask.set_structure_notify(true);
 
-    // window properties
+    // window properties 
     let mut cwp: WindowParameters = Default::default();
     cwp.event_mask = Some(event_mask);
 
@@ -39,7 +39,7 @@ fn main() {
         .unwrap();
 
     window.map(&mut conn).unwrap();
-    window.set_title(&mut conn, "breadx Example").unwrap();
+    window.set_title(&mut conn, "Hello world!").unwrap();
 
     // set up a graphics context for our window
     let mut gc_parameters: GcParameters = Default::default();
@@ -83,13 +83,16 @@ fn main() {
             }
         };
 
-        println!("{:?}", &ev);
+//        println!("{:?}", &ev);
 
         match ev {
             Event::ClientMessage(cme) => {
                 if cme.data.longs()[0] == wm_delete_window.xid() {
                     process::exit(0);
                 }
+            }
+            Event::ButtonPress(bp) => {
+                println!("Clicked at {}, {}", bp.event_x, bp.event_y);
             }
             Event::Expose(_) => {
                 let geometry = window.geometry_immediate(&mut conn).unwrap();

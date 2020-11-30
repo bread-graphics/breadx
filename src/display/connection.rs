@@ -16,25 +16,40 @@ use std::os::unix::net::UnixStream;
 
 #[cfg(feature = "async")]
 use alloc::boxed::Box;
+#[cfg(feature = "async")]
+use core::{future::Future, pin::Pin};
+#[cfg(feature = "async")]
+use futures_lite::future;
+
+/// A boxed future, for returning from a trait.
+#[cfg(feature = "async")]
+pub type GenericFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>>;
 
 /// A trait that represents the ability to send and receive bytes across a connection. This is used as a two-way
 /// stream to send and receive data from the X server.
-#[cfg_attr(feature = "async", async_trait::async_trait)]
-pub trait Connection {
+pub trait Connection : Sync {
     /// Send bytes in a packet across the connection in a blocking manner.
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result;
     /// Read a packet/request from the connection in a blocking manner.
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result;
     /// Send bytes in a packet across the connection in an async manner.
     #[cfg(feature = "async")]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result;
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future;
     /// Read a packet/request from the connection in an async manner.
     #[cfg(feature = "async")]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result;
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future;
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(feature = "async", async_trait::async_trait)]
 impl Connection for TcpStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
@@ -50,49 +65,76 @@ impl Connection for TcpStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn send_packet_async(&mut self, _bytes: &[u8]) -> crate::Result {
-        Err(crate::BreadError::WouldBlock)
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, _bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn read_packet_async(&mut self, _bytes: &mut [u8]) -> crate::Result {
-        Err(crate::BreadError::WouldBlock)
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        _bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
     }
 }
 
 #[cfg(feature = "async")]
-#[async_trait::async_trait]
 impl Connection for AsyncTcpStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
         log::warn!("Called blocking send_packet for async TcpStream");
-        block_on(self.write(bytes))?;
+        block_on(self.write_all(bytes))?;
         Ok(())
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
         log::warn!("Called blocking read_packet for async TcpStream");
-        block_on(self.read(bytes))?;
+        block_on(self.read_exact(bytes))?;
         Ok(())
     }
 
     #[inline]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
-        self.write(bytes).await?;
-        Ok(())
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        #[inline]
+        async fn inner(this: &mut AsyncTcpStream, bytes: &[u8]) -> crate::Result {
+            this.write_all(bytes).await?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 
     #[inline]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
-        self.read(bytes).await?;
-        Ok(())
+    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        #[inline]
+        async fn inner(this: &mut AsyncTcpStream, bytes: &mut [u8]) -> crate::Result {
+            this.read_exact(bytes).await?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 }
 
 #[cfg(all(feature = "std", unix))]
-#[cfg_attr(feature = "async", async_trait::async_trait)]
 impl Connection for UnixStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
@@ -108,19 +150,29 @@ impl Connection for UnixStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn send_packet_async(&mut self, _bytes: &[u8]) -> crate::Result {
-        Err(crate::BreadError::WouldBlock)
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, _bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn read_packet_async(&mut self, _bytes: &mut [u8]) -> crate::Result {
-        Err(crate::BreadError::WouldBlock)
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        _bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
     }
 }
 
 #[cfg(all(feature = "async", unix))]
-#[async_trait::async_trait]
 impl Connection for AsyncUnixStream {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
@@ -137,14 +189,32 @@ impl Connection for AsyncUnixStream {
     }
 
     #[inline]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
-        self.write(bytes).await?;
-        Ok(())
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        #[inline]
+        async fn inner(this: &mut AsyncUnixStream, bytes: &[u8]) -> crate::Result {
+            this.write(bytes).await?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 
     #[inline]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
-        self.read(bytes).await?;
-        Ok(())
+    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        #[inline]
+        async fn inner(this: &mut AsyncUnixStream, bytes: &mut [u8]) -> crate::Result {
+            this.read(bytes).await?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 }

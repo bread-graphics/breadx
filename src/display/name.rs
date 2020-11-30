@@ -12,7 +12,7 @@ use memchr::memrchr;
 use std::{env, net, path::Path};
 
 #[cfg(feature = "async")]
-use alloc::boxed::Box;
+use super::GenericFuture;
 
 #[cfg(test)]
 use std::borrow::ToOwned;
@@ -42,7 +42,7 @@ pub enum NameConnection {
 
 impl NameConnection {
     #[inline]
-    fn generic(&mut self) -> &mut (dyn Connection + Send) {
+    fn generic(&mut self) -> &mut (dyn Connection + Send + Sync) {
         match self {
             Self::Tcp(t) => t as _,
             #[cfg(unix)]
@@ -55,7 +55,6 @@ impl NameConnection {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait::async_trait)]
 impl Connection for NameConnection {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
@@ -69,14 +68,22 @@ impl Connection for NameConnection {
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn send_packet_async(&mut self, bytes: &[u8]) -> crate::Result {
-        self.generic().send_packet_async(bytes).await
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        self.generic().send_packet_async(bytes)
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    async fn read_packet_async(&mut self, bytes: &mut [u8]) -> crate::Result {
-        self.generic().read_packet_async(bytes).await
+    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+    {
+        self.generic().read_packet_async(bytes)
     }
 }
 
