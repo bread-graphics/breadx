@@ -27,7 +27,7 @@ pub type GenericFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + S
 
 /// A trait that represents the ability to send and receive bytes across a connection. This is used as a two-way
 /// stream to send and receive data from the X server.
-pub trait Connection : Sync {
+pub trait Connection: Sync {
     /// Send bytes in a packet across the connection in a blocking manner.
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result;
     /// Read a packet/request from the connection in a blocking manner.
@@ -119,7 +119,10 @@ impl Connection for AsyncTcpStream {
     }
 
     #[inline]
-    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
@@ -204,7 +207,10 @@ impl Connection for AsyncUnixStream {
     }
 
     #[inline]
-    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,

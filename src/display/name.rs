@@ -78,7 +78,10 @@ impl Connection for NameConnection {
 
     #[cfg(feature = "async")]
     #[inline]
-    fn read_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b mut [u8]) -> GenericFuture<'future>
+    fn read_packet_async<'future, 'a, 'b>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+    ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,

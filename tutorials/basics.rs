@@ -347,9 +347,9 @@
 //!
 //! Consider the workflow for the above program. It would:
 //!
-//! * Send InternAtomRequest #1 to the server.
+//! * Send `InternAtomRequest` #1 to the server.
 //! * Wait for reply #1.
-//! * Send InternAtomRequest #2 to the server.
+//! * Send `InternAtomRequest` #2 to the server.
 //! * Wait for reply #2.
 //! * and so on and so forth.
 //!
@@ -381,8 +381,8 @@
 //!
 //! The above workflow is now:
 //!
-//! * Send InternAtomRequest #1 to the server.
-//! * Send InternAtomRequest #2 to the server.
+//! * Send `InternAtomRequest` #1 to the server.
+//! * Send `InternAtomRequest` #2 to the server.
 //! * and so on and so forth.
 //! * Wait for reply #1.
 //! * Wait for reply #2.
