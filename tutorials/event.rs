@@ -97,7 +97,7 @@
 //!
 //! Now, try removing the `set_button_press` call, and note that you no longer receive button press events.
 //!
-//! <div style="border: 2px dotted black; margin: 15px; padding: 15px; background: #daffd9">
+//! <div class="another-perspective">
 //! <h2>Another Perspective on `EventMask`</h2>
 //!
 //! **TODO: implementation of bitflags explanation**

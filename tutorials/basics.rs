@@ -1,7 +1,5 @@
 // MIT/Apache2 License
 
-//! <link rel="stylesheet" href="https://raw.githubusercontent.com/not-a-seagull/breadx/master/tutorials/style.css" />
-//! 
 //! [In the last tutorial](../intro/index.html), we reached an elementary understanding of how the X protocol works. In this
 //! tutorial, we'll open a connection to the X server and create a window.
 //!
@@ -63,7 +61,7 @@
 //! The second parameter is the authentication info. **TODO: EXPLAIN**
 //! </div>
 //!
-//! <div class="another-perspective>
+//! <div class="another-perspective">
 //! <h2>Another Perspective on `DisplayConnection`</h2>
 //!
 //! Shrewd programmers will check the documentation and realize that `DisplayConnection` is actually a

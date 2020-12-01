@@ -39,3 +39,4 @@ std = []
 
 [package.metadata.docs.rs]
 features = ["async"]
+rustdoc-args = ["-Z", "unstable-options", "--extend-css", "tutorials/style.css"]

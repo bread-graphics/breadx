@@ -60,7 +60,7 @@
 //! library you wrote, and it *probably won't* make said consumers pull their hair out as they try desperately
 //! to trace the problem to code that you wrote.
 //!
-//! <div style="border: 2px dotted black; background: #ededed; margin: 15px; padding: 15px">
+//! <div class="note">
 //! <h2>Note</h2>
 //!
 //! In all seriousness, the `rgb` function has worked for every computer I've tested it on, including every
@@ -107,7 +107,7 @@
 //! }
 //! ```
 //!
-//! <div style="border: 2px solid black; border-radius: 12px; margin: 15px; padding: 15px; background: #defffd">
+//! <div class="dissecting">
 //! <h2>Dissecting `Colormap::alloc_color`</h2>
 //!
 //! You may notice two things about the [`alloc_color_immediate`](../../auto/xproto/struct.Colormap.html#method.alloc_color_immediate)
