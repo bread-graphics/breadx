@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
