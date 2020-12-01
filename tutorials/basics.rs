@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+//! <link rel="stylesheet" href="https://raw.githubusercontent.com/not-a-seagull/breadx/master/tutorials/style.css" />
+//! 
 //! [In the last tutorial](../intro/index.html), we reached an elementary understanding of how the X protocol works. In this
 //! tutorial, we'll open a connection to the X server and create a window.
 //!
@@ -41,7 +43,7 @@
 //! }
 //! ```
 //!
-//! <div style="border: 2px solid black; border-radius: 12px; margin: 15px; padding: 15px; background: #defffd">
+//! <div class="dissecting">
 //! <h2>Dissecting `DisplayConnection::create`</h2>
 //!
 //! Above, we pass in two `None` parameters to `DisplayConnection::create`. In most cases, this should work
@@ -61,7 +63,7 @@
 //! The second parameter is the authentication info. **TODO: EXPLAIN**
 //! </div>
 //!
-//! <div style="border: 2px dotted black; margin: 15px; padding: 15px; background: #daffd9">
+//! <div class="another-perspective>
 //! <h2>Another Perspective on `DisplayConnection`</h2>
 //!
 //! Shrewd programmers will check the documentation and realize that `DisplayConnection` is actually a
@@ -105,7 +107,7 @@
 //! }
 //! ```
 //!
-//! <div style="border: 2px solid black; border-radius: 12px; margin: 15px; padding: 15px; background: #defffd">
+//! <div class="dissecting">
 //! <h2>Dissecting <a href="../../display/struct.Display.html#method.create_simple_window">`Display::create_simple_window`</a></h2>
 //!
 //! The `create_simple_window` method acts as a wrapper around the [`Display::create_window`](../../display/struct.Display.html#method.create_window) method, that passes in some defaults that assume values based on the parent
@@ -250,7 +252,7 @@
 //! }
 //! ```
 //!
-//! <div style="border: 2px dotted black; background: #ededed; margin: 15px; padding: 15px">
+//! <div class="note">
 //! <h2>Note</h2>
 //!
 //! You may notice that most functions rely on a mutable reference to the connection. This is because all data
@@ -315,7 +317,7 @@
 //! }
 //! ```
 //!
-//! <div style="border: 2px dotted black; margin: 15px; padding: 15px; background: #daffd9">
+//! <div class="another-perspective">
 //! <h2>Another Perspective on the `_immediate` suffix</h2>
 //!
 //! You may notice that several functions in this library have alternatives with the `_immediate` suffix.
