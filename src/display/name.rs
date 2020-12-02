@@ -325,7 +325,7 @@ impl<'a> XConnection<'a> {
             }
 
             // add the display name to the host
-            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.screen)));
+            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.display)));
             self.open_unix()
         }
 
@@ -365,7 +365,13 @@ impl<'a> XConnection<'a> {
         // the next part only applies with unix semantics
         #[cfg(unix)]
         {
-            return self.open_unix_async().await;
+            if let Ok(u) = self.clone().open_unix() {
+                return Ok(u);
+            }
+
+            // add the display name to the host
+            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.display)));
+            self.open_unix_async().await
         }
 
         // something wrong happened
