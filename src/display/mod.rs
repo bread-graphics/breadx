@@ -302,7 +302,8 @@ impl<Conn: Connection> Display<Conn> {
         self.connection.read_packet(&mut bytes)?;
 
         match bytes[0] {
-            0 | 2 => return Err(crate::BreadError::FailedToConnect),
+            0 => return Err(crate::BreadError::FailedToConnect),
+            2 => return Err(crate::BreadError::FailedToAuthorize),
             _ => (),
         }
 
@@ -342,7 +343,8 @@ impl<Conn: Connection> Display<Conn> {
         self.connection.read_packet_async(&mut bytes).await?;
 
         match bytes[0] {
-            0 | 2 => return Err(crate::BreadError::FailedToConnect),
+            0 => return Err(crate::BreadError::FailedToConnect),
+            2 => return Err(crate::BreadError::FailedToAuthorize),
             _ => (),
         }
 

@@ -19,6 +19,8 @@ pub enum BreadError {
     Io(IoError),
     /// Unable to open connection to the X11 server.
     FailedToConnect,
+    /// X11 server rejected our authorization.
+    FailedToAuthorize,
     /// BadReadError
     BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
@@ -71,6 +73,7 @@ impl fmt::Display for BreadError {
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
             Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
+            Self::FailedToAuthorize => f.write_str("Authorization was rejected by the X11 server"),
             Self::WouldBlock => f.write_str("Attempted to call async I/O on a blocking connection"),
             Self::BadObjectRead(name) => write!(
                 f,
