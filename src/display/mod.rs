@@ -341,7 +341,7 @@ impl<Conn: Connection> Display<Conn> {
             Some(auth) => auth,
             None => AuthInfo::get_async().await,
         });
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
         self.connection.send_packet_async(&bytes[0..len]).await?;
