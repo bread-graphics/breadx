@@ -93,6 +93,8 @@ impl Connection for NameConnection {
 /// Port for X11 server.
 const X_TCP_PORT: u16 = 6000;
 
+const PART1: &str = "/tmp/.X11-unix/X";
+
 /// The protocol used for the connection.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Protocol {
@@ -306,8 +308,6 @@ impl<'a> XConnection<'a> {
 
     /// Open the connection.
     pub fn open(mut self) -> crate::Result<NameConnection> {
-        const PART1: &str = "/tmp/.X11-unix/X";
-
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
@@ -325,7 +325,7 @@ impl<'a> XConnection<'a> {
             }
 
             // add the display name to the host
-            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.screen)));
+            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.display)));
             self.open_unix()
         }
 
@@ -354,7 +354,7 @@ impl<'a> XConnection<'a> {
 
     /// Open an asynchronous connection.
     #[cfg(feature = "async")]
-    pub async fn open_async(self) -> crate::Result<NameConnection> {
+    pub async fn open_async(mut self) -> crate::Result<NameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
@@ -365,7 +365,13 @@ impl<'a> XConnection<'a> {
         // the next part only applies with unix semantics
         #[cfg(unix)]
         {
-            return self.open_unix_async().await;
+            if let Ok(u) = self.clone().open_unix() {
+                return Ok(u);
+            }
+
+            // add the display name to the host
+            self.host = Some(Cow::Owned(format!("{}{}", PART1, self.display)));
+            self.open_unix_async().await
         }
 
         // something wrong happened
