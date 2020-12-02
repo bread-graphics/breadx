@@ -260,7 +260,7 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn from_connection(connection: Conn, auth: Option<AuthInfo>) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
-        d.init(auth.unwrap_or_default())?;
+        d.init(auth)?;
         Ok(d)
     }
 
@@ -273,14 +273,14 @@ impl<Conn: Connection> Display<Conn> {
         auth: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
-        d.init_async(auth.unwrap_or(Default::default())).await?;
+        d.init_async(auth).await?;
         Ok(d)
     }
 
     /// Generate the setup from the authentication info.
     #[inline]
     fn create_setup(auth: AuthInfo) -> SetupRequest {
-        let AuthInfo { name, data } = auth;
+        let AuthInfo { name, data, .. } = auth;
         SetupRequest {
             byte_order: endian_byte(),
             protocol_major_version: 11,
@@ -292,9 +292,12 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Initialize the setup.
     #[inline]
-    fn init(&mut self, auth: AuthInfo) -> crate::Result {
-        let setup = Self::create_setup(auth);
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
+    fn init(&mut self, auth: Option<AuthInfo>) -> crate::Result {
+        let setup = Self::create_setup(match auth {
+            Some(auth) => auth,
+            None => AuthInfo::get(),
+        });
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
         self.connection.send_packet(&bytes[0..len])?;
@@ -333,8 +336,11 @@ impl<Conn: Connection> Display<Conn> {
     /// TODO; lots of copy-pasted code, redo this at some point
     #[cfg(feature = "async")]
     #[inline]
-    async fn init_async(&mut self, auth: AuthInfo) -> crate::Result {
-        let setup = Self::create_setup(auth);
+    async fn init_async(&mut self, auth: Option<AuthInfo>) -> crate::Result {
+        let setup = Self::create_setup(match auth {
+            Some(auth) => auth,
+            None => AuthInfo::get_async().await,
+        });
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);

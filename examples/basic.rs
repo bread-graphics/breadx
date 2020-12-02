@@ -2,7 +2,7 @@
 
 use breadx::{
     event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
-    WindowClass, WindowParameters, XidType, rgb,
+    WindowClass, WindowParameters, XidType,
 };
 use std::{env, process};
 
