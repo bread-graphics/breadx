@@ -11,6 +11,7 @@ repository = "https://github.com/not-a-seagull/breadx"
 [dependencies]
 async-io = { version = "1.1.0", optional = true }
 async-net = { version = "1.5.0", optional = true }
+blocking = { version = "1.0.2", optional = true }
 bytemuck = "1.4.1"
 cfg-if = "0.1.10"
 const_fn = "0.4.3"
@@ -30,7 +31,7 @@ env_logger = "0.8.1"
 
 [features]
 default = ["std"]
-async = ["std", "async-io", "async-net", "futures-io", "futures-lite"]
+async = ["std", "async-io", "async-net", "blocking", "futures-io", "futures-lite"]
 image-support = ["image", "std"]
 nightly-const-optimization = []
 nightly-min-specialization = []
