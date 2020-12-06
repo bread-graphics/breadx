@@ -427,6 +427,15 @@ impl<Conn: Connection> Display<Conn> {
             .find(|v| v.visual_id == id)
     }
 
+    #[inline]
+    pub fn get_scanline_pad(&self, depth: u8) -> usize {
+        self.setup
+            .pixmap_formats
+            .iter()
+            .find(|f| f.depth == depth)
+            .map_or(self.setup.bitmap_format_scanline_pad, |f| f.scanline_pad) as _
+    }
+
     /// Generate a unique X ID for a window, colormap, or other object. Usually, `Display`'s helper functions
     /// will generate this for you. If you'd like to circumvent them, this will generate ID's for you.
     #[inline]

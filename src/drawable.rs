@@ -6,7 +6,7 @@
 use crate::{
     auto::xproto::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
-        GetGeometryRequest, Pixmap, Window,
+        GetGeometryRequest, GetImageReply, GetImageRequest, ImageFormat, Pixmap, Window,
     },
     image::{put::put_image_req, Image},
     Connection, Display, Gcontext, RequestCookie,
@@ -346,6 +346,123 @@ pub async fn create_pixmap_async<Conn: Connection, Target: Into<Drawable>>(
     log::debug!("Sent CreatePixmapRequest to server.");
     dpy.resolve_request_async(tok).await?;
     Ok(pixmap)
+}
+
+#[inline]
+fn get_image_req(
+    drawable: Drawable,
+    x: isize,
+    y: isize,
+    width: usize,
+    height: usize,
+    plane_mask: usize,
+    format: ImageFormat,
+) -> GetImageRequest {
+    GetImageRequest {
+        drawable,
+        x: x as _,
+        y: y as _,
+        width: width as _,
+        height: height as _,
+        plane_mask: plane_mask as _,
+        format,
+        ..Default::default()
+    }
+}
+
+#[inline]
+fn create_image_from_get_image_reply<Conn: Connection>(
+    dpy: &mut Display<Conn>,
+    width: usize,
+    height: usize,
+    plane_mask: usize,
+    format: ImageFormat,
+    reply: GetImageReply,
+) -> Image<Vec<u8>> {
+    if format == ImageFormat::XyPixmap {
+        let depth = (plane_mask & (0xffff_ffff >> (32 - reply.depth))).count_ones();
+
+        let image = Image::new(
+            dpy,
+            dpy.visual_id_to_visual(reply.visual),
+            depth as _,
+            format,
+            0,
+            reply.data,
+            width,
+            height,
+            u32::from(dpy.setup.bitmap_format_scanline_pad),
+            None,
+        )
+        .unwrap();
+
+        image
+    } else {
+        let image = Image::new(
+            dpy,
+            dpy.visual_id_to_visual(reply.visual),
+            reply.depth as _,
+            ImageFormat::ZPixmap,
+            0,
+            reply.data,
+            width,
+            height,
+            dpy.get_scanline_pad(reply.depth as _) as _,
+            None,
+        )
+        .unwrap();
+
+        image
+    }
+}
+
+// Get an image from a drawable.
+#[inline]
+pub fn get_image<Conn: Connection, Target: Into<Drawable>>(
+    dpy: &mut Display<Conn>,
+    drawable: Target,
+    x: isize,
+    y: isize,
+    width: usize,
+    height: usize,
+    plane_mask: usize,
+    format: ImageFormat,
+) -> crate::Result<Image<Vec<u8>>> {
+    let req = get_image_req(drawable.into(), x, y, width, height, plane_mask, format);
+
+    log::debug!("Sending GetImageRequest to server.");
+    let tok = dpy.send_request(req)?;
+    log::debug!("Sent GetImageRequest to server.");
+    let reply = dpy.resolve_request(tok)?;
+
+    Ok(create_image_from_get_image_reply(
+        dpy, width, height, plane_mask, format, reply,
+    ))
+}
+
+// Get an image from a drawable, async redox.
+#[cfg(feature = "async")]
+#[inline]
+pub async fn get_image_async<Conn: Connection, Target: Into<Drawable>>(
+    dpy: &mut Display<Conn>,
+    drawable: Target,
+    x: isize,
+    y: isize,
+    width: usize,
+    height: usize,
+    plane_mask: usize,
+    format: ImageFormat,
+) -> crate::Result<Image<Vec<u8>>> {
+    let req = get_image_req(drawable.into(), x, y, width, height, plane_mask, format);
+
+    log::debug!("Sending GetImageRequest to server.");
+    let tok = dpy.send_request_async(req).await?;
+    log::debug!("Sent GetImageRequest to server.");
+    let reply = dpy.resolve_request_async(tok).await?;
+
+    Ok(create_image_from_get_image_reply(
+        dpy, width, height, plane_mask, format, reply,
+    ))
 }
 
 /// Write an image to a drawable.
