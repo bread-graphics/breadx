@@ -70,11 +70,11 @@
 //!     'evloop: loop {
 //!         // grab an event from the connection
 //!         let ev = conn.wait_for_event()?;
-//!         
+//!
 //!         // if the event is telling us to close, then close
 //!         if let Event::ClientMessage(cme) = ev {
 //!             // check if the client message indicates the deletion protocol
-//!             if cme.data.longs()[0] == wm_delete_window.xid() {
+//!             if cme.data.longs()[0] == wm_delete_window.xid {
 //!                 break 'evloop;
 //!             }
 //!         }

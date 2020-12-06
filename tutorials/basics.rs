@@ -36,7 +36,7 @@
 //!
 //! fn main() -> Result<(), BreadError> {
 //!     let mut conn = DisplayConnection::create(None, None)?;
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -93,7 +93,7 @@
 //!     // represents the colors black and white, respectively
 //!     let black = conn.default_black_pixel();
 //!     let white = conn.default_white_pixel();
-//!     
+//!
 //!     // creates a 640x400 window with a black border and a white background
 //!     let window = conn.create_simple_window(root, 0, 0, 640, 400, 0, black, white)?;
 //!
@@ -303,7 +303,7 @@
 //!         // interned above
 //!         match ev {
 //!             Event::ClientMessage(cme) => {
-//!                 if cme.data.longs()[0] == wm_delete_window.xid() {
+//!                 if cme.data.longs()[0] == wm_delete_window.xid {
 //!                     break;
 //!                 }
 //!             }

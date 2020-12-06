@@ -352,7 +352,7 @@ where
         };
 
         let min_bytes_per_line = match format {
-            ImageFormat::ZPixmap => roundup(bits_per_pixel as usize * width, quantum as usize),
+            ImageFormat::ZPixmap => roundup(bits_per_pixel as usize * width, quantum as usize) >> 3,
             _ => roundup(width + x_offset, quantum as usize),
         };
 

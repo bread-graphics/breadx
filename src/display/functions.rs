@@ -142,7 +142,6 @@ impl GcParameters {
 impl<Conn: Connection> Display<Conn> {
     #[inline]
     fn create_window_request(
-        &mut self,
         wid: Window,
         parent: Window,
         class: WindowClass,
@@ -153,14 +152,10 @@ impl<Conn: Connection> Display<Conn> {
         width: u16,
         height: u16,
         border_width: u16,
-        mut props: WindowParameters,
+        props: WindowParameters,
     ) -> CreateWindowRequest {
         const INHERITED_DEPTH: u8 = 0;
         const INHERITED_VISUAL: Visualid = 0;
-
-        if props.background_pixel.is_none() {
-            props.background_pixel = Some(self.default_white_pixel());
-        }
 
         let mut cwr = CreateWindowRequest {
             wid,
@@ -198,7 +193,7 @@ impl<Conn: Connection> Display<Conn> {
     ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
         log::debug!("Generate {}", wid.xid());
-        let cw = self.create_window_request(
+        let cw = Self::create_window_request(
             wid,
             parent,
             class,
@@ -236,7 +231,7 @@ impl<Conn: Connection> Display<Conn> {
         props: WindowParameters,
     ) -> crate::Result<Window> {
         let wid = Window::const_from_xid(self.generate_xid()?);
-        let cw = self.create_window_request(
+        let cw = Self::create_window_request(
             wid,
             parent,
             class,

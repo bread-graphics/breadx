@@ -124,6 +124,8 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
         dest_scanline_pad as usize,
     ) >> 3;
 
+    let mut length = bytes_per_dest * req.height as usize;
+
     let mut src_data = Cow::Borrowed::<[u8]>(
         &image.data()
             [(src_y * image.bytes_per_line()) + ((src_x * image.bits_per_pixel() as usize) >> 3)..],
@@ -148,17 +150,19 @@ fn prepare_z_image<Conn: Connection, Data: Deref<Target = [u8]>>(
         && (src_x == 0 || (src_y + req.height as usize) < image.height())
     {
         req.data = match src_data {
-            Cow::Borrowed(src_data) => src_data.to_vec(),
-            Cow::Owned(src_data) => src_data,
+            Cow::Borrowed(src_data) => src_data[..length].to_vec(),
+            Cow::Owned(mut src_data) => {
+                src_data.truncate(length);
+                src_data
+            }
         };
 
         return;
     }
 
     // determine what kind of shifts we need to do
-    let length = roundup(bytes_per_dest * req.height as usize, 4);
+    length = roundup(bytes_per_dest * req.height as usize, 4);
     let mut buffer: Vec<u8> = iter::repeat(0).take(length).collect();
-
     if image.byte_order() == dpy.setup().image_byte_order || image.bits_per_pixel() == 8 {
         no_swap(
             &src_data,
