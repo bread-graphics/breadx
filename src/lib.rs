@@ -166,7 +166,9 @@ pub trait Request: AsByteSequence {
 //pub use display::*;
 pub use xid::{XidType, XID};
 
-pub use auto::xproto::{Arc, EventMask, Rectangle, Segment, Visualid, Window, WindowClass};
+pub use auto::xproto::{
+    Arc, EventMask, ImageFormat, Rectangle, Segment, Visualid, Window, WindowClass,
+};
 
 #[path = "../tutorials/mod.rs"]
 pub mod tutorials;

@@ -18,9 +18,10 @@ fn main() {
     event_mask.set_button_press(true);
     event_mask.set_structure_notify(true);
 
-    // window properties 
+    // window properties
     let mut cwp: WindowParameters = Default::default();
     cwp.event_mask = Some(event_mask);
+    cwp.background_pixel = Some(conn.default_white_pixel());
 
     let root = conn.default_screen().root;
     let window = conn
@@ -83,7 +84,7 @@ fn main() {
             }
         };
 
-//        println!("{:?}", &ev);
+        //        println!("{:?}", &ev);
 
         match ev {
             Event::ClientMessage(cme) => {
