@@ -11,7 +11,7 @@
 //! ```no_run
 //! match ev {
 //!     Event::ClientMessage(cme) => {
-//!         if cme.data.longs()[0] == wm_delete_window.xid() {
+//!         if cme.data.longs()[0] == wm_delete_window.xid {
 //!             break;
 //!         }
 //!     }
@@ -67,7 +67,7 @@
 //!
 //!         match ev {
 //!             Event::ClientMessage(cme) => {
-//!                 if cme.data.longs()[0] == wm_delete_window.xid() {
+//!                 if cme.data.longs()[0] == wm_delete_window.xid {
 //!                     break;
 //!                 }
 //!             }
