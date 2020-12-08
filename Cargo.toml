@@ -31,6 +31,7 @@ env_logger = "0.8.1"
 image = { version = "0.23.12", default-features = false, features = ["jpeg"] }
 
 [features]
+# Optimizations and features
 default = ["std"]
 async = ["std", "async-io", "async-net", "blocking", "futures-io", "futures-lite"]
 image-support = ["image", "std"]
@@ -38,6 +39,10 @@ nightly-const-optimization = []
 nightly-min-specialization = []
 parallel = ["rayon", "std"]
 std = []
+
+# Extensions
+render = []
+all-extensions = ["render"]
 
 [package.metadata.docs.rs]
 features = ["async"]

@@ -62,7 +62,7 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
                     ty: Type::Basic("bool".into()),
                     usage: ParameterUsage::Owned,
                 }],
-                Some(Type::Ref(Box::new(Type::Basic("Self".into())), true)),
+                Some(Type::Ref(Box::new(Type::Basic("Self".into())), true, None)),
             );
 
             method.statements.extend(vec![

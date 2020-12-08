@@ -82,12 +82,12 @@ impl ToSyn for Item {
 
 impl Item {
     #[inline]
-    pub fn from_lvl2(lvl2: Lvl2Item, xids: &[Box<str>]) -> Vec<Self> {
+    pub fn from_lvl2(lvl2: Lvl2Item, xids: &[Box<str>], ext_name: Option<&str>) -> Vec<Self> {
         match lvl2 {
             Lvl2Item::Import(i) => vec![Item::Import(i)],
             Lvl2Item::Typedef(t) => vec![Item::Typedef(t)],
             Lvl2Item::Struct(s) => {
-                let (mut rs1, mut rs2) = <(RStruct, Option<RStruct>)>::from(s);
+                let (mut rs1, mut rs2) = RStruct::from_prev(s, ext_name);
                 rs1.populate_asb();
                 if let Some(ref mut rs2) = rs2 {
                     rs2.populate_asb();

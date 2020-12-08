@@ -24,7 +24,7 @@ pub enum BreadError {
     /// BadReadError
     BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
-    ExtensionNotPresent(&'static str),
+    ExtensionNotPresent,
     /// An error propogated by the X11 server.
     XProtocol {
         error_code: ErrorCode,
@@ -80,7 +80,7 @@ impl fmt::Display for BreadError {
                 "Unable to read object of type from bytes: {}",
                 name.unwrap_or("Unknown")
             ),
-            Self::ExtensionNotPresent(ext) => write!(f, "Unable to load extension {}", ext),
+            Self::ExtensionNotPresent => f.write_str("Extension was not found on X server"),
             Self::XProtocol {
                 error_code,
                 minor_code,

@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{int_litexpr_int, str_to_path, str_to_ty},
+    syn_util::{int_litexpr_int, str_to_exprpath, str_to_path, str_to_ty},
     InputParameter, Method, ParameterUsage, ToSyn, Type,
 };
 use proc_macro2::Span;
@@ -11,7 +11,7 @@ use std::{borrow::Cow, iter, ops::Deref};
 pub enum Trait {
     Event(u64),
     Error(u64),
-    Request(u64, Type),
+    Request(u64, Type, Option<String>),
     Xid,
     EnumDefault(Box<str>),
     FromXid(Box<str>),
@@ -33,6 +33,39 @@ fn opcode_const(op: u64) -> syn::ImplItem {
     })
 }
 
+#[inline]
+fn extension_const(ext: Option<&str>) -> syn::ImplItem {
+    syn::ImplItem::Const(syn::ImplItemConst {
+        attrs: vec![],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        const_token: Default::default(),
+        ident: syn::Ident::new("EXTENSION", Span::call_site()),
+        colon_token: Default::default(),
+        ty: Type::Opt(Box::new(Type::Ref(
+            Box::new(Type::Basic("str".into())),
+            false,
+            Some("'static"),
+        )))
+        .to_syn_ty(),
+        eq_token: Default::default(),
+        expr: match ext {
+            None => str_to_exprpath("None"),
+            Some(ext) => syn::Expr::Call(syn::ExprCall {
+                attrs: vec![],
+                func: Box::new(str_to_exprpath("Some")),
+                paren_token: Default::default(),
+                args: iter::once(syn::Expr::Lit(syn::ExprLit {
+                    attrs: vec![],
+                    lit: syn::Lit::Str(syn::LitStr::new(ext, Span::call_site())),
+                }))
+                .collect(),
+            }),
+        },
+        semi_token: Default::default(),
+    })
+}
+
 impl Trait {
     #[inline]
     pub fn to_syn_item(self, tyname: &str) -> Vec<syn::Item> {
@@ -47,7 +80,7 @@ impl Trait {
                 match self {
                     Self::Event(_) => str_to_path("Event"),
                     Self::Error(_) => str_to_path("Error"),
-                    Self::Request(_, _) => str_to_path("Request"),
+                    Self::Request(_, _, _) => str_to_path("Request"),
                     Self::Xid => str_to_path("XidType"),
                     Self::EnumDefault(_) => str_to_path("Default"),
                     Self::FromXid(ref from) => syn::Path {
@@ -75,8 +108,9 @@ impl Trait {
             items: match self {
                 Self::Event(opcode) => vec![opcode_const(opcode)],
                 Self::Error(opcode) => vec![opcode_const(opcode)],
-                Self::Request(opcode, reply_name) => vec![
+                Self::Request(opcode, reply_name, ext_name) => vec![
                     opcode_const(opcode),
+                    extension_const(ext_name.as_deref()),
                     syn::ImplItem::Type(syn::ImplItemType {
                         attrs: vec![],
                         vis: syn::Visibility::Inherited,

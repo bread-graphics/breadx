@@ -35,9 +35,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Stage 1: Read from Level 0 representation (XML) into Level 1 representation. Result is a
     //          vector of Level 1 items.
-    let mut buf = Vec::new();
+    let mut buf = vec![];
     let mut lvl1_items = vec![];
     let mut lvl0_state: lvl0::Lvl0State = Default::default();
+    let mut ext_name: Option<String> = None;
+
     loop {
         match reader.read_event(&mut buf) {
             Err(e) => panic!(
@@ -47,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ),
             Ok(Event::Eof) => break,
             Ok(event) => {
-                if let Some(item) = lvl0_state.react_to_event(event) {
+                if let Some(item) = lvl0_state.react_to_event(event, &mut ext_name) {
                     lvl1_items.push(item);
                 }
             }
@@ -61,12 +63,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Stage 2: Normalize from Level 1 representation to Level 2 representation. This expands some of the copying,
     //          converts enums to what they're represented as in Rust, and preforms some other optimizations.
     let (lvl2_items, xidtypes) = lvl2::convert_series(lvl1_items);
-    log::error!("Xidtypes: {:?}", &xidtypes);
 
     // Stage 3: Normalize to a basic Rust representation.
     let lvl3_items: Vec<lvl3::Item> = lvl2_items
         .into_iter()
-        .flat_map(|lvl2| lvl3::Item::from_lvl2(lvl2, &xidtypes))
+        .flat_map(|lvl2| lvl3::Item::from_lvl2(lvl2, &xidtypes, ext_name.as_deref()))
         .collect();
 
     // Stage 4: Convert to syn items

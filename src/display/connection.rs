@@ -27,7 +27,7 @@ pub type GenericFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + S
 
 /// A trait that represents the ability to send and receive bytes across a connection. This is used as a two-way
 /// stream to send and receive data from the X server.
-pub trait Connection: Sync {
+pub trait Connection: Send + Sync {
     /// Send bytes in a packet across the connection in a blocking manner.
     fn send_packet(&mut self, bytes: &[u8]) -> crate::Result;
     /// Read a packet/request from the connection in a blocking manner.

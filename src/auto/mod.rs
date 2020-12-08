@@ -319,6 +319,9 @@ impl AsByteSequence for String {
 //pub mod render;
 //pub mod shape;
 //pub mod xfixes;
+/// The X Rendering composite system.
+#[cfg(feature = "render")]
+pub mod render;
 /// Miscellaneous additions to the X11 protocol.
 pub mod xc_misc;
 /// The core X11 protocol.
