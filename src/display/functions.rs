@@ -10,13 +10,14 @@ use crate::{
         ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
         CreateCursorRequest, CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask,
         FillRule, FillStyle, Font, ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx,
-        InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle, Pixmap, ScreenSaver,
-        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
-        Window, WindowClass,
+        InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
+        ScreenSaver, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
+        Visualid, Window, WindowClass,
     },
-    XidType,
+    Extension, XidType,
 };
 use alloc::string::String;
+use core::convert::TryInto;
 
 crate::create_paramaterizer! {
     pub struct WindowParameters : (Cw, CreateWindowRequest) {
@@ -140,6 +141,63 @@ impl GcParameters {
 }
 
 impl<Conn: Connection> Display<Conn> {
+    /// Query for extension information.
+    #[inline]
+    pub fn query_extension(
+        &mut self,
+        name: String,
+    ) -> crate::Result<RequestCookie<QueryExtensionRequest>> {
+        let qer = QueryExtensionRequest {
+            name,
+            ..Default::default()
+        };
+        log::warn!("Sending QueryExtensionRequest to server.");
+        let tok = self.send_request(qer)?;
+        log::warn!("Sent QueryExtensionRequest to server.");
+        Ok(tok)
+    }
+
+    /// Query for extension information, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_extension_async(
+        &mut self,
+        name: String,
+    ) -> crate::Result<RequestCookie<QueryExtensionRequest>> {
+        let qer = QueryExtensionRequest {
+            name,
+            ..Default::default()
+        };
+        log::warn!("Sending QueryExtensionRequest to server.");
+        let tok = self.send_request_async(qer).await?;
+        log::warn!("Sent QueryExtensionRequest to server.");
+        Ok(tok)
+    }
+
+    /// Query for extension information, but resolve immediately. The `Error::ExtensionNotPresent` error is
+    /// returned when the extension is not found.
+    #[inline]
+    pub fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
+        let tok = self.query_extension(name)?;
+        let qer = self.resolve_request(tok)?;
+
+        qer.try_into()
+    }
+
+    /// Query for extension information, but resolve immediately, async redox . The `Error::ExtensionNotPresent`
+    /// error is returned when the extension is not found.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_extension_immediate_async(
+        &mut self,
+        name: String,
+    ) -> crate::Result<Extension> {
+        let tok = self.query_extension_async(name).await?;
+        let qer = self.resolve_request_async(tok).await?;
+
+        qer.try_into()
+    }
+
     #[inline]
     fn create_window_request(
         wid: Window,

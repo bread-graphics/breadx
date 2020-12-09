@@ -206,9 +206,10 @@ impl RStruct {
                 // if the list length is a single item, get that length slot
                 let length_expr =
                     if let Some(_) = list_length.single_item() {
-                        str_to_exprpath(&len_map.remove(name).unwrap_or_else(|| {
-                            panic!("Bad len map: Cannot find len for {}", &name)
-                        }))
+                        match len_map.get(name) {
+Some(name) => str_to_exprpath(name),
+None => list_length.to_length_expr(false, true),
+                        }
                     } else {
                         // just get the length expr
                         list_length.to_length_expr(false, true)
@@ -303,7 +304,7 @@ impl ToSyn for RStruct {
 
 // recursive entry point
 #[inline]
-fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
+fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct, Option<RStruct>) {
     // disassemble the structure
     let Lvl2Struct {
         mut name,
@@ -338,12 +339,13 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
                         Some(ref reply) => Type::Basic(reply_name.clone().into()),
                         None => Type::Tuple(vec![]),
                     },
+                    ext_name.map(|s| s.to_string()),
                 ));
                 name = format!("{}Request", name).into_boxed_str();
                 match reply {
                     Some(mut reply) => {
                         reply.name = reply_name.into_boxed_str();
-                        let (reply, _) = from_lvl2(*reply, true);
+                        let (reply, _) = from_lvl2(*reply, true, ext_name);
                         Some(reply)
                     }
                     None => None,
@@ -367,9 +369,9 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool) -> (RStruct, Option<RStruct>) {
 
 // From a level 2 struct
 // Note: this potentially produces 2 items
-impl From<Lvl2Struct> for (RStruct, Option<RStruct>) {
+impl RStruct {
     #[inline]
-    fn from(s: Lvl2Struct) -> Self {
-        from_lvl2(s, false)
+    pub fn from_prev(s: Lvl2Struct, ext_name: Option<&str>) -> (Self, Option<Self>) {
+        from_lvl2(s, false, ext_name)
     }
 }

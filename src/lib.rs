@@ -135,6 +135,7 @@ pub mod display;
 pub mod drawable;
 pub mod error;
 pub mod event;
+pub mod extension;
 pub mod gcontext;
 pub mod image;
 pub(crate) mod paramatizer;
@@ -148,6 +149,7 @@ pub use colormap::*;
 pub use display::*;
 pub use error::*;
 pub use event::Event;
+pub use extension::*;
 pub use gcontext::*;
 pub use image::Image;
 pub use pixmap::*;
@@ -161,6 +163,9 @@ pub trait Request: AsByteSequence {
     //
     // Every request contains an 8-bit major opcode
     const OPCODE: u8;
+
+    /// The name of the extension that this request belongs to.
+    const EXTENSION: Option<&'static str>;
 }
 
 //pub use display::*;

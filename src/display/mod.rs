@@ -16,13 +16,16 @@ use crate::{
     Request, XID,
 };
 use alloc::{boxed::Box, collections::VecDeque};
-use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32, ptr::NonNull};
-use cty::{c_int, c_void};
+use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
+use cty::c_int;
 use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 #[cfg(feature = "std")]
 use std::borrow::Cow;
+
+#[cfg(feature = "async")]
+use std::{future::Future, pin::Pin};
 
 mod connection;
 pub use connection::*;
@@ -34,6 +37,8 @@ mod input;
 mod output;
 
 pub use functions::*;
+
+pub(crate) const EXT_KEY_SIZE: usize = 24;
 
 /// The connection to the X11 server. Most operations done in breadx revolve around this object
 /// in some way, shape or form.
@@ -84,7 +89,12 @@ pub struct Display<Conn> {
     pub(crate) wm_protocols_atom: Option<NonZeroU32>,
 
     // context db
-    context: HashMap<(XID, ContextID), NonNull<c_void>>,
+    //    context: HashMap<(XID, ContextID), NonNull<c_void>>,
+
+    // hashmap linking extension names to major opcodes
+    // we use byte arrays instead of static string pointers
+    // here because cache locality leads to an overall speedup (todo: verify)
+    extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
 }
 
 /// Unique identifier for a context.
@@ -204,11 +214,11 @@ impl<Conn: Connection> Display<Conn> {
     /// information.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn send_request_async<R: Request>(
-        &mut self,
+    pub fn send_request_async<'future, R: Request + Send + 'future>(
+        &'future mut self,
         req: R,
-    ) -> crate::Result<RequestCookie<R>> {
-        self.send_request_internal_async(req).await
+    ) -> Pin<Box<dyn Future<Output = crate::Result<RequestCookie<R>>> + Send + 'future>> {
+        Box::pin(self.send_request_internal_async(req))
     }
 
     /// Wait for a request from the X11 server, async redox. See the `resolve_request` function for more
@@ -243,12 +253,13 @@ impl<Conn: Connection> Display<Conn> {
             setup: Default::default(),
             xid: Default::default(),
             default_screen: 0,
-            event_queue: VecDeque::new(),
+            event_queue: VecDeque::with_capacity(8),
             pending_requests: VecDeque::new(),
-            pending_replies: HashMap::new(),
+            pending_replies: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
-            context: HashMap::new(),
+            //            context: HashMap::new(),
+            extensions: HashMap::with_capacity(8),
         }
     }
 
@@ -468,23 +479,25 @@ impl<Conn: Connection> Display<Conn> {
         self.event_queue.iter().any(predicate)
     }
 
-    /// Save a pointer into this display's map of contexts.
-    #[inline]
-    pub fn save_context(&mut self, xid: XID, context: ContextID, data: NonNull<c_void>) {
-        self.context.insert((xid, context), data);
-    }
+    /*
+        /// Save a pointer into this display's map of contexts.
+        #[inline]
+        pub fn save_context(&mut self, xid: XID, context: ContextID, data: NonNull<c_void>) {
+            self.context.insert((xid, context), data);
+        }
 
-    /// Retrieve a pointer from the context.
-    #[inline]
-    pub fn find_context(&mut self, xid: XID, context: ContextID) -> Option<NonNull<c_void>> {
-        self.context.get(&(xid, context)).copied()
-    }
+        /// Retrieve a pointer from the context.
+        #[inline]
+        pub fn find_context(&mut self, xid: XID, context: ContextID) -> Option<NonNull<c_void>> {
+            self.context.get(&(xid, context)).copied()
+        }
 
-    /// Delete an entry in the context.
-    #[inline]
-    pub fn delete_context(&mut self, xid: XID, context: ContextID) {
-        self.context.remove(&(xid, context));
-    }
+        /// Delete an entry in the context.
+        #[inline]
+        pub fn delete_context(&mut self, xid: XID, context: ContextID) {
+            self.context.remove(&(xid, context));
+        }
+    */
 }
 
 /// A variant of `Display` that uses X11's default connection mechanisms to connect to the server. In

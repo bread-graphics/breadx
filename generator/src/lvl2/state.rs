@@ -371,6 +371,23 @@ fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
                 let lname = l.name.clone();
                 let item = item.to_owned();
 
+                // check and make sure none of the other lists in this series have this item
+                // as a single item
+                if fields.iter().any(|f| {
+                    if let StructureItem::List(l) = f {
+                        if let Some(len_name) = l.list_length.single_item() {
+                            if l.name != lname && len_name == item {
+                                return true;
+                            }
+                        }
+                    }
+
+                    false
+                }) {
+                    log::info!("Found duplicate single item: {}", &item);
+                    continue;
+                }
+
                 // if this is a single-item list length, axe that single item and
                 // just use Vec::len() to calculate length
                 fields.iter_mut().any(move |f| {

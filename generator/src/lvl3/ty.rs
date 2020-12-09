@@ -22,7 +22,7 @@ pub enum Type {
     /// Tuple container type.
     Tuple(Vec<Type>),
     /// Reference to another type.
-    Ref(Box<Type>, bool),
+    Ref(Box<Type>, bool, Option<&'static str>),
     /// Slice of a type.
     Slice(Box<Type>),
 }
@@ -68,9 +68,12 @@ impl Type {
                 paren_token: Default::default(),
                 elems: tys.iter().map(|t| t.to_syn_ty()).collect(),
             }),
-            Self::Ref(r, is_mut) => syn::Type::Reference(syn::TypeReference {
+            Self::Ref(r, is_mut, lifetime) => syn::Type::Reference(syn::TypeReference {
                 and_token: Default::default(),
-                lifetime: None,
+                lifetime: match lifetime {
+                    None => None,
+                    Some(lifetime) => Some(syn::Lifetime::new(lifetime, Span::call_site())),
+                },
                 mutability: if *is_mut {
                     Some(Default::default())
                 } else {

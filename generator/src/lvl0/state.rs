@@ -146,7 +146,11 @@ impl Lvl0State {
 
     /// React to a quick-xml event. It may return a Level 1 Item representing what it has read in.
     #[inline]
-    pub fn react_to_event<'a>(&mut self, event: Event<'a>) -> Option<Item> {
+    pub fn react_to_event<'a>(
+        &mut self,
+        event: Event<'a>,
+        ext_name: &mut Option<String>,
+    ) -> Option<Item> {
         match self {
             Self::AwaitingTopLevel => {
                 // we're waiting for a top-level event
@@ -154,9 +158,9 @@ impl Lvl0State {
                 match event {
                     Event::Start(b) => {
                         // tell what kind of tag we're reading in, and roll based on that,
-                        self.match_toplevel(b, false)
+                        self.match_toplevel(b, false, ext_name)
                     }
-                    Event::Empty(b) => self.match_toplevel(b, true),
+                    Event::Empty(b) => self.match_toplevel(b, true, ext_name),
                     _ => None,
                 }
             }
@@ -717,7 +721,7 @@ impl Lvl0State {
                                 *self =
                                     Self::StructLike(StructLike::Reply(base), tiny_vec![], None);
                             } else {
-                                log::warn!("Found reply in non-request item");
+                                log::warn!("Found reply in non-request item: {:?}", self);
                             }
                         }
                         b"doc" => {
@@ -793,8 +797,25 @@ impl Lvl0State {
     }
 
     #[inline]
-    fn match_toplevel<'a>(&mut self, b: BytesStart<'a>, is_empty: bool) -> Option<Item> {
+    fn match_toplevel<'a>(
+        &mut self,
+        b: BytesStart<'a>,
+        is_empty: bool,
+        ext_name: &mut Option<String>,
+    ) -> Option<Item> {
         match b.name() {
+            b"xcb" => {
+                // get the extension name, if applicable
+                let ename = get_attributes(&b, &[b"extension-xname".as_ref()], &[false])
+                    .unwrap()
+                    .remove(b"extension-xname".as_ref());
+
+                if let Some(ename) = ename {
+                    *ext_name = Some(ename);
+                }
+
+                None
+            }
             b"typedef" => {
                 // type definition element
                 let mut map = get_attributes(
@@ -852,6 +873,11 @@ impl Lvl0State {
                 None
             }
             b"error" => {
+                // TODO: handle empty errors
+                if is_empty {
+                    return None;
+                }
+
                 // change state machine to await error inputs
                 let mut map =
                     get_attributes(&b, &[b"name".as_ref(), b"number".as_ref()], &[true, true])?;
