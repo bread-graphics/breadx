@@ -1,11 +1,16 @@
 // MIT/Apache2 License
 
 #[cfg(feature = "async")]
-use async_io::block_on;
+mod refhack;
+
+#[cfg(feature = "async")]
+use async_io::{block_on, Async};
 #[cfg(feature = "async")]
 use async_net::TcpStream as AsyncTcpStream;
 #[cfg(feature = "async")]
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
+#[cfg(feature = "async")]
+use refhack::RefHack;
 #[cfg(feature = "std")]
 use std::{io::prelude::*, net::TcpStream};
 
@@ -18,8 +23,6 @@ use std::os::unix::net::UnixStream;
 use alloc::boxed::Box;
 #[cfg(feature = "async")]
 use core::{future::Future, pin::Pin};
-#[cfg(feature = "async")]
-use futures_lite::future;
 
 /// A boxed future, for returning from a trait.
 #[cfg(feature = "async")]
@@ -65,25 +68,43 @@ impl Connection for TcpStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    fn send_packet_async<'future, 'a, 'b>(&'a mut self, _bytes: &'b [u8]) -> GenericFuture<'future>
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
     {
-        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
+        #[inline]
+        async fn inner(this: &mut TcpStream, bytes: &[u8]) -> crate::Result {
+            log::warn!("Called send_packet_async for blocking TcpStream");
+
+            Async::new(RefHack(this))?.write_all(bytes).await?;
+            this.set_nonblocking(false)?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 
     #[cfg(feature = "async")]
     #[inline]
     fn read_packet_async<'future, 'a, 'b>(
         &'a mut self,
-        _bytes: &'b mut [u8],
+        bytes: &'b mut [u8],
     ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
     {
-        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
+        #[inline]
+        async fn inner(this: &mut TcpStream, bytes: &mut [u8]) -> crate::Result {
+            log::warn!("Called read_packet_async for blocking TcpStream");
+
+            Async::new(RefHack(this))?.read_exact(bytes).await?;
+            this.set_nonblocking(false)?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 }
 
@@ -153,25 +174,43 @@ impl Connection for UnixStream {
 
     #[cfg(feature = "async")]
     #[inline]
-    fn send_packet_async<'future, 'a, 'b>(&'a mut self, _bytes: &'b [u8]) -> GenericFuture<'future>
+    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
     {
-        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
+        #[inline]
+        async fn inner(this: &mut UnixStream, bytes: &[u8]) -> crate::Result {
+            log::warn!("Called send_packet_async on blocking UnixStream");
+
+            Async::new(RefHack(this))?.write_all(bytes).await?;
+            this.set_nonblocking(false)?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 
     #[cfg(feature = "async")]
     #[inline]
     fn read_packet_async<'future, 'a, 'b>(
         &'a mut self,
-        _bytes: &'b mut [u8],
+        bytes: &'b mut [u8],
     ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
     {
-        Box::pin(future::ready(Err(crate::BreadError::WouldBlock)))
+        #[inline]
+        async fn inner(this: &mut UnixStream, bytes: &mut [u8]) -> crate::Result {
+            log::warn!("Called read_packet_async on blocking UnixStream");
+
+            Async::new(RefHack(this))?.read_exact(bytes).await?;
+            this.set_nonblocking(false)?;
+            Ok(())
+        }
+
+        Box::pin(inner(self, bytes))
     }
 }
 
