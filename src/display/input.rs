@@ -1,7 +1,8 @@
 // MIT/Apache2 License
 
 use super::{Connection, PendingRequestFlags};
-use crate::{event::Event, util::cycled_zeroes};
+use crate::{event::Event, util::cycled_zeroes, Fd};
+use alloc::{boxed::Box, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
@@ -36,8 +37,8 @@ impl<Conn: Connection> super::Display<Conn> {
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
             let bytes = match bytes {
-                TinyVec::Heap(v) => v,
-                TinyVec::Stack(_) => unreachable!(),
+                TinyVec::Heap(v) => v.into_boxed_slice(),
+                _ => unreachable!(),
             };
 
             self.pending_replies.insert(sequence, (bytes, fds));
@@ -89,7 +90,7 @@ impl<Conn: Connection> super::Display<Conn> {
                 bytes.extend(iter::once(0).cycle().take(ab * 4));
 
                 log::debug!("Waiting for {} additional bytes", ab * 4);
-                self.connection.read_packet(&mut bytes[32..])?;
+                self.connection.read_packet(&mut bytes[32..], &mut fds)?;
                 log::debug!("Ending wait with {} additional bytes", ab * 4);
             }
         }
@@ -110,7 +111,9 @@ impl<Conn: Connection> super::Display<Conn> {
 
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             bytes.extend(iter::once(0).cycle().take(ab * 4));
-            self.connection.read_packet_async(&mut bytes[32..]).await?;
+            self.connection
+                .read_packet_async(&mut bytes[32..], &mut fds)
+                .await?;
         }
 
         self.process_bytes(bytes)
