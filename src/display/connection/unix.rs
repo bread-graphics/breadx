@@ -73,9 +73,7 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
     fds: &mut Vec<Fd>,
 ) -> crate::Result {
     // TODO: make sure this isn't unsound. the way we use it, it shouldn't be
-    conn.get_mut()
-        .expect("Failed to get mutable reference to connection")
-        .write_with(|conn| {
+    conn.write_with(|conn| {
             let connfd = conn.as_raw_fd();
             send_msg_packet(connfd, data, fds)
         })
