@@ -25,7 +25,7 @@ use tinyvec::TinyVec;
 use std::borrow::Cow;
 
 #[cfg(feature = "async")]
-use std::{future::Future, pin::Pin};
+use core::{future::Future, pin::Pin};
 
 mod connection;
 pub use connection::*;
@@ -80,7 +80,7 @@ pub struct Display<Conn> {
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
     pub(crate) pending_requests: VecDeque<input::PendingRequest>,
-    pub(crate) pending_replies: HashMap<u16, Box<[u8]>>,
+    pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
     // output variables
     request_number: u64,
@@ -119,12 +119,6 @@ impl<R: Request> RequestCookie<R> {
             _phantom: PhantomData,
         }
     }
-}
-
-#[derive(Default, Debug)]
-pub(crate) struct PendingRequestFlags {
-    pub discard_reply: bool,
-    pub checked: bool,
 }
 
 impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {

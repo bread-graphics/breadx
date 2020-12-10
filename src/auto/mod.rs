@@ -41,6 +41,10 @@ pub trait AsByteSequence: Sized {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize;
     /// Convert a sequence of bytes into this item.
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)>;
+    /// If this item has any file descriptors stored within, this function returns them.
+    fn file_descriptors(&mut self) -> Option<&mut Vec<Fd>> {
+        None
+    }
 }
 
 /// An error.

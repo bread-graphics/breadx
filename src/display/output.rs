@@ -102,7 +102,12 @@ impl<Conn: Connection> super::Display<Conn> {
 
         log::trace!("Request has bytes {:?}", &bytes);
 
-        self.expect_reply(sequence, Default::default());
+        let flags = PendingRequestFlags {
+            expects_fds: R::REPLY_EXPECTS_FDS,
+            ..Default::default()
+        };
+
+        self.expect_reply(sequence, flags);
 
         (sequence, bytes)
     }

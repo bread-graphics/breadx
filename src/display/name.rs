@@ -6,7 +6,8 @@
 #![cfg(feature = "std")]
 
 use super::Connection;
-use alloc::{borrow::Cow, format, string::String};
+use crate::Fd;
+use alloc::{borrow::Cow, format, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
 use std::{env, net, path::Path};
@@ -57,36 +58,43 @@ impl NameConnection {
 
 impl Connection for NameConnection {
     #[inline]
-    fn send_packet(&mut self, bytes: &[u8]) -> crate::Result {
-        self.generic().send_packet(bytes)
+    fn send_packet(&mut self, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
+        self.generic().send_packet(bytes, fds)
     }
 
     #[inline]
-    fn read_packet(&mut self, bytes: &mut [u8]) -> crate::Result {
-        self.generic().read_packet(bytes)
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    fn send_packet_async<'future, 'a, 'b>(&'a mut self, bytes: &'b [u8]) -> GenericFuture<'future>
-    where
-        'a: 'future,
-        'b: 'future,
-    {
-        self.generic().send_packet_async(bytes)
+    fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
+        self.generic().read_packet(bytes, fds)
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    fn read_packet_async<'future, 'a, 'b>(
+    fn send_packet_async<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b mut [u8],
+        bytes: &'b [u8],
+        fds: &'c mut Vec<Fd>,
     ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
+        'c: 'future,
     {
-        self.generic().read_packet_async(bytes)
+        self.generic().send_packet_async(bytes, fds)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    fn read_packet_async<'future, 'a, 'b, 'c>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+        fds: &'c mut Vec<Fd>,
+    ) -> GenericFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+        'c: 'future,
+    {
+        self.generic().read_packet_async(bytes, fds)
     }
 }
 

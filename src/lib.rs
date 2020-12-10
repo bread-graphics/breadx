@@ -156,6 +156,8 @@ pub use pixmap::*;
 pub use window::*;
 pub use xid::*;
 
+pub type Fd = cty::c_int;
+
 /// A request that can be sent as an instruction to the X server.
 pub trait Request: AsByteSequence {
     type Reply: AsByteSequence;
@@ -166,6 +168,9 @@ pub trait Request: AsByteSequence {
 
     /// The name of the extension that this request belongs to.
     const EXTENSION: Option<&'static str>;
+
+    /// Whether or not this request's reply includes file descriptors.
+    const REPLY_EXPECTS_FDS: bool;
 }
 
 //pub use display::*;
