@@ -207,6 +207,7 @@ impl AsByteSequence for OpenReply {
                 nfd: nfd,
                 sequence: sequence,
                 length: length,
+                device_fd: vec![],
             },
             index,
         ))
@@ -287,6 +288,7 @@ impl AsByteSequence for PixmapFromBufferRequest {
                 stride: stride,
                 depth: depth,
                 bpp: bpp,
+                pixmap_fd: vec![],
             },
             index,
         ))
@@ -430,6 +432,7 @@ impl AsByteSequence for BufferFromPixmapReply {
                 stride: stride,
                 depth: depth,
                 bpp: bpp,
+                pixmap_fd: vec![],
             },
             index,
         ))
@@ -497,6 +500,7 @@ impl AsByteSequence for FenceFromFdRequest {
                 length: length,
                 fence: fence,
                 initially_triggered: initially_triggered,
+                fence_fd: vec![],
             },
             index,
         ))
@@ -611,6 +615,7 @@ impl AsByteSequence for FdFromFenceReply {
                 nfd: nfd,
                 sequence: sequence,
                 length: length,
+                fence_fd: vec![],
             },
             index,
         ))

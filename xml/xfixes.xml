@@ -94,16 +94,12 @@ authorization from the authors.
     <field type="CARD32" name="event_mask" mask="SelectionEventMask" />
   </request>
 
-  <enum name="CursorNotify">
-    <item name="DisplayCursor"> <value>0</value> </item>
-  </enum>
-
   <enum name="CursorNotifyMask">
     <item name="DisplayCursor"><bit>0</bit></item>
   </enum>
 
   <event name="CursorNotify" number="1">
-    <field type="CARD8"     name="subtype" enum="CursorNotify" />
+    <field type="CARD8"     name="subtype" />
     <field type="WINDOW"    name="window" />
     <field type="CARD32"    name="cursor_serial" />
     <field type="TIMESTAMP" name="timestamp" />

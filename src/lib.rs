@@ -144,6 +144,7 @@ pub(crate) mod util;
 pub mod window;
 mod xid;
 
+pub use crate::image::Image;
 pub use auth_info::*;
 pub use colormap::*;
 pub use display::*;
@@ -151,7 +152,6 @@ pub use error::*;
 pub use event::Event;
 pub use extension::*;
 pub use gcontext::*;
-pub use image::Image;
 pub use pixmap::*;
 pub use window::*;
 pub use xid::*;

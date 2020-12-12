@@ -56,6 +56,9 @@ pub fn safe_name(mut name: String) -> String {
         "9" => {
             name = "Nine".to_owned();
         }
+        "async" => {
+            name = "async_".to_owned();
+        }
         _ => (),
     }
 

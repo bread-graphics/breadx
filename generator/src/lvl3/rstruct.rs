@@ -238,6 +238,7 @@ impl RStruct {
                         _ => None,
                     })
                     .collect(),
+                fds: self.fds.clone(),
             }
             .into(),
         ))

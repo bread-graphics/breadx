@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{int_litexpr_int, str_to_exprpath, str_to_path, str_to_ty},
+    syn_util::{int_litexpr_int, str_to_exprpath, str_to_path, str_to_pathseg, str_to_ty},
     InputParameter, Method, ParameterUsage, ToSyn, Type,
 };
 use proc_macro2::Span;
@@ -100,7 +100,16 @@ impl Trait {
             trait_: Some((
                 None,
                 match self {
-                    Self::Event(_) => str_to_path("Event"),
+                    Self::Event(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("crate"),
+                            str_to_pathseg("auto"),
+                            str_to_pathseg("Event"),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    },
                     Self::Error(_) => str_to_path("Error"),
                     Self::Request(_, _, _, _) => str_to_path("Request"),
                     Self::Xid => str_to_path("XidType"),

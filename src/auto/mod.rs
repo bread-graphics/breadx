@@ -14,21 +14,24 @@ use alloc::{
 };
 use core::mem;
 
+#[allow(dead_code)]
 pub(crate) mod prelude {
     pub(crate) use super::{
         buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
         AsByteSequence, Error, Event,
     };
-    pub use crate::{client_message_data::ClientMessageData, Request, XidType, XID};
-    pub use alloc::{string::String, vec::Vec};
+    pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
+    pub use alloc::{string::String, vec::Vec, vec};
     pub use cty::c_char;
     pub type Card8 = u8;
     pub type Card16 = u16;
     pub type Card32 = u32;
+    pub type Card64 = u64;
     pub type Byte = u8;
     pub type Int8 = i8;
     pub type Int16 = i16;
     pub type Int32 = i32;
+    pub type Int64 = i64;
     pub type Void = u8;
 }
 
@@ -319,15 +322,32 @@ impl AsByteSequence for String {
     }
 }
 
-//pub mod glx;
-//pub mod glx;
-//pub mod render;
-//pub mod shape;
-//pub mod xfixes;
+#[cfg(feature = "bigreq")]
+pub mod bigreq;
+#[cfg(feature = "damage")]
+pub mod damage;
+#[cfg(feature = "dpms")]
+pub mod dpms;
+//#[cfg(feature = "dri2")]
+//pub mod dri2;
+#[cfg(feature = "dri3")]
+pub mod dri3;
+#[cfg(feature = "ge")]
+pub mod ge;
+//#[cfg(feature = "present")]
+//pub mod present;
+//#[cfg(feature = "randr")]
+//pub mod randr;
 /// The X Rendering composite system.
 #[cfg(feature = "render")]
 pub mod render;
+#[cfg(feature = "shape")]
+pub mod shape;
+//#[cfg(feature = "sync")]
+//pub mod sync;
 /// Miscellaneous additions to the X11 protocol.
 pub mod xc_misc;
+#[cfg(feature = "fixes")]
+pub mod xfixes;
 /// The core X11 protocol.
 pub mod xproto;

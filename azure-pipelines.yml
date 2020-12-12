@@ -64,5 +64,7 @@ jobs:
       displayName: "No-Std Build"
     - bash: cargo build --features async
       displayName: "Async Test"
+    - bash: cargo build --all-features
+      displayName: "All Features Build"
     - bash: cargo build --examples
       displayName: "Build Examples"

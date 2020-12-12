@@ -4244,13 +4244,11 @@ impl Default for SubPixel {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Repeat {
-    None = 0,
-    Normal = 1,
-    Pad = 2,
-    Reflect = 3,
+pub enum PolyEdge {
+    Sharp = 0,
+    Smooth = 1,
 }
-impl AsByteSequence for Repeat {
+impl AsByteSequence for PolyEdge {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -4259,10 +4257,8 @@ impl AsByteSequence for Repeat {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            0 => Some((Self::None, sz)),
-            1 => Some((Self::Normal, sz)),
-            2 => Some((Self::Pad, sz)),
-            3 => Some((Self::Reflect, sz)),
+            0 => Some((Self::Sharp, sz)),
+            1 => Some((Self::Smooth, sz)),
             _ => None,
         }
     }
@@ -4271,10 +4267,10 @@ impl AsByteSequence for Repeat {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Repeat {
+impl Default for PolyEdge {
     #[inline]
-    fn default() -> Repeat {
-        Repeat::None
+    fn default() -> PolyEdge {
+        PolyEdge::Sharp
     }
 }
 #[repr(i32)]
@@ -4310,11 +4306,13 @@ impl Default for PolyMode {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyEdge {
-    Sharp = 0,
-    Smooth = 1,
+pub enum Repeat {
+    None = 0,
+    Normal = 1,
+    Pad = 2,
+    Reflect = 3,
 }
-impl AsByteSequence for PolyEdge {
+impl AsByteSequence for Repeat {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -4323,8 +4321,10 @@ impl AsByteSequence for PolyEdge {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            0 => Some((Self::Sharp, sz)),
-            1 => Some((Self::Smooth, sz)),
+            0 => Some((Self::None, sz)),
+            1 => Some((Self::Normal, sz)),
+            2 => Some((Self::Pad, sz)),
+            3 => Some((Self::Reflect, sz)),
             _ => None,
         }
     }
@@ -4333,9 +4333,9 @@ impl AsByteSequence for PolyEdge {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for PolyEdge {
+impl Default for Repeat {
     #[inline]
-    fn default() -> PolyEdge {
-        PolyEdge::Sharp
+    fn default() -> Repeat {
+        Repeat::None
     }
 }

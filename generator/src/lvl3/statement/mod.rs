@@ -5,7 +5,7 @@ use super::{
     Type,
 };
 use crate::lvl2::{Expression, MaybeString, UseCondition};
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use std::{borrow::Cow, fmt, iter, ops::Deref, rc::Rc};
 
 mod list;
@@ -364,6 +364,7 @@ pub struct ReturnStruct {
     pub sname: Box<str>,
     pub fields: Vec<Cow<'static, str>>,
     pub last_index: &'static str,
+    pub fds: Vec<String>,
 }
 
 impl Statement for ReturnStruct {
@@ -382,6 +383,20 @@ impl Statement for ReturnStruct {
                     colon_token: Some(Default::default()),
                     expr: str_to_exprpath(&*f),
                 })
+                .chain(self.fds.iter().map(|f| syn::FieldValue {
+                    attrs: vec![],
+                    member: syn::Member::Named(syn::Ident::new(&*f, Span::call_site())),
+                    colon_token: Some(Default::default()),
+                    expr: syn::Expr::Macro(syn::ExprMacro {
+                        attrs: vec![],
+                        mac: syn::Macro {
+                            path: str_to_path("vec"),
+                            bang_token: Default::default(),
+                            delimiter: syn::MacroDelimiter::Bracket(Default::default()),
+                            tokens: TokenStream::new(),
+                        },
+                    }),
+                }))
                 .collect(),
             dot2_token: None,
             rest: None,
@@ -969,6 +984,7 @@ impl Statement for ForwardFromBytes {
                     sname: self.self_name.clone(),
                     fields: vec!["inner".into()],
                     last_index: "sz",
+                    fds: vec![],
                 }
                 .to_syn_statement(),
             )

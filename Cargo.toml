@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -38,15 +38,24 @@ image = { version = "0.23.12", default-features = false, features = ["jpeg"] }
 default = ["std"]
 async = ["std", "async-io", "async-net", "blocking", "futures-io", "futures-lite"]
 image-support = ["image", "std"]
-nightly-const-optimization = []
-nightly-min-specialization = []
-parallel = ["rayon", "std"]
 std = []
 
 # Extensions
+bigreq = []
+damage = []
+dpms = []
+#dri2 = []
+dri3 = []
+fixes = []
+ge = []
+#glx = []
+#present = []
+#randr = []
 render = []
-all-extensions = ["render"]
+shape = []
+#sync = []
+all-extensions = ["bigreq", "damage", "dpms", "dri3", "fixes", "ge", "render", "shape"]
 
 [package.metadata.docs.rs]
-features = ["async"]
+features = ["async", "all-extensions"]
 rustdoc-args = ["-Z", "unstable-options", "--extend-css", "tutorials/style.css"]

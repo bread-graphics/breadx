@@ -112,15 +112,14 @@ pub fn create_generator(state: &Lvl2State, lvl1: Lvl1Enum) -> (String, EnumReprG
                     let data = match v.data {
                         // on the zero case, just ignore it
                         EnumData::Value(0) => return None,
-                        // on any other value case, error out
-                        EnumData::Value(_) => return Some(Err(())),
+                        // on any other value case, error out (TODO: actually no)
+                        EnumData::Value(_) => return None,
                         EnumData::Bit(b) => b as u64,
                     };
                     let name = safe_name(v.name.to_snake_case());
-                    Some(Ok((name, data)))
+                    Some((name, data))
                 })
-                .collect::<Result<Vec<_>, ()>>()
-                .expect("Invalid bitflag declaration");
+                .collect::<Vec<_>>();
 
             return (
                 matching_name,

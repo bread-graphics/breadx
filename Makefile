@@ -9,7 +9,7 @@ OUTPUT = $(PWD)/src/auto
 RUSTFMT = rustfmt
 
 #AUTOS = $(foreach f,$(notdir $(wildcard $(XML)/*.xml)),$(OUTPUT)/$(f:.xml=.rs))
-AUTOS = $(OUTPUT)/xproto.rs $(OUTPUT)/xc_misc.rs $(OUTPUT)/render.rs $(OUTPUT)/dri3.rs
+AUTOS = $(OUTPUT)/xproto.rs $(OUTPUT)/xc_misc.rs $(OUTPUT)/render.rs $(OUTPUT)/dri3.rs $(OUTPUT)/bigreq.rs $(OUTPUT)/shape.rs $(OUTPUT)/xfixes.rs $(OUTPUT)/damage.rs $(OUTPUT)/dpms.rs $(OUTPUT)/ge.rs
 
 autos: $(AUTOS) 
 
