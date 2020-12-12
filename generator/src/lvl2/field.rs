@@ -72,6 +72,7 @@ impl StructureItem {
     pub fn from_lvl1(
         lvl1: Lvl1StructureItem,
         resolution: &mut Option<(String, String)>,
+        fds: &mut Vec<String>,
     ) -> TinyVec<[Self; 1]> {
         match lvl1 {
             Lvl1StructureItem::Field(f) => {
@@ -134,6 +135,10 @@ impl StructureItem {
                     }
                 })])
             }
+            Lvl1StructureItem::Fd { name } => {
+                fds.push(name);
+                TinyVec::new()
+            }
             Lvl1StructureItem::ValueParam(v) => {
                 let crate::lvl1::ValueParam {
                     mask_ty,
@@ -181,7 +186,8 @@ impl StructureItem {
 
                         fields.into_iter().flat_map(move |f| {
                             let cond = cond.clone();
-                            StructureItem::from_lvl1(f, &mut Default::default())
+                            let mut _dummy = vec![]; // fds in switch cases are not yet supported
+                            StructureItem::from_lvl1(f, &mut Default::default(), &mut _dummy)
                                 .into_iter()
                                 .map(move |mut f| {
                                     if let StructureItem::Field(Field {
@@ -196,6 +202,10 @@ impl StructureItem {
                         })
                     })
                     .collect()
+            }
+            Lvl1StructureItem::RequiredStartAlign { .. } => {
+                log::error!("Required start align ignored - we need to fix this!");
+                TinyVec::new()
             }
         }
     }

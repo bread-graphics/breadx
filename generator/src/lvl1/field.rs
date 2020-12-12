@@ -9,6 +9,8 @@ pub enum StructureItem {
     List(List),
     ValueParam(ValueParam),
     Switch(Switch),
+    Fd { name: String },
+    RequiredStartAlign { align: usize },
 }
 
 impl Default for StructureItem {

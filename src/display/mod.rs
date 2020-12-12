@@ -13,9 +13,9 @@ use crate::{
     event::Event,
     util::cycled_zeroes,
     xid::XidGenerator,
-    Request, XID,
+    Fd, Request, XID,
 };
-use alloc::{boxed::Box, collections::VecDeque};
+use alloc::{boxed::Box, collections::VecDeque, vec, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
 use cty::c_int;
 use hashbrown::HashMap;
@@ -25,7 +25,7 @@ use tinyvec::TinyVec;
 use std::borrow::Cow;
 
 #[cfg(feature = "async")]
-use std::{future::Future, pin::Pin};
+use core::{future::Future, pin::Pin};
 
 mod connection;
 pub use connection::*;
@@ -79,8 +79,9 @@ pub struct Display<Conn> {
 
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
-    pub(crate) pending_requests: VecDeque<input::PendingRequest>,
-    pub(crate) pending_replies: HashMap<u16, Box<[u8]>>,
+    pub(crate) pending_requests: VecDeque<PendingRequest>,
+    #[allow(clippy::type_complexity)]
+    pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
     // output variables
     request_number: u64,
@@ -121,12 +122,6 @@ impl<R: Request> RequestCookie<R> {
     }
 }
 
-#[derive(Default, Debug)]
-pub(crate) struct PendingRequestFlags {
-    pub discard_reply: bool,
-    pub checked: bool,
-}
-
 impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -141,6 +136,21 @@ impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
             .field("request_number", &self.request_number)
             .finish()
     }
+}
+
+#[derive(Debug)]
+pub(crate) struct PendingRequest {
+    first_request: u64,
+    last_request: u64,
+    flags: PendingRequestFlags,
+    expects_fds: bool,
+}
+
+#[derive(Default, Debug)]
+pub(crate) struct PendingRequestFlags {
+    pub discard_reply: bool,
+    pub checked: bool,
+    pub expects_fds: bool,
 }
 
 #[inline]
@@ -165,10 +175,15 @@ const fn endian_byte() -> u8 {
 
 impl<Conn: Connection> Display<Conn> {
     #[inline]
-    fn decode_reply<R: Request>(reply: Box<[u8]>) -> crate::Result<R::Reply> {
-        Ok(R::Reply::from_bytes(&reply)
+    fn decode_reply<R: Request>(reply: Box<[u8]>, fds: Box<[Fd]>) -> crate::Result<R::Reply> {
+        let mut r = R::Reply::from_bytes(&reply)
             .ok_or(crate::BreadError::BadObjectRead(None))?
-            .0)
+            .0;
+        if let Some(fdslot) = r.file_descriptors() {
+            *fdslot = fds.into_vec();
+        }
+
+        Ok(r)
     }
 
     /// Send a request object to the X11 server.
@@ -204,7 +219,7 @@ impl<Conn: Connection> Display<Conn> {
             log::trace!("Current replies: {:?}", &self.pending_replies);
 
             match self.pending_replies.remove(&token.sequence) {
-                Some(reply) => break Self::decode_reply::<R>(reply),
+                Some((reply, fds)) => break Self::decode_reply::<R>(reply, fds),
                 None => self.wait()?,
             }
         }
@@ -238,8 +253,8 @@ impl<Conn: Connection> Display<Conn> {
 
         loop {
             match self.pending_replies.remove(&token.sequence) {
-                Some(reply) => {
-                    break Self::decode_reply::<R>(reply);
+                Some((reply, fds)) => {
+                    break Self::decode_reply::<R>(reply, fds);
                 }
                 None => self.wait_async().await?,
             }
@@ -308,12 +323,13 @@ impl<Conn: Connection> Display<Conn> {
             Some(auth) => auth,
             None => AuthInfo::get(),
         });
+        let mut _fds: Vec<Fd> = vec![];
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
-        self.connection.send_packet(&bytes[0..len])?;
+        self.connection.send_packet(&bytes[0..len], &mut _fds)?;
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
-        self.connection.read_packet(&mut bytes)?;
+        self.connection.read_packet(&mut bytes, &mut _fds)?;
 
         match bytes[0] {
             0 => return Err(crate::BreadError::FailedToConnect),
@@ -325,7 +341,7 @@ impl<Conn: Connection> Display<Conn> {
         let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
-        self.connection.read_packet(&mut bytes[8..])?;
+        self.connection.read_packet(&mut bytes[8..], &mut _fds)?;
 
         let (setup, _) =
             Setup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
@@ -352,12 +368,17 @@ impl<Conn: Connection> Display<Conn> {
             Some(auth) => auth,
             None => AuthInfo::get_async().await,
         });
+        let mut _fds: Vec<Fd> = vec![];
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
-        self.connection.send_packet_async(&bytes[0..len]).await?;
+        self.connection
+            .send_packet_async(&bytes[0..len], &mut _fds)
+            .await?;
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
-        self.connection.read_packet_async(&mut bytes).await?;
+        self.connection
+            .read_packet_async(&mut bytes, &mut _fds)
+            .await?;
 
         match bytes[0] {
             0 => return Err(crate::BreadError::FailedToConnect),
@@ -369,7 +390,9 @@ impl<Conn: Connection> Display<Conn> {
         let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
-        self.connection.read_packet_async(&mut bytes[8..]).await?;
+        self.connection
+            .read_packet_async(&mut bytes[8..], &mut _fds)
+            .await?;
 
         let (setup, _) = Setup::from_bytes(&bytes)
             .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;

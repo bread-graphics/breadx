@@ -40,9 +40,12 @@ jobs:
        LinuxStable:
          toolchain: stable
          vmImage: ubuntu-latest
-#       OSX:
-#         toolchain: stable
-#         vmImage: macOS-latest
+       WindowsStable:
+         toolchain: stable
+         vmImage: windows-latest
+       OSX:
+         toolchain: stable
+         vmImage: macOS-latest
    pool:
      vmImage: $(vmImage)
    steps:

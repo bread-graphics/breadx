@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
-use super::{Connection, RequestCookie, EXT_KEY_SIZE};
-use crate::{util::cycled_zeroes, Request};
-use alloc::string::ToString;
+use super::{Connection, PendingRequestFlags, RequestCookie, EXT_KEY_SIZE};
+use crate::{util::cycled_zeroes, Fd, Request};
+use alloc::{string::ToString, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
@@ -54,7 +54,7 @@ impl<Conn: Connection> super::Display<Conn> {
     #[inline]
     fn encode_request<R: Request>(
         &mut self,
-        req: R,
+        req: &R,
         ext_opcode: Option<u8>,
     ) -> (u64, TinyVec<[u8; 32]>) {
         let sequence = self.request_number;
@@ -102,20 +102,34 @@ impl<Conn: Connection> super::Display<Conn> {
 
         log::trace!("Request has bytes {:?}", &bytes);
 
-        self.expect_reply(sequence, Default::default());
+        let flags = PendingRequestFlags {
+            expects_fds: R::REPLY_EXPECTS_FDS,
+            ..Default::default()
+        };
+
+        self.expect_reply(sequence, flags);
 
         (sequence, bytes)
     }
 
     #[inline]
-    pub fn send_request_internal<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
+    pub fn send_request_internal<R: Request>(
+        &mut self,
+        mut req: R,
+    ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,
             Some(ext) => Some(self.get_ext_opcode(ext)?),
         };
-        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(req, ext_opcode);
+        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(&req, ext_opcode);
 
-        self.connection.send_packet(&bytes)?;
+        let mut _dummy: Vec<Fd> = vec![];
+        let fds = match req.file_descriptors() {
+            Some(fds) => fds,
+            None => &mut _dummy,
+        };
+
+        self.connection.send_packet(&bytes, fds)?;
         Ok(RequestCookie::from_sequence(sequence))
     }
 
@@ -123,15 +137,21 @@ impl<Conn: Connection> super::Display<Conn> {
     #[inline]
     pub async fn send_request_internal_async<R: Request>(
         &mut self,
-        req: R,
+        mut req: R,
     ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,
             Some(ext) => Some(self.get_ext_opcode_async(ext).await?),
         };
-        let (sequence, bytes) = self.encode_request(req, ext_opcode);
+        let (sequence, bytes) = self.encode_request(&req, ext_opcode);
 
-        self.connection.send_packet_async(&bytes).await?;
+        let mut _dummy: Vec<Fd> = vec![];
+        let fds = match req.file_descriptors() {
+            Some(fds) => fds,
+            None => &mut _dummy,
+        };
+
+        self.connection.send_packet_async(&bytes, fds).await?;
         Ok(RequestCookie::from_sequence(sequence))
     }
 }

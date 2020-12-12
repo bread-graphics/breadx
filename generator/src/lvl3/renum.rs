@@ -109,6 +109,7 @@ impl From<TrueEnum> for REnum {
                 is_none: false,
                 as_bytes_stmts,
                 from_bytes_stmts,
+                fd_getting: None,
                 size: SumOfSizes(vec![SizeSumPart::SizeofType(Type::Basic(underlying))]),
             },
         }

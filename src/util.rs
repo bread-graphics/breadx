@@ -5,6 +5,21 @@
 use core::iter;
 use tinyvec::{Array, TinyVec};
 
+#[cfg(all(unix, feature = "std"))]
+use nix::Error as NixError;
+#[cfg(all(unix, feature = "std"))]
+use std::io::{Error as IoError, ErrorKind};
+
+#[cfg(all(unix, feature = "std"))]
+#[inline]
+pub(crate) fn convert_nix_error(e: NixError) -> IoError {
+    match e {
+        NixError::Sys(errno) => errno.into(),
+        NixError::InvalidPath | NixError::InvalidUtf8 => IoError::new(ErrorKind::InvalidInput, e),
+        NixError::UnsupportedOperation => IoError::new(ErrorKind::Other, e),
+    }
+}
+
 #[inline]
 pub(crate) fn cycled_zeroes<A: Array<Item = u8>>(len: usize) -> TinyVec<A> {
     iter::once(0).cycle().take(len).collect()

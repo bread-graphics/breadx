@@ -1,24 +1,18 @@
 // MIT/Apache2 License
 
 use super::{Connection, PendingRequestFlags};
-use crate::{event::Event, util::cycled_zeroes};
+use crate::{event::Event, util::cycled_zeroes, Fd};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
 
-#[derive(Debug)]
-pub(crate) struct PendingRequest {
-    first_request: u64,
-    last_request: u64,
-    flags: PendingRequestFlags,
-}
-
 impl<Conn: Connection> super::Display<Conn> {
     // process a set of 32 bytes into the system
     #[inline]
-    fn process_bytes(&mut self, mut bytes: TinyVec<[u8; 32]>) -> crate::Result {
+    fn process_bytes(&mut self, mut bytes: TinyVec<[u8; 32]>, fds: Box<[Fd]>) -> crate::Result {
         // get the sequence number
         let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
         log::trace!("Found response bytes: {}", &bytes);
@@ -29,11 +23,11 @@ impl<Conn: Connection> super::Display<Conn> {
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
             let bytes = match bytes {
-                TinyVec::Heap(h) => h.into_boxed_slice(),
+                TinyVec::Heap(v) => v.into_boxed_slice(),
                 TinyVec::Inline(_) => unreachable!(),
             };
 
-            self.pending_replies.insert(sequence, bytes);
+            self.pending_replies.insert(sequence, (bytes, fds));
         } else if bytes[0] == TYPE_ERROR {
             // if it's all zeroes, the X connection has closed and the programmer
             // forgot to check for the close message
@@ -59,7 +53,7 @@ impl<Conn: Connection> super::Display<Conn> {
     #[allow(clippy::unused_self)]
     #[inline]
     pub(crate) fn expect_reply(&mut self, _req: u64, _flags: PendingRequestFlags) {
-        /*        let pereq = PendingRequest {
+        /*let pereq = PendingRequest {
             first_request: req,
             last_request: req,
             flags,
@@ -73,7 +67,8 @@ impl<Conn: Connection> super::Display<Conn> {
         log::debug!("Running wait cycle");
         // replies, errors, and events are all in units of 32 bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
-        self.connection.read_packet(&mut bytes)?;
+        let mut fds: Vec<Fd> = vec![];
+        self.connection.read_packet(&mut bytes, &mut fds)?;
 
         // in certain cases, we may have to read more bytes
         if let Some(ab) = additional_bytes(&bytes[..8]) {
@@ -81,12 +76,12 @@ impl<Conn: Connection> super::Display<Conn> {
                 bytes.extend(iter::once(0).cycle().take(ab * 4));
 
                 log::debug!("Waiting for {} additional bytes", ab * 4);
-                self.connection.read_packet(&mut bytes[32..])?;
+                self.connection.read_packet(&mut bytes[32..], &mut fds)?;
                 log::debug!("Ending wait with {} additional bytes", ab * 4);
             }
         }
 
-        self.process_bytes(bytes)
+        self.process_bytes(bytes, fds.into_boxed_slice())
     }
 
     // wait for bytes to appear, async redox
@@ -95,14 +90,19 @@ impl<Conn: Connection> super::Display<Conn> {
     pub(crate) async fn wait_async(&mut self) -> crate::Result {
         // see above function for more information
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
-        self.connection.read_packet_async(&mut bytes).await?;
+        let mut fds: Vec<Fd> = vec![];
+        self.connection
+            .read_packet_async(&mut bytes, &mut fds)
+            .await?;
 
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             bytes.extend(iter::once(0).cycle().take(ab * 4));
-            self.connection.read_packet_async(&mut bytes[32..]).await?;
+            self.connection
+                .read_packet_async(&mut bytes[32..], &mut fds)
+                .await?;
         }
 
-        self.process_bytes(bytes)
+        self.process_bytes(bytes, fds.into_boxed_slice())
     }
 }
 

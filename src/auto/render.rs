@@ -715,6 +715,7 @@ impl AsByteSequence for QueryVersionRequest {
 impl Request for QueryVersionRequest {
     const OPCODE: u8 = 0;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -817,6 +818,7 @@ impl AsByteSequence for QueryPictFormatsRequest {
 impl Request for QueryPictFormatsRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryPictFormatsReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -976,6 +978,7 @@ impl AsByteSequence for QueryPictIndexValuesRequest {
 impl Request for QueryPictIndexValuesRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryPictIndexValuesReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -1279,6 +1282,7 @@ impl AsByteSequence for CreatePictureRequest {
 impl Request for CreatePictureRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[repr(transparent)]
@@ -1779,6 +1783,7 @@ impl AsByteSequence for ChangePictureRequest {
 impl Request for ChangePictureRequest {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -1852,6 +1857,7 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
 impl Request for SetPictureClipRectanglesRequest {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -1897,6 +1903,7 @@ impl AsByteSequence for FreePictureRequest {
 impl Request for FreePictureRequest {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2013,6 +2020,7 @@ impl AsByteSequence for CompositeRequest {
 impl Request for CompositeRequest {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[repr(u8)]
@@ -2241,6 +2249,7 @@ impl AsByteSequence for TrapezoidsRequest {
 impl Request for TrapezoidsRequest {
     const OPCODE: u8 = 10;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2335,6 +2344,7 @@ impl AsByteSequence for TrianglesRequest {
 impl Request for TrianglesRequest {
     const OPCODE: u8 = 11;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2429,6 +2439,7 @@ impl AsByteSequence for TriStripRequest {
 impl Request for TriStripRequest {
     const OPCODE: u8 = 12;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2523,6 +2534,7 @@ impl AsByteSequence for TriFanRequest {
 impl Request for TriFanRequest {
     const OPCODE: u8 = 13;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2573,6 +2585,7 @@ impl AsByteSequence for CreateGlyphSetRequest {
 impl Request for CreateGlyphSetRequest {
     const OPCODE: u8 = 17;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2623,6 +2636,7 @@ impl AsByteSequence for ReferenceGlyphSetRequest {
 impl Request for ReferenceGlyphSetRequest {
     const OPCODE: u8 = 18;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2668,6 +2682,7 @@ impl AsByteSequence for FreeGlyphSetRequest {
 impl Request for FreeGlyphSetRequest {
     const OPCODE: u8 = 19;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2763,6 +2778,7 @@ impl AsByteSequence for AddGlyphsRequest {
 impl Request for AddGlyphsRequest {
     const OPCODE: u8 = 20;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2821,6 +2837,7 @@ impl AsByteSequence for FreeGlyphsRequest {
 impl Request for FreeGlyphsRequest {
     const OPCODE: u8 = 22;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -2921,6 +2938,7 @@ impl AsByteSequence for CompositeGlyphs8Request {
 impl Request for CompositeGlyphs8Request {
     const OPCODE: u8 = 23;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3021,6 +3039,7 @@ impl AsByteSequence for CompositeGlyphs16Request {
 impl Request for CompositeGlyphs16Request {
     const OPCODE: u8 = 24;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3121,6 +3140,7 @@ impl AsByteSequence for CompositeGlyphs32Request {
 impl Request for CompositeGlyphs32Request {
     const OPCODE: u8 = 25;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3197,6 +3217,7 @@ impl AsByteSequence for FillRectanglesRequest {
 impl Request for FillRectanglesRequest {
     const OPCODE: u8 = 26;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3262,6 +3283,7 @@ impl AsByteSequence for CreateCursorRequest {
 impl Request for CreateCursorRequest {
     const OPCODE: u8 = 27;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3390,6 +3412,7 @@ impl AsByteSequence for SetPictureTransformRequest {
 impl Request for SetPictureTransformRequest {
     const OPCODE: u8 = 28;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3435,6 +3458,7 @@ impl AsByteSequence for QueryFiltersRequest {
 impl Request for QueryFiltersRequest {
     const OPCODE: u8 = 29;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryFiltersReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -3601,6 +3625,7 @@ impl AsByteSequence for SetPictureFilterRequest {
 impl Request for SetPictureFilterRequest {
     const OPCODE: u8 = 30;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3694,6 +3719,7 @@ impl AsByteSequence for CreateAnimCursorRequest {
 impl Request for CreateAnimCursorRequest {
     const OPCODE: u8 = 31;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3829,6 +3855,7 @@ impl AsByteSequence for AddTrapsRequest {
 impl Request for AddTrapsRequest {
     const OPCODE: u8 = 32;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3879,6 +3906,7 @@ impl AsByteSequence for CreateSolidFillRequest {
 impl Request for CreateSolidFillRequest {
     const OPCODE: u8 = 33;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -3972,6 +4000,7 @@ impl AsByteSequence for CreateLinearGradientRequest {
 impl Request for CreateLinearGradientRequest {
     const OPCODE: u8 = 34;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -4077,6 +4106,7 @@ impl AsByteSequence for CreateRadialGradientRequest {
 impl Request for CreateRadialGradientRequest {
     const OPCODE: u8 = 35;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
@@ -4170,38 +4200,8 @@ impl AsByteSequence for CreateConicalGradientRequest {
 impl Request for CreateConicalGradientRequest {
     const OPCODE: u8 = 36;
     const EXTENSION: Option<&'static str> = Some("RENDER");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyEdge {
-    Sharp = 0,
-    Smooth = 1,
-}
-impl AsByteSequence for PolyEdge {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Sharp, sz)),
-            1 => Some((Self::Smooth, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyEdge {
-    #[inline]
-    fn default() -> PolyEdge {
-        PolyEdge::Sharp
-    }
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -4244,37 +4244,6 @@ impl Default for SubPixel {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyMode {
-    Precise = 0,
-    Imprecise = 1,
-}
-impl AsByteSequence for PolyMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Precise, sz)),
-            1 => Some((Self::Imprecise, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyMode {
-    #[inline]
-    fn default() -> PolyMode {
-        PolyMode::Precise
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Repeat {
     None = 0,
     Normal = 1,
@@ -4306,5 +4275,67 @@ impl Default for Repeat {
     #[inline]
     fn default() -> Repeat {
         Repeat::None
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyMode {
+    Precise = 0,
+    Imprecise = 1,
+}
+impl AsByteSequence for PolyMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Precise, sz)),
+            1 => Some((Self::Imprecise, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyMode {
+    #[inline]
+    fn default() -> PolyMode {
+        PolyMode::Precise
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyEdge {
+    Sharp = 0,
+    Smooth = 1,
+}
+impl AsByteSequence for PolyEdge {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Sharp, sz)),
+            1 => Some((Self::Smooth, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyEdge {
+    #[inline]
+    fn default() -> PolyEdge {
+        PolyEdge::Sharp
     }
 }

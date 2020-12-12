@@ -24,6 +24,7 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
             "PartialOrd",
             "Ord",
         ],
+        fds: vec![],
         is_transparent: true,
         fields: vec![StructureItem::Field(Field {
             name: "inner".to_string(),
