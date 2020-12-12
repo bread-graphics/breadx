@@ -11,7 +11,7 @@ use std::{borrow::Cow, iter, ops::Deref};
 pub enum Trait {
     Event(u64),
     Error(u64),
-    Request(u64, Type, Option<String>),
+    Request(u64, Type, Option<String>, bool),
     Xid,
     EnumDefault(Box<str>),
     FromXid(Box<str>),
@@ -29,6 +29,28 @@ fn opcode_const(op: u64) -> syn::ImplItem {
         ty: Type::Basic("u8".into()).to_syn_ty(),
         eq_token: Default::default(),
         expr: int_litexpr_int(op),
+        semi_token: Default::default(),
+    })
+}
+
+#[inline]
+fn ref_const(val: bool) -> syn::ImplItem {
+    syn::ImplItem::Const(syn::ImplItemConst {
+        attrs: vec![],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        const_token: Default::default(),
+        ident: syn::Ident::new("REPLY_EXPECTS_FDS", Span::call_site()),
+        colon_token: Default::default(),
+        ty: Type::Basic("bool".into()).to_syn_ty(),
+        eq_token: Default::default(),
+        expr: syn::Expr::Lit(syn::ExprLit {
+            attrs: vec![],
+            lit: syn::Lit::Bool(syn::LitBool {
+                value: val,
+                span: Span::call_site(),
+            }),
+        }),
         semi_token: Default::default(),
     })
 }
@@ -80,7 +102,7 @@ impl Trait {
                 match self {
                     Self::Event(_) => str_to_path("Event"),
                     Self::Error(_) => str_to_path("Error"),
-                    Self::Request(_, _, _) => str_to_path("Request"),
+                    Self::Request(_, _, _, _) => str_to_path("Request"),
                     Self::Xid => str_to_path("XidType"),
                     Self::EnumDefault(_) => str_to_path("Default"),
                     Self::FromXid(ref from) => syn::Path {
@@ -108,9 +130,10 @@ impl Trait {
             items: match self {
                 Self::Event(opcode) => vec![opcode_const(opcode)],
                 Self::Error(opcode) => vec![opcode_const(opcode)],
-                Self::Request(opcode, reply_name, ext_name) => vec![
+                Self::Request(opcode, reply_name, ext_name, expects_fds) => vec![
                     opcode_const(opcode),
                     extension_const(ext_name.as_deref()),
+                    ref_const(expects_fds),
                     syn::ImplItem::Type(syn::ImplItemType {
                         attrs: vec![],
                         vis: syn::Visibility::Inherited,

@@ -12,17 +12,20 @@ use alloc::vec::Vec;
 use async_io::{block_on, Async};
 #[cfg(feature = "async")]
 use async_net::TcpStream as AsyncTcpStream;
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", not(unix)))]
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
 #[cfg(feature = "async")]
 use refhack::RefHack;
 #[cfg(feature = "std")]
-use std::{io::prelude::*, net::TcpStream};
+use std::net::TcpStream;
 
 #[cfg(all(feature = "async", unix))]
 use alloc::sync::Arc;
 #[cfg(all(feature = "async", unix))]
 use async_net::unix::UnixStream as AsyncUnixStream;
+
+#[cfg(all(feature = "std", not(unix)))]
+use std::io::{Read, Write};
 
 #[cfg(all(feature = "std", unix))]
 use std::os::unix::net::UnixStream;
@@ -124,17 +127,17 @@ impl Connection for TcpStream {
         async fn inner(this: &mut TcpStream, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
             log::warn!("Called send_packet_async for blocking TcpStream");
 
-            let a = Arc::new(Async::new(RefHack(this))?);
             #[cfg(not(unix))]
             {
                 standard_fd_warning(fds);
-                a.write_all(bytes).await?;
+                Async::new(RefHack(this))?.write_all(bytes).await?;
             }
             #[cfg(unix)]
             {
-                unix::write_packet_unix_async(a, bytes, fds).await?;
+                let a = Arc::new(Async::new(RefHack(this))?);
+                unix::send_packet_unix_async(a, bytes, fds).await?;
             }
-            mem::drop(a);
+
             this.set_nonblocking(false)?;
             Ok(())
         }
@@ -152,19 +155,20 @@ impl Connection for TcpStream {
     where
         'a: 'future,
         'b: 'future,
+        'c: 'future,
     {
         #[inline]
         async fn inner(this: &mut TcpStream, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
             log::warn!("Called read_packet_async for blocking TcpStream");
 
-            let a = Arc::new(Async::new(RefHack(this))?);
             #[cfg(not(unix))]
             {
                 let _ = fds;
-                a.read_exact(bytes).await?;
+                Async::new(RefHack(this))?.read_exact(bytes).await?;
             }
             #[cfg(unix)]
             {
+                let a = Arc::new(Async::new(RefHack(this))?);
                 unix::read_packet_unix_async(a, bytes, fds).await?;
             }
 
@@ -172,7 +176,7 @@ impl Connection for TcpStream {
             Ok(())
         }
 
-        Box::pin(inner(self, bytes))
+        Box::pin(inner(self, bytes, fds))
     }
 }
 
@@ -300,7 +304,7 @@ impl Connection for UnixStream {
         'c: 'future,
     {
         #[inline]
-        async fn inner(this: &mut TcpStream, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
+        async fn inner(this: &mut UnixStream, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
             log::warn!("Called send_packet_async for blocking UnixStream");
 
             let a = Arc::new(Async::new(RefHack(this))?);
@@ -311,9 +315,8 @@ impl Connection for UnixStream {
             }
             #[cfg(unix)]
             {
-                unix::write_packet_unix_async(a, bytes, fds).await?;
+                unix::send_packet_unix_async(a, bytes, fds).await?;
             }
-            mem::drop(a);
             this.set_nonblocking(false)?;
             Ok(())
         }
@@ -334,7 +337,11 @@ impl Connection for UnixStream {
         'c: 'future,
     {
         #[inline]
-        async fn inner(this: &mut TcpStream, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
+        async fn inner(
+            this: &mut UnixStream,
+            bytes: &mut [u8],
+            fds: &mut Vec<Fd>,
+        ) -> crate::Result {
             log::warn!("Called read_packet_async for blocking UnixStream");
 
             let a = Arc::new(Async::new(RefHack(this))?);
@@ -352,7 +359,7 @@ impl Connection for UnixStream {
             Ok(())
         }
 
-        Box::pin(inner(self, bytes))
+        Box::pin(inner(self, bytes, fds))
     }
 }
 
@@ -385,7 +392,7 @@ impl Connection for AsyncUnixStream {
     {
         #[inline]
         async fn inner(
-            this: &mut AsyncTcpStream,
+            this: &mut AsyncUnixStream,
             bytes: &[u8],
             fds: &mut Vec<Fd>,
         ) -> crate::Result {
@@ -417,7 +424,7 @@ impl Connection for AsyncUnixStream {
     {
         #[inline]
         async fn inner(
-            this: &mut AsyncTcpStream,
+            this: &mut AsyncUnixStream,
             bytes: &mut [u8],
             fds: &mut Vec<Fd>,
         ) -> crate::Result {

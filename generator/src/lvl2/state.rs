@@ -127,6 +127,7 @@ impl Lvl2State {
         &mut self,
         mut fields: TinyVec<[crate::lvl1::StructureItem; 6]>,
         variant: StructVariant,
+        fds: &mut Vec<String>,
     ) -> (TinyVec<[StructureItem; 6]>, TinyVec<[Lvl2Item; 1]>) {
         let mut side_effect_enums = TinyVec::new();
         let mut align_indices: HashMap<usize, usize> = HashMap::new();
@@ -151,7 +152,7 @@ impl Lvl2State {
             .enumerate()
             .filter_map(|(i, f)| {
                 let mut resolution = None;
-                let res = StructureItem::from_lvl1(f, &mut resolution);
+                let res = StructureItem::from_lvl1(f, &mut resolution, fds);
 
                 if let Some((idname, ty)) = resolution {
                     if let Some(gen) = self.unresolved_enums.remove(&idname) {
@@ -185,6 +186,7 @@ impl Lvl2State {
     /// Convert a Lvl1 Item to an Lvl2 Item.
     #[inline]
     pub fn convert_item(&mut self, item: Lvl1Item) -> Option<TinyVec<[Item; 1]>> {
+        let mut fds: Vec<String> = vec![];
         match item {
             // imports and typedefs are directly used in lvl2
             Lvl1Item::Import(i) => Some(TinyVec::from([Item::Import(i)])),
@@ -220,12 +222,13 @@ impl Lvl2State {
             Lvl1Item::Enum(_) => unreachable!(),
             // structs translate pretty directly
             Lvl1Item::Struct(XStruct { name, fields, docs }) => {
-                let (fields, se) = self.convert_fields(fields, StructVariant::No);
+                let (fields, se) = self.convert_fields(fields, StructVariant::No, &mut fds);
                 let (brief, desc) = (None, None);
                 let name = name.to_camel_case().into_boxed_str();
                 let mut tv = TinyVec::from([Item::Struct(Struct {
                     name,
                     brief,
+                    fds,
                     desc,
                     fields: fields.to_vec(),
                     special: StructSpecial::Regular,
@@ -239,13 +242,16 @@ impl Lvl2State {
                 opcode,
                 reply,
             }) => {
-                let (fields, mut se) = self.convert_fields(fields, StructVariant::Request);
+                let (fields, mut se) =
+                    self.convert_fields(fields, StructVariant::Request, &mut fds);
                 let (brief, desc) = (None, None);
                 let name = name.to_camel_case();
 
                 let reply = match reply {
                     Some(XStruct { name, fields, docs }) => {
-                        let (fields, se2) = self.convert_fields(fields, StructVariant::Reply);
+                        let mut fds2: Vec<String> = vec![];
+                        let (fields, se2) =
+                            self.convert_fields(fields, StructVariant::Reply, &mut fds2);
                         let (brief, desc) = (None, None);
 
                         se.extend(se2);
@@ -254,6 +260,7 @@ impl Lvl2State {
                             name: name.to_camel_case().into_boxed_str(),
                             brief,
                             desc,
+                            fds: fds2,
                             fields: fields.to_vec(),
                             special: StructSpecial::Regular,
                         }))
@@ -265,6 +272,7 @@ impl Lvl2State {
                     name: name.into_boxed_str(),
                     brief,
                     desc,
+                    fds,
                     fields: fields.to_vec(),
                     special: StructSpecial::Request(opcode, reply),
                 })]);
@@ -276,7 +284,7 @@ impl Lvl2State {
                 opcode,
             }) => {
                 let (brief, desc) = (None, None);
-                let (fields, se) = self.convert_fields(fields, StructVariant::Event);
+                let (fields, se) = self.convert_fields(fields, StructVariant::Event, &mut fds);
                 let sname = name.to_camel_case().into_boxed_str();
 
                 self.events.insert(
@@ -285,6 +293,7 @@ impl Lvl2State {
                         name: sname,
                         brief,
                         desc,
+                        fds,
                         fields: fields.to_vec(),
                         special: StructSpecial::Event(opcode),
                     },
@@ -307,7 +316,7 @@ impl Lvl2State {
                 number,
             }) => {
                 let (brief, desc) = (None, None);
-                let (fields, se) = self.convert_fields(fields, StructVariant::Error);
+                let (fields, se) = self.convert_fields(fields, StructVariant::Error, &mut fds);
                 let sname = name.to_camel_case().into_boxed_str();
                 self.errors.insert(
                     name.into_boxed_str(),
@@ -315,6 +324,7 @@ impl Lvl2State {
                         name: sname,
                         fields: fields.to_vec(),
                         brief,
+                        fds,
                         desc,
                         special: StructSpecial::Error(number),
                     },

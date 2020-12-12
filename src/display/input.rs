@@ -2,26 +2,12 @@
 
 use super::{Connection, PendingRequestFlags};
 use crate::{event::Event, util::cycled_zeroes, Fd};
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
-
-#[derive(Debug)]
-pub(crate) struct PendingRequest {
-    first_request: u64,
-    last_request: u64,
-    flags: PendingRequestFlags,
-    expects_fds: bool,
-}
-
-#[derive(Default, Debug)]
-pub(crate) struct PendingRequestFlags {
-    pub discard_reply: bool,
-    pub checked: bool,
-}
 
 impl<Conn: Connection> super::Display<Conn> {
     // process a set of 32 bytes into the system
@@ -66,7 +52,7 @@ impl<Conn: Connection> super::Display<Conn> {
     // add an entry to the pending elements linked list
     #[allow(clippy::unused_self)]
     #[inline]
-    pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
+    pub(crate) fn expect_reply(&mut self, _req: u64, _flags: PendingRequestFlags) {
         /*let pereq = PendingRequest {
             first_request: req,
             last_request: req,
@@ -116,7 +102,7 @@ impl<Conn: Connection> super::Display<Conn> {
                 .await?;
         }
 
-        self.process_bytes(bytes)
+        self.process_bytes(bytes, fds.into_boxed_slice())
     }
 }
 

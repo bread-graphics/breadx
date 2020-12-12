@@ -24,6 +24,7 @@ impl From<XidType> for RStruct {
                 "PartialOrd",
                 "Ord",
             ],
+            fds: vec![],
             is_transparent: true,
             fields: vec![StructureItem::Field(Field {
                 name: "xid".into(),

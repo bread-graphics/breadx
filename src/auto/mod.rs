@@ -7,6 +7,7 @@
 
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_wrap)]
 
+use super::Fd;
 use alloc::{
     string::{String, ToString},
     vec::Vec,

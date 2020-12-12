@@ -27,6 +27,7 @@ pub struct RStruct {
     pub fields: Vec<StructureItem>,
     pub methods: Vec<Method>,
     pub traits: Vec<Trait>,
+    pub fds: Vec<String>,
     pub asb: Asb,
 }
 
@@ -91,6 +92,7 @@ impl RStruct {
                 })
                 .collect(),
         );
+        self.asb.fd_getting = self.fds.get(0).map(|s| s.to_owned());
     }
 
     /// Populate the as_bytes statements.
@@ -204,16 +206,15 @@ impl RStruct {
                 ..
             }) => {
                 // if the list length is a single item, get that length slot
-                let length_expr =
-                    if let Some(_) = list_length.single_item() {
-                        match len_map.get(name) {
-Some(name) => str_to_exprpath(name),
-None => list_length.to_length_expr(false, true),
-                        }
-                    } else {
-                        // just get the length expr
-                        list_length.to_length_expr(false, true)
-                    };
+                let length_expr = if let Some(_) = list_length.single_item() {
+                    match len_map.get(name) {
+                        Some(name) => str_to_exprpath(name),
+                        None => list_length.to_length_expr(false, true),
+                    }
+                } else {
+                    // just get the length expr
+                    list_length.to_length_expr(false, true)
+                };
 
                 vec![super::FromBytesList {
                     name: name.clone().into_boxed_str(),
@@ -269,6 +270,13 @@ impl ToSyn for RStruct {
                     .fields
                     .iter()
                     .filter_map(|f| f.to_syn_field())
+                    .chain(self.fds.iter().map(|fd| syn::Field {
+                        attrs: vec![],
+                        vis: pub_vis(),
+                        ident: Some(syn::Ident::new(fd, Span::call_site())),
+                        colon_token: Some(Default::default()),
+                        ty: Type::Vector(Box::new(Type::Basic("Fd".into()))).to_syn_ty(),
+                    }))
                     .collect(),
             }
             .into(),
@@ -311,6 +319,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         brief,
         desc,
         fields,
+        fds,
         special,
     } = s;
     let mut traits = vec![];
@@ -340,6 +349,10 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
                         None => Type::Tuple(vec![]),
                     },
                     ext_name.map(|s| s.to_string()),
+                    match reply {
+                        Some(ref reply) => !reply.fds.is_empty(),
+                        None => false,
+                    },
                 ));
                 name = format!("{}Request", name).into_boxed_str();
                 match reply {
@@ -359,6 +372,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         derives: vec!["Clone", "Debug", "Default"],
         is_transparent: fields.len() == 1,
         fields,
+        fds,
         methods: vec![],
         traits,
         asb: Default::default(),

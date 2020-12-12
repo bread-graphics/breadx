@@ -3,26 +3,21 @@
 
 #![cfg(all(feature = "std", unix))]
 
-use crate::{utils::convert_nix_error, Fd};
-use alloc::vec::Vec;
+use crate::{util::convert_nix_error, Fd};
+use alloc::{vec, vec::Vec};
 use nix::sys::{
     socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
     uio::IoVec,
 };
 use std::{
-    io::{Read, Write},
+    io::{self, Read, Write},
     os::unix::io::{AsRawFd, RawFd},
 };
 
 #[cfg(feature = "async")]
+use alloc::sync::Arc;
+#[cfg(feature = "async")]
 use async_io::Async;
-#[cfg(feature = "async")]
-use core::{
-    future::{Context, Future, Poll},
-    pin::Pin,
-};
-#[cfg(feature = "async")]
-use futures_io::{AsyncRead, AsyncWrite};
 
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()> {
@@ -31,7 +26,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()
         let data = [IoVec::from_slice(data)];
         loop {
             match sendmsg(conn, &data[..], cmsgs, MsgFlags::empty(), None) {
-                Ok(n) => return Ok(n),
+                Ok(_) => return Ok(()),
                 Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
                 Err(e) => return Err(convert_nix_error(e)),
             }
@@ -41,7 +36,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()
     let res = if fds.is_empty() {
         sendmsg_loop(conn, data, &[])
     } else {
-        let cmsgs = [ControlMessage::ScmRights(&fds[..])];
+        let cmsgs = [ControlMessage::ScmRights(&fds)];
         sendmsg_loop(conn, data, &cmsgs)
     };
 
@@ -91,7 +86,7 @@ fn read_msg_packet(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> io::Resul
     let data = [IoVec::from_mut_slice(data)];
 
     let msg = loop {
-        match recvmsg(conn, &data[..], Some(&mut cmsg), MsgFlags::empty()) {
+        match recvmsg(conn, &data, Some(&mut cmsg), MsgFlags::empty()) {
             Ok(m) => break m,
             Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
             Err(e) => return Err(convert_nix_error(e)),

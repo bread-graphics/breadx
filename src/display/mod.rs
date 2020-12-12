@@ -15,7 +15,7 @@ use crate::{
     xid::XidGenerator,
     Fd, Request, XID,
 };
-use alloc::{vec::Vec, boxed::Box, collections::VecDeque};
+use alloc::{boxed::Box, collections::VecDeque, vec, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
 use cty::c_int;
 use hashbrown::HashMap;
@@ -79,7 +79,7 @@ pub struct Display<Conn> {
 
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
-    pub(crate) pending_requests: VecDeque<input::PendingRequest>,
+    pub(crate) pending_requests: VecDeque<PendingRequest>,
     pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
     // output variables
@@ -135,6 +135,21 @@ impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
             .field("request_number", &self.request_number)
             .finish()
     }
+}
+
+#[derive(Debug)]
+pub(crate) struct PendingRequest {
+    first_request: u64,
+    last_request: u64,
+    flags: PendingRequestFlags,
+    expects_fds: bool,
+}
+
+#[derive(Default, Debug)]
+pub(crate) struct PendingRequestFlags {
+    pub discard_reply: bool,
+    pub checked: bool,
+    pub expects_fds: bool,
 }
 
 #[inline]

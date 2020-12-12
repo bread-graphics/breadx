@@ -9,6 +9,7 @@ pub struct Struct {
     pub brief: Option<Box<str>>,
     pub desc: Option<Box<str>>,
     pub fields: Vec<StructureItem>,
+    pub fds: Vec<String>,
     pub special: StructSpecial,
 }
 

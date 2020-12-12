@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use super::{Connection, PendingRequestFlags, RequestCookie, EXT_KEY_SIZE};
-use crate::{util::cycled_zeroes, Request};
-use alloc::string::ToString;
+use crate::{util::cycled_zeroes, Fd, Request};
+use alloc::{string::ToString, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
@@ -113,7 +113,10 @@ impl<Conn: Connection> super::Display<Conn> {
     }
 
     #[inline]
-    pub fn send_request_internal<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
+    pub fn send_request_internal<R: Request>(
+        &mut self,
+        mut req: R,
+    ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,
             Some(ext) => Some(self.get_ext_opcode(ext)?),
@@ -134,7 +137,7 @@ impl<Conn: Connection> super::Display<Conn> {
     #[inline]
     pub async fn send_request_internal_async<R: Request>(
         &mut self,
-        req: R,
+        mut req: R,
     ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,

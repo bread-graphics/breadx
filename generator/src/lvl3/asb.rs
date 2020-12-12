@@ -17,6 +17,8 @@ pub struct Asb {
     pub from_bytes_stmts: Vec<SumStatement>,
     /// Sum of sizes for the size.
     pub size: SumOfSizes,
+    /// Name of the field used for FD getting.
+    pub fd_getting: Option<String>,
 }
 
 impl Asb {
@@ -34,6 +36,7 @@ impl Asb {
             is_none,
             as_bytes_stmts,
             from_bytes_stmts,
+            fd_getting,
             size,
         } = self;
 
@@ -73,7 +76,23 @@ impl Asb {
             Some(Type::Basic("usize".into())),
         );
         size_method.statements = vec![size.into()];
-
+        let mut file_descriptors_method = match fd_getting {
+            None => None,
+            Some(ref fd_getting) => Some({
+                let mut fdm = Method::new(
+                    "file_descriptors".into(),
+                    Some(ParameterUsage::MutRef),
+                    vec![],
+                    Some(Type::Opt(Box::new(Type::Ref(
+                        Box::new(Type::Vector(Box::new(Type::Basic("Fd".into())))),
+                        true,
+                        None,
+                    )))),
+                );
+                fdm.statements = vec![super::GetFdRef(fd_getting.clone()).into()];
+                fdm.to_syn_impl_item(true)
+            }),
+        };
         vec![syn::Item::Impl(syn::ItemImpl {
             attrs: vec![],
             defaultness: None,
@@ -83,11 +102,15 @@ impl Asb {
             trait_: Some((None, str_to_path("AsByteSequence"), Default::default())),
             self_ty: Box::new(str_to_ty(tyname)),
             brace_token: Default::default(),
-            items: vec![
-                as_bytes_method.to_syn_impl_item(true),
-                from_bytes_method.to_syn_impl_item(true),
-                size_method.to_syn_impl_item(true),
-            ],
+            items: {
+                let mut v = vec![
+                    as_bytes_method.to_syn_impl_item(true),
+                    from_bytes_method.to_syn_impl_item(true),
+                    size_method.to_syn_impl_item(true),
+                ];
+                v.extend(file_descriptors_method.into_iter());
+                v
+            },
         })]
     }
 }

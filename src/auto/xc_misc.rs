@@ -56,6 +56,7 @@ impl AsByteSequence for GetVersionRequest {
 impl Request for GetVersionRequest {
     const OPCODE: u8 = 0;
     const EXTENSION: Option<&'static str> = Some("XC-MISC");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetVersionReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -155,6 +156,7 @@ impl AsByteSequence for GetXidRangeRequest {
 impl Request for GetXidRangeRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("XC-MISC");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetXidRangeReply;
 }
 #[derive(Clone, Debug, Default)]
@@ -257,6 +259,7 @@ impl AsByteSequence for GetXidListRequest {
 impl Request for GetXidListRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XC-MISC");
+    const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetXidListReply;
 }
 #[derive(Clone, Debug, Default)]

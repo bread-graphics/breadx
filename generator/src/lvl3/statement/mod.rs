@@ -1037,6 +1037,28 @@ impl Statement for ConvertXids {
 }
 
 #[derive(Debug, Clone)]
+pub struct GetFdRef(pub String);
+
+impl Statement for GetFdRef {
+    #[inline]
+    fn to_syn_statement(&self) -> Vec<syn::Stmt> {
+        vec![syn::Stmt::Expr(syn::Expr::Call(syn::ExprCall {
+            attrs: vec![],
+            func: Box::new(str_to_exprpath("Some")),
+            paren_token: Default::default(),
+            args: iter::once(syn::Expr::Reference(syn::ExprReference {
+                attrs: vec![],
+                and_token: Default::default(),
+                raw: Default::default(),
+                mutability: Some(Default::default()),
+                expr: Box::new(item_field(str_to_exprpath("self"), &self.0)),
+            }))
+            .collect(),
+        }))]
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum SumStatement {
     ReturnIndex(ReturnIndexStatement),
     AppendToIndex(AppendToIndexStatement),
@@ -1067,6 +1089,7 @@ pub enum SumStatement {
     InitializeCondition(InitializeCondition),
     DeserTraceMarker(DeserTraceMarker),
     ConvertXids(ConvertXids),
+    GetFdRef(GetFdRef),
 }
 
 macro_rules! sst_from_impl {
@@ -1109,6 +1132,7 @@ sst_from_impl! { AppendLengthToIndex, AppendLengthToIndex }
 sst_from_impl! { InitializeCondition, InitializeCondition }
 sst_from_impl! { DeserTraceMarker, DeserTraceMarker }
 sst_from_impl! { ConvertXids, ConvertXids }
+sst_from_impl! { GetFdRef, GetFdRef }
 
 impl Statement for SumStatement {
     #[inline]
@@ -1143,6 +1167,7 @@ impl Statement for SumStatement {
             Self::InitializeCondition(ic) => ic.to_syn_statement(),
             Self::DeserTraceMarker(dtm) => dtm.to_syn_statement(),
             Self::ConvertXids(cx) => cx.to_syn_statement(),
+            Self::GetFdRef(gfr) => gfr.to_syn_statement(),
         }
     }
 }

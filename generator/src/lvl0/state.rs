@@ -681,6 +681,13 @@ impl Lvl0State {
                                 list_name,
                             }));
                         }
+                        b"fd" => {
+                            // get the name of the file descriptor
+                            let name = get_attributes(&b, &[b"name".as_ref()], &[true])?
+                                .remove(b"name".as_ref())
+                                .unwrap();
+                            fields.push(StructureItem::Fd { name });
+                        }
                         b"list" => {
                             // we're starting a list field, shame.
                             let mut map = get_attributes(
@@ -723,6 +730,14 @@ impl Lvl0State {
                             } else {
                                 log::warn!("Found reply in non-request item: {:?}", self);
                             }
+                        }
+                        b"required_start_align" => {
+                            let align = get_attributes(&b, &[b"align".as_ref()], &[true])?
+                                .remove(b"align".as_ref())
+                                .unwrap();
+                            fields.push(StructureItem::RequiredStartAlign {
+                                align: align.parse().expect("Invalid start align"),
+                            });
                         }
                         b"doc" => {
                             // begin documentation mode

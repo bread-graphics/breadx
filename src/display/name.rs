@@ -7,10 +7,13 @@
 
 use super::Connection;
 use crate::Fd;
-use alloc::{borrow::Cow, format, string::String, vec::Vec};
+use alloc::{borrow::Cow, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
 use std::{env, net, path::Path};
+
+#[cfg(unix)]
+use alloc::format;
 
 #[cfg(feature = "async")]
 use super::GenericFuture;
@@ -101,6 +104,7 @@ impl Connection for NameConnection {
 /// Port for X11 server.
 const X_TCP_PORT: u16 = 6000;
 
+#[cfg(unix)]
 const PART1: &str = "/tmp/.X11-unix/X";
 
 /// The protocol used for the connection.
@@ -297,6 +301,7 @@ impl<'a> XConnection<'a> {
     }
 
     /// Derive the desired filename.
+    #[cfg(unix)]
     #[inline]
     fn socket_filename(self) -> crate::Result<Cow<'a, str>> {
         let XConnection { host, .. } = self;
@@ -315,6 +320,7 @@ impl<'a> XConnection<'a> {
     }
 
     /// Open the connection.
+    #[allow(unused_mut)]
     pub fn open(mut self) -> crate::Result<NameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
@@ -352,7 +358,7 @@ impl<'a> XConnection<'a> {
     }
 
     /// Open a socket file on Unix, async redox.
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", unix))]
     async fn open_unix_async(self) -> crate::Result<NameConnection> {
         let fname = self.socket_filename()?;
         Ok(NameConnection::AsyncSocket(
@@ -361,6 +367,7 @@ impl<'a> XConnection<'a> {
     }
 
     /// Open an asynchronous connection.
+    #[allow(unused_mut)]
     #[cfg(feature = "async")]
     pub async fn open_async(mut self) -> crate::Result<NameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
