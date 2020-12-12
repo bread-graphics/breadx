@@ -21,7 +21,7 @@ pub(crate) mod prelude {
         AsByteSequence, Error,
     };
     pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
-    pub use alloc::{string::String, vec::Vec, vec};
+    pub use alloc::{string::String, vec, vec::Vec};
     pub use cty::c_char;
     pub type Card8 = u8;
     pub type Card16 = u16;
