@@ -18,7 +18,7 @@ use core::mem;
 pub(crate) mod prelude {
     pub(crate) use super::{
         buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
-        AsByteSequence, Error, Event,
+        AsByteSequence, Error,
     };
     pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
     pub use alloc::{string::String, vec::Vec, vec};
