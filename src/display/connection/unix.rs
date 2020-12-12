@@ -79,6 +79,7 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
 }
 
 /// Read a packet, unix style. Includes fds.
+#[allow(clippy::similar_names)]
 #[inline]
 fn read_msg_packet(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
     const MAX_FDS: usize = 16;

@@ -24,7 +24,7 @@ impl<Conn: Connection> super::Display<Conn> {
             bytes.move_to_the_heap();
             let bytes = match bytes {
                 TinyVec::Heap(v) => v.into_boxed_slice(),
-                _ => unreachable!(),
+                TinyVec::Inline(_) => unreachable!(),
             };
 
             self.pending_replies.insert(sequence, (bytes, fds));

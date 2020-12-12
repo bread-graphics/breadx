@@ -80,6 +80,7 @@ pub struct Display<Conn> {
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
     pub(crate) pending_requests: VecDeque<PendingRequest>,
+    #[allow(clippy::type_complexity)]
     pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
     // output variables
