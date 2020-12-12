@@ -43,9 +43,9 @@ jobs:
        WindowsStable:
          toolchain: stable
          vmImage: windows-latest
-#       OSX:
-#         toolchain: stable
-#         vmImage: macOS-latest
+       OSX:
+         toolchain: stable
+         vmImage: macOS-latest
    pool:
      vmImage: $(vmImage)
    steps:
