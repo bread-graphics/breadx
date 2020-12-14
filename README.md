@@ -19,6 +19,8 @@ An implementation of the X Window System Protocol in Rust. 100% safe and mutex-f
 * No support for extensions (yet)
 * Not ABI/API compatible with Xlib/XCB
 
+If you're looking for a more complete, full-Rust X11 implementation with support for all documented extensions, consider [x11rb](https://github.com/psychon/x11rb/). This project sets out to accomplish very much the same goal as breadx, although with different ideas of how to accomplish those goals.
+
 ## Tutorials/Examples
 
 For tutorials and examples of breadx's usage, check out [the docs](https://docs.rs/breadx).
