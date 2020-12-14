@@ -346,7 +346,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
                 traits.push(Trait::Request(
                     opcode,
                     match reply {
-                        Some(ref reply) => Type::Basic(reply_name.clone().into()),
+                        Some(ref reply) => Type::from_name(reply_name.clone().into()),
                         None => Type::Tuple(vec![]),
                     },
                     ext_name.map(|s| s.to_string()),

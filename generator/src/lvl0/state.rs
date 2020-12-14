@@ -120,7 +120,7 @@ impl Lvl0State {
     /// Try to resolve a list.
     #[inline]
     fn try_resolve_expr(&mut self) {
-        if let Self::Expr(purpose, Some(expr), base) = self {
+        if let Self::Expr(purpose, expr, base) = self {
             let mut base = *mem::take(base);
             match purpose.clone() {
                 ExprPurpose::ListField(name, ty) => {
@@ -130,17 +130,19 @@ impl Lvl0State {
                         fields.push(StructureItem::List(List {
                             name,
                             ty,
-                            list_length: expr,
+                            list_length: expr.unwrap_or_default(),
                         }));
                     }
                 }
                 ExprPurpose::Switch => {
                     if let Lvl0State::SwitchField(_, _, ref mut expr_slot, _) = base {
-                        *expr_slot = Some(mem::take(expr));
+                        *expr_slot = Some(mem::take(expr).unwrap_or_default());
                     }
                 }
             }
             *self = base;
+        } else {
+            log::debug!("Tried to resolve nonexistant expression");
         }
     }
 

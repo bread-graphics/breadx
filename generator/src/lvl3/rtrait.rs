@@ -122,8 +122,10 @@ impl Trait {
                                 syn::AngleBracketedGenericArguments {
                                     colon2_token: None,
                                     lt_token: Default::default(),
-                                    args: iter::once(syn::GenericArgument::Type(str_to_ty(from)))
-                                        .collect(),
+                                    args: iter::once(syn::GenericArgument::Type(
+                                        Type::from_name(from.to_string()).to_syn_ty(),
+                                    ))
+                                    .collect(),
                                     gt_token: Default::default(),
                                 },
                             ),
@@ -134,7 +136,7 @@ impl Trait {
                 },
                 Default::default(),
             )),
-            self_ty: Box::new(str_to_ty(tyname)),
+            self_ty: Box::new(Type::from_name(tyname.to_string()).to_syn_ty()),
             brace_token: Default::default(),
             items: match self {
                 Self::Event(opcode) => vec![opcode_const(opcode)],
@@ -186,7 +188,7 @@ impl Trait {
                         "default".into(),
                         None,
                         vec![],
-                        Some(Type::Basic(tyname.to_string().into())),
+                        Some(Type::from_name(tyname.to_string().into())),
                     );
                     method.statements = vec![super::ReturnEnumVariant(
                         tyname.to_string().into_boxed_str(),
@@ -201,7 +203,7 @@ impl Trait {
                         None,
                         vec![InputParameter {
                             name: "base".into(),
-                            ty: Type::Basic(from.deref().to_string().into()),
+                            ty: Type::from_name(from.deref().to_string().into()),
                             usage: ParameterUsage::Owned,
                         }],
                         Some(Type::Basic("Self".into())),

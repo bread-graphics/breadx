@@ -32,6 +32,8 @@ pub(crate) mod prelude {
     pub type Int16 = i16;
     pub type Int32 = i32;
     pub type Int64 = i64;
+    pub type Float = f32;
+    pub type Double = f64;
     pub type Void = u8;
 }
 
@@ -250,6 +252,7 @@ const ISIZE_SIZE: usize = mem::size_of::<isize>();
 impl_fundamental_num! {
     (i16, 2) (u16, 2) (i32, 4) (u32, 4) (i64, 8) (u64, 8) (i128, 16) (u128, 16)
     (usize, USIZE_SIZE) (isize, ISIZE_SIZE)
+    (f32, 4) (f64, 8)
 }
 
 macro_rules! impl_array {
@@ -334,10 +337,12 @@ pub mod dpms;
 pub mod dri3;
 #[cfg(feature = "ge")]
 pub mod ge;
+#[cfg(feature = "glx")]
+pub mod glx;
 //#[cfg(feature = "present")]
 //pub mod present;
-//#[cfg(feature = "randr")]
-//pub mod randr;
+#[cfg(feature = "randr")]
+pub mod randr;
 /// The X Rendering composite system.
 #[cfg(feature = "render")]
 pub mod render;

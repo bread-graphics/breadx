@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -21,8 +21,7 @@ futures-lite = { version = "1.11.2", optional = true }
 hashbrown = "0.9.1"
 image = { version = "0.23.12", default-features = false, optional = true }
 log = "0.4"
-memchr = "2.3.3"
-rayon = { version = "1.5.0", optional = true }
+memchr = { version = "2.3.3", default-features = false }
 ref_slice = "1.2.0"
 tinyvec = { version = "1.1.0-alpha", features = ["alloc"] }
 
@@ -38,7 +37,7 @@ image = { version = "0.23.12", default-features = false, features = ["jpeg"] }
 default = ["std"]
 async = ["std", "async-io", "async-net", "blocking", "futures-io", "futures-lite"]
 image-support = ["image", "std"]
-std = []
+std = ["memchr/std"]
 
 # Extensions
 bigreq = []
@@ -48,13 +47,13 @@ dpms = []
 dri3 = []
 fixes = []
 ge = []
-#glx = []
-#present = []
+glx = []
+present = []
 #randr = []
 render = []
 shape = []
 #sync = []
-all-extensions = ["bigreq", "damage", "dpms", "dri3", "fixes", "ge", "render", "shape"]
+all-extensions = ["bigreq", "damage", "dpms", "dri3", "fixes", "ge", "glx", "present", "render", "shape"]
 
 [package.metadata.docs.rs]
 features = ["async", "all-extensions"]

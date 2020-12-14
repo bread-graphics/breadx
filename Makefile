@@ -8,8 +8,7 @@ XML = $(PWD)/xml
 OUTPUT = $(PWD)/src/auto
 RUSTFMT = rustfmt
 
-#AUTOS = $(foreach f,$(notdir $(wildcard $(XML)/*.xml)),$(OUTPUT)/$(f:.xml=.rs))
-AUTOS = $(OUTPUT)/xproto.rs $(OUTPUT)/xc_misc.rs $(OUTPUT)/render.rs $(OUTPUT)/dri3.rs $(OUTPUT)/bigreq.rs $(OUTPUT)/shape.rs $(OUTPUT)/xfixes.rs $(OUTPUT)/damage.rs $(OUTPUT)/dpms.rs $(OUTPUT)/ge.rs
+AUTOS = $(foreach f,$(notdir $(wildcard $(XML)/*.xml)),$(OUTPUT)/$(f:.xml=.rs))
 
 autos: $(AUTOS) 
 
@@ -19,5 +18,5 @@ $(GENR): $(GENR_DEPS)
 	cd $(PWD)/generator; $(CARGO) build
 
 $(OUTPUT)/%.rs: $(XML)/%.xml $(GENR)
-	$(GENR) $< $@
+	RUST_BACKTRACE=1 $(GENR) $< $@
 	$(RUSTFMT) $@

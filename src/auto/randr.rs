@@ -2248,7 +2248,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.validValues.len() as u32).as_bytes(&mut bytes[index..]);
+        index += (self.valid_values.len() as u32).as_bytes(&mut bytes[index..]);
         index += self.pending.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
         index += self.immutable.as_bytes(&mut bytes[index..]);
@@ -2277,7 +2277,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += sz;
         index += 21;
         let (validValues, block_len): (Vec<Int32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
         Some((

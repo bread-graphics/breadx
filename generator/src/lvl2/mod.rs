@@ -59,6 +59,9 @@ pub fn safe_name(mut name: String) -> String {
         "async" => {
             name = "async_".to_owned();
         }
+        "event_type" => {
+            name = "event_type_".to_owned();
+        }
         _ => (),
     }
 

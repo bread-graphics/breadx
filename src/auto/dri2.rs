@@ -637,6 +637,7 @@ pub struct GetBuffersRequest {
     pub req_type: u8,
     pub drawable: Drawable,
     pub length: u16,
+    pub count: Card32,
     pub attachments: Vec<Card32>,
 }
 impl GetBuffersRequest {}
@@ -647,7 +648,7 @@ impl AsByteSequence for GetBuffersRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += (self.attachments.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.attachments, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -663,10 +664,10 @@ impl AsByteSequence for GetBuffersRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (attachments, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
@@ -674,6 +675,7 @@ impl AsByteSequence for GetBuffersRequest {
                 req_type: req_type,
                 drawable: drawable,
                 length: length,
+                count: count,
                 attachments: attachments,
             },
             index,
@@ -681,22 +683,96 @@ impl AsByteSequence for GetBuffersRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size()
-            + self.drawable.size()
-            + self.length.size()
-            + ::core::mem::size_of::<Card32>()
-            + {
-                let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
+        self.req_type.size() + self.drawable.size() + self.length.size() + self.count.size() + {
+            let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+            block_len + pad
+        }
     }
 }
 impl Request for GetBuffersRequest {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("DRI2");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ();
+    type Reply = GetBuffersReply;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GetBuffersReply {
+    pub reply_type: u8,
+    pub sequence: u16,
+    pub length: u32,
+    pub width: Card32,
+    pub height: Card32,
+    pub buffers: Vec<Dri2Buffer>,
+}
+impl GetBuffersReply {}
+impl AsByteSequence for GetBuffersReply {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.reply_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += (self.buffers.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 12;
+        let block_len: usize = vector_as_bytes(&self.buffers, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GetBuffersReply from byte buffer");
+        let (reply_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        let (buffers, block_len): (Vec<Dri2Buffer>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+        Some((
+            GetBuffersReply {
+                reply_type: reply_type,
+                sequence: sequence,
+                length: length,
+                width: width,
+                height: height,
+                buffers: buffers,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.reply_type.size()
+            + 1
+            + self.sequence.size()
+            + self.length.size()
+            + self.width.size()
+            + self.height.size()
+            + ::core::mem::size_of::<Card32>()
+            + 12
+            + {
+                let block_len: usize = self.buffers.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+                block_len + pad
+            }
+    }
 }
 #[derive(Clone, Debug, Default)]
 pub struct CopyRegionRequest {
@@ -811,6 +887,7 @@ pub struct GetBuffersWithFormatRequest {
     pub req_type: u8,
     pub drawable: Drawable,
     pub length: u16,
+    pub count: Card32,
     pub attachments: Vec<AttachFormat>,
 }
 impl GetBuffersWithFormatRequest {}
@@ -821,7 +898,7 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += (self.attachments.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.attachments, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
@@ -837,10 +914,10 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (attachments, block_len): (Vec<AttachFormat>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
         Some((
@@ -848,6 +925,7 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
                 req_type: req_type,
                 drawable: drawable,
                 length: length,
+                count: count,
                 attachments: attachments,
             },
             index,
@@ -855,22 +933,96 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size()
-            + self.drawable.size()
-            + self.length.size()
-            + ::core::mem::size_of::<Card32>()
-            + {
-                let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
-                block_len + pad
-            }
+        self.req_type.size() + self.drawable.size() + self.length.size() + self.count.size() + {
+            let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
+            block_len + pad
+        }
     }
 }
 impl Request for GetBuffersWithFormatRequest {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("DRI2");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ();
+    type Reply = GetBuffersWithFormatReply;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GetBuffersWithFormatReply {
+    pub reply_type: u8,
+    pub sequence: u16,
+    pub length: u32,
+    pub width: Card32,
+    pub height: Card32,
+    pub buffers: Vec<Dri2Buffer>,
+}
+impl GetBuffersWithFormatReply {}
+impl AsByteSequence for GetBuffersWithFormatReply {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.reply_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += (self.buffers.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 12;
+        let block_len: usize = vector_as_bytes(&self.buffers, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GetBuffersWithFormatReply from byte buffer");
+        let (reply_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        let (buffers, block_len): (Vec<Dri2Buffer>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+        Some((
+            GetBuffersWithFormatReply {
+                reply_type: reply_type,
+                sequence: sequence,
+                length: length,
+                width: width,
+                height: height,
+                buffers: buffers,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.reply_type.size()
+            + 1
+            + self.sequence.size()
+            + self.length.size()
+            + self.width.size()
+            + self.height.size()
+            + ::core::mem::size_of::<Card32>()
+            + 12
+            + {
+                let block_len: usize = self.buffers.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
+                block_len + pad
+            }
+    }
 }
 #[derive(Clone, Debug, Default)]
 pub struct SwapBuffersRequest {
@@ -1645,7 +1797,7 @@ impl Default for EventType {
 pub struct BufferSwapCompleteEvent {
     pub event_type: u8,
     pub sequence: u16,
-    pub event_type: EventType,
+    pub event_type_: EventType,
     pub drawable: Drawable,
     pub ust_hi: Card32,
     pub ust_lo: Card32,
@@ -1661,7 +1813,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.event_type_.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.ust_hi.as_bytes(&mut bytes[index..]);
@@ -1680,7 +1832,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event_type, sz): (EventType, usize) = <EventType>::from_bytes(&bytes[index..])?;
+        let (event_type_, sz): (EventType, usize) = <EventType>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
@@ -1699,7 +1851,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
             BufferSwapCompleteEvent {
                 event_type: event_type,
                 sequence: sequence,
-                event_type: event_type,
+                event_type_: event_type_,
                 drawable: drawable,
                 ust_hi: ust_hi,
                 ust_lo: ust_lo,
@@ -1715,7 +1867,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
         self.event_type.size()
             + 1
             + self.sequence.size()
-            + self.event_type.size()
+            + self.event_type_.size()
             + 2
             + self.drawable.size()
             + self.ust_hi.size()
@@ -1725,7 +1877,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
             + self.sbc.size()
     }
 }
-impl Event for BufferSwapCompleteEvent {
+impl crate::auto::Event for BufferSwapCompleteEvent {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
@@ -1770,6 +1922,6 @@ impl AsByteSequence for InvalidateBuffersEvent {
         self.event_type.size() + 1 + self.sequence.size() + self.drawable.size()
     }
 }
-impl Event for InvalidateBuffersEvent {
+impl crate::auto::Event for InvalidateBuffersEvent {
     const OPCODE: u8 = 1;
 }

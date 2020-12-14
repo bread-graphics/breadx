@@ -4205,6 +4205,72 @@ impl Request for CreateConicalGradientRequest {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyMode {
+    Precise = 0,
+    Imprecise = 1,
+}
+impl AsByteSequence for PolyMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Precise, sz)),
+            1 => Some((Self::Imprecise, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyMode {
+    #[inline]
+    fn default() -> PolyMode {
+        PolyMode::Precise
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Repeat {
+    None = 0,
+    Normal = 1,
+    Pad = 2,
+    Reflect = 3,
+}
+impl AsByteSequence for Repeat {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::None, sz)),
+            1 => Some((Self::Normal, sz)),
+            2 => Some((Self::Pad, sz)),
+            3 => Some((Self::Reflect, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Repeat {
+    #[inline]
+    fn default() -> Repeat {
+        Repeat::None
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SubPixel {
     Unknown = 0,
     HorizontalRgb = 1,
@@ -4271,71 +4337,5 @@ impl Default for PolyEdge {
     #[inline]
     fn default() -> PolyEdge {
         PolyEdge::Sharp
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyMode {
-    Precise = 0,
-    Imprecise = 1,
-}
-impl AsByteSequence for PolyMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Precise, sz)),
-            1 => Some((Self::Imprecise, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyMode {
-    #[inline]
-    fn default() -> PolyMode {
-        PolyMode::Precise
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Repeat {
-    None = 0,
-    Normal = 1,
-    Pad = 2,
-    Reflect = 3,
-}
-impl AsByteSequence for Repeat {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::None, sz)),
-            1 => Some((Self::Normal, sz)),
-            2 => Some((Self::Pad, sz)),
-            3 => Some((Self::Reflect, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Repeat {
-    #[inline]
-    fn default() -> Repeat {
-        Repeat::None
     }
 }

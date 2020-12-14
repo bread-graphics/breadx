@@ -8,7 +8,7 @@ use super::{
 use crate::lvl1::{
     Item as Lvl1Item, NonenumTypenames, StructureItem as Lvl1StructureItem, XStruct,
 };
-use heck::CamelCase;
+use heck::{CamelCase, SnakeCase};
 use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
@@ -406,7 +406,7 @@ fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
                             let ty = mem::take(ty);
                             *f = StructureItem::LenSlot {
                                 ty,
-                                owning_list: lname.clone(),
+                                owning_list: lname.to_snake_case(),
                             };
 
                             true
