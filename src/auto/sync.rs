@@ -685,8 +685,8 @@ impl AsByteSequence for QueryCounterReply {
 #[derive(Clone, Debug, Default)]
 pub struct AwaitRequest {
     pub req_type: u8,
-    pub wait_list: Vec<Waitcondition>,
     pub length: u16,
+    pub wait_list: Vec<Waitcondition>,
 }
 impl AwaitRequest {}
 impl AsByteSequence for AwaitRequest {
@@ -694,10 +694,11 @@ impl AsByteSequence for AwaitRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.length.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.wait_list, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
-        index += self.length.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -706,30 +707,29 @@ impl AsByteSequence for AwaitRequest {
         log::trace!("Deserializing AwaitRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (wait_list, block_len): (Vec<Waitcondition>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
         Some((
             AwaitRequest {
                 req_type: req_type,
-                wait_list: wait_list,
                 length: length,
+                wait_list: wait_list,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size()
-            + {
-                let block_len: usize = self.wait_list.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
-                block_len + pad
-            }
-            + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + {
+            let block_len: usize = self.wait_list.iter().map(|i| i.size()).sum();
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
+            block_len + pad
+        }
     }
 }
 impl Request for AwaitRequest {
@@ -1896,8 +1896,8 @@ impl AsByteSequence for QueryFenceReply {
 #[derive(Clone, Debug, Default)]
 pub struct AwaitFenceRequest {
     pub req_type: u8,
-    pub fence_list: Vec<Fence>,
     pub length: u16,
+    pub fence_list: Vec<Fence>,
 }
 impl AwaitFenceRequest {}
 impl AsByteSequence for AwaitFenceRequest {
@@ -1905,10 +1905,11 @@ impl AsByteSequence for AwaitFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.length.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.fence_list, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fence>());
-        index += self.length.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1917,30 +1918,29 @@ impl AsByteSequence for AwaitFenceRequest {
         log::trace!("Deserializing AwaitFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (fence_list, block_len): (Vec<Fence>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fence>());
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
         Some((
             AwaitFenceRequest {
                 req_type: req_type,
-                fence_list: fence_list,
                 length: length,
+                fence_list: fence_list,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size()
-            + {
-                let block_len: usize = self.fence_list.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fence>());
-                block_len + pad
-            }
-            + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + {
+            let block_len: usize = self.fence_list.iter().map(|i| i.size()).sum();
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fence>());
+            block_len + pad
+        }
     }
 }
 impl Request for AwaitFenceRequest {
@@ -2100,6 +2100,84 @@ impl Error for CounterError {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
+pub struct AlarmNotifyEvent {
+    pub event_type: u8,
+    pub kind: Card8,
+    pub sequence: u16,
+    pub alarm: Alarm,
+    pub counter_value: Int64,
+    pub alarm_value: Int64,
+    pub timestamp: Timestamp,
+    pub state: Alarmstate,
+}
+impl AlarmNotifyEvent {}
+impl AsByteSequence for AlarmNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.alarm.as_bytes(&mut bytes[index..]);
+        index += self.counter_value.as_bytes(&mut bytes[index..]);
+        index += self.alarm_value.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            AlarmNotifyEvent {
+                event_type: event_type,
+                kind: kind,
+                sequence: sequence,
+                alarm: alarm,
+                counter_value: counter_value,
+                alarm_value: alarm_value,
+                timestamp: timestamp,
+                state: state,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.kind.size()
+            + self.sequence.size()
+            + self.alarm.size()
+            + self.counter_value.size()
+            + self.alarm_value.size()
+            + self.timestamp.size()
+            + self.state.size()
+            + 3
+    }
+}
+impl crate::auto::Event for AlarmNotifyEvent {
+    const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
 pub struct CounterNotifyEvent {
     pub event_type: u8,
     pub kind: Card8,
@@ -2182,82 +2260,4 @@ impl AsByteSequence for CounterNotifyEvent {
 }
 impl crate::auto::Event for CounterNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct AlarmNotifyEvent {
-    pub event_type: u8,
-    pub kind: Card8,
-    pub sequence: u16,
-    pub alarm: Alarm,
-    pub counter_value: Int64,
-    pub alarm_value: Int64,
-    pub timestamp: Timestamp,
-    pub state: Alarmstate,
-}
-impl AlarmNotifyEvent {}
-impl AsByteSequence for AlarmNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.kind.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.alarm.as_bytes(&mut bytes[index..]);
-        index += self.counter_value.as_bytes(&mut bytes[index..]);
-        index += self.alarm_value.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        Some((
-            AlarmNotifyEvent {
-                event_type: event_type,
-                kind: kind,
-                sequence: sequence,
-                alarm: alarm,
-                counter_value: counter_value,
-                alarm_value: alarm_value,
-                timestamp: timestamp,
-                state: state,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.kind.size()
-            + self.sequence.size()
-            + self.alarm.size()
-            + self.counter_value.size()
-            + self.alarm_value.size()
-            + self.timestamp.size()
-            + self.state.size()
-            + 3
-    }
-}
-impl crate::auto::Event for AlarmNotifyEvent {
-    const OPCODE: u8 = 1;
 }

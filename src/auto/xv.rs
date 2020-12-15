@@ -2981,6 +2981,70 @@ impl Request for ShmPutImageRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
+pub struct VideoNotifyEvent {
+    pub event_type: u8,
+    pub reason: VideoNotifyReason,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub drawable: Drawable,
+    pub port: Port,
+}
+impl VideoNotifyEvent {}
+impl AsByteSequence for VideoNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.reason.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing VideoNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (reason, sz): (VideoNotifyReason, usize) =
+            <VideoNotifyReason>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            VideoNotifyEvent {
+                event_type: event_type,
+                reason: reason,
+                sequence: sequence,
+                time: time,
+                drawable: drawable,
+                port: port,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.reason.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.drawable.size()
+            + self.port.size()
+    }
+}
+impl crate::auto::Event for VideoNotifyEvent {
+    const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
 pub struct PortNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -3045,68 +3109,4 @@ impl AsByteSequence for PortNotifyEvent {
 }
 impl crate::auto::Event for PortNotifyEvent {
     const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
-pub struct VideoNotifyEvent {
-    pub event_type: u8,
-    pub reason: VideoNotifyReason,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub drawable: Drawable,
-    pub port: Port,
-}
-impl VideoNotifyEvent {}
-impl AsByteSequence for VideoNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.reason.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing VideoNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (reason, sz): (VideoNotifyReason, usize) =
-            <VideoNotifyReason>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            VideoNotifyEvent {
-                event_type: event_type,
-                reason: reason,
-                sequence: sequence,
-                time: time,
-                drawable: drawable,
-                port: port,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.reason.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.drawable.size()
-            + self.port.size()
-    }
-}
-impl crate::auto::Event for VideoNotifyEvent {
-    const OPCODE: u8 = 0;
 }

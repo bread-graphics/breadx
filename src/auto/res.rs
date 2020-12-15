@@ -260,7 +260,7 @@ impl AsByteSequence for ResourceIdSpec {
 #[derive(Clone, Debug, Default)]
 pub struct ResourceSizeSpec {
     pub spec: ResourceIdSpec,
-    pub bytes: Card32,
+    pub bytes_: Card32,
     pub ref_count: Card32,
     pub use_count: Card32,
 }
@@ -270,7 +270,7 @@ impl AsByteSequence for ResourceSizeSpec {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.spec.as_bytes(&mut bytes[index..]);
-        index += self.bytes.as_bytes(&mut bytes[index..]);
+        index += self.bytes_.as_bytes(&mut bytes[index..]);
         index += self.ref_count.as_bytes(&mut bytes[index..]);
         index += self.use_count.as_bytes(&mut bytes[index..]);
         index
@@ -281,7 +281,7 @@ impl AsByteSequence for ResourceSizeSpec {
         log::trace!("Deserializing ResourceSizeSpec from byte buffer");
         let (spec, sz): (ResourceIdSpec, usize) = <ResourceIdSpec>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (bytes, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (bytes_, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (ref_count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -290,7 +290,7 @@ impl AsByteSequence for ResourceSizeSpec {
         Some((
             ResourceSizeSpec {
                 spec: spec,
-                bytes: bytes,
+                bytes_: bytes_,
                 ref_count: ref_count,
                 use_count: use_count,
             },
@@ -299,7 +299,7 @@ impl AsByteSequence for ResourceSizeSpec {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.spec.size() + self.bytes.size() + self.ref_count.size() + self.use_count.size()
+        self.spec.size() + self.bytes_.size() + self.ref_count.size() + self.use_count.size()
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -732,7 +732,7 @@ pub struct QueryClientPixmapBytesReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub bytes: Card32,
+    pub bytes_: Card32,
     pub bytes_overflow: Card32,
 }
 impl QueryClientPixmapBytesReply {}
@@ -744,7 +744,7 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.bytes.as_bytes(&mut bytes[index..]);
+        index += self.bytes_.as_bytes(&mut bytes[index..]);
         index += self.bytes_overflow.as_bytes(&mut bytes[index..]);
         index
     }
@@ -759,7 +759,7 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (bytes, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (bytes_, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (bytes_overflow, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -768,7 +768,7 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
-                bytes: bytes,
+                bytes_: bytes_,
                 bytes_overflow: bytes_overflow,
             },
             index,
@@ -780,7 +780,7 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + self.bytes.size()
+            + self.bytes_.size()
             + self.bytes_overflow.size()
     }
 }

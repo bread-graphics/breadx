@@ -299,7 +299,6 @@ impl AsByteSequence for EndReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24
     }
 }
-#[repr(transparent)]
 #[derive(Clone, Debug, Default)]
 pub struct Event {}
 impl Event {}

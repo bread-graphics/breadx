@@ -35,6 +35,7 @@ pub(crate) mod prelude {
     pub type Float = f32;
     pub type Double = f64;
     pub type Void = u8;
+    pub type Char = u8;
 
     #[cfg(feature = "randr")]
     pub use crate::notify_data::NotifyData;
@@ -334,28 +335,54 @@ pub mod bigreq;
 pub mod damage;
 #[cfg(feature = "dpms")]
 pub mod dpms;
-//#[cfg(feature = "dri2")]
-//pub mod dri2;
+#[cfg(feature = "dri2")]
+pub mod dri2;
 #[cfg(feature = "dri3")]
 pub mod dri3;
 #[cfg(feature = "ge")]
 pub mod ge;
 #[cfg(feature = "glx")]
 pub mod glx;
-//#[cfg(feature = "present")]
-//pub mod present;
+#[cfg(feature = "present")]
+pub mod present;
 #[cfg(feature = "randr")]
 pub mod randr;
+#[cfg(feature = "record")]
+pub mod record;
 /// The X Rendering composite system.
 #[cfg(feature = "render")]
 pub mod render;
+#[cfg(feature = "res")]
+pub mod res;
+#[cfg(feature = "screensaver")]
+pub mod screensaver;
 #[cfg(feature = "shape")]
 pub mod shape;
-//#[cfg(feature = "sync")]
-//pub mod sync;
+#[cfg(feature = "shm")]
+pub mod shm;
+#[cfg(feature = "sync")]
+pub mod sync;
 /// Miscellaneous additions to the X11 protocol.
 pub mod xc_misc;
+#[cfg(feature = "xevie")]
+pub mod xevie;
+#[cfg(feature = "xf86dri")]
+pub mod xf86dri;
+#[cfg(feature = "xf86vidmode")]
+pub mod xf86vidmode;
 #[cfg(feature = "fixes")]
 pub mod xfixes;
+#[cfg(feature = "xinerama")]
+pub mod xinerama;
+#[cfg(feature = "print")]
+pub mod xprint;
 /// The core X11 protocol.
 pub mod xproto;
+#[cfg(feature = "selinux")]
+pub mod xselinux;
+#[cfg(feature = "xtest")]
+pub mod xtest;
+#[cfg(feature = "xv")]
+pub mod xv;
+#[cfg(feature = "xvmc")]
+pub mod xvmc;

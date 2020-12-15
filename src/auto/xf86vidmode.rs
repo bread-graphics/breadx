@@ -7,6 +7,7 @@ use super::prelude::*;
 
 pub type Syncrange = Card32;
 pub type Dotclock = Card32;
+pub type ClockFlag = Card32;
 #[derive(Clone, Debug, Default)]
 pub struct ModeInfo {
     pub dotclock: Dotclock,
@@ -2174,51 +2175,7 @@ impl AsByteSequence for GetDotClocksReply {
             }
     }
 }
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ClockFlag {
-    pub inner: u32,
-}
-impl ClockFlag {
-    #[inline]
-    pub fn programable(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_programable(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(programable: bool) -> Self {
-        let mut inner: u32 = 0;
-        if programable {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        ClockFlag { inner: inner }
-    }
-}
-impl AsByteSequence for ClockFlag {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (u32, usize) = <u32>::from_bytes(bytes)?;
-        Some((ClockFlag { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
+pub const CLOCK_FLAG_PROGRAMABLE: ClockFlag = 1;
 #[derive(Clone, Debug, Default)]
 pub struct SetClientVersionRequest {
     pub req_type: u8,

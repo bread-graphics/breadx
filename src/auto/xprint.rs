@@ -2178,6 +2178,76 @@ impl AsByteSequence for PrintGetImageResolutionReply {
             + self.image_resolution.size()
     }
 }
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GetDoc {
+    Finished = 0,
+    SecondConsumer = 1,
+}
+impl AsByteSequence for GetDoc {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Finished, sz)),
+            1 => Some((Self::SecondConsumer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for GetDoc {
+    #[inline]
+    fn default() -> GetDoc {
+        GetDoc::Finished
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Detail {
+    StartJobNotify = 1,
+    EndJobNotify = 2,
+    StartDocNotify = 3,
+    EndDocNotify = 4,
+    StartPageNotify = 5,
+    EndPageNotify = 6,
+}
+impl AsByteSequence for Detail {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::StartJobNotify, sz)),
+            2 => Some((Self::EndJobNotify, sz)),
+            3 => Some((Self::StartDocNotify, sz)),
+            4 => Some((Self::EndDocNotify, sz)),
+            5 => Some((Self::StartPageNotify, sz)),
+            6 => Some((Self::EndPageNotify, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Detail {
+    #[inline]
+    fn default() -> Detail {
+        Detail::StartJobNotify
+    }
+}
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EvMask {
@@ -2243,37 +2313,6 @@ impl AsByteSequence for EvMask {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum GetDoc {
-    Finished = 0,
-    SecondConsumer = 1,
-}
-impl AsByteSequence for GetDoc {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Finished, sz)),
-            1 => Some((Self::SecondConsumer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for GetDoc {
-    #[inline]
-    fn default() -> GetDoc {
-        GetDoc::Finished
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Attr {
     JobAttr = 1,
     DocAttr = 2,
@@ -2313,44 +2352,53 @@ impl Default for Attr {
         Attr::JobAttr
     }
 }
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Detail {
-    StartJobNotify = 1,
-    EndJobNotify = 2,
-    StartDocNotify = 3,
-    EndDocNotify = 4,
-    StartPageNotify = 5,
-    EndPageNotify = 6,
+#[derive(Clone, Debug, Default)]
+pub struct AttributNotifyEvent {
+    pub event_type: u8,
+    pub detail: Card8,
+    pub sequence: u16,
+    pub context: Pcontext,
 }
-impl AsByteSequence for Detail {
+impl AttributNotifyEvent {}
+impl AsByteSequence for AttributNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
+        index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::StartJobNotify, sz)),
-            2 => Some((Self::EndJobNotify, sz)),
-            3 => Some((Self::StartDocNotify, sz)),
-            4 => Some((Self::EndDocNotify, sz)),
-            5 => Some((Self::StartPageNotify, sz)),
-            6 => Some((Self::EndPageNotify, sz)),
-            _ => None,
-        }
+        let mut index: usize = 0;
+        log::trace!("Deserializing AttributNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            AttributNotifyEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                context: context,
+            },
+            index,
+        ))
     }
     #[inline]
     fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
+        self.event_type.size() + self.detail.size() + self.sequence.size() + self.context.size()
     }
 }
-impl Default for Detail {
-    #[inline]
-    fn default() -> Detail {
-        Detail::StartJobNotify
-    }
+impl crate::auto::Event for AttributNotifyEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct NotifyEvent {
@@ -2408,52 +2456,4 @@ impl AsByteSequence for NotifyEvent {
 }
 impl crate::auto::Event for NotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct AttributNotifyEvent {
-    pub event_type: u8,
-    pub detail: Card8,
-    pub sequence: u16,
-    pub context: Pcontext,
-}
-impl AttributNotifyEvent {}
-impl AsByteSequence for AttributNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing AttributNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            AttributNotifyEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                context: context,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + self.detail.size() + self.sequence.size() + self.context.size()
-    }
-}
-impl crate::auto::Event for AttributNotifyEvent {
-    const OPCODE: u8 = 1;
 }

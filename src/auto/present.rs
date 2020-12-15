@@ -721,16 +721,12 @@ impl Default for CompleteMode {
         CompleteMode::Copy
     }
 }
-pub const EVENT_CONFIGURE_NOTIFY: Event = <Event>::const_from_xid(0);
-pub const EVENT_COMPLETE_NOTIFY: Event = <Event>::const_from_xid(1);
-pub const EVENT_IDLE_NOTIFY: Event = <Event>::const_from_xid(2);
-pub const EVENT_REDIRECT_NOTIFY: Event = <Event>::const_from_xid(3);
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Option {
+pub struct Option_ {
     pub inner: i32,
 }
-impl Option {
+impl Option_ {
     #[inline]
     pub fn async_(&self) -> bool {
         self.inner & (1 << 0) != 0
@@ -806,10 +802,10 @@ impl Option {
         } else {
             inner &= !(1 << 3);
         }
-        Option { inner: inner }
+        Option_ { inner: inner }
     }
 }
-impl AsByteSequence for Option {
+impl AsByteSequence for Option_ {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         self.inner.as_bytes(bytes)
@@ -817,13 +813,17 @@ impl AsByteSequence for Option {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((Option { inner: inner }, sz))
+        Some((Option_ { inner: inner }, sz))
     }
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
     }
 }
+pub const EVENT_CONFIGURE_NOTIFY: Event = <Event>::const_from_xid(0);
+pub const EVENT_COMPLETE_NOTIFY: Event = <Event>::const_from_xid(1);
+pub const EVENT_IDLE_NOTIFY: Event = <Event>::const_from_xid(2);
+pub const EVENT_REDIRECT_NOTIFY: Event = <Event>::const_from_xid(3);
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Capability {
@@ -904,6 +904,114 @@ impl AsByteSequence for Capability {
     fn size(&self) -> usize {
         self.inner.size()
     }
+}
+#[derive(Clone, Debug, Default)]
+pub struct ConfigureNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event: Event,
+    pub window: Window,
+    pub x: Int16,
+    pub y: Int16,
+    pub width: Card16,
+    pub height: Card16,
+    pub off_x: Int16,
+    pub off_y: Int16,
+    pub pixmap_width: Card16,
+    pub pixmap_height: Card16,
+    pub pixmap_flags: Card32,
+}
+impl ConfigureNotifyEvent {}
+impl AsByteSequence for ConfigureNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.x.as_bytes(&mut bytes[index..]);
+        index += self.y.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += self.off_x.as_bytes(&mut bytes[index..]);
+        index += self.off_y.as_bytes(&mut bytes[index..]);
+        index += self.pixmap_width.as_bytes(&mut bytes[index..]);
+        index += self.pixmap_height.as_bytes(&mut bytes[index..]);
+        index += self.pixmap_flags.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ConfigureNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (off_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (off_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap_height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap_flags, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            ConfigureNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event: event,
+                window: window,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                off_x: off_x,
+                off_y: off_y,
+                pixmap_width: pixmap_width,
+                pixmap_height: pixmap_height,
+                pixmap_flags: pixmap_flags,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 2
+            + self.sequence.size()
+            + self.event.size()
+            + self.window.size()
+            + self.x.size()
+            + self.y.size()
+            + self.width.size()
+            + self.height.size()
+            + self.off_x.size()
+            + self.off_y.size()
+            + self.pixmap_width.size()
+            + self.pixmap_height.size()
+            + self.pixmap_flags.size()
+    }
+}
+impl crate::auto::Event for ConfigureNotifyEvent {
+    const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
 pub struct IdleNotifyEvent {
@@ -1059,179 +1167,6 @@ impl crate::auto::Event for CompleteNotifyEvent {
     const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
-pub struct RedirectNotifyEvent {
-    pub event_type: u8,
-    pub update_window: bool,
-    pub sequence: u16,
-    pub event: Event,
-    pub event_window: Window,
-    pub window: Window,
-    pub pixmap: Pixmap,
-    pub serial: Card32,
-    pub valid_region: Region,
-    pub update_region: Region,
-    pub valid_rect: Rectangle,
-    pub update_rect: Rectangle,
-    pub x_off: Int16,
-    pub y_off: Int16,
-    pub target_crtc: Crtc,
-    pub wait_fence: Fence,
-    pub idle_fence: Fence,
-    pub options: Card32,
-    pub target_msc: Card64,
-    pub divisor: Card64,
-    pub remainder: Card64,
-    pub notifies: Vec<Notify>,
-}
-impl RedirectNotifyEvent {}
-impl AsByteSequence for RedirectNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.update_window.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.event_window.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
-        index += self.serial.as_bytes(&mut bytes[index..]);
-        index += self.valid_region.as_bytes(&mut bytes[index..]);
-        index += self.update_region.as_bytes(&mut bytes[index..]);
-        index += self.valid_rect.as_bytes(&mut bytes[index..]);
-        index += self.update_rect.as_bytes(&mut bytes[index..]);
-        index += self.x_off.as_bytes(&mut bytes[index..]);
-        index += self.y_off.as_bytes(&mut bytes[index..]);
-        index += self.target_crtc.as_bytes(&mut bytes[index..]);
-        index += self.wait_fence.as_bytes(&mut bytes[index..]);
-        index += self.idle_fence.as_bytes(&mut bytes[index..]);
-        index += self.options.as_bytes(&mut bytes[index..]);
-        index += 4;
-        index += self.target_msc.as_bytes(&mut bytes[index..]);
-        index += self.divisor.as_bytes(&mut bytes[index..]);
-        index += self.remainder.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.notifies, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Notify>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RedirectNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (update_window, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (valid_region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (update_region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (valid_rect, sz): (Rectangle, usize) = <Rectangle>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (update_rect, sz): (Rectangle, usize) = <Rectangle>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (x_off, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y_off, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (target_crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (wait_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (options, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (target_msc, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (divisor, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (remainder, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (notifies, block_len): (Vec<Notify>, usize) =
-            vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Notify>());
-        Some((
-            RedirectNotifyEvent {
-                event_type: event_type,
-                update_window: update_window,
-                sequence: sequence,
-                event: event,
-                event_window: event_window,
-                window: window,
-                pixmap: pixmap,
-                serial: serial,
-                valid_region: valid_region,
-                update_region: update_region,
-                valid_rect: valid_rect,
-                update_rect: update_rect,
-                x_off: x_off,
-                y_off: y_off,
-                target_crtc: target_crtc,
-                wait_fence: wait_fence,
-                idle_fence: idle_fence,
-                options: options,
-                target_msc: target_msc,
-                divisor: divisor,
-                remainder: remainder,
-                notifies: notifies,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.update_window.size()
-            + self.sequence.size()
-            + 1
-            + self.event.size()
-            + self.event_window.size()
-            + self.window.size()
-            + self.pixmap.size()
-            + self.serial.size()
-            + self.valid_region.size()
-            + self.update_region.size()
-            + self.valid_rect.size()
-            + self.update_rect.size()
-            + self.x_off.size()
-            + self.y_off.size()
-            + self.target_crtc.size()
-            + self.wait_fence.size()
-            + self.idle_fence.size()
-            + self.options.size()
-            + 4
-            + self.target_msc.size()
-            + self.divisor.size()
-            + self.remainder.size()
-            + {
-                let block_len: usize = self.notifies.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Notify>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RedirectNotifyEvent {
-    const OPCODE: u8 = 3;
-}
-#[derive(Clone, Debug, Default)]
 pub struct GenericEvent {
     pub event_type: u8,
     pub extension: Card8,
@@ -1295,113 +1230,5 @@ impl AsByteSequence for GenericEvent {
     }
 }
 impl crate::auto::Event for GenericEvent {
-    const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ConfigureNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Event,
-    pub window: Window,
-    pub x: Int16,
-    pub y: Int16,
-    pub width: Card16,
-    pub height: Card16,
-    pub off_x: Int16,
-    pub off_y: Int16,
-    pub pixmap_width: Card16,
-    pub pixmap_height: Card16,
-    pub pixmap_flags: Card32,
-}
-impl ConfigureNotifyEvent {}
-impl AsByteSequence for ConfigureNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.x.as_bytes(&mut bytes[index..]);
-        index += self.y.as_bytes(&mut bytes[index..]);
-        index += self.width.as_bytes(&mut bytes[index..]);
-        index += self.height.as_bytes(&mut bytes[index..]);
-        index += self.off_x.as_bytes(&mut bytes[index..]);
-        index += self.off_y.as_bytes(&mut bytes[index..]);
-        index += self.pixmap_width.as_bytes(&mut bytes[index..]);
-        index += self.pixmap_height.as_bytes(&mut bytes[index..]);
-        index += self.pixmap_flags.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ConfigureNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (off_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (off_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap_height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap_flags, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ConfigureNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-                off_x: off_x,
-                off_y: off_y,
-                pixmap_width: pixmap_width,
-                pixmap_height: pixmap_height,
-                pixmap_flags: pixmap_flags,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 2
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + self.x.size()
-            + self.y.size()
-            + self.width.size()
-            + self.height.size()
-            + self.off_x.size()
-            + self.off_y.size()
-            + self.pixmap_width.size()
-            + self.pixmap_height.size()
-            + self.pixmap_flags.size()
-    }
-}
-impl crate::auto::Event for ConfigureNotifyEvent {
     const OPCODE: u8 = 0;
 }

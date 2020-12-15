@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{
-    configure_fields, create_generator, EnumRepr, EnumReprGenerator, Expression, Field,
+    configure_fields, create_generator, safe_name, EnumRepr, EnumReprGenerator, Expression, Field,
     Item as Lvl2Item, Item, List, MaybeString, Struct, StructSpecial, StructVariant, StructureItem,
     Type, XidType,
 };
@@ -199,7 +199,7 @@ impl Lvl2State {
             }
             // xidtypes are basically the same
             Lvl1Item::Xidtype(crate::lvl1::Xidtype { name }) => {
-                let name = name.to_camel_case().into_boxed_str();
+                let name = safe_name(name.to_camel_case()).into_boxed_str();
                 self.xidtypes.push(name.clone());
                 Some(TinyVec::from([Item::XidType(XidType {
                     name,
@@ -208,7 +208,7 @@ impl Lvl2State {
             }
             // xidunions translate to xidtypes as well
             Lvl1Item::XidUnion(crate::lvl1::XidUnion { name, members }) => {
-                let name = name.to_camel_case().into_boxed_str();
+                let name = safe_name(name.to_camel_case()).into_boxed_str();
                 self.xidtypes.push(name.clone());
                 Some(TinyVec::from([Item::XidType(XidType {
                     name,
@@ -224,7 +224,7 @@ impl Lvl2State {
             Lvl1Item::Struct(XStruct { name, fields, docs }) => {
                 let (fields, se) = self.convert_fields(fields, StructVariant::No, &mut fds);
                 let (brief, desc) = (None, None);
-                let name = name.to_camel_case().into_boxed_str();
+                let name = safe_name(name.to_camel_case()).into_boxed_str();
                 let mut tv = TinyVec::from([Item::Struct(Struct {
                     name,
                     brief,
@@ -245,7 +245,7 @@ impl Lvl2State {
                 let (fields, mut se) =
                     self.convert_fields(fields, StructVariant::Request, &mut fds);
                 let (brief, desc) = (None, None);
-                let name = name.to_camel_case();
+                let name = safe_name(name.to_camel_case());
 
                 let reply = match reply {
                     Some(XStruct { name, fields, docs }) => {
@@ -285,7 +285,7 @@ impl Lvl2State {
             }) => {
                 let (brief, desc) = (None, None);
                 let (fields, se) = self.convert_fields(fields, StructVariant::Event, &mut fds);
-                let sname = name.to_camel_case().into_boxed_str();
+                let sname = safe_name(name.to_camel_case()).into_boxed_str();
 
                 self.events.insert(
                     name.into_boxed_str(),
@@ -306,7 +306,7 @@ impl Lvl2State {
                     if let StructSpecial::Event(ref mut o) = event.special {
                         *o = opcode;
                     }
-                    event.name = name.to_camel_case().into_boxed_str();
+                    event.name = safe_name(name.to_camel_case()).into_boxed_str();
                     self.events.insert(name.into_boxed_str(), event);
                 }
                 None
@@ -317,7 +317,7 @@ impl Lvl2State {
             }) => {
                 let (brief, desc) = (None, None);
                 let (fields, se) = self.convert_fields(fields, StructVariant::Error, &mut fds);
-                let sname = name.to_camel_case().into_boxed_str();
+                let sname = safe_name(name.to_camel_case()).into_boxed_str();
                 self.errors.insert(
                     name.into_boxed_str(),
                     Struct {
@@ -337,7 +337,7 @@ impl Lvl2State {
                     if let StructSpecial::Error(ref mut o) = error.special {
                         *o = number as _;
                     }
-                    error.name = name.to_camel_case().into_boxed_str();
+                    error.name = safe_name(name.to_camel_case()).into_boxed_str();
                     self.errors.insert(name.into_boxed_str(), error);
                 }
 

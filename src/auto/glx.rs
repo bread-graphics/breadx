@@ -10869,12 +10869,11 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rm {
-    GlRender = 7168,
-    GlFeedback = 7169,
-    GlSelect = 7170,
+pub enum Pbcet {
+    Damaged = 32791,
+    Saved = 32792,
 }
-impl AsByteSequence for Rm {
+impl AsByteSequence for Pbcet {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -10883,9 +10882,8 @@ impl AsByteSequence for Rm {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            7168 => Some((Self::GlRender, sz)),
-            7169 => Some((Self::GlFeedback, sz)),
-            7170 => Some((Self::GlSelect, sz)),
+            32791 => Some((Self::Damaged, sz)),
+            32792 => Some((Self::Saved, sz)),
             _ => None,
         }
     }
@@ -10894,10 +10892,10 @@ impl AsByteSequence for Rm {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Rm {
+impl Default for Pbcet {
     #[inline]
-    fn default() -> Rm {
-        Rm::GlRender
+    fn default() -> Pbcet {
+        Pbcet::Damaged
     }
 }
 #[repr(transparent)]
@@ -11310,37 +11308,6 @@ impl AsByteSequence for Gc {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcet {
-    Damaged = 32791,
-    Saved = 32792,
-}
-impl AsByteSequence for Pbcet {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            32791 => Some((Self::Damaged, sz)),
-            32792 => Some((Self::Saved, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Pbcet {
-    #[inline]
-    fn default() -> Pbcet {
-        Pbcet::Damaged
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Pbcdt {
     Window = 32793,
     Pbuffer = 32794,
@@ -11368,6 +11335,39 @@ impl Default for Pbcdt {
     #[inline]
     fn default() -> Pbcdt {
         Pbcdt::Window
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Rm {
+    GlRender = 7168,
+    GlFeedback = 7169,
+    GlSelect = 7170,
+}
+impl AsByteSequence for Rm {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            7168 => Some((Self::GlRender, sz)),
+            7169 => Some((Self::GlFeedback, sz)),
+            7170 => Some((Self::GlSelect, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Rm {
+    #[inline]
+    fn default() -> Rm {
+        Rm::GlRender
     }
 }
 #[derive(Clone, Debug, Default)]

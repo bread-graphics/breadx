@@ -180,6 +180,7 @@ OF THIS SOFTWARE.
     <field type="FENCE" name="idle_fence" />
   </event>
 
+<!-- todo: this is broke, lol - seagull
   <event name="RedirectNotify" number="3" xge="true">
     <required_start_align align="8" />
     <field type="BOOL" name="update_window"/>
@@ -207,5 +208,6 @@ OF THIS SOFTWARE.
     <field type="CARD64" name="remainder" />
     <list type="Notify" name="notifies" />
   </event>
+-->
 
 </xcb>

@@ -99,13 +99,14 @@ pub fn create_generator(state: &Lvl2State, lvl1: Lvl1Enum) -> (String, EnumReprG
     };
     variants.sort_unstable_by_key(val_of_em);
     variants.dedup_by_key(|em| val_of_em(em));
+    let name = safe_name(name);
 
     // Case 2: The enumeration contains any combination of "bits" items. In this case, we assume
     //         that it is a bitflag.
     // Case 3: If nothing else, we assume it is a true enum.
     match variants.iter().any(|v| matches!(&v.data, EnumData::Bit(_))) {
         true => {
-            let name = name.to_camel_case();
+            let name = safe_name(name.to_camel_case());
             let bits = variants
                 .into_iter()
                 .filter_map(|v| {
@@ -133,7 +134,7 @@ pub fn create_generator(state: &Lvl2State, lvl1: Lvl1Enum) -> (String, EnumReprG
             );
         }
         false => {
-            let name = name.to_camel_case();
+            let name = safe_name(name.to_camel_case());
             let variants = variants
                 .into_iter()
                 .map(|v| {

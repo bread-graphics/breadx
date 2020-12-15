@@ -35,15 +35,16 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
     });
 
     // secondly, if the first field has a size of one, we could potentially optimize it
+    const ONE_PAD: Option<StructureItem> = Some(StructureItem::Padding { bytes: 1 });
     let opt_field =
         if let StructVariant::Request | StructVariant::Reply | StructVariant::Event = variant {
-            if fields.is_empty() {
-                Some(StructureItem::Padding { bytes: 1 })
+            if fields.is_empty() || matches!(fields[0], StructureItem::List(_)) {
+                ONE_PAD
             } else {
                 Some(fields.remove(0))
             }
         } else {
-            None
+            ONE_PAD
         };
 
     match variant {

@@ -51,6 +51,7 @@ authorization from the authors.
 	<item name="Half_Clock">	<bit>12</bit></item>
     </enum>
 
+    <typedef oldname="CARD32" newname="ClockFlag" />
     <enum name="ClockFlag">
 	<item name="Programable">	<bit>0</bit></item>
     </enum>

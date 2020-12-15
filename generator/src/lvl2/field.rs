@@ -126,7 +126,7 @@ impl StructureItem {
                     List {
                         name,
                         ty: match ty.as_str() {
-                            "char" => MaybeString::IsAString,
+                            "char" | "String8" => MaybeString::IsAString,
                             _ => MaybeString::NotAString(ty.to_camel_case().into()),
                         },
                         doc: None,
