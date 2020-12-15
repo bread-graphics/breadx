@@ -903,6 +903,7 @@ pub struct GetMonitorReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
+    pub vendor_length: Card8,
     pub hsync: Vec<Syncrange>,
     pub vsync: Vec<Syncrange>,
     pub vendor: String,
@@ -918,7 +919,7 @@ impl AsByteSequence for GetMonitorReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += (self.vendor.len() as Card8).as_bytes(&mut bytes[index..]);
+        index += self.vendor_length.as_bytes(&mut bytes[index..]);
         index += (self.model.len() as Card8).as_bytes(&mut bytes[index..]);
         index += (self.hsync.len() as Card8).as_bytes(&mut bytes[index..]);
         index += (self.vsync.len() as Card8).as_bytes(&mut bytes[index..]);
@@ -951,25 +952,25 @@ impl AsByteSequence for GetMonitorReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (vendor_length, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len1, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len2, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len3, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
         index += 20;
         let (hsync, block_len): (Vec<Syncrange>, usize) =
-            vector_from_bytes(&bytes[index..], len2 as usize)?;
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Syncrange>());
         let (vsync, block_len): (Vec<Syncrange>, usize) =
-            vector_from_bytes(&bytes[index..], len3 as usize)?;
+            vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Syncrange>());
         let (vendor, block_len): (String, usize) =
-            string_from_bytes(&bytes[index..], len0 as usize)?;
+            string_from_bytes(&bytes[index..], (vendor_length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         let (alignment_pad, block_len): (Vec<Void>, usize) = vector_from_bytes(
@@ -979,7 +980,7 @@ impl AsByteSequence for GetMonitorReply {
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Void>());
         let (model, block_len): (String, usize) =
-            string_from_bytes(&bytes[index..], len1 as usize)?;
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -987,6 +988,7 @@ impl AsByteSequence for GetMonitorReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
+                vendor_length: vendor_length,
                 hsync: hsync,
                 vsync: vsync,
                 vendor: vendor,
@@ -1002,7 +1004,7 @@ impl AsByteSequence for GetMonitorReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + ::core::mem::size_of::<Card8>()
+            + self.vendor_length.size()
             + ::core::mem::size_of::<Card8>()
             + ::core::mem::size_of::<Card8>()
             + ::core::mem::size_of::<Card8>()

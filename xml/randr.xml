@@ -793,6 +793,7 @@ authorization from the authors.
 	<!-- New in version 1.2 -->
 
 	<!-- subcode -->
+        <typedef oldname="CARD8" newname="Notify" />
 	<enum name="Notify" >
 		<item name="CrtcChange">      <value>0</value></item>
 		<item name="OutputChange">    <value>1</value></item>

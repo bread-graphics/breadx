@@ -121,7 +121,7 @@ impl StructureItem {
 
                     // conver the list length to a postfix-oriented version rather than a linked list version
                     let list_length: Expression = list_length.into();
-                    let name = safe_name(name.clone());
+                    let name = safe_name(name.to_snake_case());
 
                     List {
                         name,

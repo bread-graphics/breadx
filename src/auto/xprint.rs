@@ -9,9 +9,7 @@ use super::xproto::*;
 pub type String8 = Char;
 #[derive(Clone, Debug, Default)]
 pub struct Printer {
-    pub name_len: Card32,
     pub name: Vec<String8>,
-    pub desc_len: Card32,
     pub description: Vec<String8>,
 }
 impl Printer {}
@@ -19,11 +17,11 @@ impl AsByteSequence for Printer {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.name_len.as_bytes(&mut bytes[index..]);
+        index += (self.name.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.name, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, 4);
-        index += self.desc_len.as_bytes(&mut bytes[index..]);
+        index += (self.description.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.description, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -33,23 +31,21 @@ impl AsByteSequence for Printer {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
         log::trace!("Deserializing Printer from byte buffer");
-        let (name_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (name, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (nameLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (desc_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (description, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (descLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         Some((
             Printer {
-                name_len: name_len,
                 name: name,
-                desc_len: desc_len,
                 description: description,
             },
             index,
@@ -57,13 +53,13 @@ impl AsByteSequence for Printer {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.name_len.size()
+        ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.name.iter().map(|i| i.size()).sum();
                 let pad: usize = buffer_pad(block_len, 4);
                 block_len + pad
             }
-            + self.desc_len.size()
+            + ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.description.iter().map(|i| i.size()).sum();
                 let pad: usize = buffer_pad(block_len, 4);
@@ -195,9 +191,7 @@ impl AsByteSequence for PrintQueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetPrinterListRequest {
     pub req_type: u8,
-    pub printer_name_len: Card32,
     pub length: u16,
-    pub locale_len: Card32,
     pub printer_name: Vec<String8>,
     pub locale: Vec<String8>,
 }
@@ -207,9 +201,9 @@ impl AsByteSequence for PrintGetPrinterListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.printer_name_len.as_bytes(&mut bytes[index..]);
+        index += (self.printer_name.len() as Card32).as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.locale_len.as_bytes(&mut bytes[index..]);
+        index += (self.locale.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.printer_name, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -224,26 +218,24 @@ impl AsByteSequence for PrintGetPrinterListRequest {
         log::trace!("Deserializing PrintGetPrinterListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (printer_name_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (locale_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (printer_name, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (printerNameLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         let (locale, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (localeLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         Some((
             PrintGetPrinterListRequest {
                 req_type: req_type,
-                printer_name_len: printer_name_len,
                 length: length,
-                locale_len: locale_len,
                 printer_name: printer_name,
                 locale: locale,
             },
@@ -253,9 +245,9 @@ impl AsByteSequence for PrintGetPrinterListRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.printer_name_len.size()
+            + ::core::mem::size_of::<Card32>()
             + self.length.size()
-            + self.locale_len.size()
+            + ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.printer_name.iter().map(|i| i.size()).sum();
                 let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -279,7 +271,6 @@ pub struct PrintGetPrinterListReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub list_count: Card32,
     pub printers: Vec<Printer>,
 }
 impl PrintGetPrinterListReply {}
@@ -291,7 +282,7 @@ impl AsByteSequence for PrintGetPrinterListReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.list_count.as_bytes(&mut bytes[index..]);
+        index += (self.printers.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 20;
         let block_len: usize = vector_as_bytes(&self.printers, &mut bytes[index..]);
         index += block_len;
@@ -309,11 +300,11 @@ impl AsByteSequence for PrintGetPrinterListReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (list_count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
         let (printers, block_len): (Vec<Printer>, usize) =
-            vector_from_bytes(&bytes[index..], (listCount as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Printer>());
         Some((
@@ -321,7 +312,6 @@ impl AsByteSequence for PrintGetPrinterListReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
-                list_count: list_count,
                 printers: printers,
             },
             index,
@@ -333,7 +323,7 @@ impl AsByteSequence for PrintGetPrinterListReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + self.list_count.size()
+            + ::core::mem::size_of::<Card32>()
             + 20
             + {
                 let block_len: usize = self.printers.iter().map(|i| i.size()).sum();
@@ -390,9 +380,7 @@ pub struct CreateContextRequest {
     pub req_type: u8,
     pub context_id: Card32,
     pub length: u16,
-    pub printer_name_len: Card32,
-    pub locale_len: Card32,
-    pub printerName: Vec<String8>,
+    pub printer_name: Vec<String8>,
     pub locale: Vec<String8>,
 }
 impl CreateContextRequest {}
@@ -403,9 +391,9 @@ impl AsByteSequence for CreateContextRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += self.context_id.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.printer_name_len.as_bytes(&mut bytes[index..]);
-        index += self.locale_len.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.printerName, &mut bytes[index..]);
+        index += (self.printer_name.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += (self.locale.len() as Card32).as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.printer_name, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         let block_len: usize = vector_as_bytes(&self.locale, &mut bytes[index..]);
@@ -423,16 +411,16 @@ impl AsByteSequence for CreateContextRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (printer_name_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (locale_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (printerName, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (printerNameLen as usize) as usize)?;
+        let (printer_name, block_len): (Vec<String8>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         let (locale, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (localeLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         Some((
@@ -440,9 +428,7 @@ impl AsByteSequence for CreateContextRequest {
                 req_type: req_type,
                 context_id: context_id,
                 length: length,
-                printer_name_len: printer_name_len,
-                locale_len: locale_len,
-                printerName: printerName,
+                printer_name: printer_name,
                 locale: locale,
             },
             index,
@@ -453,10 +439,10 @@ impl AsByteSequence for CreateContextRequest {
         self.req_type.size()
             + self.context_id.size()
             + self.length.size()
-            + self.printer_name_len.size()
-            + self.locale_len.size()
+            + ::core::mem::size_of::<Card32>()
+            + ::core::mem::size_of::<Card32>()
             + {
-                let block_len: usize = self.printerName.iter().map(|i| i.size()).sum();
+                let block_len: usize = self.printer_name.iter().map(|i| i.size()).sum();
                 let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String8>());
                 block_len + pad
             }
@@ -1089,7 +1075,6 @@ pub struct PrintGetDocumentDataReply {
     pub length: u32,
     pub status_code: Card32,
     pub finished_flag: Card32,
-    pub data_len: Card32,
     pub data: Vec<Byte>,
 }
 impl PrintGetDocumentDataReply {}
@@ -1103,7 +1088,7 @@ impl AsByteSequence for PrintGetDocumentDataReply {
         index += self.length.as_bytes(&mut bytes[index..]);
         index += self.status_code.as_bytes(&mut bytes[index..]);
         index += self.finished_flag.as_bytes(&mut bytes[index..]);
-        index += self.data_len.as_bytes(&mut bytes[index..]);
+        index += (self.data.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 12;
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
@@ -1125,11 +1110,11 @@ impl AsByteSequence for PrintGetDocumentDataReply {
         index += sz;
         let (finished_flag, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
         let (data, block_len): (Vec<Byte>, usize) =
-            vector_from_bytes(&bytes[index..], (dataLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
         Some((
@@ -1139,7 +1124,6 @@ impl AsByteSequence for PrintGetDocumentDataReply {
                 length: length,
                 status_code: status_code,
                 finished_flag: finished_flag,
-                data_len: data_len,
                 data: data,
             },
             index,
@@ -1153,7 +1137,7 @@ impl AsByteSequence for PrintGetDocumentDataReply {
             + self.length.size()
             + self.status_code.size()
             + self.finished_flag.size()
-            + self.data_len.size()
+            + ::core::mem::size_of::<Card32>()
             + 12
             + {
                 let block_len: usize = self.data.iter().map(|i| i.size()).sum();
@@ -1468,7 +1452,6 @@ pub struct PrintGetAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub string_len: Card32,
     pub attributes: Vec<String8>,
 }
 impl PrintGetAttributesReply {}
@@ -1480,7 +1463,7 @@ impl AsByteSequence for PrintGetAttributesReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.string_len.as_bytes(&mut bytes[index..]);
+        index += (self.attributes.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 20;
         let block_len: usize = vector_as_bytes(&self.attributes, &mut bytes[index..]);
         index += block_len;
@@ -1498,11 +1481,11 @@ impl AsByteSequence for PrintGetAttributesReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
         let (attributes, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (stringLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         Some((
@@ -1510,7 +1493,6 @@ impl AsByteSequence for PrintGetAttributesReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
-                string_len: string_len,
                 attributes: attributes,
             },
             index,
@@ -1522,7 +1504,7 @@ impl AsByteSequence for PrintGetAttributesReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + self.string_len.size()
+            + ::core::mem::size_of::<Card32>()
             + 20
             + {
                 let block_len: usize = self.attributes.iter().map(|i| i.size()).sum();
@@ -1536,7 +1518,6 @@ pub struct PrintGetOneAttributesRequest {
     pub req_type: u8,
     pub context: Pcontext,
     pub length: u16,
-    pub name_len: Card32,
     pub pool: Card8,
     pub name: Vec<String8>,
 }
@@ -1548,7 +1529,7 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         index += self.req_type.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.name_len.as_bytes(&mut bytes[index..]);
+        index += (self.name.len() as Card32).as_bytes(&mut bytes[index..]);
         index += self.pool.as_bytes(&mut bytes[index..]);
         index += 3;
         let block_len: usize = vector_as_bytes(&self.name, &mut bytes[index..]);
@@ -1566,13 +1547,13 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pool, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (name, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (nameLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         Some((
@@ -1580,7 +1561,6 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
                 req_type: req_type,
                 context: context,
                 length: length,
-                name_len: name_len,
                 pool: pool,
                 name: name,
             },
@@ -1592,7 +1572,7 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         self.req_type.size()
             + self.context.size()
             + self.length.size()
-            + self.name_len.size()
+            + ::core::mem::size_of::<Card32>()
             + self.pool.size()
             + 3
             + {
@@ -1613,7 +1593,6 @@ pub struct PrintGetOneAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub value_len: Card32,
     pub value: Vec<String8>,
 }
 impl PrintGetOneAttributesReply {}
@@ -1625,7 +1604,7 @@ impl AsByteSequence for PrintGetOneAttributesReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.value_len.as_bytes(&mut bytes[index..]);
+        index += (self.value.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 20;
         let block_len: usize = vector_as_bytes(&self.value, &mut bytes[index..]);
         index += block_len;
@@ -1643,11 +1622,11 @@ impl AsByteSequence for PrintGetOneAttributesReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (value_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
         let (value, block_len): (Vec<String8>, usize) =
-            vector_from_bytes(&bytes[index..], (valueLen as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
         Some((
@@ -1655,7 +1634,6 @@ impl AsByteSequence for PrintGetOneAttributesReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
-                value_len: value_len,
                 value: value,
             },
             index,
@@ -1667,7 +1645,7 @@ impl AsByteSequence for PrintGetOneAttributesReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + self.value_len.size()
+            + ::core::mem::size_of::<Card32>()
             + 20
             + {
                 let block_len: usize = self.value.iter().map(|i| i.size()).sum();
@@ -1934,7 +1912,6 @@ pub struct PrintQueryScreensReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub list_count: Card32,
     pub roots: Vec<Window>,
 }
 impl PrintQueryScreensReply {}
@@ -1946,7 +1923,7 @@ impl AsByteSequence for PrintQueryScreensReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.list_count.as_bytes(&mut bytes[index..]);
+        index += (self.roots.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 20;
         let block_len: usize = vector_as_bytes(&self.roots, &mut bytes[index..]);
         index += block_len;
@@ -1964,11 +1941,11 @@ impl AsByteSequence for PrintQueryScreensReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (list_count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
         let (roots, block_len): (Vec<Window>, usize) =
-            vector_from_bytes(&bytes[index..], (listCount as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Window>());
         Some((
@@ -1976,7 +1953,6 @@ impl AsByteSequence for PrintQueryScreensReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
-                list_count: list_count,
                 roots: roots,
             },
             index,
@@ -1988,7 +1964,7 @@ impl AsByteSequence for PrintQueryScreensReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + self.list_count.size()
+            + ::core::mem::size_of::<Card32>()
             + 20
             + {
                 let block_len: usize = self.roots.iter().map(|i| i.size()).sum();
@@ -2202,6 +2178,100 @@ impl AsByteSequence for PrintGetImageResolutionReply {
             + self.image_resolution.size()
     }
 }
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct EvMask {
+    pub inner: i32,
+}
+impl EvMask {
+    #[inline]
+    pub fn print_mask(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_print_mask(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn attribute_mask(&self) -> bool {
+        self.inner & (1 << 1) != 0
+    }
+    #[inline]
+    pub fn set_attribute_mask(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 1;
+        } else {
+            self.inner &= !(1 << 1);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(print_mask: bool, attribute_mask: bool) -> Self {
+        let mut inner: i32 = 0;
+        if print_mask {
+            inner |= 1 << 0;
+        } else {
+            inner &= !(1 << 0);
+        }
+        if attribute_mask {
+            inner |= 1 << 1;
+        } else {
+            inner &= !(1 << 1);
+        }
+        EvMask { inner: inner }
+    }
+}
+impl AsByteSequence for EvMask {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((EvMask { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GetDoc {
+    Finished = 0,
+    SecondConsumer = 1,
+}
+impl AsByteSequence for GetDoc {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Finished, sz)),
+            1 => Some((Self::SecondConsumer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for GetDoc {
+    #[inline]
+    fn default() -> GetDoc {
+        GetDoc::Finished
+    }
+}
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Attr {
@@ -2280,100 +2350,6 @@ impl Default for Detail {
     #[inline]
     fn default() -> Detail {
         Detail::StartJobNotify
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum GetDoc {
-    Finished = 0,
-    SecondConsumer = 1,
-}
-impl AsByteSequence for GetDoc {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Finished, sz)),
-            1 => Some((Self::SecondConsumer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for GetDoc {
-    #[inline]
-    fn default() -> GetDoc {
-        GetDoc::Finished
-    }
-}
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EvMask {
-    pub inner: i32,
-}
-impl EvMask {
-    #[inline]
-    pub fn print_mask(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_print_mask(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn attribute_mask(&self) -> bool {
-        self.inner & (1 << 1) != 0
-    }
-    #[inline]
-    pub fn set_attribute_mask(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 1;
-        } else {
-            self.inner &= !(1 << 1);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(print_mask: bool, attribute_mask: bool) -> Self {
-        let mut inner: i32 = 0;
-        if print_mask {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        if attribute_mask {
-            inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
-        }
-        EvMask { inner: inner }
-    }
-}
-impl AsByteSequence for EvMask {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((EvMask { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
     }
 }
 #[derive(Clone, Debug, Default)]

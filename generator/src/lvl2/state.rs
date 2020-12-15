@@ -385,10 +385,8 @@ fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
                 // as a single item
                 if fields.iter().any(|f| {
                     if let StructureItem::List(l) = f {
-                        if let Some(len_name) = l.list_length.single_item() {
-                            if l.name != lname && len_name == item {
-                                return true;
-                            }
+                        if l.name != lname && l.list_length.involves_field(&item) {
+                            return true;
                         }
                     }
 

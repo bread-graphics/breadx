@@ -35,6 +35,9 @@ pub(crate) mod prelude {
     pub type Float = f32;
     pub type Double = f64;
     pub type Void = u8;
+
+    #[cfg(feature = "randr")]
+    pub use crate::notify_data::NotifyData;
 }
 
 /// Internal use helper trait. This represents an item that can be converted to and from a series

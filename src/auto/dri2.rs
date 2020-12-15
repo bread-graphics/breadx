@@ -311,6 +311,7 @@ pub struct ConnectReply {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
+    pub driver_name_length: Card32,
     pub driver_name: String,
     pub alignment_pad: Vec<Void>,
     pub device_name: String,
@@ -324,7 +325,7 @@ impl AsByteSequence for ConnectReply {
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
-        index += (self.driver_name.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += self.driver_name_length.as_bytes(&mut bytes[index..]);
         index += (self.device_name.len() as Card32).as_bytes(&mut bytes[index..]);
         index += 16;
         let block_len: usize = string_as_bytes(&self.driver_name, &mut bytes[index..]);
@@ -349,13 +350,13 @@ impl AsByteSequence for ConnectReply {
         index += sz;
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (driver_name_length, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
         let (driver_name, block_len): (String, usize) =
-            string_from_bytes(&bytes[index..], len0 as usize)?;
+            string_from_bytes(&bytes[index..], (driver_name_length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         let (alignment_pad, block_len): (Vec<Void>, usize) = vector_from_bytes(
@@ -366,7 +367,7 @@ impl AsByteSequence for ConnectReply {
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Void>());
         let (device_name, block_len): (String, usize) =
-            string_from_bytes(&bytes[index..], len1 as usize)?;
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -374,6 +375,7 @@ impl AsByteSequence for ConnectReply {
                 reply_type: reply_type,
                 sequence: sequence,
                 length: length,
+                driver_name_length: driver_name_length,
                 driver_name: driver_name,
                 alignment_pad: alignment_pad,
                 device_name: device_name,
@@ -387,7 +389,7 @@ impl AsByteSequence for ConnectReply {
             + 1
             + self.sequence.size()
             + self.length.size()
-            + ::core::mem::size_of::<Card32>()
+            + self.driver_name_length.size()
             + ::core::mem::size_of::<Card32>()
             + 16
             + {

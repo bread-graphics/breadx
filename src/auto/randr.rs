@@ -159,7 +159,6 @@ impl AsByteSequence for ScreenSize {
 }
 #[derive(Clone, Debug, Default)]
 pub struct RefreshRates {
-    pub n_rates: Card16,
     pub rates: Vec<Card16>,
 }
 impl RefreshRates {}
@@ -167,7 +166,7 @@ impl AsByteSequence for RefreshRates {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.n_rates.as_bytes(&mut bytes[index..]);
+        index += (self.rates.len() as Card16).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.rates, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -177,23 +176,17 @@ impl AsByteSequence for RefreshRates {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
         log::trace!("Deserializing RefreshRates from byte buffer");
-        let (n_rates, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (rates, block_len): (Vec<Card16>, usize) =
-            vector_from_bytes(&bytes[index..], (nRates as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        Some((
-            RefreshRates {
-                n_rates: n_rates,
-                rates: rates,
-            },
-            index,
-        ))
+        Some((RefreshRates { rates: rates }, index))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.n_rates.size() + {
+        ::core::mem::size_of::<Card16>() + {
             let block_len: usize = self.rates.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card16>());
             block_len + pad
@@ -999,12 +992,12 @@ impl AsByteSequence for GetScreenInfoReply {
         index += sz;
         index += 2;
         let (sizes, block_len): (Vec<ScreenSize>, usize) =
-            vector_from_bytes(&bytes[index..], (nSizes as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], (n_sizes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ScreenSize>());
         let (rates, block_len): (Vec<RefreshRates>, usize) = vector_from_bytes(
             &bytes[index..],
-            ((nInfo as usize) - (nSizes as usize)) as usize,
+            ((n_info as usize) - (n_sizes as usize)) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<RefreshRates>());
@@ -2238,7 +2231,7 @@ pub struct QueryOutputPropertyReply {
     pub pending: bool,
     pub range: bool,
     pub immutable: bool,
-    pub validValues: Vec<Int32>,
+    pub valid_values: Vec<Int32>,
 }
 impl QueryOutputPropertyReply {}
 impl AsByteSequence for QueryOutputPropertyReply {
@@ -2253,7 +2246,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += self.range.as_bytes(&mut bytes[index..]);
         index += self.immutable.as_bytes(&mut bytes[index..]);
         index += 21;
-        let block_len: usize = vector_as_bytes(&self.validValues, &mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.valid_values, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
         index
@@ -2276,8 +2269,8 @@ impl AsByteSequence for QueryOutputPropertyReply {
         let (immutable, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 21;
-        let (validValues, block_len): (Vec<Int32>, usize) =
-            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
+        let (valid_values, block_len): (Vec<Int32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
         Some((
@@ -2287,7 +2280,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
                 pending: pending,
                 range: range,
                 immutable: immutable,
-                validValues: validValues,
+                valid_values: valid_values,
             },
             index,
         ))
@@ -2303,7 +2296,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
             + self.immutable.size()
             + 21
             + {
-                let block_len: usize = self.validValues.iter().map(|i| i.size()).sum();
+                let block_len: usize = self.valid_values.iter().map(|i| i.size()).sum();
                 let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Int32>());
                 block_len + pad
             }
@@ -5806,6 +5799,7 @@ impl AsByteSequence for GetProviderPropertyReply {
             }
     }
 }
+pub type Notify = Card8;
 #[derive(Clone, Debug, Default)]
 pub struct CrtcChange {
     pub timestamp: Timestamp,
@@ -6163,7 +6157,6 @@ pub struct MonitorInfo {
     pub name: Atom,
     pub primary: bool,
     pub automatic: bool,
-    pub n_output: Card16,
     pub x: Int16,
     pub y: Int16,
     pub width: Card16,
@@ -6180,7 +6173,7 @@ impl AsByteSequence for MonitorInfo {
         index += self.name.as_bytes(&mut bytes[index..]);
         index += self.primary.as_bytes(&mut bytes[index..]);
         index += self.automatic.as_bytes(&mut bytes[index..]);
-        index += self.n_output.as_bytes(&mut bytes[index..]);
+        index += (self.outputs.len() as Card16).as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -6202,7 +6195,7 @@ impl AsByteSequence for MonitorInfo {
         index += sz;
         let (automatic, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_output, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6217,7 +6210,7 @@ impl AsByteSequence for MonitorInfo {
         let (height_in_millimeters, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (outputs, block_len): (Vec<Output>, usize) =
-            vector_from_bytes(&bytes[index..], (nOutput as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
         Some((
@@ -6225,7 +6218,6 @@ impl AsByteSequence for MonitorInfo {
                 name: name,
                 primary: primary,
                 automatic: automatic,
-                n_output: n_output,
                 x: x,
                 y: y,
                 width: width,
@@ -6242,7 +6234,7 @@ impl AsByteSequence for MonitorInfo {
         self.name.size()
             + self.primary.size()
             + self.automatic.size()
-            + self.n_output.size()
+            + ::core::mem::size_of::<Card16>()
             + self.x.size()
             + self.y.size()
             + self.width.size()
@@ -6313,7 +6305,6 @@ pub struct GetMonitorsReply {
     pub sequence: u16,
     pub length: u32,
     pub timestamp: Timestamp,
-    pub n_monitors: Card32,
     pub n_outputs: Card32,
     pub monitors: Vec<MonitorInfo>,
 }
@@ -6327,7 +6318,7 @@ impl AsByteSequence for GetMonitorsReply {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.length.as_bytes(&mut bytes[index..]);
         index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.n_monitors.as_bytes(&mut bytes[index..]);
+        index += (self.monitors.len() as Card32).as_bytes(&mut bytes[index..]);
         index += self.n_outputs.as_bytes(&mut bytes[index..]);
         index += 12;
         let block_len: usize = vector_as_bytes(&self.monitors, &mut bytes[index..]);
@@ -6348,13 +6339,13 @@ impl AsByteSequence for GetMonitorsReply {
         index += sz;
         let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_monitors, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (n_outputs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
         let (monitors, block_len): (Vec<MonitorInfo>, usize) =
-            vector_from_bytes(&bytes[index..], (nMonitors as usize) as usize)?;
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo>());
         Some((
@@ -6363,7 +6354,6 @@ impl AsByteSequence for GetMonitorsReply {
                 sequence: sequence,
                 length: length,
                 timestamp: timestamp,
-                n_monitors: n_monitors,
                 n_outputs: n_outputs,
                 monitors: monitors,
             },
@@ -6377,7 +6367,7 @@ impl AsByteSequence for GetMonitorsReply {
             + self.sequence.size()
             + self.length.size()
             + self.timestamp.size()
-            + self.n_monitors.size()
+            + ::core::mem::size_of::<Card32>()
             + self.n_outputs.size()
             + 12
             + {

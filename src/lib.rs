@@ -144,6 +144,9 @@ pub(crate) mod util;
 pub mod window;
 mod xid;
 
+#[cfg(feature = "randr")]
+pub mod notify_data;
+
 pub use crate::image::Image;
 pub use auth_info::*;
 pub use colormap::*;

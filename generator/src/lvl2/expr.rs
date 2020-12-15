@@ -1,7 +1,8 @@
 // MIT/Apache2 License
 
 use crate::lvl1::Expression as Lvl1Expression;
-use std::str::FromStr;
+use heck::SnakeCase;
+use std::{ops::Deref, str::FromStr};
 use tinyvec::{tiny_vec, TinyVec};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -88,6 +89,15 @@ impl Expression {
         }
     }
 
+    /// Tell if this item involves a certain field.
+    #[inline]
+    pub fn involves_field(&self, f: &str) -> bool {
+        self.postfix.iter().any(|t| match t {
+            ExpressionItem::FieldRef(ft) => f == ft.deref(),
+            _ => false,
+        })
+    }
+
     /// If this is a one-field list, return that one field.
     #[inline]
     pub fn single_item(&self) -> Option<&str> {
@@ -136,7 +146,7 @@ fn convert_ll(length: Lvl1Expression) -> TinyVec<[ExpressionItem; 1]> {
     match length {
         Lvl1Expression::Value(v) => TinyVec::from([ExpressionItem::Value(v)]),
         Lvl1Expression::FieldReference(f) => {
-            TinyVec::from([ExpressionItem::FieldRef(f.into_boxed_str())])
+            TinyVec::from([ExpressionItem::FieldRef(f.to_snake_case().into_boxed_str())])
         }
         Lvl1Expression::BinaryOp { op, left, right } => {
             // parse the op

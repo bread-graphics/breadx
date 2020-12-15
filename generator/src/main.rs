@@ -17,7 +17,9 @@ use std::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-    simple_logger::SimpleLogger::new().init().unwrap();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
 
     // open the file
     let fname = env::args_os()
