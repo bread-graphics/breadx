@@ -723,6 +723,91 @@ impl Default for CompleteMode {
 }
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Capability {
+    pub inner: i32,
+}
+impl Capability {
+    #[inline]
+    pub fn async_(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_async_(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn fence(&self) -> bool {
+        self.inner & (1 << 1) != 0
+    }
+    #[inline]
+    pub fn set_fence(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 1;
+        } else {
+            self.inner &= !(1 << 1);
+        }
+        self
+    }
+    #[inline]
+    pub fn ust(&self) -> bool {
+        self.inner & (1 << 2) != 0
+    }
+    #[inline]
+    pub fn set_ust(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 2;
+        } else {
+            self.inner &= !(1 << 2);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(async_: bool, fence: bool, ust: bool) -> Self {
+        let mut inner: i32 = 0;
+        if async_ {
+            inner |= 1 << 0;
+        } else {
+            inner &= !(1 << 0);
+        }
+        if fence {
+            inner |= 1 << 1;
+        } else {
+            inner &= !(1 << 1);
+        }
+        if ust {
+            inner |= 1 << 2;
+        } else {
+            inner &= !(1 << 2);
+        }
+        Capability { inner: inner }
+    }
+}
+impl AsByteSequence for Capability {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((Capability { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+pub const EVENT_CONFIGURE_NOTIFY: Event = <Event>::const_from_xid(0);
+pub const EVENT_COMPLETE_NOTIFY: Event = <Event>::const_from_xid(1);
+pub const EVENT_IDLE_NOTIFY: Event = <Event>::const_from_xid(2);
+pub const EVENT_REDIRECT_NOTIFY: Event = <Event>::const_from_xid(3);
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Option_ {
     pub inner: i32,
 }
@@ -820,90 +905,77 @@ impl AsByteSequence for Option_ {
         self.inner.size()
     }
 }
-pub const EVENT_CONFIGURE_NOTIFY: Event = <Event>::const_from_xid(0);
-pub const EVENT_COMPLETE_NOTIFY: Event = <Event>::const_from_xid(1);
-pub const EVENT_IDLE_NOTIFY: Event = <Event>::const_from_xid(2);
-pub const EVENT_REDIRECT_NOTIFY: Event = <Event>::const_from_xid(3);
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Capability {
-    pub inner: i32,
+#[derive(Clone, Debug, Default)]
+pub struct IdleNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event: Event,
+    pub window: Window,
+    pub serial: Card32,
+    pub pixmap: Pixmap,
+    pub idle_fence: Fence,
 }
-impl Capability {
-    #[inline]
-    pub fn async_(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_async_(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn fence(&self) -> bool {
-        self.inner & (1 << 1) != 0
-    }
-    #[inline]
-    pub fn set_fence(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 1;
-        } else {
-            self.inner &= !(1 << 1);
-        }
-        self
-    }
-    #[inline]
-    pub fn ust(&self) -> bool {
-        self.inner & (1 << 2) != 0
-    }
-    #[inline]
-    pub fn set_ust(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 2;
-        } else {
-            self.inner &= !(1 << 2);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(async_: bool, fence: bool, ust: bool) -> Self {
-        let mut inner: i32 = 0;
-        if async_ {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        if fence {
-            inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
-        }
-        if ust {
-            inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
-        }
-        Capability { inner: inner }
-    }
-}
-impl AsByteSequence for Capability {
+impl IdleNotifyEvent {}
+impl AsByteSequence for IdleNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.serial.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += self.idle_fence.as_bytes(&mut bytes[index..]);
+        index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((Capability { inner: inner }, sz))
+        let mut index: usize = 0;
+        log::trace!("Deserializing IdleNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            IdleNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event: event,
+                window: window,
+                serial: serial,
+                pixmap: pixmap,
+                idle_fence: idle_fence,
+            },
+            index,
+        ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.inner.size()
+        self.event_type.size()
+            + 2
+            + self.sequence.size()
+            + self.event.size()
+            + self.window.size()
+            + self.serial.size()
+            + self.pixmap.size()
+            + self.idle_fence.size()
     }
+}
+impl crate::auto::Event for IdleNotifyEvent {
+    const OPCODE: u8 = 2;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ConfigureNotifyEvent {
@@ -1012,78 +1084,6 @@ impl AsByteSequence for ConfigureNotifyEvent {
 }
 impl crate::auto::Event for ConfigureNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct IdleNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Event,
-    pub window: Window,
-    pub serial: Card32,
-    pub pixmap: Pixmap,
-    pub idle_fence: Fence,
-}
-impl IdleNotifyEvent {}
-impl AsByteSequence for IdleNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.serial.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
-        index += self.idle_fence.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing IdleNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            IdleNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                serial: serial,
-                pixmap: pixmap,
-                idle_fence: idle_fence,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 2
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + self.serial.size()
-            + self.pixmap.size()
-            + self.idle_fence.size()
-    }
-}
-impl crate::auto::Event for IdleNotifyEvent {
-    const OPCODE: u8 = 2;
 }
 #[derive(Clone, Debug, Default)]
 pub struct CompleteNotifyEvent {

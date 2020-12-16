@@ -110,7 +110,16 @@ impl Trait {
                         .into_iter()
                         .collect(),
                     },
-                    Self::Error(_) => str_to_path("Error"),
+                    Self::Error(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("crate"),
+                            str_to_pathseg("auto"),
+                            str_to_pathseg("Error"),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    },
                     Self::Request(_, _, _, _) => str_to_path("Request"),
                     Self::Xid => str_to_path("XidType"),
                     Self::EnumDefault(_) => str_to_path("Default"),

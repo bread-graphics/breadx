@@ -6827,6 +6827,54 @@ impl AsByteSequence for Transform {
     }
 }
 #[derive(Clone, Debug, Default)]
+pub struct NotifyEvent {
+    pub event_type: u8,
+    pub sub_code: Notify,
+    pub sequence: u16,
+    pub u: NotifyData,
+}
+impl NotifyEvent {}
+impl AsByteSequence for NotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.sub_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.u.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            NotifyEvent {
+                event_type: event_type,
+                sub_code: sub_code,
+                sequence: sequence,
+                u: u,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
+    }
+}
+impl crate::auto::Event for NotifyEvent {
+    const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
 pub struct ScreenChangeNotifyEvent {
     pub event_type: u8,
     pub rotation: Rotation,
@@ -6930,52 +6978,4 @@ impl AsByteSequence for ScreenChangeNotifyEvent {
 }
 impl crate::auto::Event for ScreenChangeNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NotifyEvent {
-    pub event_type: u8,
-    pub sub_code: Notify,
-    pub sequence: u16,
-    pub u: NotifyData,
-}
-impl NotifyEvent {}
-impl AsByteSequence for NotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.sub_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.u.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            NotifyEvent {
-                event_type: event_type,
-                sub_code: sub_code,
-                sequence: sequence,
-                u: u,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
-    }
-}
-impl crate::auto::Event for NotifyEvent {
-    const OPCODE: u8 = 1;
 }

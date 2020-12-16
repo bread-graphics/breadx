@@ -1,10 +1,11 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{int_litexpr_int, item_field, str_to_exprpath},
+    syn_util::{int_litexpr_int, item_field, str_to_exprpath, str_to_pathseg, str_to_ty},
     Type,
 };
 use crate::lvl2::{BinaryOp, Expression, ExpressionItem, UnaryOp};
+use proc_macro2::Span;
 use std::iter;
 
 #[inline]
@@ -94,6 +95,84 @@ impl Expression {
                         })),
                         op: syn::BinOp::Sub(Default::default()),
                         right: Box::new(str_to_exprpath("index")),
+                    }),
+                    Some(ExpressionItem::SumOf(slist)) => syn::Expr::Call(syn::ExprCall {
+                        attrs: vec![],
+                        func: Box::new(item_field(
+                            {
+                                let iterator = syn::Expr::Call(syn::ExprCall {
+                                    attrs: vec![],
+                                    func: Box::new(item_field(
+                                        if with_self_fields {
+                                            item_field(str_to_exprpath("self"), &slist)
+                                        } else {
+                                            str_to_exprpath(&slist)
+                                        },
+                                        "iter",
+                                    )),
+                                    paren_token: Default::default(),
+                                    args: syn::punctuated::Punctuated::new(),
+                                });
+                                let mapper = syn::Expr::Closure(syn::ExprClosure {
+                                    attrs: vec![],
+                                    asyncness: None,
+                                    movability: None,
+                                    capture: None,
+                                    or1_token: Default::default(),
+                                    inputs: iter::once(syn::Pat::Ident(syn::PatIdent {
+                                        attrs: vec![],
+                                        by_ref: None,
+                                        mutability: None,
+                                        ident: syn::Ident::new("a", Span::call_site()),
+                                        subpat: None,
+                                    }))
+                                    .collect(),
+                                    or2_token: Default::default(),
+                                    output: syn::ReturnType::Default,
+                                    body: Box::new(syn::Expr::Call(syn::ExprCall {
+                                        attrs: vec![],
+                                        args: iter::once(syn::Expr::Unary(syn::ExprUnary {
+                                            attrs: vec![],
+                                            op: syn::UnOp::Deref(Default::default()),
+                                            expr: Box::new(str_to_exprpath("a")),
+                                        }))
+                                        .collect(),
+                                        paren_token: Default::default(),
+                                        func: Box::new(syn::Expr::Path(syn::ExprPath {
+                                            attrs: vec![],
+                                            qself: None,
+                                            path: syn::Path {
+                                                leading_colon: None,
+                                                segments: vec![
+syn::PathSegment {
+  ident: syn::Ident::new("Into", Span::call_site()),
+  arguments: syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+colon2_token: Some(Default::default()),
+lt_token: Default::default(),
+gt_token: Default::default(),
+args: iter::once(syn::GenericArgument::Type(str_to_ty("usize"))).collect(),
+  }),
+},
+str_to_pathseg("into"),
+    ]
+                                                .into_iter()
+                                                .collect(),
+                                            },
+                                        })),
+                                    })),
+                                });
+
+                                syn::Expr::Call(syn::ExprCall {
+                                    attrs: vec![],
+                                    func: Box::new(item_field(iterator, "map")),
+                                    paren_token: Default::default(),
+                                    args: iter::once(mapper).collect(),
+                                })
+                            },
+                            "sum",
+                        )),
+                        paren_token: Default::default(),
+                        args: syn::punctuated::Punctuated::new(),
                     }),
                 }),
             })

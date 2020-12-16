@@ -56,6 +56,24 @@ pub fn safe_name(mut name: String) -> String {
         "9" => {
             name = "Nine".to_owned();
         }
+        "10" => {
+            name = "Ten".to_owned();
+        }
+        "11" => {
+            name = "Eleven".to_owned();
+        }
+        "12" => {
+            name = "Twelve".to_owned();
+        }
+        "13" => {
+            name = "Thirteen".to_owned();
+        }
+        "14" => {
+            name = "Fourteen".to_owned();
+        }
+        "15" => {
+            name = "Fifteen".to_owned();
+        }
         "async" => {
             name = "async_".to_owned();
         }
@@ -65,10 +83,17 @@ pub fn safe_name(mut name: String) -> String {
         "bytes" => {
             name = "bytes_".to_owned();
         }
+        "match" => {
+            name = "match_".to_owned();
+        }
         "Option" => {
             name = "Option_".to_owned();
         }
         _ => (),
+    }
+
+    if name.chars().all(|c| c.is_numeric()) {
+        log::error!("Safe name still composed of all numbers: {}", &name);
     }
 
     name

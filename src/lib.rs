@@ -144,6 +144,9 @@ pub(crate) mod util;
 pub mod window;
 mod xid;
 
+#[cfg(feature = "xkb")]
+pub mod action;
+
 #[cfg(feature = "randr")]
 pub mod notify_data;
 

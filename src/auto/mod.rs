@@ -18,7 +18,7 @@ use core::mem;
 pub(crate) mod prelude {
     pub(crate) use super::{
         buffer_pad, string_as_bytes, string_from_bytes, vector_as_bytes, vector_from_bytes,
-        AsByteSequence, Error,
+        AsByteSequence,
     };
     pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
     pub use alloc::{string::String, vec, vec::Vec};
@@ -39,6 +39,9 @@ pub(crate) mod prelude {
 
     #[cfg(feature = "randr")]
     pub use crate::notify_data::NotifyData;
+
+    #[cfg(feature = "xkb")]
+    pub use crate::action::Action;
 }
 
 /// Internal use helper trait. This represents an item that can be converted to and from a series
@@ -374,6 +377,8 @@ pub mod xf86vidmode;
 pub mod xfixes;
 #[cfg(feature = "xinerama")]
 pub mod xinerama;
+#[cfg(feature = "xkb")]
+pub mod xkb;
 #[cfg(feature = "print")]
 pub mod xprint;
 /// The core X11 protocol.

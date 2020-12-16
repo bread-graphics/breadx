@@ -12,7 +12,8 @@ use heck::{CamelCase, SnakeCase};
 use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
-    mem,
+    iter, mem,
+    ops::Deref,
     rc::Rc,
 };
 use tinyvec::{tiny_vec, TinyVec};
@@ -35,7 +36,7 @@ pub struct Lvl2State {
 fn enum_repr_conv(repr: String) -> Cow<'static, str> {
     match repr.as_str() {
         "Card8" | "Byte" | "Keycode" | "Op" | "Kind" => Cow::Borrowed("u8"),
-        "Card16" => Cow::Borrowed("u16"),
+        "Card16" | "LedClassSpec" | "IdSpec" => Cow::Borrowed("u16"),
         "Window" | "Colormap" | "Atom" | "Timestamp" | "Pixmap" | "Card32" => Cow::Borrowed("u32"),
         _ => Cow::Owned(repr),
     }
@@ -179,6 +180,9 @@ impl Lvl2State {
 
         // normalize the fields
         normalize_fields(&mut fields);
+
+        // uniqueify the fields
+        uniquify_fields(&mut fields);
 
         (fields, side_effect_enums)
     }
@@ -417,6 +421,36 @@ fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
                 });
             }
         }
+    }
+}
+
+/// Iterate over a set of fields and ensure all of the names are unique (for bitcases).
+#[inline]
+pub fn uniquify_fields(fields: &mut [StructureItem]) {
+    for i in 0..fields.len() {
+        let fname = match fields[i] {
+            StructureItem::Field(Field { ref name, .. })
+            | StructureItem::List(List { ref name, .. }) => name.clone(),
+            _ => continue,
+        };
+
+        fields.iter_mut().fold(0, |mut field_index, field| {
+            match field {
+                StructureItem::Field(Field { ref mut name, .. })
+                | StructureItem::List(List { ref mut name, .. }) => {
+                    if name.as_str() == fname.as_str() {
+                        *name = fname
+                            .chars()
+                            .chain(iter::repeat('_').take(field_index))
+                            .collect::<String>();
+                        field_index += 1;
+                    }
+                }
+                _ => (),
+            }
+
+            field_index
+        });
     }
 }
 

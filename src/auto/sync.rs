@@ -1950,81 +1950,6 @@ impl Request for AwaitFenceRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
-pub struct AlarmError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_alarm: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl AlarmError {}
-impl AsByteSequence for AlarmError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_alarm.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing AlarmError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_alarm, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            AlarmError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_alarm: bad_alarm,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_alarm.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-    }
-}
-impl Error for AlarmError {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
 pub struct CounterError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -2096,85 +2021,82 @@ impl AsByteSequence for CounterError {
             + self.major_opcode.size()
     }
 }
-impl Error for CounterError {
+impl crate::auto::Error for CounterError {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
-pub struct AlarmNotifyEvent {
-    pub event_type: u8,
-    pub kind: Card8,
+pub struct AlarmError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
     pub sequence: u16,
-    pub alarm: Alarm,
-    pub counter_value: Int64,
-    pub alarm_value: Int64,
-    pub timestamp: Timestamp,
-    pub state: Alarmstate,
+    pub bad_alarm: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
 }
-impl AlarmNotifyEvent {}
-impl AsByteSequence for AlarmNotifyEvent {
+impl AlarmError {}
+impl AsByteSequence for AlarmError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.alarm.as_bytes(&mut bytes[index..]);
-        index += self.counter_value.as_bytes(&mut bytes[index..]);
-        index += self.alarm_value.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += 3;
+        index += self.bad_alarm.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        log::trace!("Deserializing AlarmError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
+        let (bad_alarm, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
         Some((
-            AlarmNotifyEvent {
-                event_type: event_type,
-                kind: kind,
+            AlarmError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
                 sequence: sequence,
-                alarm: alarm,
-                counter_value: counter_value,
-                alarm_value: alarm_value,
-                timestamp: timestamp,
-                state: state,
+                bad_alarm: bad_alarm,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size()
-            + self.kind.size()
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
             + self.sequence.size()
-            + self.alarm.size()
-            + self.counter_value.size()
-            + self.alarm_value.size()
-            + self.timestamp.size()
-            + self.state.size()
-            + 3
+            + self.bad_alarm.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
     }
 }
-impl crate::auto::Event for AlarmNotifyEvent {
+impl crate::auto::Error for AlarmError {
     const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
@@ -2260,4 +2182,82 @@ impl AsByteSequence for CounterNotifyEvent {
 }
 impl crate::auto::Event for CounterNotifyEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct AlarmNotifyEvent {
+    pub event_type: u8,
+    pub kind: Card8,
+    pub sequence: u16,
+    pub alarm: Alarm,
+    pub counter_value: Int64,
+    pub alarm_value: Int64,
+    pub timestamp: Timestamp,
+    pub state: Alarmstate,
+}
+impl AlarmNotifyEvent {}
+impl AsByteSequence for AlarmNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.alarm.as_bytes(&mut bytes[index..]);
+        index += self.counter_value.as_bytes(&mut bytes[index..]);
+        index += self.alarm_value.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            AlarmNotifyEvent {
+                event_type: event_type,
+                kind: kind,
+                sequence: sequence,
+                alarm: alarm,
+                counter_value: counter_value,
+                alarm_value: alarm_value,
+                timestamp: timestamp,
+                state: state,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.kind.size()
+            + self.sequence.size()
+            + self.alarm.size()
+            + self.counter_value.size()
+            + self.alarm_value.size()
+            + self.timestamp.size()
+            + self.state.size()
+            + 3
+    }
+}
+impl crate::auto::Event for AlarmNotifyEvent {
+    const OPCODE: u8 = 1;
 }

@@ -10869,11 +10869,12 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcet {
-    Damaged = 32791,
-    Saved = 32792,
+pub enum Rm {
+    GlRender = 7168,
+    GlFeedback = 7169,
+    GlSelect = 7170,
 }
-impl AsByteSequence for Pbcet {
+impl AsByteSequence for Rm {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -10882,8 +10883,9 @@ impl AsByteSequence for Pbcet {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            32791 => Some((Self::Damaged, sz)),
-            32792 => Some((Self::Saved, sz)),
+            7168 => Some((Self::GlRender, sz)),
+            7169 => Some((Self::GlFeedback, sz)),
+            7170 => Some((Self::GlSelect, sz)),
             _ => None,
         }
     }
@@ -10892,10 +10894,41 @@ impl AsByteSequence for Pbcet {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Pbcet {
+impl Default for Rm {
     #[inline]
-    fn default() -> Pbcet {
-        Pbcet::Damaged
+    fn default() -> Rm {
+        Rm::GlRender
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Pbcdt {
+    Window = 32793,
+    Pbuffer = 32794,
+}
+impl AsByteSequence for Pbcdt {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            32793 => Some((Self::Window, sz)),
+            32794 => Some((Self::Pbuffer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Pbcdt {
+    #[inline]
+    fn default() -> Pbcdt {
+        Pbcdt::Window
     }
 }
 #[repr(transparent)]
@@ -11308,11 +11341,11 @@ impl AsByteSequence for Gc {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcdt {
-    Window = 32793,
-    Pbuffer = 32794,
+pub enum Pbcet {
+    Damaged = 32791,
+    Saved = 32792,
 }
-impl AsByteSequence for Pbcdt {
+impl AsByteSequence for Pbcet {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -11321,8 +11354,8 @@ impl AsByteSequence for Pbcdt {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            32793 => Some((Self::Window, sz)),
-            32794 => Some((Self::Pbuffer, sz)),
+            32791 => Some((Self::Damaged, sz)),
+            32792 => Some((Self::Saved, sz)),
             _ => None,
         }
     }
@@ -11331,132 +11364,11 @@ impl AsByteSequence for Pbcdt {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Pbcdt {
+impl Default for Pbcet {
     #[inline]
-    fn default() -> Pbcdt {
-        Pbcdt::Window
+    fn default() -> Pbcet {
+        Pbcet::Damaged
     }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rm {
-    GlRender = 7168,
-    GlFeedback = 7169,
-    GlSelect = 7170,
-}
-impl AsByteSequence for Rm {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            7168 => Some((Self::GlRender, sz)),
-            7169 => Some((Self::GlFeedback, sz)),
-            7170 => Some((Self::GlSelect, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Rm {
-    #[inline]
-    fn default() -> Rm {
-        Rm::GlRender
-    }
-}
-#[derive(Clone, Debug, Default)]
-pub struct BufferSwapCompleteEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event_type_: Card16,
-    pub drawable: super::glx::Drawable,
-    pub ust_hi: Card32,
-    pub ust_lo: Card32,
-    pub msc_hi: Card32,
-    pub msc_lo: Card32,
-    pub sbc: Card32,
-}
-impl BufferSwapCompleteEvent {}
-impl AsByteSequence for BufferSwapCompleteEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event_type_.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index += self.ust_hi.as_bytes(&mut bytes[index..]);
-        index += self.ust_lo.as_bytes(&mut bytes[index..]);
-        index += self.msc_hi.as_bytes(&mut bytes[index..]);
-        index += self.msc_lo.as_bytes(&mut bytes[index..]);
-        index += self.sbc.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (drawable, sz): (super::glx::Drawable, usize) =
-            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            BufferSwapCompleteEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event_type_: event_type_,
-                drawable: drawable,
-                ust_hi: ust_hi,
-                ust_lo: ust_lo,
-                msc_hi: msc_hi,
-                msc_lo: msc_lo,
-                sbc: sbc,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event_type_.size()
-            + 2
-            + self.drawable.size()
-            + self.ust_hi.size()
-            + self.ust_lo.size()
-            + self.msc_hi.size()
-            + self.msc_lo.size()
-            + self.sbc.size()
-    }
-}
-impl crate::auto::Event for BufferSwapCompleteEvent {
-    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct PbufferClobberEvent {
@@ -11563,4 +11475,92 @@ impl AsByteSequence for PbufferClobberEvent {
 }
 impl crate::auto::Event for PbufferClobberEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct BufferSwapCompleteEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event_type_: Card16,
+    pub drawable: super::glx::Drawable,
+    pub ust_hi: Card32,
+    pub ust_lo: Card32,
+    pub msc_hi: Card32,
+    pub msc_lo: Card32,
+    pub sbc: Card32,
+}
+impl BufferSwapCompleteEvent {}
+impl AsByteSequence for BufferSwapCompleteEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event_type_.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += self.ust_hi.as_bytes(&mut bytes[index..]);
+        index += self.ust_lo.as_bytes(&mut bytes[index..]);
+        index += self.msc_hi.as_bytes(&mut bytes[index..]);
+        index += self.msc_lo.as_bytes(&mut bytes[index..]);
+        index += self.sbc.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (drawable, sz): (super::glx::Drawable, usize) =
+            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            BufferSwapCompleteEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event_type_: event_type_,
+                drawable: drawable,
+                ust_hi: ust_hi,
+                ust_lo: ust_lo,
+                msc_hi: msc_hi,
+                msc_lo: msc_lo,
+                sbc: sbc,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.event_type_.size()
+            + 2
+            + self.drawable.size()
+            + self.ust_hi.size()
+            + self.ust_lo.size()
+            + self.msc_hi.size()
+            + self.msc_lo.size()
+            + self.sbc.size()
+    }
+}
+impl crate::auto::Event for BufferSwapCompleteEvent {
+    const OPCODE: u8 = 1;
 }

@@ -14,6 +14,8 @@ pub enum Expression {
         op: String,
         target: Box<Expression>,
     },
+    OneCount(Box<Expression>),
+    SumOf(String),
 }
 
 impl Default for Expression {

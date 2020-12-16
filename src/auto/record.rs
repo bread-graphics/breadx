@@ -1165,6 +1165,6 @@ impl AsByteSequence for BadContextError {
             + self.invalid_record.size()
     }
 }
-impl Error for BadContextError {
+impl crate::auto::Error for BadContextError {
     const OPCODE: u8 = 0;
 }

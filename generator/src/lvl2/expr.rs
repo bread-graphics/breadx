@@ -57,6 +57,7 @@ pub enum ExpressionItem {
     UnaryOp(UnaryOp),
     /// ((length as usize) * 4) - index
     Remainder,
+    SumOf(Box<str>),
 }
 
 impl Default for ExpressionItem {
@@ -94,6 +95,7 @@ impl Expression {
     pub fn involves_field(&self, f: &str) -> bool {
         self.postfix.iter().any(|t| match t {
             ExpressionItem::FieldRef(ft) => f == ft.deref(),
+            ExpressionItem::SumOf(ls) => f == ls.deref(),
             _ => false,
         })
     }
@@ -170,5 +172,13 @@ fn convert_ll(length: Lvl1Expression) -> TinyVec<[ExpressionItem; 1]> {
             res.extend(target);
             res
         }
+        Lvl1Expression::SumOf(t) => {
+            TinyVec::from([ExpressionItem::SumOf(t.to_snake_case().into_boxed_str())])
+        }
+        Lvl1Expression::OneCount(ll) => TinyVec::Heap({
+            let mut v = vec![ExpressionItem::UnaryOp(UnaryOp::OneCount)];
+            v.extend(convert_ll(*ll));
+            v
+        }),
     }
 }

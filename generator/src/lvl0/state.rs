@@ -51,6 +51,8 @@ pub enum Lvl0State {
         Option<Expression>,
         Box<Lvl0State>,
     ),
+    /// Calculating the expression, given that we are counting one's somewhere.
+    ExprPopcount(Option<Expression>, Box<Lvl0State>),
     /// Creating a switch field.
     SwitchField(String, Vec<Case>, Option<Expression>, Box<Lvl0State>),
     /// Creating the case for a switch field.
@@ -103,6 +105,7 @@ impl Lvl0State {
                     ll2
                 }
             }
+            Self::ExprPopcount(ll, _) => ll,
             _ => unreachable!("Called list_length_ref on non LL-item"),
         }
     }
@@ -393,7 +396,8 @@ impl Lvl0State {
             Self::Expr(purpose, ll, base) => {
                 // we are constructing a list field
                 match event {
-                    Event::Start(b) => self.handle_expr_item(b)?,
+                    Event::Start(b) => self.handle_expr_item(b, false)?,
+                    Event::Empty(b) => self.handle_expr_item(b, true)?,
                     Event::End(_) => self.try_resolve_expr(),
                     _ => (),
                 }
@@ -435,7 +439,8 @@ impl Lvl0State {
             }
             Self::ExprBinary(op, ll1, ll2, base) => {
                 match event {
-                    Event::Start(b) => self.handle_expr_item(b)?,
+                    Event::Start(b) => self.handle_expr_item(b, false)?,
+                    Event::Empty(b) => self.handle_expr_item(b, true)?,
                     Event::End(e) => {
                         if e.name() == b"op" {
                             if ll2.is_some() {
@@ -466,7 +471,8 @@ impl Lvl0State {
             }
             Self::ExprUnary(op, ll, base) => {
                 match event {
-                    Event::Start(b) => self.handle_expr_item(b)?,
+                    Event::Start(b) => self.handle_expr_item(b, false)?,
+                    Event::Empty(b) => self.handle_expr_item(b, true)?,
                     Event::End(e) => {
                         if e.name() == b"unop" {
                             let op = mem::take(op);
@@ -485,6 +491,23 @@ impl Lvl0State {
                     _ => (),
                 }
 
+                None
+            }
+            Self::ExprPopcount(ll, base) => {
+                match event {
+                    Event::Start(b) => self.handle_expr_item(b, false)?,
+                    Event::Empty(b) => self.handle_expr_item(b, true)?,
+                    Event::End(e) => {
+                        if e.name() == b"popcount" {
+                            let ll = ll.take().expect("Failed to construct popcount operation");
+                            let mut base = mem::take(base);
+                            *base.list_length_ref() =
+                                Some(crate::lvl1::Expression::OneCount(Box::new(ll)));
+                            *self = *base;
+                        }
+                    }
+                    _ => (),
+                }
                 None
             }
             Self::SwitchField(name, cases, expr, base) => {
@@ -762,7 +785,7 @@ impl Lvl0State {
     }
 
     #[inline]
-    fn handle_expr_item<'a>(&mut self, b: BytesStart<'a>) -> Option<()> {
+    fn handle_expr_item<'a>(&mut self, b: BytesStart<'a>, is_single: bool) -> Option<()> {
         match b.name() {
             // replace self with various list types
             b"fieldref" => {
@@ -798,6 +821,23 @@ impl Lvl0State {
                     Self::ExprUnary(op, None, Box::new(Default::default())),
                 );
                 if let Self::ExprUnary(_, _, sbase) = self {
+                    mem::swap(&mut base, &mut *sbase);
+                }
+            }
+            b"sumof" => {
+                if !is_single {
+                    panic!("Can't handle non-single sumof");
+                }
+
+                let mut reff = get_attributes(&b, &[b"ref".as_ref()], &[true])?
+                    .remove(b"ref".as_ref())
+                    .unwrap();
+                *(self.list_length_ref()) = Some(Expression::SumOf(reff));
+            }
+            b"popcount" => {
+                let mut base =
+                    mem::replace(self, Self::ExprPopcount(None, Box::new(Default::default())));
+                if let Self::ExprPopcount(_, sbase) = self {
                     mem::swap(&mut base, &mut *sbase);
                 }
             }
