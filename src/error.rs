@@ -4,10 +4,10 @@
 
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
-use std::{error::Error as StdError, io::Error as IoError};
+use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
 
 /// The common error type returned by `breadx` functions.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BreadError {
     StaticMsg(&'static str),
     /// Unable to parse connection name.
@@ -16,7 +16,7 @@ pub enum BreadError {
     UnableToOpenConnection,
     /// IO Error
     #[cfg(feature = "std")]
-    Io(IoError),
+    Io(Box<str>),
     /// Unable to open connection to the X11 server.
     FailedToConnect,
     /// X11 server rejected our authorization.
@@ -61,7 +61,7 @@ impl BreadError {
 impl From<IoError> for BreadError {
     #[inline]
     fn from(io: IoError) -> Self {
-        Self::Io(io)
+        Self::Io(format!("{:?}", io).into_boxed_str())
     }
 }
 
