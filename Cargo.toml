@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -48,6 +48,7 @@ dri3 = []
 fixes = ["render", "shape"]
 ge = []
 glx = []
+input = ["fixes"]
 present = ["randr", "fixes", "sync"]
 print = []
 randr = ["render"]
@@ -67,7 +68,7 @@ xkb = []
 xtest = []
 xvmc = ["xv"]
 xv = ["shm"]
-all-extensions = ["bigreq", "damage", "dpms", "dri2", "dri3", "fixes", "ge", "glx", "present", "print", "randr", "record", "render", "res", "screensaver", "selinux", "shape", "shm", "sync", "xevie", "xf86dri", "xf86vidmode", "xinerama", "xkb", "xtest", "xvmc", "xv"]
+all-extensions = ["bigreq", "damage", "dpms", "dri2", "dri3", "fixes", "ge", "glx", "input", "present", "print", "randr", "record", "render", "res", "screensaver", "selinux", "shape", "shm", "sync", "xevie", "xf86dri", "xf86vidmode", "xinerama", "xkb", "xtest", "xvmc", "xv"]
 
 [package.metadata.docs.rs]
 features = ["async", "all-extensions"]

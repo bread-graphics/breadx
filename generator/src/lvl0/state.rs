@@ -53,6 +53,8 @@ pub enum Lvl0State {
     ),
     /// Calculating the expression, given that we are counting one's somewhere.
     ExprPopcount(Option<Expression>, Box<Lvl0State>),
+    /// Calculating the expression, given that we're inside of a sumof statement.
+    ExprSumof(String, Option<Expression>, Box<Lvl0State>),
     /// Creating a switch field.
     SwitchField(String, Vec<Case>, Option<Expression>, Box<Lvl0State>),
     /// Creating the case for a switch field.
@@ -106,6 +108,7 @@ impl Lvl0State {
                 }
             }
             Self::ExprPopcount(ll, _) => ll,
+            Self::ExprSumof(_, ll, _) => ll,
             _ => unreachable!("Called list_length_ref on non LL-item"),
         }
     }
@@ -510,6 +513,25 @@ impl Lvl0State {
                 }
                 None
             }
+            Self::ExprSumof(reff, ll, base) => {
+                match event {
+                    Event::Start(b) => self.handle_expr_item(b, false)?,
+                    Event::Empty(b) => self.handle_expr_item(b, true)?,
+                    Event::End(e) => {
+                        if e.name() == b"sumof" {
+                            let reff = mem::take(reff);
+                            let ll = ll.take().expect("Failed to construct sumof operation");
+                            let mut base = mem::take(base);
+                            *base.list_length_ref() =
+                                Some(crate::lvl1::Expression::SumOf(reff, Some(Box::new(ll))));
+                            *self = *base;
+                        }
+                    }
+                    _ => (),
+                }
+
+                None
+            }
             Self::SwitchField(name, cases, expr, base) => {
                 match event {
                     Event::End(e) => {
@@ -825,14 +847,26 @@ impl Lvl0State {
                 }
             }
             b"sumof" => {
-                if !is_single {
-                    panic!("Can't handle non-single sumof");
-                }
-
                 let mut reff = get_attributes(&b, &[b"ref".as_ref()], &[true])?
                     .remove(b"ref".as_ref())
                     .unwrap();
-                *(self.list_length_ref()) = Some(Expression::SumOf(reff));
+
+                if !is_single {
+                    let mut base = mem::replace(
+                        self,
+                        Self::ExprSumof(reff, None, Box::new(Default::default())),
+                    );
+                    if let Self::ExprSumof(_, _, sbase) = self {
+                        **sbase = base;
+                    }
+
+                    return None;
+                }
+
+                *(self.list_length_ref()) = Some(Expression::SumOf(reff, None));
+            }
+            b"listelement-ref" => {
+                *(self.list_length_ref()) = Some(Expression::ListExpression);
             }
             b"popcount" => {
                 let mut base =

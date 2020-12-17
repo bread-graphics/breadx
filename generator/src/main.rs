@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+#![recursion_limit = "256"]
+
 mod lvl0;
 mod lvl1;
 mod lvl2;

@@ -22,6 +22,7 @@ pub(crate) mod prelude {
     };
     pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
     pub use alloc::{string::String, vec, vec::Vec};
+    pub use core::convert::TryInto;
     pub use cty::c_char;
     pub type Card8 = u8;
     pub type Card16 = u16;
@@ -36,6 +37,9 @@ pub(crate) mod prelude {
     pub type Double = f64;
     pub type Void = u8;
     pub type Char = u8;
+
+    #[cfg(feature = "input")]
+    pub use crate::event::input::InputEvent as EventForSend;
 
     #[cfg(feature = "randr")]
     pub use crate::notify_data::NotifyData;
@@ -377,6 +381,8 @@ pub mod xf86vidmode;
 pub mod xfixes;
 #[cfg(feature = "xinerama")]
 pub mod xinerama;
+#[cfg(feature = "input")]
+pub mod xinput;
 #[cfg(feature = "xkb")]
 pub mod xkb;
 #[cfg(feature = "print")]

@@ -15,7 +15,8 @@ pub enum Expression {
         target: Box<Expression>,
     },
     OneCount(Box<Expression>),
-    SumOf(String),
+    SumOf(String, Option<Box<Expression>>),
+    ListExpression,
 }
 
 impl Default for Expression {

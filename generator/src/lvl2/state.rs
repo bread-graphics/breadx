@@ -36,7 +36,7 @@ pub struct Lvl2State {
 fn enum_repr_conv(repr: String) -> Cow<'static, str> {
     match repr.as_str() {
         "Card8" | "Byte" | "Keycode" | "Op" | "Kind" => Cow::Borrowed("u8"),
-        "Card16" | "LedClassSpec" | "IdSpec" => Cow::Borrowed("u16"),
+        "Card16" | "LedClassSpec" | "IdSpec" | "DeviceId" => Cow::Borrowed("u16"),
         "Window" | "Colormap" | "Atom" | "Timestamp" | "Pixmap" | "Card32" => Cow::Borrowed("u32"),
         _ => Cow::Owned(repr),
     }

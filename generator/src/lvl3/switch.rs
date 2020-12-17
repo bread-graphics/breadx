@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::syn_util::{item_field, str_to_exprpath, str_to_pathseg};
-use crate::lvl2::{ConditionVariant, UseCondition};
+use crate::lvl2::{safe_name, ConditionVariant, UseCondition};
 use heck::{CamelCase, SnakeCase};
 
 impl UseCondition {

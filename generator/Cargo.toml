@@ -1,6 +1,6 @@
 [package]
 name = "breadx_generator"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["not_a_seagull <notaseagull048@gmail.com>"]
 edition = "2018"
 

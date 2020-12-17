@@ -89,6 +89,18 @@ pub fn safe_name(mut name: String) -> String {
         "Option" => {
             name = "Option_".to_owned();
         }
+        "8bits" => {
+            name = "EightBits".to_owned();
+        }
+        "16bits" => {
+            name = "SixteenBits".to_owned();
+        }
+        "32bits" => {
+            name = "ThirtyTwoBits".to_owned();
+        }
+        "type" => {
+            name = "type_".to_owned();
+        }
         _ => (),
     }
 

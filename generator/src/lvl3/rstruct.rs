@@ -5,8 +5,8 @@ use super::{
     Asb, Method, SizeSumPart, Statement, SumOfSizes, SumStatement, ToSyn, Trait, Type,
 };
 use crate::lvl2::{
-    Expression, Field, List, MaybeString, Struct as Lvl2Struct, StructSpecial, StructureItem,
-    Type as Lvl2Type, UseCondition,
+    safe_name, Expression, Field, List, MaybeString, Struct as Lvl2Struct, StructSpecial,
+    StructureItem, Type as Lvl2Type, UseCondition,
 };
 use proc_macro2::Span;
 use std::{

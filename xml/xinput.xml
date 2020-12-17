@@ -309,6 +309,10 @@ authorization from the authors.
 
     <!-- GetDeviceMotionEvents -->
 
+<!-- notgull note: the way this is implemented is idiotic and requires about a dozen additional assumptions
+                   to be made about how the code is structured. not doing this unless it becomes absolutely
+                   necessary later on
+
     <struct name="DeviceTimeCoord">
         <field type="TIMESTAMP" name="time" />
         <list type="INT32" name="axisvalues">
@@ -332,6 +336,7 @@ authorization from the authors.
             </list>
         </reply>
     </request>
+-->
 
     <!-- ChangeKeyboardDevice -->
 
@@ -1814,7 +1819,7 @@ authorization from the authors.
         <field type="DeviceId"  name="deviceid" altenum="Device" />
         <field type="CARD8"     name="mode" enum="GrabMode" />
         <field type="CARD8"     name="paired_device_mode" enum="GrabMode" />
-        <field type="BOOL"      name="owner_events" enum="GrabOwner" />
+        <field type="CARD8"      name="owner_events" enum="GrabOwner" />
         <pad bytes="1" />
         <field type="CARD16"    name="mask_len" />
         <list type="CARD32" name="mask">

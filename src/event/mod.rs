@@ -2,6 +2,9 @@
 
 //! This module provides the events used to drive the `breadx` event system.
 
+#[cfg(feature = "input")]
+pub mod input;
+
 use crate::auto::{
     xproto::{
         ButtonPressEvent, ButtonReleaseEvent, CirculateNotifyEvent, CirculateRequestEvent,

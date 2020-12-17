@@ -16865,144 +16865,6 @@ impl Request for NoOperationRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum MapIndex {
-    Shift = 0,
-    Lock = 1,
-    Control = 2,
-    One = 3,
-    Two = 4,
-    Three = 5,
-    Four = 6,
-    Five = 7,
-}
-impl AsByteSequence for MapIndex {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Shift, sz)),
-            1 => Some((Self::Lock, sz)),
-            2 => Some((Self::Control, sz)),
-            3 => Some((Self::One, sz)),
-            4 => Some((Self::Two, sz)),
-            5 => Some((Self::Three, sz)),
-            6 => Some((Self::Four, sz)),
-            7 => Some((Self::Five, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for MapIndex {
-    #[inline]
-    fn default() -> MapIndex {
-        MapIndex::Shift
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum BackPixmap {
-    None = 0,
-    ParentRelative = 1,
-}
-impl AsByteSequence for BackPixmap {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::None, sz)),
-            1 => Some((Self::ParentRelative, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for BackPixmap {
-    #[inline]
-    fn default() -> BackPixmap {
-        BackPixmap::None
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum JoinStyle {
-    Miter = 0,
-    Round = 1,
-    Bevel = 2,
-}
-impl AsByteSequence for JoinStyle {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Miter, sz)),
-            1 => Some((Self::Round, sz)),
-            2 => Some((Self::Bevel, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for JoinStyle {
-    #[inline]
-    fn default() -> JoinStyle {
-        JoinStyle::Miter
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ArcMode {
-    Chord = 0,
-    PieSlice = 1,
-}
-impl AsByteSequence for ArcMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Chord, sz)),
-            1 => Some((Self::PieSlice, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for ArcMode {
-    #[inline]
-    fn default() -> ArcMode {
-        ArcMode::Chord
-    }
-}
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonMask {
@@ -17148,13 +17010,12 @@ impl core::ops::BitAnd for ButtonMask {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CapStyle {
-    NotLast = 0,
-    Butt = 1,
-    Round = 2,
-    Projecting = 3,
+pub enum JoinStyle {
+    Miter = 0,
+    Round = 1,
+    Bevel = 2,
 }
-impl AsByteSequence for CapStyle {
+impl AsByteSequence for JoinStyle {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -17163,10 +17024,9 @@ impl AsByteSequence for CapStyle {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            0 => Some((Self::NotLast, sz)),
-            1 => Some((Self::Butt, sz)),
-            2 => Some((Self::Round, sz)),
-            3 => Some((Self::Projecting, sz)),
+            0 => Some((Self::Miter, sz)),
+            1 => Some((Self::Round, sz)),
+            2 => Some((Self::Bevel, sz)),
             _ => None,
         }
     }
@@ -17175,72 +17035,10 @@ impl AsByteSequence for CapStyle {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for CapStyle {
+impl Default for JoinStyle {
     #[inline]
-    fn default() -> CapStyle {
-        CapStyle::NotLast
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SubwindowMode {
-    ClipByChildren = 0,
-    IncludeInferiors = 1,
-}
-impl AsByteSequence for SubwindowMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::ClipByChildren, sz)),
-            1 => Some((Self::IncludeInferiors, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for SubwindowMode {
-    #[inline]
-    fn default() -> SubwindowMode {
-        SubwindowMode::ClipByChildren
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum FillRule {
-    EvenOdd = 0,
-    Winding = 1,
-}
-impl AsByteSequence for FillRule {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::EvenOdd, sz)),
-            1 => Some((Self::Winding, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for FillRule {
-    #[inline]
-    fn default() -> FillRule {
-        FillRule::EvenOdd
+    fn default() -> JoinStyle {
+        JoinStyle::Miter
     }
 }
 #[repr(i32)]
@@ -17300,6 +17098,37 @@ impl Default for Gx {
     #[inline]
     fn default() -> Gx {
         Gx::Clear
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum FillRule {
+    EvenOdd = 0,
+    Winding = 1,
+}
+impl AsByteSequence for FillRule {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::EvenOdd, sz)),
+            1 => Some((Self::Winding, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for FillRule {
+    #[inline]
+    fn default() -> FillRule {
+        FillRule::EvenOdd
     }
 }
 #[repr(i32)]
@@ -17401,6 +17230,177 @@ impl Default for LedMode {
         LedMode::Off
     }
 }
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum MapIndex {
+    Shift = 0,
+    Lock = 1,
+    Control = 2,
+    One = 3,
+    Two = 4,
+    Three = 5,
+    Four = 6,
+    Five = 7,
+}
+impl AsByteSequence for MapIndex {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Shift, sz)),
+            1 => Some((Self::Lock, sz)),
+            2 => Some((Self::Control, sz)),
+            3 => Some((Self::One, sz)),
+            4 => Some((Self::Two, sz)),
+            5 => Some((Self::Three, sz)),
+            6 => Some((Self::Four, sz)),
+            7 => Some((Self::Five, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for MapIndex {
+    #[inline]
+    fn default() -> MapIndex {
+        MapIndex::Shift
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CapStyle {
+    NotLast = 0,
+    Butt = 1,
+    Round = 2,
+    Projecting = 3,
+}
+impl AsByteSequence for CapStyle {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::NotLast, sz)),
+            1 => Some((Self::Butt, sz)),
+            2 => Some((Self::Round, sz)),
+            3 => Some((Self::Projecting, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for CapStyle {
+    #[inline]
+    fn default() -> CapStyle {
+        CapStyle::NotLast
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SubwindowMode {
+    ClipByChildren = 0,
+    IncludeInferiors = 1,
+}
+impl AsByteSequence for SubwindowMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::ClipByChildren, sz)),
+            1 => Some((Self::IncludeInferiors, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for SubwindowMode {
+    #[inline]
+    fn default() -> SubwindowMode {
+        SubwindowMode::ClipByChildren
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ArcMode {
+    Chord = 0,
+    PieSlice = 1,
+}
+impl AsByteSequence for ArcMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Chord, sz)),
+            1 => Some((Self::PieSlice, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for ArcMode {
+    #[inline]
+    fn default() -> ArcMode {
+        ArcMode::Chord
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BackPixmap {
+    None = 0,
+    ParentRelative = 1,
+}
+impl AsByteSequence for BackPixmap {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::None, sz)),
+            1 => Some((Self::ParentRelative, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for BackPixmap {
+    #[inline]
+    fn default() -> BackPixmap {
+        BackPixmap::None
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct RequestError {
     pub _error_type: u8,
@@ -17480,7 +17480,7 @@ impl crate::auto::Error for RequestError {
     const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
-pub struct FontError {
+pub struct AccessError {
     pub _error_type: u8,
     pub error_code: u8,
     pub major_code: u8,
@@ -17490,8 +17490,8 @@ pub struct FontError {
     pub minor_opcode: Card16,
     pub major_opcode: Card8,
 }
-impl FontError {}
-impl AsByteSequence for FontError {
+impl AccessError {}
+impl AsByteSequence for AccessError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17509,7 +17509,7 @@ impl AsByteSequence for FontError {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing FontError from byte buffer");
+        log::trace!("Deserializing AccessError from byte buffer");
         let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
@@ -17528,7 +17528,7 @@ impl AsByteSequence for FontError {
         index += sz;
         index += 1;
         Some((
-            FontError {
+            AccessError {
                 _error_type: _error_type,
                 error_code: error_code,
                 major_code: major_code,
@@ -17554,164 +17554,8 @@ impl AsByteSequence for FontError {
             + 1
     }
 }
-impl crate::auto::Error for FontError {
-    const OPCODE: u8 = 7;
-}
-#[derive(Clone, Debug, Default)]
-pub struct MatchError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl MatchError {}
-impl AsByteSequence for MatchError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing MatchError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            MatchError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for MatchError {
-    const OPCODE: u8 = 8;
-}
-#[derive(Clone, Debug, Default)]
-pub struct GContextError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl GContextError {}
-impl AsByteSequence for GContextError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing GContextError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            GContextError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for GContextError {
-    const OPCODE: u8 = 13;
+impl crate::auto::Error for AccessError {
+    const OPCODE: u8 = 10;
 }
 #[derive(Clone, Debug, Default)]
 pub struct IdChoiceError {
@@ -17792,240 +17636,6 @@ impl crate::auto::Error for IdChoiceError {
     const OPCODE: u8 = 14;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ValueError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl ValueError {}
-impl AsByteSequence for ValueError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ValueError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            ValueError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for ValueError {
-    const OPCODE: u8 = 2;
-}
-#[derive(Clone, Debug, Default)]
-pub struct CursorError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl CursorError {}
-impl AsByteSequence for CursorError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CursorError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            CursorError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for CursorError {
-    const OPCODE: u8 = 6;
-}
-#[derive(Clone, Debug, Default)]
-pub struct PixmapError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl PixmapError {}
-impl AsByteSequence for PixmapError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing PixmapError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            PixmapError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for PixmapError {
-    const OPCODE: u8 = 4;
-}
-#[derive(Clone, Debug, Default)]
 pub struct AtomError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -18104,7 +17714,7 @@ impl crate::auto::Error for AtomError {
     const OPCODE: u8 = 5;
 }
 #[derive(Clone, Debug, Default)]
-pub struct NameError {
+pub struct ColormapError {
     pub _error_type: u8,
     pub error_code: u8,
     pub major_code: u8,
@@ -18114,8 +17724,8 @@ pub struct NameError {
     pub minor_opcode: Card16,
     pub major_opcode: Card8,
 }
-impl NameError {}
-impl AsByteSequence for NameError {
+impl ColormapError {}
+impl AsByteSequence for ColormapError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18133,7 +17743,7 @@ impl AsByteSequence for NameError {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing NameError from byte buffer");
+        log::trace!("Deserializing ColormapError from byte buffer");
         let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
@@ -18152,7 +17762,7 @@ impl AsByteSequence for NameError {
         index += sz;
         index += 1;
         Some((
-            NameError {
+            ColormapError {
                 _error_type: _error_type,
                 error_code: error_code,
                 major_code: major_code,
@@ -18178,8 +17788,8 @@ impl AsByteSequence for NameError {
             + 1
     }
 }
-impl crate::auto::Error for NameError {
-    const OPCODE: u8 = 15;
+impl crate::auto::Error for ColormapError {
+    const OPCODE: u8 = 12;
 }
 #[derive(Clone, Debug, Default)]
 pub struct LengthError {
@@ -18338,6 +17948,318 @@ impl crate::auto::Error for ImplementationError {
     const OPCODE: u8 = 17;
 }
 #[derive(Clone, Debug, Default)]
+pub struct ValueError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
+    pub sequence: u16,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl ValueError {}
+impl AsByteSequence for ValueError {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ValueError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            ValueError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
+                sequence: sequence,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
+            + self.sequence.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+            + 1
+    }
+}
+impl crate::auto::Error for ValueError {
+    const OPCODE: u8 = 2;
+}
+#[derive(Clone, Debug, Default)]
+pub struct NameError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
+    pub sequence: u16,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl NameError {}
+impl AsByteSequence for NameError {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NameError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            NameError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
+                sequence: sequence,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
+            + self.sequence.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+            + 1
+    }
+}
+impl crate::auto::Error for NameError {
+    const OPCODE: u8 = 15;
+}
+#[derive(Clone, Debug, Default)]
+pub struct GContextError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
+    pub sequence: u16,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl GContextError {}
+impl AsByteSequence for GContextError {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing GContextError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            GContextError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
+                sequence: sequence,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
+            + self.sequence.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+            + 1
+    }
+}
+impl crate::auto::Error for GContextError {
+    const OPCODE: u8 = 13;
+}
+#[derive(Clone, Debug, Default)]
+pub struct FontError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
+    pub sequence: u16,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl FontError {}
+impl AsByteSequence for FontError {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing FontError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            FontError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
+                sequence: sequence,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
+            + self.sequence.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+            + 1
+    }
+}
+impl crate::auto::Error for FontError {
+    const OPCODE: u8 = 7;
+}
+#[derive(Clone, Debug, Default)]
 pub struct WindowError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -18414,162 +18336,6 @@ impl AsByteSequence for WindowError {
 }
 impl crate::auto::Error for WindowError {
     const OPCODE: u8 = 3;
-}
-#[derive(Clone, Debug, Default)]
-pub struct AllocError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl AllocError {}
-impl AsByteSequence for AllocError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing AllocError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            AllocError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for AllocError {
-    const OPCODE: u8 = 11;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ColormapError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_value: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl ColormapError {}
-impl AsByteSequence for ColormapError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_value.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ColormapError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            ColormapError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_value: bad_value,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_value.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-            + 1
-    }
-}
-impl crate::auto::Error for ColormapError {
-    const OPCODE: u8 = 12;
 }
 #[derive(Clone, Debug, Default)]
 pub struct DrawableError {
@@ -18650,7 +18416,7 @@ impl crate::auto::Error for DrawableError {
     const OPCODE: u8 = 9;
 }
 #[derive(Clone, Debug, Default)]
-pub struct AccessError {
+pub struct PixmapError {
     pub _error_type: u8,
     pub error_code: u8,
     pub major_code: u8,
@@ -18660,8 +18426,8 @@ pub struct AccessError {
     pub minor_opcode: Card16,
     pub major_opcode: Card8,
 }
-impl AccessError {}
-impl AsByteSequence for AccessError {
+impl PixmapError {}
+impl AsByteSequence for PixmapError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18679,7 +18445,7 @@ impl AsByteSequence for AccessError {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing AccessError from byte buffer");
+        log::trace!("Deserializing PixmapError from byte buffer");
         let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
@@ -18698,7 +18464,7 @@ impl AsByteSequence for AccessError {
         index += sz;
         index += 1;
         Some((
-            AccessError {
+            PixmapError {
                 _error_type: _error_type,
                 error_code: error_code,
                 major_code: major_code,
@@ -18724,643 +18490,253 @@ impl AsByteSequence for AccessError {
             + 1
     }
 }
-impl crate::auto::Error for AccessError {
-    const OPCODE: u8 = 10;
+impl crate::auto::Error for PixmapError {
+    const OPCODE: u8 = 4;
 }
 #[derive(Clone, Debug, Default)]
-pub struct UnmapNotifyEvent {
-    pub event_type: u8,
+pub struct AllocError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
     pub sequence: u16,
-    pub event: Window,
-    pub window: Window,
-    pub from_configure: bool,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
 }
-impl UnmapNotifyEvent {}
-impl AsByteSequence for UnmapNotifyEvent {
+impl AllocError {}
+impl AsByteSequence for AllocError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.from_configure.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing UnmapNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (from_configure, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        Some((
-            UnmapNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                from_configure: from_configure,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + self.from_configure.size()
-            + 3
-    }
-}
-impl crate::auto::Event for UnmapNotifyEvent {
-    const OPCODE: u8 = 18;
-}
-#[derive(Clone, Debug, Default)]
-pub struct KeyReleaseEvent {
-    pub event_type: u8,
-    pub detail: Keycode,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-}
-impl KeyReleaseEvent {}
-impl AsByteSequence for KeyReleaseEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
         index += 1;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing KeyReleaseEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        log::trace!("Deserializing AllocError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (detail, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         Some((
-            KeyReleaseEvent {
-                event_type: event_type,
-                detail: detail,
+            AllocError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
                 sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
             + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
             + 1
     }
 }
-impl crate::auto::Event for KeyReleaseEvent {
-    const OPCODE: u8 = 3;
+impl crate::auto::Error for AllocError {
+    const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ButtonReleaseEvent {
-    pub event_type: u8,
-    pub detail: Button,
+pub struct CursorError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
     pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
 }
-impl ButtonReleaseEvent {}
-impl AsByteSequence for ButtonReleaseEvent {
+impl CursorError {}
+impl AsByteSequence for CursorError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
         index += 1;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing ButtonReleaseEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        log::trace!("Deserializing CursorError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (detail, sz): (Button, usize) = <Button>::from_bytes(&bytes[index..])?;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         Some((
-            ButtonReleaseEvent {
-                event_type: event_type,
-                detail: detail,
+            CursorError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
                 sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
             + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
             + 1
     }
 }
-impl crate::auto::Event for ButtonReleaseEvent {
-    const OPCODE: u8 = 5;
-}
-#[derive(Clone, Debug, Default)]
-pub struct KeyPressEvent {
-    pub event_type: u8,
-    pub detail: Keycode,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-}
-impl KeyPressEvent {}
-impl AsByteSequence for KeyPressEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing KeyPressEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            KeyPressEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + 1
-    }
-}
-impl crate::auto::Event for KeyPressEvent {
-    const OPCODE: u8 = 2;
-}
-#[derive(Clone, Debug, Default)]
-pub struct FocusInEvent {
-    pub event_type: u8,
-    pub detail: NotifyDetail,
-    pub sequence: u16,
-    pub event: Window,
-    pub mode: NotifyMode,
-}
-impl FocusInEvent {}
-impl AsByteSequence for FocusInEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing FocusInEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (NotifyDetail, usize) = <NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (NotifyMode, usize) = <NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        Some((
-            FocusInEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                event: event,
-                mode: mode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.event.size()
-            + self.mode.size()
-            + 3
-    }
-}
-impl crate::auto::Event for FocusInEvent {
-    const OPCODE: u8 = 9;
-}
-#[derive(Clone, Debug, Default)]
-pub struct MotionNotifyEvent {
-    pub event_type: u8,
-    pub detail: Motion,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-}
-impl MotionNotifyEvent {}
-impl AsByteSequence for MotionNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing MotionNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Motion, usize) = <Motion>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        Some((
-            MotionNotifyEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + 1
-    }
-}
-impl crate::auto::Event for MotionNotifyEvent {
+impl crate::auto::Error for CursorError {
     const OPCODE: u8 = 6;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ColormapNotifyEvent {
-    pub event_type: u8,
+pub struct MatchError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
     pub sequence: u16,
-    pub window: Window,
-    pub colormap: Colormap,
-    pub new: bool,
-    pub state: ColormapState,
+    pub bad_value: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
 }
-impl ColormapNotifyEvent {}
-impl AsByteSequence for ColormapNotifyEvent {
+impl MatchError {}
+impl AsByteSequence for MatchError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.colormap.as_bytes(&mut bytes[index..]);
-        index += self.new.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += 2;
+        index += self.bad_value.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += 1;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing ColormapNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        log::trace!("Deserializing MatchError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 1;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        let (bad_value, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (colormap, sz): (Colormap, usize) = <Colormap>::from_bytes(&bytes[index..])?;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (new, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (state, sz): (ColormapState, usize) = <ColormapState>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
+        index += 1;
         Some((
-            ColormapNotifyEvent {
-                event_type: event_type,
+            MatchError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
                 sequence: sequence,
-                window: window,
-                colormap: colormap,
-                new: new,
-                state: state,
+                bad_value: bad_value,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
             + self.sequence.size()
-            + self.window.size()
-            + self.colormap.size()
-            + self.new.size()
-            + self.state.size()
-            + 2
+            + self.bad_value.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+            + 1
     }
 }
-impl crate::auto::Event for ColormapNotifyEvent {
-    const OPCODE: u8 = 32;
+impl crate::auto::Error for MatchError {
+    const OPCODE: u8 = 8;
 }
 #[derive(Clone, Debug, Default)]
-pub struct MapNotifyEvent {
+pub struct CirculateRequestEvent {
     pub event_type: u8,
     pub sequence: u16,
     pub event: Window,
     pub window: Window,
-    pub override_redirect: bool,
+    pub place: Place,
 }
-impl MapNotifyEvent {}
-impl AsByteSequence for MapNotifyEvent {
+impl CirculateRequestEvent {}
+impl AsByteSequence for CirculateRequestEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -19369,14 +18745,15 @@ impl AsByteSequence for MapNotifyEvent {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.override_redirect.as_bytes(&mut bytes[index..]);
+        index += 4;
+        index += self.place.as_bytes(&mut bytes[index..]);
         index += 3;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing MapNotifyEvent from byte buffer");
+        log::trace!("Deserializing CirculateRequestEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
@@ -19386,16 +18763,17 @@ impl AsByteSequence for MapNotifyEvent {
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += 4;
+        let (place, sz): (Place, usize) = <Place>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         Some((
-            MapNotifyEvent {
+            CirculateRequestEvent {
                 event_type: event_type,
                 sequence: sequence,
                 event: event,
                 window: window,
-                override_redirect: override_redirect,
+                place: place,
             },
             index,
         ))
@@ -19407,63 +18785,90 @@ impl AsByteSequence for MapNotifyEvent {
             + self.sequence.size()
             + self.event.size()
             + self.window.size()
-            + self.override_redirect.size()
+            + 4
+            + self.place.size()
             + 3
     }
 }
-impl crate::auto::Event for MapNotifyEvent {
-    const OPCODE: u8 = 19;
+impl crate::auto::Event for CirculateRequestEvent {
+    const OPCODE: u8 = 27;
 }
 #[derive(Clone, Debug, Default)]
-pub struct PropertyNotifyEvent {
+pub struct ConfigureRequestEvent {
     pub event_type: u8,
+    pub stack_mode: StackMode,
     pub sequence: u16,
+    pub parent: Window,
     pub window: Window,
-    pub atom: Atom,
-    pub time: Timestamp,
-    pub state: Property,
+    pub sibling: Window,
+    pub x: Int16,
+    pub y: Int16,
+    pub width: Card16,
+    pub height: Card16,
+    pub border_width: Card16,
+    pub value_mask: ConfigWindow,
 }
-impl PropertyNotifyEvent {}
-impl AsByteSequence for PropertyNotifyEvent {
+impl ConfigureRequestEvent {}
+impl AsByteSequence for ConfigureRequestEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
+        index += self.stack_mode.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.parent.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.atom.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += 3;
+        index += self.sibling.as_bytes(&mut bytes[index..]);
+        index += self.x.as_bytes(&mut bytes[index..]);
+        index += self.y.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += self.border_width.as_bytes(&mut bytes[index..]);
+        index += self.value_mask.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing PropertyNotifyEvent from byte buffer");
+        log::trace!("Deserializing ConfigureRequestEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 1;
+        let (stack_mode, sz): (StackMode, usize) = <StackMode>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (atom, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        let (sibling, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (state, sz): (Property, usize) = <Property>::from_bytes(&bytes[index..])?;
+        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 3;
+        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (border_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (value_mask, sz): (ConfigWindow, usize) = <ConfigWindow>::from_bytes(&bytes[index..])?;
+        index += sz;
         Some((
-            PropertyNotifyEvent {
+            ConfigureRequestEvent {
                 event_type: event_type,
+                stack_mode: stack_mode,
                 sequence: sequence,
+                parent: parent,
                 window: window,
-                atom: atom,
-                time: time,
-                state: state,
+                sibling: sibling,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                border_width: border_width,
+                value_mask: value_mask,
             },
             index,
         ))
@@ -19471,77 +18876,21 @@ impl AsByteSequence for PropertyNotifyEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + 1
+            + self.stack_mode.size()
             + self.sequence.size()
+            + self.parent.size()
             + self.window.size()
-            + self.atom.size()
-            + self.time.size()
-            + self.state.size()
-            + 3
+            + self.sibling.size()
+            + self.x.size()
+            + self.y.size()
+            + self.width.size()
+            + self.height.size()
+            + self.border_width.size()
+            + self.value_mask.size()
     }
 }
-impl crate::auto::Event for PropertyNotifyEvent {
-    const OPCODE: u8 = 28;
-}
-#[derive(Clone, Debug, Default)]
-pub struct MappingNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub request: Mapping,
-    pub first_keycode: Keycode,
-    pub count: Card8,
-}
-impl MappingNotifyEvent {}
-impl AsByteSequence for MappingNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.request.as_bytes(&mut bytes[index..]);
-        index += self.first_keycode.as_bytes(&mut bytes[index..]);
-        index += self.count.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing MappingNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (request, sz): (Mapping, usize) = <Mapping>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (count, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            MappingNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                request: request,
-                first_keycode: first_keycode,
-                count: count,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.request.size()
-            + self.first_keycode.size()
-            + self.count.size()
-    }
-}
-impl crate::auto::Event for MappingNotifyEvent {
-    const OPCODE: u8 = 34;
+impl crate::auto::Event for ConfigureRequestEvent {
+    const OPCODE: u8 = 23;
 }
 #[derive(Clone, Debug, Default)]
 pub struct LeaveNotifyEvent {
@@ -19655,48 +19004,88 @@ impl crate::auto::Event for LeaveNotifyEvent {
     const OPCODE: u8 = 8;
 }
 #[derive(Clone, Debug, Default)]
-pub struct NoExposureEvent {
+pub struct ButtonReleaseEvent {
     pub event_type: u8,
+    pub detail: Button,
     pub sequence: u16,
-    pub drawable: Drawable,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
 }
-impl NoExposureEvent {}
-impl AsByteSequence for NoExposureEvent {
+impl ButtonReleaseEvent {}
+impl AsByteSequence for ButtonReleaseEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
+        index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing NoExposureEvent from byte buffer");
+        log::trace!("Deserializing ButtonReleaseEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 1;
+        let (detail, sz): (Button, usize) = <Button>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
         Some((
-            NoExposureEvent {
+            ButtonReleaseEvent {
                 event_type: event_type,
+                detail: detail,
                 sequence: sequence,
-                drawable: drawable,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
             },
             index,
         ))
@@ -19704,56 +19093,71 @@ impl AsByteSequence for NoExposureEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + 1
+            + self.detail.size()
             + self.sequence.size()
-            + self.drawable.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + 1
     }
 }
-impl crate::auto::Event for NoExposureEvent {
-    const OPCODE: u8 = 14;
+impl crate::auto::Event for ButtonReleaseEvent {
+    const OPCODE: u8 = 5;
 }
 #[derive(Clone, Debug, Default)]
-pub struct VisibilityNotifyEvent {
+pub struct CirculateNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
+    pub event: Window,
     pub window: Window,
-    pub state: Visibility,
+    pub place: Place,
 }
-impl VisibilityNotifyEvent {}
-impl AsByteSequence for VisibilityNotifyEvent {
+impl CirculateNotifyEvent {}
+impl AsByteSequence for CirculateNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 4;
+        index += self.place.as_bytes(&mut bytes[index..]);
         index += 3;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing VisibilityNotifyEvent from byte buffer");
+        log::trace!("Deserializing CirculateNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (state, sz): (Visibility, usize) = <Visibility>::from_bytes(&bytes[index..])?;
+        index += 4;
+        let (place, sz): (Place, usize) = <Place>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         Some((
-            VisibilityNotifyEvent {
+            CirculateNotifyEvent {
                 event_type: event_type,
                 sequence: sequence,
+                event: event,
                 window: window,
-                state: state,
+                place: place,
             },
             index,
         ))
@@ -19763,13 +19167,105 @@ impl AsByteSequence for VisibilityNotifyEvent {
         self.event_type.size()
             + 1
             + self.sequence.size()
+            + self.event.size()
             + self.window.size()
-            + self.state.size()
+            + 4
+            + self.place.size()
             + 3
     }
 }
-impl crate::auto::Event for VisibilityNotifyEvent {
-    const OPCODE: u8 = 15;
+impl crate::auto::Event for CirculateNotifyEvent {
+    const OPCODE: u8 = 26;
+}
+#[derive(Clone, Debug, Default)]
+pub struct CreateNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub parent: Window,
+    pub window: Window,
+    pub x: Int16,
+    pub y: Int16,
+    pub width: Card16,
+    pub height: Card16,
+    pub border_width: Card16,
+    pub override_redirect: bool,
+}
+impl CreateNotifyEvent {}
+impl AsByteSequence for CreateNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.parent.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.x.as_bytes(&mut bytes[index..]);
+        index += self.y.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += self.border_width.as_bytes(&mut bytes[index..]);
+        index += self.override_redirect.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CreateNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (border_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            CreateNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                parent: parent,
+                window: window,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                border_width: border_width,
+                override_redirect: override_redirect,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.parent.size()
+            + self.window.size()
+            + self.x.size()
+            + self.y.size()
+            + self.width.size()
+            + self.height.size()
+            + self.border_width.size()
+            + self.override_redirect.size()
+    }
+}
+impl crate::auto::Event for CreateNotifyEvent {
+    const OPCODE: u8 = 16;
 }
 #[derive(Clone, Debug, Default)]
 pub struct GravityNotifyEvent {
@@ -19838,48 +19334,148 @@ impl crate::auto::Event for GravityNotifyEvent {
     const OPCODE: u8 = 24;
 }
 #[derive(Clone, Debug, Default)]
-pub struct FocusOutEvent {
+pub struct ResizeRequestEvent {
     pub event_type: u8,
-    pub detail: NotifyDetail,
     pub sequence: u16,
-    pub event: Window,
-    pub mode: NotifyMode,
+    pub window: Window,
+    pub width: Card16,
+    pub height: Card16,
 }
-impl FocusOutEvent {}
-impl AsByteSequence for FocusOutEvent {
+impl ResizeRequestEvent {}
+impl AsByteSequence for ResizeRequestEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ResizeRequestEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            ResizeRequestEvent {
+                event_type: event_type,
+                sequence: sequence,
+                window: window,
+                width: width,
+                height: height,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.window.size()
+            + self.width.size()
+            + self.height.size()
+    }
+}
+impl crate::auto::Event for ResizeRequestEvent {
+    const OPCODE: u8 = 25;
+}
+#[derive(Clone, Debug, Default)]
+pub struct KeyPressEvent {
+    pub event_type: u8,
+    pub detail: Keycode,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+}
+impl KeyPressEvent {}
+impl AsByteSequence for KeyPressEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += 3;
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing FocusOutEvent from byte buffer");
+        log::trace!("Deserializing KeyPressEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (detail, sz): (NotifyDetail, usize) = <NotifyDetail>::from_bytes(&bytes[index..])?;
+        let (detail, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mode, sz): (NotifyMode, usize) = <NotifyMode>::from_bytes(&bytes[index..])?;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 3;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
         Some((
-            FocusOutEvent {
+            KeyPressEvent {
                 event_type: event_type,
                 detail: detail,
                 sequence: sequence,
+                time: time,
+                root: root,
                 event: event,
-                mode: mode,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
             },
             index,
         ))
@@ -19889,13 +19485,21 @@ impl AsByteSequence for FocusOutEvent {
         self.event_type.size()
             + self.detail.size()
             + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
             + self.event.size()
-            + self.mode.size()
-            + 3
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + 1
     }
 }
-impl crate::auto::Event for FocusOutEvent {
-    const OPCODE: u8 = 10;
+impl crate::auto::Event for KeyPressEvent {
+    const OPCODE: u8 = 2;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ConfigureNotifyEvent {
@@ -19992,217 +19596,6 @@ impl AsByteSequence for ConfigureNotifyEvent {
 }
 impl crate::auto::Event for ConfigureNotifyEvent {
     const OPCODE: u8 = 22;
-}
-#[derive(Clone, Debug, Default)]
-pub struct CirculateRequestEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Window,
-    pub window: Window,
-    pub place: Place,
-}
-impl CirculateRequestEvent {}
-impl AsByteSequence for CirculateRequestEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += 4;
-        index += self.place.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CirculateRequestEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (place, sz): (Place, usize) = <Place>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        Some((
-            CirculateRequestEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                place: place,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + 4
-            + self.place.size()
-            + 3
-    }
-}
-impl crate::auto::Event for CirculateRequestEvent {
-    const OPCODE: u8 = 27;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ClientMessageEvent {
-    pub event_type: u8,
-    pub format: Card8,
-    pub sequence: u16,
-    pub window: Window,
-    pub ty: Atom,
-    pub data: ClientMessageData,
-}
-impl ClientMessageEvent {}
-impl AsByteSequence for ClientMessageEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.format.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.ty.as_bytes(&mut bytes[index..]);
-        index += self.data.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ClientMessageEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (format, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ty, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (data, sz): (ClientMessageData, usize) =
-            <ClientMessageData>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ClientMessageEvent {
-                event_type: event_type,
-                format: format,
-                sequence: sequence,
-                window: window,
-                ty: ty,
-                data: data,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.format.size()
-            + self.sequence.size()
-            + self.window.size()
-            + self.ty.size()
-            + self.data.size()
-    }
-}
-impl crate::auto::Event for ClientMessageEvent {
-    const OPCODE: u8 = 33;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ReparentNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Window,
-    pub window: Window,
-    pub parent: Window,
-    pub x: Int16,
-    pub y: Int16,
-    pub override_redirect: bool,
-}
-impl ReparentNotifyEvent {}
-impl AsByteSequence for ReparentNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.parent.as_bytes(&mut bytes[index..]);
-        index += self.x.as_bytes(&mut bytes[index..]);
-        index += self.y.as_bytes(&mut bytes[index..]);
-        index += self.override_redirect.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ReparentNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        Some((
-            ReparentNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                parent: parent,
-                x: x,
-                y: y,
-                override_redirect: override_redirect,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + self.parent.size()
-            + self.x.size()
-            + self.y.size()
-            + self.override_redirect.size()
-            + 3
-    }
-}
-impl crate::auto::Event for ReparentNotifyEvent {
-    const OPCODE: u8 = 21;
 }
 #[derive(Clone, Debug, Default)]
 pub struct EnterNotifyEvent {
@@ -20316,6 +19709,75 @@ impl crate::auto::Event for EnterNotifyEvent {
     const OPCODE: u8 = 7;
 }
 #[derive(Clone, Debug, Default)]
+pub struct ColormapNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub window: Window,
+    pub colormap: Colormap,
+    pub new: bool,
+    pub state: ColormapState,
+}
+impl ColormapNotifyEvent {}
+impl AsByteSequence for ColormapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.colormap.as_bytes(&mut bytes[index..]);
+        index += self.new.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ColormapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (colormap, sz): (Colormap, usize) = <Colormap>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (new, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (ColormapState, usize) = <ColormapState>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        Some((
+            ColormapNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                window: window,
+                colormap: colormap,
+                new: new,
+                state: state,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.window.size()
+            + self.colormap.size()
+            + self.new.size()
+            + self.state.size()
+            + 2
+    }
+}
+impl crate::auto::Event for ColormapNotifyEvent {
+    const OPCODE: u8 = 32;
+}
+#[derive(Clone, Debug, Default)]
 pub struct GraphicsExposureEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -20409,6 +19871,255 @@ impl crate::auto::Event for GraphicsExposureEvent {
     const OPCODE: u8 = 13;
 }
 #[derive(Clone, Debug, Default)]
+pub struct NoExposureEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub drawable: Drawable,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl NoExposureEvent {}
+impl AsByteSequence for NoExposureEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NoExposureEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            NoExposureEvent {
+                event_type: event_type,
+                sequence: sequence,
+                drawable: drawable,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.drawable.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+    }
+}
+impl crate::auto::Event for NoExposureEvent {
+    const OPCODE: u8 = 14;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ReparentNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event: Window,
+    pub window: Window,
+    pub parent: Window,
+    pub x: Int16,
+    pub y: Int16,
+    pub override_redirect: bool,
+}
+impl ReparentNotifyEvent {}
+impl AsByteSequence for ReparentNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.parent.as_bytes(&mut bytes[index..]);
+        index += self.x.as_bytes(&mut bytes[index..]);
+        index += self.y.as_bytes(&mut bytes[index..]);
+        index += self.override_redirect.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ReparentNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            ReparentNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event: event,
+                window: window,
+                parent: parent,
+                x: x,
+                y: y,
+                override_redirect: override_redirect,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.event.size()
+            + self.window.size()
+            + self.parent.size()
+            + self.x.size()
+            + self.y.size()
+            + self.override_redirect.size()
+            + 3
+    }
+}
+impl crate::auto::Event for ReparentNotifyEvent {
+    const OPCODE: u8 = 21;
+}
+#[derive(Clone, Debug, Default)]
+pub struct MotionNotifyEvent {
+    pub event_type: u8,
+    pub detail: Motion,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+}
+impl MotionNotifyEvent {}
+impl AsByteSequence for MotionNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing MotionNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Motion, usize) = <Motion>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            MotionNotifyEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + 1
+    }
+}
+impl crate::auto::Event for MotionNotifyEvent {
+    const OPCODE: u8 = 6;
+}
+#[derive(Clone, Debug, Default)]
 pub struct GeGenericEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -20449,54 +20160,49 @@ impl crate::auto::Event for GeGenericEvent {
     const OPCODE: u8 = 35;
 }
 #[derive(Clone, Debug, Default)]
-pub struct DestroyNotifyEvent {
+pub struct KeymapNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
-    pub event: Window,
-    pub window: Window,
+    pub keys: [Card8; 31],
 }
-impl DestroyNotifyEvent {}
-impl AsByteSequence for DestroyNotifyEvent {
+impl KeymapNotifyEvent {}
+impl AsByteSequence for KeymapNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.keys.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing DestroyNotifyEvent from byte buffer");
+        log::trace!("Deserializing KeymapNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        let (keys, sz): ([Card8; 31], usize) = <[Card8; 31]>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
-            DestroyNotifyEvent {
+            KeymapNotifyEvent {
                 event_type: event_type,
                 sequence: sequence,
-                event: event,
-                window: window,
+                keys: keys,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size() + 1 + self.sequence.size() + self.event.size() + self.window.size()
+        self.event_type.size() + 1 + self.sequence.size() + self.keys.size()
     }
 }
-impl crate::auto::Event for DestroyNotifyEvent {
-    const OPCODE: u8 = 17;
+impl crate::auto::Event for KeymapNotifyEvent {
+    const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default)]
 pub struct SelectionRequestEvent {
@@ -20575,6 +20281,633 @@ impl AsByteSequence for SelectionRequestEvent {
 }
 impl crate::auto::Event for SelectionRequestEvent {
     const OPCODE: u8 = 30;
+}
+#[derive(Clone, Debug, Default)]
+pub struct PropertyNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub window: Window,
+    pub atom: Atom,
+    pub time: Timestamp,
+    pub state: Property,
+}
+impl PropertyNotifyEvent {}
+impl AsByteSequence for PropertyNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.atom.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing PropertyNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (atom, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (Property, usize) = <Property>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            PropertyNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                window: window,
+                atom: atom,
+                time: time,
+                state: state,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.window.size()
+            + self.atom.size()
+            + self.time.size()
+            + self.state.size()
+            + 3
+    }
+}
+impl crate::auto::Event for PropertyNotifyEvent {
+    const OPCODE: u8 = 28;
+}
+#[derive(Clone, Debug, Default)]
+pub struct SelectionNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub requestor: Window,
+    pub selection: Atom,
+    pub target: Atom,
+    pub property: Atom,
+}
+impl SelectionNotifyEvent {}
+impl AsByteSequence for SelectionNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.requestor.as_bytes(&mut bytes[index..]);
+        index += self.selection.as_bytes(&mut bytes[index..]);
+        index += self.target.as_bytes(&mut bytes[index..]);
+        index += self.property.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing SelectionNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (requestor, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (target, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            SelectionNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                time: time,
+                requestor: requestor,
+                selection: selection,
+                target: target,
+                property: property,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.time.size()
+            + self.requestor.size()
+            + self.selection.size()
+            + self.target.size()
+            + self.property.size()
+    }
+}
+impl crate::auto::Event for SelectionNotifyEvent {
+    const OPCODE: u8 = 31;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ClientMessageEvent {
+    pub event_type: u8,
+    pub format: Card8,
+    pub sequence: u16,
+    pub window: Window,
+    pub ty: Atom,
+    pub data: ClientMessageData,
+}
+impl ClientMessageEvent {}
+impl AsByteSequence for ClientMessageEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.format.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.ty.as_bytes(&mut bytes[index..]);
+        index += self.data.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ClientMessageEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (format, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ty, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (data, sz): (ClientMessageData, usize) =
+            <ClientMessageData>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            ClientMessageEvent {
+                event_type: event_type,
+                format: format,
+                sequence: sequence,
+                window: window,
+                ty: ty,
+                data: data,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.format.size()
+            + self.sequence.size()
+            + self.window.size()
+            + self.ty.size()
+            + self.data.size()
+    }
+}
+impl crate::auto::Event for ClientMessageEvent {
+    const OPCODE: u8 = 33;
+}
+#[derive(Clone, Debug, Default)]
+pub struct MapRequestEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub parent: Window,
+    pub window: Window,
+}
+impl MapRequestEvent {}
+impl AsByteSequence for MapRequestEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.parent.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing MapRequestEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            MapRequestEvent {
+                event_type: event_type,
+                sequence: sequence,
+                parent: parent,
+                window: window,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + 1 + self.sequence.size() + self.parent.size() + self.window.size()
+    }
+}
+impl crate::auto::Event for MapRequestEvent {
+    const OPCODE: u8 = 20;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ExposeEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub window: Window,
+    pub x: Card16,
+    pub y: Card16,
+    pub width: Card16,
+    pub height: Card16,
+    pub count: Card16,
+}
+impl ExposeEvent {}
+impl AsByteSequence for ExposeEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.x.as_bytes(&mut bytes[index..]);
+        index += self.y.as_bytes(&mut bytes[index..]);
+        index += self.width.as_bytes(&mut bytes[index..]);
+        index += self.height.as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ExposeEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (x, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (y, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (count, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        Some((
+            ExposeEvent {
+                event_type: event_type,
+                sequence: sequence,
+                window: window,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                count: count,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.window.size()
+            + self.x.size()
+            + self.y.size()
+            + self.width.size()
+            + self.height.size()
+            + self.count.size()
+            + 2
+    }
+}
+impl crate::auto::Event for ExposeEvent {
+    const OPCODE: u8 = 12;
+}
+#[derive(Clone, Debug, Default)]
+pub struct KeyReleaseEvent {
+    pub event_type: u8,
+    pub detail: Keycode,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+}
+impl KeyReleaseEvent {}
+impl AsByteSequence for KeyReleaseEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing KeyReleaseEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        Some((
+            KeyReleaseEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + 1
+    }
+}
+impl crate::auto::Event for KeyReleaseEvent {
+    const OPCODE: u8 = 3;
+}
+#[derive(Clone, Debug, Default)]
+pub struct FocusInEvent {
+    pub event_type: u8,
+    pub detail: NotifyDetail,
+    pub sequence: u16,
+    pub event: Window,
+    pub mode: NotifyMode,
+}
+impl FocusInEvent {}
+impl AsByteSequence for FocusInEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing FocusInEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (NotifyDetail, usize) = <NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (NotifyMode, usize) = <NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            FocusInEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                event: event,
+                mode: mode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.event.size()
+            + self.mode.size()
+            + 3
+    }
+}
+impl crate::auto::Event for FocusInEvent {
+    const OPCODE: u8 = 9;
+}
+#[derive(Clone, Debug, Default)]
+pub struct UnmapNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event: Window,
+    pub window: Window,
+    pub from_configure: bool,
+}
+impl UnmapNotifyEvent {}
+impl AsByteSequence for UnmapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.from_configure.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing UnmapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (from_configure, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            UnmapNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event: event,
+                window: window,
+                from_configure: from_configure,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.event.size()
+            + self.window.size()
+            + self.from_configure.size()
+            + 3
+    }
+}
+impl crate::auto::Event for UnmapNotifyEvent {
+    const OPCODE: u8 = 18;
+}
+#[derive(Clone, Debug, Default)]
+pub struct SelectionClearEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub owner: Window,
+    pub selection: Atom,
+}
+impl SelectionClearEvent {}
+impl AsByteSequence for SelectionClearEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.owner.as_bytes(&mut bytes[index..]);
+        index += self.selection.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing SelectionClearEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (owner, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            SelectionClearEvent {
+                event_type: event_type,
+                sequence: sequence,
+                time: time,
+                owner: owner,
+                selection: selection,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.time.size()
+            + self.owner.size()
+            + self.selection.size()
+    }
+}
+impl crate::auto::Event for SelectionClearEvent {
+    const OPCODE: u8 = 29;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ButtonPressEvent {
@@ -20685,64 +21018,157 @@ impl crate::auto::Event for ButtonPressEvent {
     const OPCODE: u8 = 4;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ExposeEvent {
+pub struct FocusOutEvent {
+    pub event_type: u8,
+    pub detail: NotifyDetail,
+    pub sequence: u16,
+    pub event: Window,
+    pub mode: NotifyMode,
+}
+impl FocusOutEvent {}
+impl AsByteSequence for FocusOutEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing FocusOutEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (NotifyDetail, usize) = <NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (NotifyMode, usize) = <NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            FocusOutEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                event: event,
+                mode: mode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.event.size()
+            + self.mode.size()
+            + 3
+    }
+}
+impl crate::auto::Event for FocusOutEvent {
+    const OPCODE: u8 = 10;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DestroyNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
+    pub event: Window,
     pub window: Window,
-    pub x: Card16,
-    pub y: Card16,
-    pub width: Card16,
-    pub height: Card16,
-    pub count: Card16,
 }
-impl ExposeEvent {}
-impl AsByteSequence for ExposeEvent {
+impl DestroyNotifyEvent {}
+impl AsByteSequence for DestroyNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.x.as_bytes(&mut bytes[index..]);
-        index += self.y.as_bytes(&mut bytes[index..]);
-        index += self.width.as_bytes(&mut bytes[index..]);
-        index += self.height.as_bytes(&mut bytes[index..]);
-        index += self.count.as_bytes(&mut bytes[index..]);
-        index += 2;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing ExposeEvent from byte buffer");
+        log::trace!("Deserializing DestroyNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (x, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (count, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
         Some((
-            ExposeEvent {
+            DestroyNotifyEvent {
                 event_type: event_type,
                 sequence: sequence,
+                event: event,
                 window: window,
-                x: x,
-                y: y,
-                width: width,
-                height: height,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + 1 + self.sequence.size() + self.event.size() + self.window.size()
+    }
+}
+impl crate::auto::Event for DestroyNotifyEvent {
+    const OPCODE: u8 = 17;
+}
+#[derive(Clone, Debug, Default)]
+pub struct MappingNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub request: Mapping,
+    pub first_keycode: Keycode,
+    pub count: Card8,
+}
+impl MappingNotifyEvent {}
+impl AsByteSequence for MappingNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.request.as_bytes(&mut bytes[index..]);
+        index += self.first_keycode.as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing MappingNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request, sz): (Mapping, usize) = <Mapping>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (count, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            MappingNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                request: request,
+                first_keycode: first_keycode,
                 count: count,
             },
             index,
@@ -20753,73 +21179,81 @@ impl AsByteSequence for ExposeEvent {
         self.event_type.size()
             + 1
             + self.sequence.size()
-            + self.window.size()
-            + self.x.size()
-            + self.y.size()
-            + self.width.size()
-            + self.height.size()
+            + self.request.size()
+            + self.first_keycode.size()
             + self.count.size()
-            + 2
     }
 }
-impl crate::auto::Event for ExposeEvent {
-    const OPCODE: u8 = 12;
+impl crate::auto::Event for MappingNotifyEvent {
+    const OPCODE: u8 = 34;
 }
 #[derive(Clone, Debug, Default)]
-pub struct KeymapNotifyEvent {
+pub struct VisibilityNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
-    pub keys: [Card8; 31],
+    pub window: Window,
+    pub state: Visibility,
 }
-impl KeymapNotifyEvent {}
-impl AsByteSequence for KeymapNotifyEvent {
+impl VisibilityNotifyEvent {}
+impl AsByteSequence for VisibilityNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.keys.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 3;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing KeymapNotifyEvent from byte buffer");
+        log::trace!("Deserializing VisibilityNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keys, sz): ([Card8; 31], usize) = <[Card8; 31]>::from_bytes(&bytes[index..])?;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (state, sz): (Visibility, usize) = <Visibility>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
         Some((
-            KeymapNotifyEvent {
+            VisibilityNotifyEvent {
                 event_type: event_type,
                 sequence: sequence,
-                keys: keys,
+                window: window,
+                state: state,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size() + 1 + self.sequence.size() + self.keys.size()
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.window.size()
+            + self.state.size()
+            + 3
     }
 }
-impl crate::auto::Event for KeymapNotifyEvent {
-    const OPCODE: u8 = 11;
+impl crate::auto::Event for VisibilityNotifyEvent {
+    const OPCODE: u8 = 15;
 }
 #[derive(Clone, Debug, Default)]
-pub struct CirculateNotifyEvent {
+pub struct MapNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
     pub event: Window,
     pub window: Window,
-    pub place: Place,
+    pub override_redirect: bool,
 }
-impl CirculateNotifyEvent {}
-impl AsByteSequence for CirculateNotifyEvent {
+impl MapNotifyEvent {}
+impl AsByteSequence for MapNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -20828,15 +21262,14 @@ impl AsByteSequence for CirculateNotifyEvent {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
-        index += 4;
-        index += self.place.as_bytes(&mut bytes[index..]);
+        index += self.override_redirect.as_bytes(&mut bytes[index..]);
         index += 3;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing CirculateNotifyEvent from byte buffer");
+        log::trace!("Deserializing MapNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
@@ -20846,17 +21279,16 @@ impl AsByteSequence for CirculateNotifyEvent {
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 4;
-        let (place, sz): (Place, usize) = <Place>::from_bytes(&bytes[index..])?;
+        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         Some((
-            CirculateNotifyEvent {
+            MapNotifyEvent {
                 event_type: event_type,
                 sequence: sequence,
                 event: event,
                 window: window,
-                place: place,
+                override_redirect: override_redirect,
             },
             index,
         ))
@@ -20868,442 +21300,10 @@ impl AsByteSequence for CirculateNotifyEvent {
             + self.sequence.size()
             + self.event.size()
             + self.window.size()
-            + 4
-            + self.place.size()
+            + self.override_redirect.size()
             + 3
     }
 }
-impl crate::auto::Event for CirculateNotifyEvent {
-    const OPCODE: u8 = 26;
-}
-#[derive(Clone, Debug, Default)]
-pub struct SelectionNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub requestor: Window,
-    pub selection: Atom,
-    pub target: Atom,
-    pub property: Atom,
-}
-impl SelectionNotifyEvent {}
-impl AsByteSequence for SelectionNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.requestor.as_bytes(&mut bytes[index..]);
-        index += self.selection.as_bytes(&mut bytes[index..]);
-        index += self.target.as_bytes(&mut bytes[index..]);
-        index += self.property.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing SelectionNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (requestor, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (target, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            SelectionNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                time: time,
-                requestor: requestor,
-                selection: selection,
-                target: target,
-                property: property,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.time.size()
-            + self.requestor.size()
-            + self.selection.size()
-            + self.target.size()
-            + self.property.size()
-    }
-}
-impl crate::auto::Event for SelectionNotifyEvent {
-    const OPCODE: u8 = 31;
-}
-#[derive(Clone, Debug, Default)]
-pub struct CreateNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub parent: Window,
-    pub window: Window,
-    pub x: Int16,
-    pub y: Int16,
-    pub width: Card16,
-    pub height: Card16,
-    pub border_width: Card16,
-    pub override_redirect: bool,
-}
-impl CreateNotifyEvent {}
-impl AsByteSequence for CreateNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.parent.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.x.as_bytes(&mut bytes[index..]);
-        index += self.y.as_bytes(&mut bytes[index..]);
-        index += self.width.as_bytes(&mut bytes[index..]);
-        index += self.height.as_bytes(&mut bytes[index..]);
-        index += self.border_width.as_bytes(&mut bytes[index..]);
-        index += self.override_redirect.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CreateNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (border_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (override_redirect, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            CreateNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                parent: parent,
-                window: window,
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-                border_width: border_width,
-                override_redirect: override_redirect,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.parent.size()
-            + self.window.size()
-            + self.x.size()
-            + self.y.size()
-            + self.width.size()
-            + self.height.size()
-            + self.border_width.size()
-            + self.override_redirect.size()
-    }
-}
-impl crate::auto::Event for CreateNotifyEvent {
-    const OPCODE: u8 = 16;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ResizeRequestEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub window: Window,
-    pub width: Card16,
-    pub height: Card16,
-}
-impl ResizeRequestEvent {}
-impl AsByteSequence for ResizeRequestEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.width.as_bytes(&mut bytes[index..]);
-        index += self.height.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ResizeRequestEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ResizeRequestEvent {
-                event_type: event_type,
-                sequence: sequence,
-                window: window,
-                width: width,
-                height: height,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.window.size()
-            + self.width.size()
-            + self.height.size()
-    }
-}
-impl crate::auto::Event for ResizeRequestEvent {
-    const OPCODE: u8 = 25;
-}
-#[derive(Clone, Debug, Default)]
-pub struct MapRequestEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub parent: Window,
-    pub window: Window,
-}
-impl MapRequestEvent {}
-impl AsByteSequence for MapRequestEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.parent.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing MapRequestEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            MapRequestEvent {
-                event_type: event_type,
-                sequence: sequence,
-                parent: parent,
-                window: window,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + 1 + self.sequence.size() + self.parent.size() + self.window.size()
-    }
-}
-impl crate::auto::Event for MapRequestEvent {
-    const OPCODE: u8 = 20;
-}
-#[derive(Clone, Debug, Default)]
-pub struct SelectionClearEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub owner: Window,
-    pub selection: Atom,
-}
-impl SelectionClearEvent {}
-impl AsByteSequence for SelectionClearEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.owner.as_bytes(&mut bytes[index..]);
-        index += self.selection.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing SelectionClearEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (owner, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            SelectionClearEvent {
-                event_type: event_type,
-                sequence: sequence,
-                time: time,
-                owner: owner,
-                selection: selection,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.time.size()
-            + self.owner.size()
-            + self.selection.size()
-    }
-}
-impl crate::auto::Event for SelectionClearEvent {
-    const OPCODE: u8 = 29;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ConfigureRequestEvent {
-    pub event_type: u8,
-    pub stack_mode: StackMode,
-    pub sequence: u16,
-    pub parent: Window,
-    pub window: Window,
-    pub sibling: Window,
-    pub x: Int16,
-    pub y: Int16,
-    pub width: Card16,
-    pub height: Card16,
-    pub border_width: Card16,
-    pub value_mask: ConfigWindow,
-}
-impl ConfigureRequestEvent {}
-impl AsByteSequence for ConfigureRequestEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.stack_mode.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.parent.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.sibling.as_bytes(&mut bytes[index..]);
-        index += self.x.as_bytes(&mut bytes[index..]);
-        index += self.y.as_bytes(&mut bytes[index..]);
-        index += self.width.as_bytes(&mut bytes[index..]);
-        index += self.height.as_bytes(&mut bytes[index..]);
-        index += self.border_width.as_bytes(&mut bytes[index..]);
-        index += self.value_mask.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ConfigureRequestEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (stack_mode, sz): (StackMode, usize) = <StackMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (parent, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sibling, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (border_width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (value_mask, sz): (ConfigWindow, usize) = <ConfigWindow>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ConfigureRequestEvent {
-                event_type: event_type,
-                stack_mode: stack_mode,
-                sequence: sequence,
-                parent: parent,
-                window: window,
-                sibling: sibling,
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-                border_width: border_width,
-                value_mask: value_mask,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.stack_mode.size()
-            + self.sequence.size()
-            + self.parent.size()
-            + self.window.size()
-            + self.sibling.size()
-            + self.x.size()
-            + self.y.size()
-            + self.width.size()
-            + self.height.size()
-            + self.border_width.size()
-            + self.value_mask.size()
-    }
-}
-impl crate::auto::Event for ConfigureRequestEvent {
-    const OPCODE: u8 = 23;
+impl crate::auto::Event for MapNotifyEvent {
+    const OPCODE: u8 = 19;
 }

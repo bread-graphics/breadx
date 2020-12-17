@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+use super::safe_name;
 use crate::lvl1::Expression as Lvl1Expression;
 use heck::SnakeCase;
 use std::{ops::Deref, str::FromStr};
@@ -57,7 +58,8 @@ pub enum ExpressionItem {
     UnaryOp(UnaryOp),
     /// ((length as usize) * 4) - index
     Remainder,
-    SumOf(Box<str>),
+    SumOf(Box<str>, bool),
+    ListExprRef,
 }
 
 impl Default for ExpressionItem {
@@ -95,7 +97,7 @@ impl Expression {
     pub fn involves_field(&self, f: &str) -> bool {
         self.postfix.iter().any(|t| match t {
             ExpressionItem::FieldRef(ft) => f == ft.deref(),
-            ExpressionItem::SumOf(ls) => f == ls.deref(),
+            ExpressionItem::SumOf(ls, _) => f == ls.deref(),
             _ => false,
         })
     }
@@ -147,9 +149,9 @@ impl From<Lvl1Expression> for Expression {
 fn convert_ll(length: Lvl1Expression) -> TinyVec<[ExpressionItem; 1]> {
     match length {
         Lvl1Expression::Value(v) => TinyVec::from([ExpressionItem::Value(v)]),
-        Lvl1Expression::FieldReference(f) => {
-            TinyVec::from([ExpressionItem::FieldRef(f.to_snake_case().into_boxed_str())])
-        }
+        Lvl1Expression::FieldReference(f) => TinyVec::from([ExpressionItem::FieldRef(
+            safe_name(f.to_snake_case()).into_boxed_str(),
+        )]),
         Lvl1Expression::BinaryOp { op, left, right } => {
             // parse the op
             let op: BinaryOp = op.parse().unwrap();
@@ -172,13 +174,21 @@ fn convert_ll(length: Lvl1Expression) -> TinyVec<[ExpressionItem; 1]> {
             res.extend(target);
             res
         }
-        Lvl1Expression::SumOf(t) => {
-            TinyVec::from([ExpressionItem::SumOf(t.to_snake_case().into_boxed_str())])
+        Lvl1Expression::SumOf(t, item) => {
+            let mut v = TinyVec::from([ExpressionItem::SumOf(
+                t.to_snake_case().into_boxed_str(),
+                item.is_some(),
+            )]);
+            if let Some(item) = item {
+                v.extend(convert_ll(*item));
+            }
+            v
         }
         Lvl1Expression::OneCount(ll) => TinyVec::Heap({
             let mut v = vec![ExpressionItem::UnaryOp(UnaryOp::OneCount)];
             v.extend(convert_ll(*ll));
             v
         }),
+        Lvl1Expression::ListExpression => TinyVec::from([ExpressionItem::ListExprRef]),
     }
 }

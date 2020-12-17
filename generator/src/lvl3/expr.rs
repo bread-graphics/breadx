@@ -24,7 +24,7 @@ impl Expression {
         #[inline]
         fn process_lli<T: Iterator<Item = ExpressionItem>>(
             iter: &mut T,
-            with_self_fields: bool,
+            with_self_fields: Option<&str>,
             cast: bool,
         ) -> syn::Expr {
             syn::Expr::Paren(syn::ExprParen {
@@ -33,8 +33,8 @@ impl Expression {
                 expr: Box::new(match iter.next() {
                     None => panic!("Expected an operation where there was not one"),
                     Some(ExpressionItem::FieldRef(s)) => {
-                        let b = if with_self_fields {
-                            item_field(str_to_exprpath("self"), &s)
+                        let b = if let Some(t) = with_self_fields {
+                            item_field(str_to_exprpath(t), &s)
                         } else {
                             str_to_exprpath(&s)
                         };
@@ -96,15 +96,22 @@ impl Expression {
                         op: syn::BinOp::Sub(Default::default()),
                         right: Box::new(str_to_exprpath("index")),
                     }),
-                    Some(ExpressionItem::SumOf(slist)) => {
+                    Some(ExpressionItem::SumOf(slist, uses_extended)) => {
+                        let sexpr = if uses_extended {
+                            process_lli(iter, Some("a"), cast)
+                        } else {
+                            let mut once = std::iter::once(ExpressionItem::ListExprRef);
+                            process_lli(&mut once, Some("a"), cast)
+                        };
+
                         syn::Expr::MethodCall(syn::ExprMethodCall {
                             attrs: vec![],
                             receiver: Box::new({
                                 let iterator = syn::Expr::Call(syn::ExprCall {
                                     attrs: vec![],
                                     func: Box::new(item_field(
-                                        if with_self_fields {
-                                            item_field(str_to_exprpath("self"), &slist)
+                                        if let Some(a) = with_self_fields {
+                                            item_field(str_to_exprpath(a), &slist)
                                         } else {
                                             str_to_exprpath(&slist)
                                         },
@@ -129,37 +136,7 @@ impl Expression {
                                     .collect(),
                                     or2_token: Default::default(),
                                     output: syn::ReturnType::Default,
-                                    body: Box::new(syn::Expr::Call(syn::ExprCall {
-                                        attrs: vec![],
-                                        args: iter::once(syn::Expr::Unary(syn::ExprUnary {
-                                            attrs: vec![],
-                                            op: syn::UnOp::Deref(Default::default()),
-                                            expr: Box::new(str_to_exprpath("a")),
-                                        }))
-                                        .collect(),
-                                        paren_token: Default::default(),
-                                        func: Box::new(syn::Expr::Path(syn::ExprPath {
-                                            attrs: vec![],
-                                            qself: None,
-                                            path: syn::Path {
-                                                leading_colon: None,
-                                                segments: vec![
-syn::PathSegment {
-  ident: syn::Ident::new("Into", Span::call_site()),
-  arguments: syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
-    colon2_token: Some(Default::default()),
-    lt_token: Default::default(),
-    gt_token: Default::default(),
-    args: iter::once(syn::GenericArgument::Type(str_to_ty("usize"))).collect(),
-  }),
-},
-str_to_pathseg("into"),
-    ]
-                                                .into_iter()
-                                                .collect(),
-                                            },
-                                        })),
-                                    })),
+                                    body: Box::new(cast_to_usize(sexpr)),
                                 });
 
                                 syn::Expr::Call(syn::ExprCall {
@@ -184,11 +161,67 @@ str_to_pathseg("into"),
                             args: syn::punctuated::Punctuated::new(),
                         })
                     }
+                    Some(ExpressionItem::ListExprRef) => {
+                        // assume we're inside of a sumof loop, where 'a' is the item
+                        let base_call = syn::Expr::Call(syn::ExprCall {
+                            attrs: vec![],
+                            args: iter::once(syn::Expr::Unary(syn::ExprUnary {
+                                attrs: vec![],
+                                op: syn::UnOp::Deref(Default::default()),
+                                expr: Box::new(str_to_exprpath(with_self_fields.unwrap())),
+                            }))
+                            .collect(),
+                            paren_token: Default::default(),
+                            func: Box::new(syn::Expr::Path(syn::ExprPath {
+                                attrs: vec![],
+                                qself: None,
+                                path: syn::Path {
+                                    leading_colon: None,
+                                    segments: vec![
+                                        syn::PathSegment {
+                                            ident: syn::Ident::new("TryInto", Span::call_site()),
+                                            arguments: syn::PathArguments::AngleBracketed(
+                                                syn::AngleBracketedGenericArguments {
+                                                    colon2_token: Some(Default::default()),
+                                                    lt_token: Default::default(),
+                                                    gt_token: Default::default(),
+                                                    args: iter::once(syn::GenericArgument::Type(
+                                                        str_to_ty("usize"),
+                                                    ))
+                                                    .collect(),
+                                                },
+                                            ),
+                                        },
+                                        str_to_pathseg("try_into"),
+                                    ]
+                                    .into_iter()
+                                    .collect(),
+                                },
+                            })),
+                        });
+                        syn::Expr::Call(syn::ExprCall {
+                            attrs: vec![],
+                            args: iter::once(syn::Expr::Lit(syn::ExprLit {
+                                attrs: vec![],
+                                lit: syn::Lit::Str(syn::LitStr::new(
+                                    "Unable to cast type to usize",
+                                    Span::call_site(),
+                                )),
+                            }))
+                            .collect(),
+                            paren_token: Default::default(),
+                            func: Box::new(item_field(base_call, "expect")),
+                        })
+                    }
                 }),
             })
         }
 
         let mut i = self.iter().cloned();
-        process_lli(&mut i, with_self_fields, cast)
+        process_lli(
+            &mut i,
+            if with_self_fields { Some("self") } else { None },
+            cast,
+        )
     }
 }

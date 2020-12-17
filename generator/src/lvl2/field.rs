@@ -180,8 +180,8 @@ impl StructureItem {
                             } else {
                                 ConditionVariant::Equal
                             },
-                            enum_name: enum_ref,
-                            enum_value: enum_item,
+                            enum_name: safe_name(enum_ref),
+                            enum_value: safe_name(enum_item),
                         });
 
                         fields.into_iter().flat_map(move |f| {

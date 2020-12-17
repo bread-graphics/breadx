@@ -11257,6 +11257,39 @@ impl core::ops::BitAnd for Gc {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Rm {
+    GlRender = 7168,
+    GlFeedback = 7169,
+    GlSelect = 7170,
+}
+impl AsByteSequence for Rm {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            7168 => Some((Self::GlRender, sz)),
+            7169 => Some((Self::GlFeedback, sz)),
+            7170 => Some((Self::GlSelect, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Rm {
+    #[inline]
+    fn default() -> Rm {
+        Rm::GlRender
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Pbcet {
     Damaged = 32791,
     Saved = 32792,
@@ -11315,39 +11348,6 @@ impl Default for Pbcdt {
     #[inline]
     fn default() -> Pbcdt {
         Pbcdt::Window
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rm {
-    GlRender = 7168,
-    GlFeedback = 7169,
-    GlSelect = 7170,
-}
-impl AsByteSequence for Rm {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            7168 => Some((Self::GlRender, sz)),
-            7169 => Some((Self::GlFeedback, sz)),
-            7170 => Some((Self::GlSelect, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Rm {
-    #[inline]
-    fn default() -> Rm {
-        Rm::GlRender
     }
 }
 #[derive(Clone, Debug, Default)]
