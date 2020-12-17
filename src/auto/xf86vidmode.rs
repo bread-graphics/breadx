@@ -304,70 +304,48 @@ impl ModeFlag {
         let mut inner: u32 = 0;
         if positive_h_sync {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if negative_h_sync {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if positive_v_sync {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if negative_v_sync {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if interlace {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if composite_sync {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if positive_c_sync {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if negative_c_sync {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if h_skew {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if broadcast {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if pixmux {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if double_clock {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if half_clock {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         ModeFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ModeFlag {
@@ -383,6 +361,22 @@ impl AsByteSequence for ModeFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn not(self) -> ModeFlag {
+        ModeFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitand(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -2897,15 +2891,15 @@ impl Permission {
         let mut inner: u32 = 0;
         if read {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if write {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         Permission { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Permission {
@@ -2921,5 +2915,21 @@ impl AsByteSequence for Permission {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Permission {
+    type Output = Permission;
+    #[inline]
+    fn not(self) -> Permission {
+        Permission { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Permission {
+    type Output = Permission;
+    #[inline]
+    fn bitand(self, rhs: Permission) -> Permission {
+        Permission {
+            inner: self.inner & rhs.inner,
+        }
     }
 }

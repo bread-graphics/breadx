@@ -146,6 +146,8 @@ mod xid;
 
 #[cfg(feature = "xkb")]
 pub mod action;
+#[cfg(feature = "xkb")]
+pub mod behavior;
 
 #[cfg(feature = "randr")]
 pub mod notify_data;

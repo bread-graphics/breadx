@@ -1479,70 +1479,48 @@ impl Cp {
         let mut inner: u32 = 0;
         if repeat {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if alpha_map {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if alpha_x_origin {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if alpha_y_origin {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if clip_x_origin {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if clip_y_origin {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if clip_mask {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if graphics_exposure {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if subwindow_mode {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if poly_edge {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if poly_mode {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if dither {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if component_alpha {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         Cp { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Cp {
@@ -1558,6 +1536,22 @@ impl AsByteSequence for Cp {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Cp {
+    type Output = Cp;
+    #[inline]
+    fn not(self) -> Cp {
+        Cp { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Cp {
+    type Output = Cp;
+    #[inline]
+    fn bitand(self, rhs: Cp) -> Cp {
+        Cp {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -4205,6 +4199,72 @@ impl Request for CreateConicalGradientRequest {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Repeat {
+    None = 0,
+    Normal = 1,
+    Pad = 2,
+    Reflect = 3,
+}
+impl AsByteSequence for Repeat {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::None, sz)),
+            1 => Some((Self::Normal, sz)),
+            2 => Some((Self::Pad, sz)),
+            3 => Some((Self::Reflect, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Repeat {
+    #[inline]
+    fn default() -> Repeat {
+        Repeat::None
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyMode {
+    Precise = 0,
+    Imprecise = 1,
+}
+impl AsByteSequence for PolyMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Precise, sz)),
+            1 => Some((Self::Imprecise, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyMode {
+    #[inline]
+    fn default() -> PolyMode {
+        PolyMode::Precise
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SubPixel {
     Unknown = 0,
     HorizontalRgb = 1,
@@ -4244,37 +4304,6 @@ impl Default for SubPixel {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyMode {
-    Precise = 0,
-    Imprecise = 1,
-}
-impl AsByteSequence for PolyMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Precise, sz)),
-            1 => Some((Self::Imprecise, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyMode {
-    #[inline]
-    fn default() -> PolyMode {
-        PolyMode::Precise
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PolyEdge {
     Sharp = 0,
     Smooth = 1,
@@ -4302,40 +4331,5 @@ impl Default for PolyEdge {
     #[inline]
     fn default() -> PolyEdge {
         PolyEdge::Sharp
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Repeat {
-    None = 0,
-    Normal = 1,
-    Pad = 2,
-    Reflect = 3,
-}
-impl AsByteSequence for Repeat {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::None, sz)),
-            1 => Some((Self::Normal, sz)),
-            2 => Some((Self::Pad, sz)),
-            3 => Some((Self::Reflect, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Repeat {
-    #[inline]
-    fn default() -> Repeat {
-        Repeat::None
     }
 }

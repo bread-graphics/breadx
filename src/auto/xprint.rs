@@ -2219,100 +2219,6 @@ impl Default for Attr {
         Attr::JobAttr
     }
 }
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EvMask {
-    pub inner: i32,
-}
-impl EvMask {
-    #[inline]
-    pub fn print_mask(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_print_mask(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn attribute_mask(&self) -> bool {
-        self.inner & (1 << 1) != 0
-    }
-    #[inline]
-    pub fn set_attribute_mask(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 1;
-        } else {
-            self.inner &= !(1 << 1);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(print_mask: bool, attribute_mask: bool) -> Self {
-        let mut inner: i32 = 0;
-        if print_mask {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        if attribute_mask {
-            inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
-        }
-        EvMask { inner: inner }
-    }
-}
-impl AsByteSequence for EvMask {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((EvMask { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum GetDoc {
-    Finished = 0,
-    SecondConsumer = 1,
-}
-impl AsByteSequence for GetDoc {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Finished, sz)),
-            1 => Some((Self::SecondConsumer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for GetDoc {
-    #[inline]
-    fn default() -> GetDoc {
-        GetDoc::Finished
-    }
-}
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Detail {
@@ -2350,6 +2256,116 @@ impl Default for Detail {
     #[inline]
     fn default() -> Detail {
         Detail::StartJobNotify
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GetDoc {
+    Finished = 0,
+    SecondConsumer = 1,
+}
+impl AsByteSequence for GetDoc {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Finished, sz)),
+            1 => Some((Self::SecondConsumer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for GetDoc {
+    #[inline]
+    fn default() -> GetDoc {
+        GetDoc::Finished
+    }
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct EvMask {
+    pub inner: i32,
+}
+impl EvMask {
+    #[inline]
+    pub fn print_mask(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_print_mask(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn attribute_mask(&self) -> bool {
+        self.inner & (1 << 1) != 0
+    }
+    #[inline]
+    pub fn set_attribute_mask(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 1;
+        } else {
+            self.inner &= !(1 << 1);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(print_mask: bool, attribute_mask: bool) -> Self {
+        let mut inner: i32 = 0;
+        if print_mask {
+            inner |= 1 << 0;
+        }
+        if attribute_mask {
+            inner |= 1 << 1;
+        }
+        EvMask { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+}
+impl AsByteSequence for EvMask {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((EvMask { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for EvMask {
+    type Output = EvMask;
+    #[inline]
+    fn not(self) -> EvMask {
+        EvMask { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for EvMask {
+    type Output = EvMask;
+    #[inline]
+    fn bitand(self, rhs: EvMask) -> EvMask {
+        EvMask {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]

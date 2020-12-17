@@ -522,25 +522,21 @@ impl EventMask {
         let mut inner: u32 = 0;
         if configure_notify {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if complete_notify {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if idle_notify {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if redirect_notify {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         EventMask { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for EventMask {
@@ -556,6 +552,22 @@ impl AsByteSequence for EventMask {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for EventMask {
+    type Output = EventMask;
+    #[inline]
+    fn not(self) -> EventMask {
+        EventMask { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for EventMask {
+    type Output = EventMask;
+    #[inline]
+    fn bitand(self, rhs: EventMask) -> EventMask {
+        EventMask {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -771,20 +783,18 @@ impl Capability {
         let mut inner: i32 = 0;
         if async_ {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if fence {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if ust {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         Capability { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Capability {
@@ -800,6 +810,22 @@ impl AsByteSequence for Capability {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Capability {
+    type Output = Capability;
+    #[inline]
+    fn not(self) -> Capability {
+        Capability { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Capability {
+    type Output = Capability;
+    #[inline]
+    fn bitand(self, rhs: Capability) -> Capability {
+        Capability {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 pub const EVENT_CONFIGURE_NOTIFY: Event = <Event>::const_from_xid(0);
@@ -869,25 +895,21 @@ impl Option_ {
         let mut inner: i32 = 0;
         if async_ {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if copy {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if ust {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if suboptimal {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         Option_ { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Option_ {
@@ -905,59 +927,70 @@ impl AsByteSequence for Option_ {
         self.inner.size()
     }
 }
-#[derive(Clone, Debug, Default)]
-pub struct IdleNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Event,
-    pub window: Window,
-    pub serial: Card32,
-    pub pixmap: Pixmap,
-    pub idle_fence: Fence,
+impl core::ops::Not for Option_ {
+    type Output = Option_;
+    #[inline]
+    fn not(self) -> Option_ {
+        Option_ { inner: !self.inner }
+    }
 }
-impl IdleNotifyEvent {}
-impl AsByteSequence for IdleNotifyEvent {
+impl core::ops::BitAnd for Option_ {
+    type Output = Option_;
+    #[inline]
+    fn bitand(self, rhs: Option_) -> Option_ {
+        Option_ {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct GenericEvent {
+    pub event_type: u8,
+    pub extension: Card8,
+    pub sequence: u16,
+    pub length: Card32,
+    pub evtype: Card16,
+    pub event: Event,
+}
+impl GenericEvent {}
+impl AsByteSequence for GenericEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 2;
+        index += self.extension.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.evtype.as_bytes(&mut bytes[index..]);
+        index += 2;
         index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.serial.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
-        index += self.idle_fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing IdleNotifyEvent from byte buffer");
+        log::trace!("Deserializing GenericEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 2;
+        let (extension, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
+        let (length, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (evtype, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
         let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
         Some((
-            IdleNotifyEvent {
+            GenericEvent {
                 event_type: event_type,
+                extension: extension,
                 sequence: sequence,
+                length: length,
+                evtype: evtype,
                 event: event,
-                window: window,
-                serial: serial,
-                pixmap: pixmap,
-                idle_fence: idle_fence,
             },
             index,
         ))
@@ -965,17 +998,97 @@ impl AsByteSequence for IdleNotifyEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + 2
+            + self.extension.size()
             + self.sequence.size()
+            + self.length.size()
+            + self.evtype.size()
+            + 2
+            + self.event.size()
+    }
+}
+impl crate::auto::Event for GenericEvent {
+    const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct CompleteNotifyEvent {
+    pub event_type: u8,
+    pub kind: CompleteKind,
+    pub sequence: u16,
+    pub mode: CompleteMode,
+    pub event: Event,
+    pub window: Window,
+    pub serial: Card32,
+    pub ust: Card64,
+    pub msc: Card64,
+}
+impl CompleteNotifyEvent {}
+impl AsByteSequence for CompleteNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.serial.as_bytes(&mut bytes[index..]);
+        index += self.ust.as_bytes(&mut bytes[index..]);
+        index += self.msc.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CompleteNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (kind, sz): (CompleteKind, usize) = <CompleteKind>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (CompleteMode, usize) = <CompleteMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            CompleteNotifyEvent {
+                event_type: event_type,
+                kind: kind,
+                sequence: sequence,
+                mode: mode,
+                event: event,
+                window: window,
+                serial: serial,
+                ust: ust,
+                msc: msc,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.kind.size()
+            + self.sequence.size()
+            + self.mode.size()
             + self.event.size()
             + self.window.size()
             + self.serial.size()
-            + self.pixmap.size()
-            + self.idle_fence.size()
+            + self.ust.size()
+            + self.msc.size()
     }
 }
-impl crate::auto::Event for IdleNotifyEvent {
-    const OPCODE: u8 = 2;
+impl crate::auto::Event for CompleteNotifyEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ConfigureNotifyEvent {
@@ -1086,44 +1199,38 @@ impl crate::auto::Event for ConfigureNotifyEvent {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
-pub struct CompleteNotifyEvent {
+pub struct IdleNotifyEvent {
     pub event_type: u8,
-    pub kind: CompleteKind,
     pub sequence: u16,
-    pub mode: CompleteMode,
     pub event: Event,
     pub window: Window,
     pub serial: Card32,
-    pub ust: Card64,
-    pub msc: Card64,
+    pub pixmap: Pixmap,
+    pub idle_fence: Fence,
 }
-impl CompleteNotifyEvent {}
-impl AsByteSequence for CompleteNotifyEvent {
+impl IdleNotifyEvent {}
+impl AsByteSequence for IdleNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += 2;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index += self.serial.as_bytes(&mut bytes[index..]);
-        index += self.ust.as_bytes(&mut bytes[index..]);
-        index += self.msc.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += self.idle_fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing CompleteNotifyEvent from byte buffer");
+        log::trace!("Deserializing IdleNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (kind, sz): (CompleteKind, usize) = <CompleteKind>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 2;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (CompleteMode, usize) = <CompleteMode>::from_bytes(&bytes[index..])?;
         index += sz;
         let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1131,21 +1238,19 @@ impl AsByteSequence for CompleteNotifyEvent {
         index += sz;
         let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (ust, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (msc, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
+        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
-            CompleteNotifyEvent {
+            IdleNotifyEvent {
                 event_type: event_type,
-                kind: kind,
                 sequence: sequence,
-                mode: mode,
                 event: event,
                 window: window,
                 serial: serial,
-                ust: ust,
-                msc: msc,
+                pixmap: pixmap,
+                idle_fence: idle_fence,
             },
             index,
         ))
@@ -1153,82 +1258,15 @@ impl AsByteSequence for CompleteNotifyEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + self.kind.size()
+            + 2
             + self.sequence.size()
-            + self.mode.size()
             + self.event.size()
             + self.window.size()
             + self.serial.size()
-            + self.ust.size()
-            + self.msc.size()
+            + self.pixmap.size()
+            + self.idle_fence.size()
     }
 }
-impl crate::auto::Event for CompleteNotifyEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
-pub struct GenericEvent {
-    pub event_type: u8,
-    pub extension: Card8,
-    pub sequence: u16,
-    pub length: Card32,
-    pub evtype: Card16,
-    pub event: Event,
-}
-impl GenericEvent {}
-impl AsByteSequence for GenericEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.extension.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.length.as_bytes(&mut bytes[index..]);
-        index += self.evtype.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing GenericEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (extension, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (evtype, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            GenericEvent {
-                event_type: event_type,
-                extension: extension,
-                sequence: sequence,
-                length: length,
-                evtype: evtype,
-                event: event,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.extension.size()
-            + self.sequence.size()
-            + self.length.size()
-            + self.evtype.size()
-            + 2
-            + self.event.size()
-    }
-}
-impl crate::auto::Event for GenericEvent {
-    const OPCODE: u8 = 0;
+impl crate::auto::Event for IdleNotifyEvent {
+    const OPCODE: u8 = 2;
 }

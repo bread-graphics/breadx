@@ -1796,6 +1796,51 @@ impl Default for EventType {
     }
 }
 #[derive(Clone, Debug, Default)]
+pub struct InvalidateBuffersEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub drawable: Drawable,
+}
+impl InvalidateBuffersEvent {}
+impl AsByteSequence for InvalidateBuffersEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing InvalidateBuffersEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            InvalidateBuffersEvent {
+                event_type: event_type,
+                sequence: sequence,
+                drawable: drawable,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + 1 + self.sequence.size() + self.drawable.size()
+    }
+}
+impl crate::auto::Event for InvalidateBuffersEvent {
+    const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
 pub struct BufferSwapCompleteEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -1881,49 +1926,4 @@ impl AsByteSequence for BufferSwapCompleteEvent {
 }
 impl crate::auto::Event for BufferSwapCompleteEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct InvalidateBuffersEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub drawable: Drawable,
-}
-impl InvalidateBuffersEvent {}
-impl AsByteSequence for InvalidateBuffersEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing InvalidateBuffersEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            InvalidateBuffersEvent {
-                event_type: event_type,
-                sequence: sequence,
-                drawable: drawable,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + 1 + self.sequence.size() + self.drawable.size()
-    }
-}
-impl crate::auto::Event for InvalidateBuffersEvent {
-    const OPCODE: u8 = 1;
 }

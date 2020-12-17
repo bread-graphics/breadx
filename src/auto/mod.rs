@@ -41,7 +41,7 @@ pub(crate) mod prelude {
     pub use crate::notify_data::NotifyData;
 
     #[cfg(feature = "xkb")]
-    pub use crate::action::Action;
+    pub use crate::{action::Action, behavior::Behavior};
 }
 
 /// Internal use helper trait. This represents an item that can be converted to and from a series

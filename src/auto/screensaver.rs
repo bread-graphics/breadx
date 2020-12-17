@@ -371,15 +371,15 @@ impl Event {
         let mut inner: u32 = 0;
         if notify_mask {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if cycle_mask {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         Event { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Event {
@@ -395,6 +395,22 @@ impl AsByteSequence for Event {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Event {
+    type Output = Event;
+    #[inline]
+    fn not(self) -> Event {
+        Event { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Event {
+    type Output = Event;
+    #[inline]
+    fn bitand(self, rhs: Event) -> Event {
+        Event {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]

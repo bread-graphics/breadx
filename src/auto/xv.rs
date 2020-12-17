@@ -283,30 +283,24 @@ impl Type {
         let mut inner: u8 = 0;
         if input_mask {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if output_mask {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if video_mask {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if still_mask {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if image_mask {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         Type { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Type {
@@ -322,6 +316,22 @@ impl AsByteSequence for Type {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Type {
+    type Output = Type;
+    #[inline]
+    fn not(self) -> Type {
+        Type { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Type {
+    type Output = Type;
+    #[inline]
+    fn bitand(self, rhs: Type) -> Type {
+        Type {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -578,15 +588,15 @@ impl AttributeFlag {
         let mut inner: u32 = 0;
         if gettable {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if settable {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         AttributeFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for AttributeFlag {
@@ -602,6 +612,22 @@ impl AsByteSequence for AttributeFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for AttributeFlag {
+    type Output = AttributeFlag;
+    #[inline]
+    fn not(self) -> AttributeFlag {
+        AttributeFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for AttributeFlag {
+    type Output = AttributeFlag;
+    #[inline]
+    fn bitand(self, rhs: AttributeFlag) -> AttributeFlag {
+        AttributeFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]

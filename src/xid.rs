@@ -9,6 +9,11 @@ pub type XID = u32;
 pub trait XidType {
     fn xid(&self) -> XID;
     fn from_xid(xid: XID) -> Self;
+
+    #[inline]
+    fn count_ones(&self) -> usize {
+        self.xid().count_ones() as usize
+    }
 }
 
 impl<T: XidType> auto::AsByteSequence for T {

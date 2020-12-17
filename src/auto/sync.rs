@@ -1070,35 +1070,27 @@ impl Ca {
         let mut inner: u32 = 0;
         if counter {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if value_type {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if value {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if test_type {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if delta {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if events {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         Ca { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Ca {
@@ -1114,6 +1106,22 @@ impl AsByteSequence for Ca {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Ca {
+    type Output = Ca;
+    #[inline]
+    fn not(self) -> Ca {
+        Ca { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Ca {
+    type Output = Ca;
+    #[inline]
+    fn bitand(self, rhs: Ca) -> Ca {
+        Ca {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -1950,81 +1958,6 @@ impl Request for AwaitFenceRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
-pub struct CounterError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_counter: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl CounterError {}
-impl AsByteSequence for CounterError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_counter.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CounterError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_counter, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            CounterError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_counter: bad_counter,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_counter.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-    }
-}
-impl crate::auto::Error for CounterError {
-    const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
 pub struct AlarmError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -2098,6 +2031,81 @@ impl AsByteSequence for AlarmError {
 }
 impl crate::auto::Error for AlarmError {
     const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
+pub struct CounterError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
+    pub sequence: u16,
+    pub bad_counter: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
+}
+impl CounterError {}
+impl AsByteSequence for CounterError {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.bad_counter.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CounterError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bad_counter, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            CounterError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
+                sequence: sequence,
+                bad_counter: bad_counter,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
+            + self.sequence.size()
+            + self.bad_counter.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
+    }
+}
+impl crate::auto::Error for CounterError {
+    const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
 pub struct CounterNotifyEvent {

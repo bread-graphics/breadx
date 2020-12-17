@@ -559,35 +559,27 @@ impl Rotation {
         let mut inner: u16 = 0;
         if rotate_0 {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if rotate_90 {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if rotate_180 {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if rotate_270 {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if reflect_x {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if reflect_y {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         Rotation { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Rotation {
@@ -603,6 +595,22 @@ impl AsByteSequence for Rotation {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Rotation {
+    type Output = Rotation;
+    #[inline]
+    fn not(self) -> Rotation {
+        Rotation { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Rotation {
+    type Output = Rotation;
+    #[inline]
+    fn bitand(self, rhs: Rotation) -> Rotation {
+        Rotation {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(u8)]
@@ -817,45 +825,33 @@ impl NotifyMask {
         let mut inner: u16 = 0;
         if screen_change {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if crtc_change {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if output_change {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if output_property {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if provider_change {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if provider_property {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if resource_change {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if lease {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         NotifyMask { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for NotifyMask {
@@ -871,6 +867,22 @@ impl AsByteSequence for NotifyMask {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for NotifyMask {
+    type Output = NotifyMask;
+    #[inline]
+    fn not(self) -> NotifyMask {
+        NotifyMask { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for NotifyMask {
+    type Output = NotifyMask;
+    #[inline]
+    fn bitand(self, rhs: NotifyMask) -> NotifyMask {
+        NotifyMask {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -1548,75 +1560,51 @@ impl ModeFlag {
         let mut inner: u32 = 0;
         if hsync_positive {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if hsync_negative {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if vsync_positive {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if vsync_negative {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if interlace {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if double_scan {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if csync {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if csync_positive {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if csync_negative {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if hskew_present {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if bcast {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if pixel_multiplex {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if double_clock {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         if halve_clock {
             inner |= 1 << 13;
-        } else {
-            inner &= !(1 << 13);
         }
         ModeFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ModeFlag {
@@ -1632,6 +1620,22 @@ impl AsByteSequence for ModeFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn not(self) -> ModeFlag {
+        ModeFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitand(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -4999,25 +5003,21 @@ impl ProviderCapability {
         let mut inner: u32 = 0;
         if source_output {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if sink_output {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if source_offload {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if sink_offload {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         ProviderCapability { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ProviderCapability {
@@ -5033,6 +5033,22 @@ impl AsByteSequence for ProviderCapability {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ProviderCapability {
+    type Output = ProviderCapability;
+    #[inline]
+    fn not(self) -> ProviderCapability {
+        ProviderCapability { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ProviderCapability {
+    type Output = ProviderCapability;
+    #[inline]
+    fn bitand(self, rhs: ProviderCapability) -> ProviderCapability {
+        ProviderCapability {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -6790,25 +6806,21 @@ impl Transform {
         let mut inner: i32 = 0;
         if unit {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if scale_up {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if scale_down {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if projective {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         Transform { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Transform {
@@ -6826,53 +6838,21 @@ impl AsByteSequence for Transform {
         self.inner.size()
     }
 }
-#[derive(Clone, Debug, Default)]
-pub struct NotifyEvent {
-    pub event_type: u8,
-    pub sub_code: Notify,
-    pub sequence: u16,
-    pub u: NotifyData,
-}
-impl NotifyEvent {}
-impl AsByteSequence for NotifyEvent {
+impl core::ops::Not for Transform {
+    type Output = Transform;
     #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.sub_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.u.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            NotifyEvent {
-                event_type: event_type,
-                sub_code: sub_code,
-                sequence: sequence,
-                u: u,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
+    fn not(self) -> Transform {
+        Transform { inner: !self.inner }
     }
 }
-impl crate::auto::Event for NotifyEvent {
-    const OPCODE: u8 = 1;
+impl core::ops::BitAnd for Transform {
+    type Output = Transform;
+    #[inline]
+    fn bitand(self, rhs: Transform) -> Transform {
+        Transform {
+            inner: self.inner & rhs.inner,
+        }
+    }
 }
 #[derive(Clone, Debug, Default)]
 pub struct ScreenChangeNotifyEvent {
@@ -6978,4 +6958,52 @@ impl AsByteSequence for ScreenChangeNotifyEvent {
 }
 impl crate::auto::Event for ScreenChangeNotifyEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct NotifyEvent {
+    pub event_type: u8,
+    pub sub_code: Notify,
+    pub sequence: u16,
+    pub u: NotifyData,
+}
+impl NotifyEvent {}
+impl AsByteSequence for NotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.sub_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.u.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            NotifyEvent {
+                event_type: event_type,
+                sub_code: sub_code,
+                sequence: sequence,
+                u: u,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
+    }
+}
+impl crate::auto::Event for NotifyEvent {
+    const OPCODE: u8 = 1;
 }

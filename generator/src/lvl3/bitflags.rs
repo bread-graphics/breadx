@@ -1,8 +1,11 @@
 // MIT/Apache2 License
 
-use super::{Asb, InputParameter, Method, ParameterUsage, RStruct, SizeSumPart, SumOfSizes, Type};
+use super::{
+    syn_util::{item_field, str_to_ty},
+    Asb, InputParameter, Method, ParameterUsage, RStruct, SizeSumPart, SumOfSizes, Trait, Type,
+};
 use crate::lvl2::{Bitflags, Field, StructureItem, Type as Lvl2Type};
-use std::iter;
+use std::{iter, rc::Rc};
 
 /// Convert a bitflags conversion to a rust struct.
 pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
@@ -32,7 +35,10 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
             ..Default::default()
         })],
         methods: vec![],
-        traits: Vec::new(),
+        traits: vec![
+            Trait::BitflagsNot(name.clone().into_boxed_str()),
+            Trait::BitflagsAnd(name.clone().into_boxed_str()),
+        ],
         asb: Default::default(),
     };
 
@@ -113,6 +119,31 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
         ),
     );
     rstruct.methods.push(new_method);
+
+    // also have a count_ones() method
+    let mut count_ones = Method::new(
+        "count_ones".into(),
+        Some(ParameterUsage::Ref),
+        vec![].into_iter().collect(),
+        Some(Type::Basic("usize".into())),
+    );
+    count_ones.statements.push(
+        super::ForwardToInner(Rc::new(|i| {
+            syn::Expr::Cast(syn::ExprCast {
+                attrs: vec![],
+                expr: Box::new(syn::Expr::Call(syn::ExprCall {
+                    attrs: vec![],
+                    func: Box::new(item_field(i, "count_ones")),
+                    paren_token: Default::default(),
+                    args: syn::punctuated::Punctuated::new(),
+                })),
+                as_token: Default::default(),
+                ty: Box::new(str_to_ty("usize")),
+            })
+        }))
+        .into(),
+    );
+    rstruct.methods.push(count_ones);
 
     // asb should forward to inner
     rstruct.asb.size = SumOfSizes(vec![SizeSumPart::SizeofField("inner".into())]);

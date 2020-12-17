@@ -863,36 +863,40 @@ impl Statement for InsertBit {
                     Default::default(),
                 )],
             },
-            else_branch: Some((
-                Default::default(),
-                Box::new(syn::Expr::Block(syn::ExprBlock {
-                    attrs: vec![],
-                    label: None,
-                    block: syn::Block {
-                        brace_token: Default::default(),
-                        stmts: vec![
-                            // AND self.inner with !(1 << bit)
-                            syn::Stmt::Semi(
-                                syn::Expr::AssignOp(syn::ExprAssignOp {
-                                    attrs: vec![],
-                                    left: Box::new(inner),
-                                    op: syn::BinOp::BitAndEq(Default::default()),
-                                    right: Box::new(syn::Expr::Unary(syn::ExprUnary {
+            else_branch: if self.is_self {
+                Some((
+                    Default::default(),
+                    Box::new(syn::Expr::Block(syn::ExprBlock {
+                        attrs: vec![],
+                        label: None,
+                        block: syn::Block {
+                            brace_token: Default::default(),
+                            stmts: vec![
+                                // AND self.inner with !(1 << bit)
+                                syn::Stmt::Semi(
+                                    syn::Expr::AssignOp(syn::ExprAssignOp {
                                         attrs: vec![],
-                                        op: syn::UnOp::Not(Default::default()),
-                                        expr: Box::new(syn::Expr::Paren(syn::ExprParen {
+                                        left: Box::new(inner),
+                                        op: syn::BinOp::BitAndEq(Default::default()),
+                                        right: Box::new(syn::Expr::Unary(syn::ExprUnary {
                                             attrs: vec![],
-                                            paren_token: Default::default(),
-                                            expr: Box::new(shl),
+                                            op: syn::UnOp::Not(Default::default()),
+                                            expr: Box::new(syn::Expr::Paren(syn::ExprParen {
+                                                attrs: vec![],
+                                                paren_token: Default::default(),
+                                                expr: Box::new(shl),
+                                            })),
                                         })),
-                                    })),
-                                }),
-                                Default::default(),
-                            ),
-                        ],
-                    },
-                })),
-            )),
+                                    }),
+                                    Default::default(),
+                                ),
+                            ],
+                        },
+                    })),
+                ))
+            } else {
+                None
+            },
         }))]
     }
 }
@@ -1074,6 +1078,26 @@ impl Statement for GetFdRef {
     }
 }
 
+#[derive(Clone)]
+pub struct ForwardToInner(pub Rc<dyn Fn(syn::Expr) -> syn::Expr>);
+
+impl fmt::Debug for ForwardToInner {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ForwardToInner")
+    }
+}
+
+impl Statement for ForwardToInner {
+    #[inline]
+    fn to_syn_statement(&self) -> Vec<syn::Stmt> {
+        vec![syn::Stmt::Expr((self.0)(item_field(
+            str_to_exprpath("self"),
+            "inner",
+        )))]
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum SumStatement {
     ReturnIndex(ReturnIndexStatement),
@@ -1106,6 +1130,7 @@ pub enum SumStatement {
     DeserTraceMarker(DeserTraceMarker),
     ConvertXids(ConvertXids),
     GetFdRef(GetFdRef),
+    ForwardToInner(ForwardToInner),
 }
 
 macro_rules! sst_from_impl {
@@ -1149,6 +1174,7 @@ sst_from_impl! { InitializeCondition, InitializeCondition }
 sst_from_impl! { DeserTraceMarker, DeserTraceMarker }
 sst_from_impl! { ConvertXids, ConvertXids }
 sst_from_impl! { GetFdRef, GetFdRef }
+sst_from_impl! { ForwardToInner, ForwardToInner }
 
 impl Statement for SumStatement {
     #[inline]
@@ -1184,6 +1210,7 @@ impl Statement for SumStatement {
             Self::DeserTraceMarker(dtm) => dtm.to_syn_statement(),
             Self::ConvertXids(cx) => cx.to_syn_statement(),
             Self::GetFdRef(gfr) => gfr.to_syn_statement(),
+            Self::ForwardToInner(fti) => fti.to_syn_statement(),
         }
     }
 }

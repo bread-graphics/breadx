@@ -133,20 +133,18 @@ impl ImFlag {
         let mut inner: u8 = 0;
         if led_drives_kb {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if no_automatic {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if no_explicit {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         ImFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ImFlag {
@@ -162,6 +160,22 @@ impl AsByteSequence for ImFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ImFlag {
+    type Output = ImFlag;
+    #[inline]
+    fn not(self) -> ImFlag {
+        ImFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ImFlag {
+    type Output = ImFlag;
+    #[inline]
+    fn bitand(self, rhs: ImFlag) -> ImFlag {
+        ImFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -246,30 +260,24 @@ impl ImGroupsWhich {
         let mut inner: u8 = 0;
         if use_base {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if use_latched {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if use_locked {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if use_effective {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if use_compat {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         ImGroupsWhich { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ImGroupsWhich {
@@ -285,6 +293,22 @@ impl AsByteSequence for ImGroupsWhich {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ImGroupsWhich {
+    type Output = ImGroupsWhich;
+    #[inline]
+    fn not(self) -> ImGroupsWhich {
+        ImGroupsWhich { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ImGroupsWhich {
+    type Output = ImGroupsWhich;
+    #[inline]
+    fn bitand(self, rhs: ImGroupsWhich) -> ImGroupsWhich {
+        ImGroupsWhich {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -350,25 +374,21 @@ impl SetOfGroup {
         let mut inner: u8 = 0;
         if group1 {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if group2 {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if group3 {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if group4 {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         SetOfGroup { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SetOfGroup {
@@ -384,6 +404,22 @@ impl AsByteSequence for SetOfGroup {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SetOfGroup {
+    type Output = SetOfGroup;
+    #[inline]
+    fn not(self) -> SetOfGroup {
+        SetOfGroup { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SetOfGroup {
+    type Output = SetOfGroup;
+    #[inline]
+    fn bitand(self, rhs: SetOfGroup) -> SetOfGroup {
+        SetOfGroup {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -468,30 +504,24 @@ impl ImModsWhich {
         let mut inner: u8 = 0;
         if use_base {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if use_latched {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if use_locked {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if use_effective {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if use_compat {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         ImModsWhich { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ImModsWhich {
@@ -507,6 +537,22 @@ impl AsByteSequence for ImModsWhich {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ImModsWhich {
+    type Output = ImModsWhich;
+    #[inline]
+    fn not(self) -> ImModsWhich {
+        ImModsWhich { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ImModsWhich {
+    type Output = ImModsWhich;
+    #[inline]
+    fn bitand(self, rhs: ImModsWhich) -> ImModsWhich {
+        ImModsWhich {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -745,85 +791,57 @@ impl VMod {
         let mut inner: u16 = 0;
         if Zero {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if One {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if Two {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if Three {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if Four {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if Five {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if Six {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if Seven {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if Eight {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if Nine {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if Ten {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if Eleven {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if Twelve {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         if Thirteen {
             inner |= 1 << 13;
-        } else {
-            inner &= !(1 << 13);
         }
         if Fourteen {
             inner |= 1 << 14;
-        } else {
-            inner &= !(1 << 14);
         }
         if Fifteen {
             inner |= 1 << 15;
-        } else {
-            inner &= !(1 << 15);
         }
         VMod { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for VMod {
@@ -839,6 +857,22 @@ impl AsByteSequence for VMod {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for VMod {
+    type Output = VMod;
+    #[inline]
+    fn not(self) -> VMod {
+        VMod { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for VMod {
+    type Output = VMod;
+    #[inline]
+    fn bitand(self, rhs: VMod) -> VMod {
+        VMod {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -1035,70 +1069,48 @@ impl BoolCtrl {
         let mut inner: u32 = 0;
         if repeat_keys {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if slow_keys {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if bounce_keys {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if sticky_keys {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if mouse_keys {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if mouse_keys_accel {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if access_x_keys {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if access_x_timeout_mask {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if access_x_feedback_mask {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if audible_bell_mask {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if overlay1_mask {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if overlay2_mask {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if ignore_group_lock_mask {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         BoolCtrl { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for BoolCtrl {
@@ -1114,6 +1126,22 @@ impl AsByteSequence for BoolCtrl {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for BoolCtrl {
+    type Output = BoolCtrl;
+    #[inline]
+    fn not(self) -> BoolCtrl {
+        BoolCtrl { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for BoolCtrl {
+    type Output = BoolCtrl;
+    #[inline]
+    fn bitand(self, rhs: BoolCtrl) -> BoolCtrl {
+        BoolCtrl {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -1806,45 +1834,33 @@ impl Explicit {
         let mut inner: u8 = 0;
         if key_type1 {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if key_type2 {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if key_type3 {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if key_type4 {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if interpret {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if auto_repeat {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if behavior {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if v_mod_map {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         Explicit { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Explicit {
@@ -1860,6 +1876,22 @@ impl AsByteSequence for Explicit {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Explicit {
+    type Output = Explicit;
+    #[inline]
+    fn not(self) -> Explicit {
+        Explicit { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Explicit {
+    type Output = Explicit;
+    #[inline]
+    fn bitand(self, rhs: Explicit) -> Explicit {
+        Explicit {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -2510,16 +2542,12 @@ impl AsByteSequence for DeviceLedInfo {
         index += sz;
         let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((names_present as usize).count_ones()) as usize,
-        )?;
+        let (names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((names_present).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (maps, block_len): (Vec<IndicatorMap>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((maps_present as usize).count_ones()) as usize,
-        )?;
+        let (maps, block_len): (Vec<IndicatorMap>, usize) =
+            vector_from_bytes(&bytes[index..], ((maps_present).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
         Some((
@@ -2841,20 +2869,18 @@ impl Sa {
         let mut inner: u8 = 0;
         if clear_locks {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if latch_to_lock {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if use_mod_map_mods {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         Sa { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Sa {
@@ -2870,6 +2896,22 @@ impl AsByteSequence for Sa {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Sa {
+    type Output = Sa;
+    #[inline]
+    fn not(self) -> Sa {
+        Sa { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Sa {
+    type Output = Sa;
+    #[inline]
+    fn bitand(self, rhs: Sa) -> Sa {
+        Sa {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -2996,45 +3038,33 @@ impl VModsHigh {
         let mut inner: u8 = 0;
         if Eight {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if Nine {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if Ten {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if Eleven {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if Twelve {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if Thirteen {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if Fourteen {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if Fifteen {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         VModsHigh { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for VModsHigh {
@@ -3050,6 +3080,22 @@ impl AsByteSequence for VModsHigh {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for VModsHigh {
+    type Output = VModsHigh;
+    #[inline]
+    fn not(self) -> VModsHigh {
+        VModsHigh { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for VModsHigh {
+    type Output = VModsHigh;
+    #[inline]
+    fn bitand(self, rhs: VModsHigh) -> VModsHigh {
+        VModsHigh {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -3176,45 +3222,33 @@ impl VModsLow {
         let mut inner: u8 = 0;
         if Zero {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if One {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if Two {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if Three {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if Four {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if Five {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if Six {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if Seven {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         VModsLow { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for VModsLow {
@@ -3230,6 +3264,22 @@ impl AsByteSequence for VModsLow {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for VModsLow {
+    type Output = VModsLow;
+    #[inline]
+    fn not(self) -> VModsLow {
+        VModsLow { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for VModsLow {
+    type Output = VModsLow;
+    #[inline]
+    fn bitand(self, rhs: VModsLow) -> VModsLow {
+        VModsLow {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 pub type SaLatchMods = SaSetMods;
@@ -3391,20 +3441,18 @@ impl SaMovePtrFlag {
         let mut inner: u8 = 0;
         if no_acceleration {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if move_absolute_x {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if move_absolute_y {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         SaMovePtrFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SaMovePtrFlag {
@@ -3420,6 +3468,22 @@ impl AsByteSequence for SaMovePtrFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SaMovePtrFlag {
+    type Output = SaMovePtrFlag;
+    #[inline]
+    fn not(self) -> SaMovePtrFlag {
+        SaMovePtrFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SaMovePtrFlag {
+    type Output = SaMovePtrFlag;
+    #[inline]
+    fn bitand(self, rhs: SaMovePtrFlag) -> SaMovePtrFlag {
+        SaMovePtrFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -3599,15 +3663,15 @@ impl SaSetPtrDfltFlag {
         let mut inner: u8 = 0;
         if affect_dflt_button {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if dflt_btn_absolute {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         SaSetPtrDfltFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SaSetPtrDfltFlag {
@@ -3623,6 +3687,22 @@ impl AsByteSequence for SaSetPtrDfltFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SaSetPtrDfltFlag {
+    type Output = SaSetPtrDfltFlag;
+    #[inline]
+    fn not(self) -> SaSetPtrDfltFlag {
+        SaSetPtrDfltFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SaSetPtrDfltFlag {
+    type Output = SaSetPtrDfltFlag;
+    #[inline]
+    fn bitand(self, rhs: SaSetPtrDfltFlag) -> SaSetPtrDfltFlag {
+        SaSetPtrDfltFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -3766,25 +3846,21 @@ impl SaIsoLockFlag {
         let mut inner: u8 = 0;
         if no_lock {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if no_unlock {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if use_mod_map_mods {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if iso_dflt_is_group {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         SaIsoLockFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SaIsoLockFlag {
@@ -3800,6 +3876,22 @@ impl AsByteSequence for SaIsoLockFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SaIsoLockFlag {
+    type Output = SaIsoLockFlag;
+    #[inline]
+    fn not(self) -> SaIsoLockFlag {
+        SaIsoLockFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SaIsoLockFlag {
+    type Output = SaIsoLockFlag;
+    #[inline]
+    fn bitand(self, rhs: SaIsoLockFlag) -> SaIsoLockFlag {
+        SaIsoLockFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -3865,25 +3957,21 @@ impl SaIsoLockNoAffect {
         let mut inner: u8 = 0;
         if ctrls {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if ptr {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if group {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if mods {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         SaIsoLockNoAffect { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SaIsoLockNoAffect {
@@ -3899,6 +3987,22 @@ impl AsByteSequence for SaIsoLockNoAffect {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SaIsoLockNoAffect {
+    type Output = SaIsoLockNoAffect;
+    #[inline]
+    fn not(self) -> SaIsoLockNoAffect {
+        SaIsoLockNoAffect { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SaIsoLockNoAffect {
+    type Output = SaIsoLockNoAffect;
+    #[inline]
+    fn bitand(self, rhs: SaIsoLockNoAffect) -> SaIsoLockNoAffect {
+        SaIsoLockNoAffect {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -4098,30 +4202,24 @@ impl BoolCtrlsHigh {
         let mut inner: u8 = 0;
         if access_x_feedback {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if audible_bell {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if overlay1 {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if overlay2 {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if ignore_group_lock {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         BoolCtrlsHigh { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for BoolCtrlsHigh {
@@ -4137,6 +4235,22 @@ impl AsByteSequence for BoolCtrlsHigh {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for BoolCtrlsHigh {
+    type Output = BoolCtrlsHigh;
+    #[inline]
+    fn not(self) -> BoolCtrlsHigh {
+        BoolCtrlsHigh { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for BoolCtrlsHigh {
+    type Output = BoolCtrlsHigh;
+    #[inline]
+    fn bitand(self, rhs: BoolCtrlsHigh) -> BoolCtrlsHigh {
+        BoolCtrlsHigh {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -4263,45 +4377,33 @@ impl BoolCtrlsLow {
         let mut inner: u8 = 0;
         if repeat_keys {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if slow_keys {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if bounce_keys {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if sticky_keys {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if mouse_keys {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if mouse_keys_accel {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if access_x_keys {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if access_x_timeout {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         BoolCtrlsLow { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for BoolCtrlsLow {
@@ -4317,6 +4419,22 @@ impl AsByteSequence for BoolCtrlsLow {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for BoolCtrlsLow {
+    type Output = BoolCtrlsLow;
+    #[inline]
+    fn not(self) -> BoolCtrlsLow {
+        BoolCtrlsLow { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for BoolCtrlsLow {
+    type Output = BoolCtrlsLow;
+    #[inline]
+    fn bitand(self, rhs: BoolCtrlsLow) -> BoolCtrlsLow {
+        BoolCtrlsLow {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 pub type SaLockControls = SaSetControls;
@@ -4411,20 +4529,18 @@ impl ActionMessageFlag {
         let mut inner: u8 = 0;
         if on_press {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if on_release {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if gen_key_event {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         ActionMessageFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ActionMessageFlag {
@@ -4440,6 +4556,22 @@ impl AsByteSequence for ActionMessageFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ActionMessageFlag {
+    type Output = ActionMessageFlag;
+    #[inline]
+    fn not(self) -> ActionMessageFlag {
+        ActionMessageFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ActionMessageFlag {
+    type Output = ActionMessageFlag;
+    #[inline]
+    fn bitand(self, rhs: ActionMessageFlag) -> ActionMessageFlag {
+        ActionMessageFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -4657,15 +4789,15 @@ impl LockDeviceFlags {
         let mut inner: u8 = 0;
         if no_lock {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if no_unlock {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         LockDeviceFlags { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for LockDeviceFlags {
@@ -4681,6 +4813,22 @@ impl AsByteSequence for LockDeviceFlags {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for LockDeviceFlags {
+    type Output = LockDeviceFlags;
+    #[inline]
+    fn not(self) -> LockDeviceFlags {
+        LockDeviceFlags { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for LockDeviceFlags {
+    type Output = LockDeviceFlags;
+    #[inline]
+    fn bitand(self, rhs: LockDeviceFlags) -> LockDeviceFlags {
+        LockDeviceFlags {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -5595,65 +5743,45 @@ impl EventType {
         let mut inner: u16 = 0;
         if new_keyboard_notify {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if map_notify {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if state_notify {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if controls_notify {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if indicator_state_notify {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if indicator_map_notify {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if names_notify {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if compat_map_notify {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if bell_notify {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if action_message {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if access_x_notify {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if extension_device_notify {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         EventType { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for EventType {
@@ -5669,6 +5797,22 @@ impl AsByteSequence for EventType {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for EventType {
+    type Output = EventType;
+    #[inline]
+    fn not(self) -> EventType {
+        EventType { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for EventType {
+    type Output = EventType;
+    #[inline]
+    fn bitand(self, rhs: EventType) -> EventType {
+        EventType {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -5795,45 +5939,33 @@ impl MapPart {
         let mut inner: u16 = 0;
         if key_types {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if key_syms {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if modifier_map {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if explicit_components {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if key_actions {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if key_behaviors {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if virtual_mods {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if virtual_mod_map {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         MapPart { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for MapPart {
@@ -5849,6 +5981,22 @@ impl AsByteSequence for MapPart {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for MapPart {
+    type Output = MapPart;
+    #[inline]
+    fn not(self) -> MapPart {
+        MapPart { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for MapPart {
+    type Output = MapPart;
+    #[inline]
+    fn bitand(self, rhs: MapPart) -> MapPart {
+        MapPart {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -6725,65 +6873,45 @@ impl AxOption {
         let mut inner: u16 = 0;
         if sk_press_fb {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if sk_accept_fb {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if feature_fb {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if slow_warn_fb {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if indicator_fb {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if sticky_keys_fb {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if two_keys {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if latch_to_lock {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if sk_release_fb {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if sk_reject_fb {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if bk_reject_fb {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if dumb_bell {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         AxOption { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for AxOption {
@@ -6799,6 +6927,22 @@ impl AsByteSequence for AxOption {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for AxOption {
+    type Output = AxOption;
+    #[inline]
+    fn not(self) -> AxOption {
+        AxOption { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for AxOption {
+    type Output = AxOption;
+    #[inline]
+    fn bitand(self, rhs: AxOption) -> AxOption {
+        AxOption {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -7128,30 +7272,24 @@ impl Control {
         let mut inner: u32 = 0;
         if groups_wrap {
             inner |= 1 << 27;
-        } else {
-            inner &= !(1 << 27);
         }
         if internal_mods {
             inner |= 1 << 28;
-        } else {
-            inner &= !(1 << 28);
         }
         if ignore_lock_mods {
             inner |= 1 << 29;
-        } else {
-            inner &= !(1 << 29);
         }
         if per_key_repeat {
             inner |= 1 << 30;
-        } else {
-            inner &= !(1 << 30);
         }
         if controls_enabled {
             inner |= 1 << 31;
-        } else {
-            inner &= !(1 << 31);
         }
         Control { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for Control {
@@ -7167,6 +7305,22 @@ impl AsByteSequence for Control {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for Control {
+    type Output = Control;
+    #[inline]
+    fn not(self) -> Control {
+        Control { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for Control {
+    type Output = Control;
+    #[inline]
+    fn bitand(self, rhs: Control) -> Control {
+        Control {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -7506,10 +7660,8 @@ impl AsByteSequence for GetMapReply {
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods_rtrn, block_len): (Vec<Card8>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (vmods_rtrn, block_len): (Vec<Card8>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         let (explicit_rtrn, block_len): (Vec<SetExplicit>, usize) =
@@ -7817,10 +7969,8 @@ impl AsByteSequence for SetMapRequest {
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods, block_len): (Vec<Card8>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (vmods, block_len): (Vec<Card8>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         let (explicit, block_len): (Vec<SetExplicit>, usize) =
@@ -7991,15 +8141,15 @@ impl SetMapFlags {
         let mut inner: u16 = 0;
         if resize_types {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if recompute_actions {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         SetMapFlags { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SetMapFlags {
@@ -8015,6 +8165,22 @@ impl AsByteSequence for SetMapFlags {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SetMapFlags {
+    type Output = SetMapFlags;
+    #[inline]
+    fn not(self) -> SetMapFlags {
+        SetMapFlags { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SetMapFlags {
+    type Output = SetMapFlags;
+    #[inline]
+    fn bitand(self, rhs: SetMapFlags) -> SetMapFlags {
+        SetMapFlags {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -8150,10 +8316,8 @@ impl AsByteSequence for GetCompatMapReply {
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
-        let (group_rtrn, block_len): (Vec<ModDef>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((groups_rtrn as usize).count_ones()) as usize,
-        )?;
+        let (group_rtrn, block_len): (Vec<ModDef>, usize) =
+            vector_from_bytes(&bytes[index..], ((groups_rtrn).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
         Some((
@@ -8257,7 +8421,7 @@ impl AsByteSequence for SetCompatMapRequest {
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
         let (group_maps, block_len): (Vec<ModDef>, usize) =
-            vector_from_bytes(&bytes[index..], ((groups as usize).count_ones()) as usize)?;
+            vector_from_bytes(&bytes[index..], ((groups).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
         Some((
@@ -8512,7 +8676,7 @@ impl AsByteSequence for GetIndicatorMapReply {
         index += sz;
         index += 15;
         let (maps, block_len): (Vec<IndicatorMap>, usize) =
-            vector_from_bytes(&bytes[index..], ((which as usize).count_ones()) as usize)?;
+            vector_from_bytes(&bytes[index..], ((which).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
         Some((
@@ -8583,7 +8747,7 @@ impl AsByteSequence for SetIndicatorMapRequest {
         let (which, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (maps, block_len): (Vec<IndicatorMap>, usize) =
-            vector_from_bytes(&bytes[index..], ((which as usize).count_ones()) as usize)?;
+            vector_from_bytes(&bytes[index..], ((which).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
         Some((
@@ -8847,10 +9011,12 @@ impl SetOfGroups {
         let mut inner: u8 = 0;
         if any {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         SetOfGroups { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SetOfGroups {
@@ -8866,6 +9032,22 @@ impl AsByteSequence for SetOfGroups {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for SetOfGroups {
+    type Output = SetOfGroups;
+    #[inline]
+    fn not(self) -> SetOfGroups {
+        SetOfGroups { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SetOfGroups {
+    type Output = SetOfGroups;
+    #[inline]
+    fn bitand(self, rhs: SetOfGroups) -> SetOfGroups {
+        SetOfGroups {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -9255,26 +9437,20 @@ impl AsByteSequence for GetNamesReply {
             (n_levels_per_type
                 .iter()
                 .map(|a| Into::<usize>::into(*a))
-                .sum()) as usize,
+                .sum::<usize>()) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((indicators as usize).count_ones()) as usize,
-        )?;
+        let (indicator_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((group_names as usize).count_ones()) as usize,
-        )?;
+        let (groups, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
         let (key_names, block_len): (Vec<KeyName>, usize) =
@@ -9603,75 +9779,51 @@ impl NameDetail {
         let mut inner: u32 = 0;
         if keycodes {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if geometry {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if symbols {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if phys_symbols {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if types {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if compat {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if key_type_names {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if kt_level_names {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if indicator_names {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if key_names {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if key_aliases {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if virtual_mod_names {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if group_names {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         if rg_names {
             inner |= 1 << 13;
-        } else {
-            inner &= !(1 << 13);
         }
         NameDetail { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for NameDetail {
@@ -9687,6 +9839,22 @@ impl AsByteSequence for NameDetail {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for NameDetail {
+    type Output = NameDetail;
+    #[inline]
+    fn not(self) -> NameDetail {
+        NameDetail { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for NameDetail {
+    type Output = NameDetail;
+    #[inline]
+    fn bitand(self, rhs: NameDetail) -> NameDetail {
+        NameDetail {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -9885,26 +10053,20 @@ impl AsByteSequence for SetNamesRequest {
             (n_levels_per_type
                 .iter()
                 .map(|a| Into::<usize>::into(*a))
-                .sum()) as usize,
+                .sum::<usize>()) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((indicators as usize).count_ones()) as usize,
-        )?;
+        let (indicator_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((group_names as usize).count_ones()) as usize,
-        )?;
+        let (groups, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
         let (key_names, block_len): (Vec<KeyName>, usize) =
@@ -10270,30 +10432,24 @@ impl PerClientFlag {
         let mut inner: u32 = 0;
         if detectable_auto_repeat {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if grabs_use_xkb_state {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if auto_reset_controls {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if lookup_state_when_grabbed {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if send_event_uses_xkb_state {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         PerClientFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for PerClientFlag {
@@ -10309,6 +10465,22 @@ impl AsByteSequence for PerClientFlag {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for PerClientFlag {
+    type Output = PerClientFlag;
+    #[inline]
+    fn not(self) -> PerClientFlag {
+        PerClientFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for PerClientFlag {
+    type Output = PerClientFlag;
+    #[inline]
+    fn bitand(self, rhs: PerClientFlag) -> PerClientFlag {
+        PerClientFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -11232,10 +11404,8 @@ impl AsByteSequence for GetKbdByNameReply {
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods_rtrn, block_len): (Vec<Card8>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (vmods_rtrn, block_len): (Vec<Card8>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         let (explicit_rtrn, block_len): (Vec<SetExplicit>, usize) =
@@ -11305,10 +11475,8 @@ impl AsByteSequence for GetKbdByNameReply {
             vector_from_bytes(&bytes[index..], len7 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
-        let (group_rtrn, block_len): (Vec<ModDef>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((groups_rtrn as usize).count_ones()) as usize,
-        )?;
+        let (group_rtrn, block_len): (Vec<ModDef>, usize) =
+            vector_from_bytes(&bytes[index..], ((groups_rtrn).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
         let indicatormap_type: Card8 = if cond0.indicator_maps() {
@@ -11513,26 +11681,20 @@ impl AsByteSequence for GetKbdByNameReply {
             (n_levels_per_type
                 .iter()
                 .map(|a| Into::<usize>::into(*a))
-                .sum()) as usize,
+                .sum::<usize>()) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((indicators as usize).count_ones()) as usize,
-        )?;
+        let (indicator_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((virtual_mods as usize).count_ones()) as usize,
-        )?;
+        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((group_names as usize).count_ones()) as usize,
-        )?;
+        let (groups, block_len): (Vec<Atom>, usize) =
+            vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
         let (key_names, block_len): (Vec<KeyName>, usize) =
@@ -12106,45 +12268,33 @@ impl GbnDetail {
         let mut inner: u16 = 0;
         if types {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if compat_map {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if client_symbols {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if server_symbols {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if indicator_maps {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if key_names {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if geometry {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if other_names {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         GbnDetail { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for GbnDetail {
@@ -12160,6 +12310,22 @@ impl AsByteSequence for GbnDetail {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for GbnDetail {
+    type Output = GbnDetail;
+    #[inline]
+    fn not(self) -> GbnDetail {
+        GbnDetail { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for GbnDetail {
+    type Output = GbnDetail;
+    #[inline]
+    fn bitand(self, rhs: GbnDetail) -> GbnDetail {
+        GbnDetail {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -12502,30 +12668,24 @@ impl XiFeature {
         let mut inner: u16 = 0;
         if keyboards {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if button_actions {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if indicator_names {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if indicator_maps {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if indicator_state {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         XiFeature { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for XiFeature {
@@ -12541,6 +12701,22 @@ impl AsByteSequence for XiFeature {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for XiFeature {
+    type Output = XiFeature;
+    #[inline]
+    fn not(self) -> XiFeature {
+        XiFeature { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for XiFeature {
+    type Output = XiFeature;
+    #[inline]
+    fn bitand(self, rhs: XiFeature) -> XiFeature {
+        XiFeature {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]
@@ -12848,20 +13024,18 @@ impl NknDetail {
         let mut inner: u16 = 0;
         if keycodes {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if geometry {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if device_id {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         NknDetail { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for NknDetail {
@@ -12877,6 +13051,22 @@ impl AsByteSequence for NknDetail {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for NknDetail {
+    type Output = NknDetail;
+    #[inline]
+    fn not(self) -> NknDetail {
+        NknDetail { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for NknDetail {
+    type Output = NknDetail;
+    #[inline]
+    fn bitand(self, rhs: NknDetail) -> NknDetail {
+        NknDetail {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -13087,75 +13277,51 @@ impl StatePart {
         let mut inner: u16 = 0;
         if modifier_state {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if modifier_base {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if modifier_latch {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if modifier_lock {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if group_state {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if group_base {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if group_latch {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if group_lock {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         if compat_state {
             inner |= 1 << 8;
-        } else {
-            inner &= !(1 << 8);
         }
         if grab_mods {
             inner |= 1 << 9;
-        } else {
-            inner &= !(1 << 9);
         }
         if compat_grab_mods {
             inner |= 1 << 10;
-        } else {
-            inner &= !(1 << 10);
         }
         if lookup_mods {
             inner |= 1 << 11;
-        } else {
-            inner &= !(1 << 11);
         }
         if compat_lookup_mods {
             inner |= 1 << 12;
-        } else {
-            inner &= !(1 << 12);
         }
         if pointer_buttons {
             inner |= 1 << 13;
-        } else {
-            inner &= !(1 << 13);
         }
         StatePart { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for StatePart {
@@ -13171,6 +13337,22 @@ impl AsByteSequence for StatePart {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for StatePart {
+    type Output = StatePart;
+    #[inline]
+    fn not(self) -> StatePart {
+        StatePart { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for StatePart {
+    type Output = StatePart;
+    #[inline]
+    fn bitand(self, rhs: StatePart) -> StatePart {
+        StatePart {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(u8)]
@@ -13314,40 +13496,30 @@ impl AxnDetail {
         let mut inner: u16 = 0;
         if sk_press {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if sk_accept {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if sk_reject {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         if sk_release {
             inner |= 1 << 3;
-        } else {
-            inner &= !(1 << 3);
         }
         if bk_accept {
             inner |= 1 << 4;
-        } else {
-            inner &= !(1 << 4);
         }
         if bk_reject {
             inner |= 1 << 5;
-        } else {
-            inner &= !(1 << 5);
         }
         if axk_warning {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         AxnDetail { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for AxnDetail {
@@ -13363,6 +13535,22 @@ impl AsByteSequence for AxnDetail {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for AxnDetail {
+    type Output = AxnDetail;
+    #[inline]
+    fn not(self) -> AxnDetail {
+        AxnDetail { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for AxnDetail {
+    type Output = AxnDetail;
+    #[inline]
+    fn bitand(self, rhs: AxnDetail) -> AxnDetail {
+        AxnDetail {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(u16)]
@@ -13398,11 +13586,12 @@ impl Default for LedClassResult {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Groups {
-    Any = 254,
-    All = 255,
+pub enum Error {
+    BadId = 253,
+    BadClass = 254,
+    BadDevice = 255,
 }
-impl AsByteSequence for Groups {
+impl AsByteSequence for Error {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -13411,8 +13600,9 @@ impl AsByteSequence for Groups {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            254 => Some((Self::Any, sz)),
-            255 => Some((Self::All, sz)),
+            253 => Some((Self::BadId, sz)),
+            254 => Some((Self::BadClass, sz)),
+            255 => Some((Self::BadDevice, sz)),
             _ => None,
         }
     }
@@ -13421,20 +13611,178 @@ impl AsByteSequence for Groups {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Groups {
+impl Default for Error {
     #[inline]
-    fn default() -> Groups {
-        Groups::Any
+    fn default() -> Error {
+        Error::BadId
+    }
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CmDetail {
+    pub inner: i32,
+}
+impl CmDetail {
+    #[inline]
+    pub fn sym_interp(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_sym_interp(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn group_compat(&self) -> bool {
+        self.inner & (1 << 1) != 0
+    }
+    #[inline]
+    pub fn set_group_compat(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 1;
+        } else {
+            self.inner &= !(1 << 1);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(sym_interp: bool, group_compat: bool) -> Self {
+        let mut inner: i32 = 0;
+        if sym_interp {
+            inner |= 1 << 0;
+        }
+        if group_compat {
+            inner |= 1 << 1;
+        }
+        CmDetail { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+}
+impl AsByteSequence for CmDetail {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((CmDetail { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for CmDetail {
+    type Output = CmDetail;
+    #[inline]
+    fn not(self) -> CmDetail {
+        CmDetail { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for CmDetail {
+    type Output = CmDetail;
+    #[inline]
+    fn bitand(self, rhs: CmDetail) -> CmDetail {
+        CmDetail {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SwitchScreenFlag {
+    pub inner: i32,
+}
+impl SwitchScreenFlag {
+    #[inline]
+    pub fn application(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_application(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn absolute(&self) -> bool {
+        self.inner & (1 << 2) != 0
+    }
+    #[inline]
+    pub fn set_absolute(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 2;
+        } else {
+            self.inner &= !(1 << 2);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(application: bool, absolute: bool) -> Self {
+        let mut inner: i32 = 0;
+        if application {
+            inner |= 1 << 0;
+        }
+        if absolute {
+            inner |= 1 << 2;
+        }
+        SwitchScreenFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+}
+impl AsByteSequence for SwitchScreenFlag {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((SwitchScreenFlag { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn not(self) -> SwitchScreenFlag {
+        SwitchScreenFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn bitand(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
+        SwitchScreenFlag {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum BellClass {
-    KbdFeedbackClass = 0,
-    BellFeedbackClass = 5,
-    DfltXiClass = 768,
+pub enum Const {
+    KeyNameLength = 4,
+    PerKeyBitArraySize = 32,
+    MaxLegalKeyCode = 255,
 }
-impl AsByteSequence for BellClass {
+impl AsByteSequence for Const {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -13443,9 +13791,9 @@ impl AsByteSequence for BellClass {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            0 => Some((Self::KbdFeedbackClass, sz)),
-            5 => Some((Self::BellFeedbackClass, sz)),
-            768 => Some((Self::DfltXiClass, sz)),
+            4 => Some((Self::KeyNameLength, sz)),
+            32 => Some((Self::PerKeyBitArraySize, sz)),
+            255 => Some((Self::MaxLegalKeyCode, sz)),
             _ => None,
         }
     }
@@ -13454,10 +13802,10 @@ impl AsByteSequence for BellClass {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for BellClass {
+impl Default for Const {
     #[inline]
-    fn default() -> BellClass {
-        BellClass::KbdFeedbackClass
+    fn default() -> Const {
+        Const::KeyNameLength
     }
 }
 #[repr(i32)]
@@ -13507,132 +13855,6 @@ impl Default for BehaviorType {
 }
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SwitchScreenFlag {
-    pub inner: i32,
-}
-impl SwitchScreenFlag {
-    #[inline]
-    pub fn application(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_application(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn absolute(&self) -> bool {
-        self.inner & (1 << 2) != 0
-    }
-    #[inline]
-    pub fn set_absolute(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 2;
-        } else {
-            self.inner &= !(1 << 2);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(application: bool, absolute: bool) -> Self {
-        let mut inner: i32 = 0;
-        if application {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        if absolute {
-            inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
-        }
-        SwitchScreenFlag { inner: inner }
-    }
-}
-impl AsByteSequence for SwitchScreenFlag {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((SwitchScreenFlag { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CmDetail {
-    pub inner: i32,
-}
-impl CmDetail {
-    #[inline]
-    pub fn sym_interp(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_sym_interp(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn group_compat(&self) -> bool {
-        self.inner & (1 << 1) != 0
-    }
-    #[inline]
-    pub fn set_group_compat(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 1;
-        } else {
-            self.inner &= !(1 << 1);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(sym_interp: bool, group_compat: bool) -> Self {
-        let mut inner: i32 = 0;
-        if sym_interp {
-            inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
-        }
-        if group_compat {
-            inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
-        }
-        CmDetail { inner: inner }
-    }
-}
-impl AsByteSequence for CmDetail {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((CmDetail { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupsWrap {
     pub inner: i32,
 }
@@ -13668,15 +13890,15 @@ impl GroupsWrap {
         let mut inner: i32 = 0;
         if clamp_into_range {
             inner |= 1 << 6;
-        } else {
-            inner &= !(1 << 6);
         }
         if redirect_into_range {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         GroupsWrap { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for GroupsWrap {
@@ -13692,6 +13914,22 @@ impl AsByteSequence for GroupsWrap {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn not(self) -> GroupsWrap {
+        GroupsWrap { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn bitand(self, rhs: GroupsWrap) -> GroupsWrap {
+        GroupsWrap {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -13718,10 +13956,12 @@ impl SymInterpMatch {
         let mut inner: i32 = 0;
         if level_one_only {
             inner |= 1 << 7;
-        } else {
-            inner &= !(1 << 7);
         }
         SymInterpMatch { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for SymInterpMatch {
@@ -13739,14 +13979,30 @@ impl AsByteSequence for SymInterpMatch {
         self.inner.size()
     }
 }
+impl core::ops::Not for SymInterpMatch {
+    type Output = SymInterpMatch;
+    #[inline]
+    fn not(self) -> SymInterpMatch {
+        SymInterpMatch { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SymInterpMatch {
+    type Output = SymInterpMatch;
+    #[inline]
+    fn bitand(self, rhs: SymInterpMatch) -> SymInterpMatch {
+        SymInterpMatch {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Const {
-    KeyNameLength = 4,
-    PerKeyBitArraySize = 32,
-    MaxLegalKeyCode = 255,
+pub enum BellClass {
+    KbdFeedbackClass = 0,
+    BellFeedbackClass = 5,
+    DfltXiClass = 768,
 }
-impl AsByteSequence for Const {
+impl AsByteSequence for BellClass {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -13755,9 +14011,9 @@ impl AsByteSequence for Const {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            4 => Some((Self::KeyNameLength, sz)),
-            32 => Some((Self::PerKeyBitArraySize, sz)),
-            255 => Some((Self::MaxLegalKeyCode, sz)),
+            0 => Some((Self::KbdFeedbackClass, sz)),
+            5 => Some((Self::BellFeedbackClass, sz)),
+            768 => Some((Self::DfltXiClass, sz)),
             _ => None,
         }
     }
@@ -13766,20 +14022,19 @@ impl AsByteSequence for Const {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Const {
+impl Default for BellClass {
     #[inline]
-    fn default() -> Const {
-        Const::KeyNameLength
+    fn default() -> BellClass {
+        BellClass::KbdFeedbackClass
     }
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Error {
-    BadId = 253,
-    BadClass = 254,
-    BadDevice = 255,
+pub enum Groups {
+    Any = 254,
+    All = 255,
 }
-impl AsByteSequence for Error {
+impl AsByteSequence for Groups {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -13788,9 +14043,8 @@ impl AsByteSequence for Error {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            253 => Some((Self::BadId, sz)),
-            254 => Some((Self::BadClass, sz)),
-            255 => Some((Self::BadDevice, sz)),
+            254 => Some((Self::Any, sz)),
+            255 => Some((Self::All, sz)),
             _ => None,
         }
     }
@@ -13799,10 +14053,10 @@ impl AsByteSequence for Error {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Error {
+impl Default for Groups {
     #[inline]
-    fn default() -> Error {
-        Error::BadId
+    fn default() -> Groups {
+        Groups::Any
     }
 }
 #[repr(i32)]
@@ -13921,6 +14175,227 @@ impl crate::auto::Error for KeyboardError {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
+pub struct BellNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub bell_class: BellClassResult,
+    pub bell_id: Card8,
+    pub percent: Card8,
+    pub pitch: Card16,
+    pub duration: Card16,
+    pub name: Atom,
+    pub window: Window,
+    pub event_only: bool,
+}
+impl BellNotifyEvent {}
+impl AsByteSequence for BellNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.bell_class.as_bytes(&mut bytes[index..]);
+        index += self.bell_id.as_bytes(&mut bytes[index..]);
+        index += self.percent.as_bytes(&mut bytes[index..]);
+        index += self.pitch.as_bytes(&mut bytes[index..]);
+        index += self.duration.as_bytes(&mut bytes[index..]);
+        index += self.name.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.event_only.as_bytes(&mut bytes[index..]);
+        index += 7;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BellNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bell_class, sz): (BellClassResult, usize) =
+            <BellClassResult>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bell_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (percent, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pitch, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (duration, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_only, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 7;
+        Some((
+            BellNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                bell_class: bell_class,
+                bell_id: bell_id,
+                percent: percent,
+                pitch: pitch,
+                duration: duration,
+                name: name,
+                window: window,
+                event_only: event_only,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.bell_class.size()
+            + self.bell_id.size()
+            + self.percent.size()
+            + self.pitch.size()
+            + self.duration.size()
+            + self.name.size()
+            + self.window.size()
+            + self.event_only.size()
+            + 7
+    }
+}
+impl crate::auto::Event for BellNotifyEvent {
+    const OPCODE: u8 = 8;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ControlsNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub num_groups: Card8,
+    pub changed_controls: Control,
+    pub enabled_controls: BoolCtrl,
+    pub enabled_control_changes: BoolCtrl,
+    pub keycode: Keycode,
+    pub event_type_: Card8,
+    pub request_major: Card8,
+    pub request_minor: Card8,
+}
+impl ControlsNotifyEvent {}
+impl AsByteSequence for ControlsNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.num_groups.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.changed_controls.as_bytes(&mut bytes[index..]);
+        index += self.enabled_controls.as_bytes(&mut bytes[index..]);
+        index += self.enabled_control_changes.as_bytes(&mut bytes[index..]);
+        index += self.keycode.as_bytes(&mut bytes[index..]);
+        index += self.event_type_.as_bytes(&mut bytes[index..]);
+        index += self.request_major.as_bytes(&mut bytes[index..]);
+        index += self.request_minor.as_bytes(&mut bytes[index..]);
+        index += 4;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ControlsNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (num_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (changed_controls, sz): (Control, usize) = <Control>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (enabled_controls, sz): (BoolCtrl, usize) = <BoolCtrl>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (enabled_control_changes, sz): (BoolCtrl, usize) =
+            <BoolCtrl>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_type_, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        Some((
+            ControlsNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                num_groups: num_groups,
+                changed_controls: changed_controls,
+                enabled_controls: enabled_controls,
+                enabled_control_changes: enabled_control_changes,
+                keycode: keycode,
+                event_type_: event_type_,
+                request_major: request_major,
+                request_minor: request_minor,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.num_groups.size()
+            + 2
+            + self.changed_controls.size()
+            + self.enabled_controls.size()
+            + self.enabled_control_changes.size()
+            + self.keycode.size()
+            + self.event_type_.size()
+            + self.request_major.size()
+            + self.request_minor.size()
+            + 4
+    }
+}
+impl crate::auto::Event for ControlsNotifyEvent {
+    const OPCODE: u8 = 3;
+}
+#[derive(Clone, Debug, Default)]
 pub struct CompatMapNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -14003,250 +14478,6 @@ impl AsByteSequence for CompatMapNotifyEvent {
 }
 impl crate::auto::Event for CompatMapNotifyEvent {
     const OPCODE: u8 = 7;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NamesNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub changed: NameDetail,
-    pub first_type: Card8,
-    pub n_types: Card8,
-    pub first_level_name: Card8,
-    pub n_level_names: Card8,
-    pub n_radio_groups: Card8,
-    pub n_key_aliases: Card8,
-    pub changed_group_names: SetOfGroup,
-    pub changed_virtual_mods: VMod,
-    pub first_key: Keycode,
-    pub n_keys: Card8,
-    pub changed_indicators: Card32,
-}
-impl NamesNotifyEvent {}
-impl AsByteSequence for NamesNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.changed.as_bytes(&mut bytes[index..]);
-        index += self.first_type.as_bytes(&mut bytes[index..]);
-        index += self.n_types.as_bytes(&mut bytes[index..]);
-        index += self.first_level_name.as_bytes(&mut bytes[index..]);
-        index += self.n_level_names.as_bytes(&mut bytes[index..]);
-        index += self.n_radio_groups.as_bytes(&mut bytes[index..]);
-        index += self.n_key_aliases.as_bytes(&mut bytes[index..]);
-        index += self.changed_group_names.as_bytes(&mut bytes[index..]);
-        index += self.changed_virtual_mods.as_bytes(&mut bytes[index..]);
-        index += self.first_key.as_bytes(&mut bytes[index..]);
-        index += self.n_keys.as_bytes(&mut bytes[index..]);
-        index += self.changed_indicators.as_bytes(&mut bytes[index..]);
-        index += 4;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NamesNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (changed, sz): (NameDetail, usize) = <NameDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_types, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_level_name, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_level_names, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_radio_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_key_aliases, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_group_names, sz): (SetOfGroup, usize) =
-            <SetOfGroup>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_indicators, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        Some((
-            NamesNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                changed: changed,
-                first_type: first_type,
-                n_types: n_types,
-                first_level_name: first_level_name,
-                n_level_names: n_level_names,
-                n_radio_groups: n_radio_groups,
-                n_key_aliases: n_key_aliases,
-                changed_group_names: changed_group_names,
-                changed_virtual_mods: changed_virtual_mods,
-                first_key: first_key,
-                n_keys: n_keys,
-                changed_indicators: changed_indicators,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + 1
-            + self.changed.size()
-            + self.first_type.size()
-            + self.n_types.size()
-            + self.first_level_name.size()
-            + self.n_level_names.size()
-            + self.n_radio_groups.size()
-            + self.n_key_aliases.size()
-            + self.changed_group_names.size()
-            + self.changed_virtual_mods.size()
-            + self.first_key.size()
-            + self.n_keys.size()
-            + self.changed_indicators.size()
-            + 4
-    }
-}
-impl crate::auto::Event for NamesNotifyEvent {
-    const OPCODE: u8 = 6;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NewKeyboardNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub old_device_id: Card8,
-    pub min_key_code: Keycode,
-    pub max_key_code: Keycode,
-    pub old_min_key_code: Keycode,
-    pub old_max_key_code: Keycode,
-    pub request_major: Card8,
-    pub request_minor: Card8,
-    pub changed: NknDetail,
-}
-impl NewKeyboardNotifyEvent {}
-impl AsByteSequence for NewKeyboardNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.old_device_id.as_bytes(&mut bytes[index..]);
-        index += self.min_key_code.as_bytes(&mut bytes[index..]);
-        index += self.max_key_code.as_bytes(&mut bytes[index..]);
-        index += self.old_min_key_code.as_bytes(&mut bytes[index..]);
-        index += self.old_max_key_code.as_bytes(&mut bytes[index..]);
-        index += self.request_major.as_bytes(&mut bytes[index..]);
-        index += self.request_minor.as_bytes(&mut bytes[index..]);
-        index += self.changed.as_bytes(&mut bytes[index..]);
-        index += 14;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NewKeyboardNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (request_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (request_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed, sz): (NknDetail, usize) = <NknDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 14;
-        Some((
-            NewKeyboardNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                old_device_id: old_device_id,
-                min_key_code: min_key_code,
-                max_key_code: max_key_code,
-                old_min_key_code: old_min_key_code,
-                old_max_key_code: old_max_key_code,
-                request_major: request_major,
-                request_minor: request_minor,
-                changed: changed,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + self.old_device_id.size()
-            + self.min_key_code.size()
-            + self.max_key_code.size()
-            + self.old_min_key_code.size()
-            + self.old_max_key_code.size()
-            + self.request_major.size()
-            + self.request_minor.size()
-            + self.changed.size()
-            + 14
-    }
-}
-impl crate::auto::Event for NewKeyboardNotifyEvent {
-    const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
 pub struct StateNotifyEvent {
@@ -14420,109 +14651,27 @@ impl crate::auto::Event for StateNotifyEvent {
     const OPCODE: u8 = 2;
 }
 #[derive(Clone, Debug, Default)]
-pub struct IndicatorMapNotifyEvent {
+pub struct NamesNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
     pub sequence: u16,
     pub time: Timestamp,
     pub device_id: Card8,
-    pub state: Card32,
-    pub map_changed: Card32,
-}
-impl IndicatorMapNotifyEvent {}
-impl AsByteSequence for IndicatorMapNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.map_changed.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing IndicatorMapNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (map_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            IndicatorMapNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                state: state,
-                map_changed: map_changed,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + 3
-            + self.state.size()
-            + self.map_changed.size()
-            + 12
-    }
-}
-impl crate::auto::Event for IndicatorMapNotifyEvent {
-    const OPCODE: u8 = 5;
-}
-#[derive(Clone, Debug, Default)]
-pub struct MapNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub ptr_btn_actions: Card8,
-    pub changed: MapPart,
-    pub min_key_code: Keycode,
-    pub max_key_code: Keycode,
+    pub changed: NameDetail,
     pub first_type: Card8,
     pub n_types: Card8,
-    pub first_key_sym: Keycode,
-    pub n_key_syms: Card8,
-    pub first_key_act: Keycode,
-    pub n_key_acts: Card8,
-    pub first_key_behavior: Keycode,
-    pub n_key_behavior: Card8,
-    pub first_key_explicit: Keycode,
-    pub n_key_explicit: Card8,
-    pub first_mod_map_key: Keycode,
-    pub n_mod_map_keys: Card8,
-    pub first_v_mod_map_key: Keycode,
-    pub n_v_mod_map_keys: Card8,
-    pub virtual_mods: VMod,
+    pub first_level_name: Card8,
+    pub n_level_names: Card8,
+    pub n_radio_groups: Card8,
+    pub n_key_aliases: Card8,
+    pub changed_group_names: SetOfGroup,
+    pub changed_virtual_mods: VMod,
+    pub first_key: Keycode,
+    pub n_keys: Card8,
+    pub changed_indicators: Card32,
 }
-impl MapNotifyEvent {}
-impl AsByteSequence for MapNotifyEvent {
+impl NamesNotifyEvent {}
+impl AsByteSequence for NamesNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14531,32 +14680,26 @@ impl AsByteSequence for MapNotifyEvent {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.ptr_btn_actions.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.changed.as_bytes(&mut bytes[index..]);
-        index += self.min_key_code.as_bytes(&mut bytes[index..]);
-        index += self.max_key_code.as_bytes(&mut bytes[index..]);
         index += self.first_type.as_bytes(&mut bytes[index..]);
         index += self.n_types.as_bytes(&mut bytes[index..]);
-        index += self.first_key_sym.as_bytes(&mut bytes[index..]);
-        index += self.n_key_syms.as_bytes(&mut bytes[index..]);
-        index += self.first_key_act.as_bytes(&mut bytes[index..]);
-        index += self.n_key_acts.as_bytes(&mut bytes[index..]);
-        index += self.first_key_behavior.as_bytes(&mut bytes[index..]);
-        index += self.n_key_behavior.as_bytes(&mut bytes[index..]);
-        index += self.first_key_explicit.as_bytes(&mut bytes[index..]);
-        index += self.n_key_explicit.as_bytes(&mut bytes[index..]);
-        index += self.first_mod_map_key.as_bytes(&mut bytes[index..]);
-        index += self.n_mod_map_keys.as_bytes(&mut bytes[index..]);
-        index += self.first_v_mod_map_key.as_bytes(&mut bytes[index..]);
-        index += self.n_v_mod_map_keys.as_bytes(&mut bytes[index..]);
-        index += self.virtual_mods.as_bytes(&mut bytes[index..]);
-        index += 2;
+        index += self.first_level_name.as_bytes(&mut bytes[index..]);
+        index += self.n_level_names.as_bytes(&mut bytes[index..]);
+        index += self.n_radio_groups.as_bytes(&mut bytes[index..]);
+        index += self.n_key_aliases.as_bytes(&mut bytes[index..]);
+        index += self.changed_group_names.as_bytes(&mut bytes[index..]);
+        index += self.changed_virtual_mods.as_bytes(&mut bytes[index..]);
+        index += self.first_key.as_bytes(&mut bytes[index..]);
+        index += self.n_keys.as_bytes(&mut bytes[index..]);
+        index += self.changed_indicators.as_bytes(&mut bytes[index..]);
+        index += 4;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing MapNotifyEvent from byte buffer");
+        log::trace!("Deserializing NamesNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
@@ -14567,71 +14710,52 @@ impl AsByteSequence for MapNotifyEvent {
         index += sz;
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (ptr_btn_actions, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed, sz): (MapPart, usize) = <MapPart>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += 1;
+        let (changed, sz): (NameDetail, usize) = <NameDetail>::from_bytes(&bytes[index..])?;
         index += sz;
         let (first_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (n_types, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_key_sym, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (first_level_name, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_key_syms, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (n_level_names, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_key_act, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (n_radio_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_key_acts, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (n_key_aliases, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_key_behavior, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (changed_group_names, sz): (SetOfGroup, usize) =
+            <SetOfGroup>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_key_behavior, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (changed_virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_key_explicit, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (first_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_key_explicit, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (n_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_mod_map_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        let (changed_indicators, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_mod_map_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_v_mod_map_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_v_mod_map_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
+        index += 4;
         Some((
-            MapNotifyEvent {
+            NamesNotifyEvent {
                 event_type: event_type,
                 xkb_type: xkb_type,
                 sequence: sequence,
                 time: time,
                 device_id: device_id,
-                ptr_btn_actions: ptr_btn_actions,
                 changed: changed,
-                min_key_code: min_key_code,
-                max_key_code: max_key_code,
                 first_type: first_type,
                 n_types: n_types,
-                first_key_sym: first_key_sym,
-                n_key_syms: n_key_syms,
-                first_key_act: first_key_act,
-                n_key_acts: n_key_acts,
-                first_key_behavior: first_key_behavior,
-                n_key_behavior: n_key_behavior,
-                first_key_explicit: first_key_explicit,
-                n_key_explicit: n_key_explicit,
-                first_mod_map_key: first_mod_map_key,
-                n_mod_map_keys: n_mod_map_keys,
-                first_v_mod_map_key: first_v_mod_map_key,
-                n_v_mod_map_keys: n_v_mod_map_keys,
-                virtual_mods: virtual_mods,
+                first_level_name: first_level_name,
+                n_level_names: n_level_names,
+                n_radio_groups: n_radio_groups,
+                n_key_aliases: n_key_aliases,
+                changed_group_names: changed_group_names,
+                changed_virtual_mods: changed_virtual_mods,
+                first_key: first_key,
+                n_keys: n_keys,
+                changed_indicators: changed_indicators,
             },
             index,
         ))
@@ -14643,139 +14767,24 @@ impl AsByteSequence for MapNotifyEvent {
             + self.sequence.size()
             + self.time.size()
             + self.device_id.size()
-            + self.ptr_btn_actions.size()
+            + 1
             + self.changed.size()
-            + self.min_key_code.size()
-            + self.max_key_code.size()
             + self.first_type.size()
             + self.n_types.size()
-            + self.first_key_sym.size()
-            + self.n_key_syms.size()
-            + self.first_key_act.size()
-            + self.n_key_acts.size()
-            + self.first_key_behavior.size()
-            + self.n_key_behavior.size()
-            + self.first_key_explicit.size()
-            + self.n_key_explicit.size()
-            + self.first_mod_map_key.size()
-            + self.n_mod_map_keys.size()
-            + self.first_v_mod_map_key.size()
-            + self.n_v_mod_map_keys.size()
-            + self.virtual_mods.size()
-            + 2
+            + self.first_level_name.size()
+            + self.n_level_names.size()
+            + self.n_radio_groups.size()
+            + self.n_key_aliases.size()
+            + self.changed_group_names.size()
+            + self.changed_virtual_mods.size()
+            + self.first_key.size()
+            + self.n_keys.size()
+            + self.changed_indicators.size()
+            + 4
     }
 }
-impl crate::auto::Event for MapNotifyEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
-pub struct BellNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub bell_class: BellClassResult,
-    pub bell_id: Card8,
-    pub percent: Card8,
-    pub pitch: Card16,
-    pub duration: Card16,
-    pub name: Atom,
-    pub window: Window,
-    pub event_only: bool,
-}
-impl BellNotifyEvent {}
-impl AsByteSequence for BellNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.bell_class.as_bytes(&mut bytes[index..]);
-        index += self.bell_id.as_bytes(&mut bytes[index..]);
-        index += self.percent.as_bytes(&mut bytes[index..]);
-        index += self.pitch.as_bytes(&mut bytes[index..]);
-        index += self.duration.as_bytes(&mut bytes[index..]);
-        index += self.name.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.event_only.as_bytes(&mut bytes[index..]);
-        index += 7;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BellNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bell_class, sz): (BellClassResult, usize) =
-            <BellClassResult>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bell_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (percent, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pitch, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (duration, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_only, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 7;
-        Some((
-            BellNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                bell_class: bell_class,
-                bell_id: bell_id,
-                percent: percent,
-                pitch: pitch,
-                duration: duration,
-                name: name,
-                window: window,
-                event_only: event_only,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + self.bell_class.size()
-            + self.bell_id.size()
-            + self.percent.size()
-            + self.pitch.size()
-            + self.duration.size()
-            + self.name.size()
-            + self.window.size()
-            + self.event_only.size()
-            + 7
-    }
-}
-impl crate::auto::Event for BellNotifyEvent {
-    const OPCODE: u8 = 8;
+impl crate::auto::Event for NamesNotifyEvent {
+    const OPCODE: u8 = 6;
 }
 #[derive(Clone, Debug, Default)]
 pub struct AccessXNotifyEvent {
@@ -14860,6 +14869,81 @@ impl AsByteSequence for AccessXNotifyEvent {
 }
 impl crate::auto::Event for AccessXNotifyEvent {
     const OPCODE: u8 = 10;
+}
+#[derive(Clone, Debug, Default)]
+pub struct IndicatorMapNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub state: Card32,
+    pub map_changed: Card32,
+}
+impl IndicatorMapNotifyEvent {}
+impl AsByteSequence for IndicatorMapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.map_changed.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing IndicatorMapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (map_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            IndicatorMapNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                state: state,
+                map_changed: map_changed,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + 3
+            + self.state.size()
+            + self.map_changed.size()
+            + 12
+    }
+}
+impl crate::auto::Event for IndicatorMapNotifyEvent {
+    const OPCODE: u8 = 5;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ActionMessageEvent {
@@ -15076,23 +15160,23 @@ impl crate::auto::Event for ExtensionDeviceNotifyEvent {
     const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ControlsNotifyEvent {
+pub struct NewKeyboardNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
     pub sequence: u16,
     pub time: Timestamp,
     pub device_id: Card8,
-    pub num_groups: Card8,
-    pub changed_controls: Control,
-    pub enabled_controls: BoolCtrl,
-    pub enabled_control_changes: BoolCtrl,
-    pub keycode: Keycode,
-    pub event_type_: Card8,
+    pub old_device_id: Card8,
+    pub min_key_code: Keycode,
+    pub max_key_code: Keycode,
+    pub old_min_key_code: Keycode,
+    pub old_max_key_code: Keycode,
     pub request_major: Card8,
     pub request_minor: Card8,
+    pub changed: NknDetail,
 }
-impl ControlsNotifyEvent {}
-impl AsByteSequence for ControlsNotifyEvent {
+impl NewKeyboardNotifyEvent {}
+impl AsByteSequence for NewKeyboardNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15101,22 +15185,21 @@ impl AsByteSequence for ControlsNotifyEvent {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.num_groups.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.changed_controls.as_bytes(&mut bytes[index..]);
-        index += self.enabled_controls.as_bytes(&mut bytes[index..]);
-        index += self.enabled_control_changes.as_bytes(&mut bytes[index..]);
-        index += self.keycode.as_bytes(&mut bytes[index..]);
-        index += self.event_type_.as_bytes(&mut bytes[index..]);
+        index += self.old_device_id.as_bytes(&mut bytes[index..]);
+        index += self.min_key_code.as_bytes(&mut bytes[index..]);
+        index += self.max_key_code.as_bytes(&mut bytes[index..]);
+        index += self.old_min_key_code.as_bytes(&mut bytes[index..]);
+        index += self.old_max_key_code.as_bytes(&mut bytes[index..]);
         index += self.request_major.as_bytes(&mut bytes[index..]);
         index += self.request_minor.as_bytes(&mut bytes[index..]);
-        index += 4;
+        index += self.changed.as_bytes(&mut bytes[index..]);
+        index += 14;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing ControlsNotifyEvent from byte buffer");
+        log::trace!("Deserializing NewKeyboardNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
@@ -15127,40 +15210,38 @@ impl AsByteSequence for ControlsNotifyEvent {
         index += sz;
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (num_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (old_device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 2;
-        let (changed_controls, sz): (Control, usize) = <Control>::from_bytes(&bytes[index..])?;
+        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (enabled_controls, sz): (BoolCtrl, usize) = <BoolCtrl>::from_bytes(&bytes[index..])?;
+        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (enabled_control_changes, sz): (BoolCtrl, usize) =
-            <BoolCtrl>::from_bytes(&bytes[index..])?;
+        let (old_min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_type_, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (old_max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
         let (request_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (request_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 4;
+        let (changed, sz): (NknDetail, usize) = <NknDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 14;
         Some((
-            ControlsNotifyEvent {
+            NewKeyboardNotifyEvent {
                 event_type: event_type,
                 xkb_type: xkb_type,
                 sequence: sequence,
                 time: time,
                 device_id: device_id,
-                num_groups: num_groups,
-                changed_controls: changed_controls,
-                enabled_controls: enabled_controls,
-                enabled_control_changes: enabled_control_changes,
-                keycode: keycode,
-                event_type_: event_type_,
+                old_device_id: old_device_id,
+                min_key_code: min_key_code,
+                max_key_code: max_key_code,
+                old_min_key_code: old_min_key_code,
+                old_max_key_code: old_max_key_code,
                 request_major: request_major,
                 request_minor: request_minor,
+                changed: changed,
             },
             index,
         ))
@@ -15172,20 +15253,193 @@ impl AsByteSequence for ControlsNotifyEvent {
             + self.sequence.size()
             + self.time.size()
             + self.device_id.size()
-            + self.num_groups.size()
-            + 2
-            + self.changed_controls.size()
-            + self.enabled_controls.size()
-            + self.enabled_control_changes.size()
-            + self.keycode.size()
-            + self.event_type_.size()
+            + self.old_device_id.size()
+            + self.min_key_code.size()
+            + self.max_key_code.size()
+            + self.old_min_key_code.size()
+            + self.old_max_key_code.size()
             + self.request_major.size()
             + self.request_minor.size()
-            + 4
+            + self.changed.size()
+            + 14
     }
 }
-impl crate::auto::Event for ControlsNotifyEvent {
-    const OPCODE: u8 = 3;
+impl crate::auto::Event for NewKeyboardNotifyEvent {
+    const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct MapNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub ptr_btn_actions: Card8,
+    pub changed: MapPart,
+    pub min_key_code: Keycode,
+    pub max_key_code: Keycode,
+    pub first_type: Card8,
+    pub n_types: Card8,
+    pub first_key_sym: Keycode,
+    pub n_key_syms: Card8,
+    pub first_key_act: Keycode,
+    pub n_key_acts: Card8,
+    pub first_key_behavior: Keycode,
+    pub n_key_behavior: Card8,
+    pub first_key_explicit: Keycode,
+    pub n_key_explicit: Card8,
+    pub first_mod_map_key: Keycode,
+    pub n_mod_map_keys: Card8,
+    pub first_v_mod_map_key: Keycode,
+    pub n_v_mod_map_keys: Card8,
+    pub virtual_mods: VMod,
+}
+impl MapNotifyEvent {}
+impl AsByteSequence for MapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.ptr_btn_actions.as_bytes(&mut bytes[index..]);
+        index += self.changed.as_bytes(&mut bytes[index..]);
+        index += self.min_key_code.as_bytes(&mut bytes[index..]);
+        index += self.max_key_code.as_bytes(&mut bytes[index..]);
+        index += self.first_type.as_bytes(&mut bytes[index..]);
+        index += self.n_types.as_bytes(&mut bytes[index..]);
+        index += self.first_key_sym.as_bytes(&mut bytes[index..]);
+        index += self.n_key_syms.as_bytes(&mut bytes[index..]);
+        index += self.first_key_act.as_bytes(&mut bytes[index..]);
+        index += self.n_key_acts.as_bytes(&mut bytes[index..]);
+        index += self.first_key_behavior.as_bytes(&mut bytes[index..]);
+        index += self.n_key_behavior.as_bytes(&mut bytes[index..]);
+        index += self.first_key_explicit.as_bytes(&mut bytes[index..]);
+        index += self.n_key_explicit.as_bytes(&mut bytes[index..]);
+        index += self.first_mod_map_key.as_bytes(&mut bytes[index..]);
+        index += self.n_mod_map_keys.as_bytes(&mut bytes[index..]);
+        index += self.first_v_mod_map_key.as_bytes(&mut bytes[index..]);
+        index += self.n_v_mod_map_keys.as_bytes(&mut bytes[index..]);
+        index += self.virtual_mods.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing MapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ptr_btn_actions, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed, sz): (MapPart, usize) = <MapPart>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_types, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_key_sym, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_key_syms, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_key_act, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_key_acts, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_key_behavior, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_key_behavior, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_key_explicit, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_key_explicit, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_mod_map_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_mod_map_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_v_mod_map_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_v_mod_map_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        Some((
+            MapNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                ptr_btn_actions: ptr_btn_actions,
+                changed: changed,
+                min_key_code: min_key_code,
+                max_key_code: max_key_code,
+                first_type: first_type,
+                n_types: n_types,
+                first_key_sym: first_key_sym,
+                n_key_syms: n_key_syms,
+                first_key_act: first_key_act,
+                n_key_acts: n_key_acts,
+                first_key_behavior: first_key_behavior,
+                n_key_behavior: n_key_behavior,
+                first_key_explicit: first_key_explicit,
+                n_key_explicit: n_key_explicit,
+                first_mod_map_key: first_mod_map_key,
+                n_mod_map_keys: n_mod_map_keys,
+                first_v_mod_map_key: first_v_mod_map_key,
+                n_v_mod_map_keys: n_v_mod_map_keys,
+                virtual_mods: virtual_mods,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.ptr_btn_actions.size()
+            + self.changed.size()
+            + self.min_key_code.size()
+            + self.max_key_code.size()
+            + self.first_type.size()
+            + self.n_types.size()
+            + self.first_key_sym.size()
+            + self.n_key_syms.size()
+            + self.first_key_act.size()
+            + self.n_key_acts.size()
+            + self.first_key_behavior.size()
+            + self.n_key_behavior.size()
+            + self.first_key_explicit.size()
+            + self.n_key_explicit.size()
+            + self.first_mod_map_key.size()
+            + self.n_mod_map_keys.size()
+            + self.first_v_mod_map_key.size()
+            + self.n_v_mod_map_keys.size()
+            + self.virtual_mods.size()
+            + 2
+    }
+}
+impl crate::auto::Event for MapNotifyEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct IndicatorStateNotifyEvent {

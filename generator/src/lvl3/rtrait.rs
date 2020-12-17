@@ -1,11 +1,13 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{int_litexpr_int, str_to_exprpath, str_to_path, str_to_pathseg, str_to_ty},
+    syn_util::{
+        int_litexpr_int, item_field, str_to_exprpath, str_to_path, str_to_pathseg, str_to_ty,
+    },
     InputParameter, Method, ParameterUsage, ToSyn, Type,
 };
 use proc_macro2::Span;
-use std::{borrow::Cow, iter, ops::Deref};
+use std::{borrow::Cow, iter, ops::Deref, rc::Rc};
 
 #[derive(Debug)]
 pub enum Trait {
@@ -15,6 +17,8 @@ pub enum Trait {
     Xid,
     EnumDefault(Box<str>),
     FromXid(Box<str>),
+    BitflagsNot(Box<str>),
+    BitflagsAnd(Box<str>),
 }
 
 #[inline]
@@ -88,6 +92,21 @@ fn extension_const(ext: Option<&str>) -> syn::ImplItem {
     })
 }
 
+#[inline]
+fn bitflags_output_ty(ty: &str) -> syn::ImplItem {
+    syn::ImplItem::Type(syn::ImplItemType {
+        attrs: vec![],
+        vis: syn::Visibility::Inherited,
+        defaultness: None,
+        type_token: Default::default(),
+        ident: syn::Ident::new("Output", Span::call_site()),
+        generics: Default::default(),
+        eq_token: Default::default(),
+        semi_token: Default::default(),
+        ty: str_to_ty(ty),
+    })
+}
+
 impl Trait {
     #[inline]
     pub fn to_syn_item(self, tyname: &str) -> Vec<syn::Item> {
@@ -139,6 +158,26 @@ impl Trait {
                                 },
                             ),
                         }]
+                        .into_iter()
+                        .collect(),
+                    },
+                    Self::BitflagsNot(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("core"),
+                            str_to_pathseg("ops"),
+                            str_to_pathseg("Not"),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    },
+                    Self::BitflagsAnd(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("core"),
+                            str_to_pathseg("ops"),
+                            str_to_pathseg("BitAnd"),
+                        ]
                         .into_iter()
                         .collect(),
                     },
@@ -221,6 +260,78 @@ impl Trait {
                         oldname: from.clone(),
                         newname: tyname.to_string().into_boxed_str(),
                     }
+                    .into()];
+                    method.to_syn_impl_item(true)
+                }],
+                Self::BitflagsNot(ty) => vec![bitflags_output_ty(&ty), {
+                    let mut method = Method::new(
+                        "not".into(),
+                        Some(ParameterUsage::Owned),
+                        vec![],
+                        Some(Type::Basic(ty.to_string().into())),
+                    );
+                    method.statements = vec![super::ForwardToInner(Rc::new(move |i| {
+                        syn::Expr::Struct(syn::ExprStruct {
+                            attrs: vec![],
+                            path: str_to_path(&ty),
+                            brace_token: Default::default(),
+                            fields: iter::once(syn::FieldValue {
+                                attrs: vec![],
+                                member: syn::Member::Named(syn::Ident::new(
+                                    "inner",
+                                    Span::call_site(),
+                                )),
+                                colon_token: Some(Default::default()),
+                                expr: syn::Expr::Unary(syn::ExprUnary {
+                                    attrs: vec![],
+                                    op: syn::UnOp::Not(Default::default()),
+                                    expr: Box::new(i),
+                                }),
+                            })
+                            .collect(),
+                            dot2_token: None,
+                            rest: None,
+                        })
+                    }))
+                    .into()];
+                    method.to_syn_impl_item(true)
+                }],
+
+                Self::BitflagsAnd(ty) => vec![bitflags_output_ty(&ty), {
+                    let mut method = Method::new(
+                        "bitand".into(),
+                        Some(ParameterUsage::Owned),
+                        vec![InputParameter {
+                            name: "rhs".into(),
+                            ty: Type::Basic(ty.to_string().into()),
+                            usage: ParameterUsage::Owned,
+                        }],
+                        Some(Type::Basic(ty.to_string().into())),
+                    );
+                    method.statements = vec![super::ForwardToInner(Rc::new(move |i| {
+                        syn::Expr::Struct(syn::ExprStruct {
+                            attrs: vec![],
+                            path: str_to_path(&ty),
+                            brace_token: Default::default(),
+                            fields: iter::once(syn::FieldValue {
+                                attrs: vec![],
+                                member: syn::Member::Named(syn::Ident::new(
+                                    "inner",
+                                    Span::call_site(),
+                                )),
+                                colon_token: Some(Default::default()),
+                                expr: syn::Expr::Binary(syn::ExprBinary {
+                                    attrs: vec![],
+                                    op: syn::BinOp::BitAnd(Default::default()),
+                                    left: Box::new(i),
+                                    right: Box::new(item_field(str_to_exprpath("rhs"), "inner")),
+                                }),
+                            })
+                            .collect(),
+                            dot2_token: None,
+                            rest: None,
+                        })
+                    }))
                     .into()];
                     method.to_syn_impl_item(true)
                 }],

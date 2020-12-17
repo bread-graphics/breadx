@@ -66,7 +66,7 @@ impl Expression {
                         UnaryOp::OneCount => syn::Expr::Call(syn::ExprCall {
                             attrs: vec![],
                             func: Box::new(item_field(
-                                process_lli(iter, with_self_fields, cast),
+                                process_lli(iter, with_self_fields, false),
                                 "count_ones",
                             )),
                             paren_token: Default::default(),
@@ -96,10 +96,10 @@ impl Expression {
                         op: syn::BinOp::Sub(Default::default()),
                         right: Box::new(str_to_exprpath("index")),
                     }),
-                    Some(ExpressionItem::SumOf(slist)) => syn::Expr::Call(syn::ExprCall {
-                        attrs: vec![],
-                        func: Box::new(item_field(
-                            {
+                    Some(ExpressionItem::SumOf(slist)) => {
+                        syn::Expr::MethodCall(syn::ExprMethodCall {
+                            attrs: vec![],
+                            receiver: Box::new({
                                 let iterator = syn::Expr::Call(syn::ExprCall {
                                     attrs: vec![],
                                     func: Box::new(item_field(
@@ -147,10 +147,10 @@ impl Expression {
 syn::PathSegment {
   ident: syn::Ident::new("Into", Span::call_site()),
   arguments: syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
-colon2_token: Some(Default::default()),
-lt_token: Default::default(),
-gt_token: Default::default(),
-args: iter::once(syn::GenericArgument::Type(str_to_ty("usize"))).collect(),
+    colon2_token: Some(Default::default()),
+    lt_token: Default::default(),
+    gt_token: Default::default(),
+    args: iter::once(syn::GenericArgument::Type(str_to_ty("usize"))).collect(),
   }),
 },
 str_to_pathseg("into"),
@@ -168,12 +168,22 @@ str_to_pathseg("into"),
                                     paren_token: Default::default(),
                                     args: iter::once(mapper).collect(),
                                 })
-                            },
-                            "sum",
-                        )),
-                        paren_token: Default::default(),
-                        args: syn::punctuated::Punctuated::new(),
-                    }),
+                            }),
+                            dot_token: Default::default(),
+                            method: syn::Ident::new("sum", Span::call_site()),
+                            turbofish: Some(syn::MethodTurbofish {
+                                colon2_token: Default::default(),
+                                lt_token: Default::default(),
+                                gt_token: Default::default(),
+                                args: iter::once(syn::GenericMethodArgument::Type(str_to_ty(
+                                    "usize",
+                                )))
+                                .collect(),
+                            }),
+                            paren_token: Default::default(),
+                            args: syn::punctuated::Punctuated::new(),
+                        })
+                    }
                 }),
             })
         }

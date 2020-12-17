@@ -148,15 +148,15 @@ impl ClientIdMask {
         let mut inner: u32 = 0;
         if client_xid {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if local_client_pid {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         ClientIdMask { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for ClientIdMask {
@@ -172,6 +172,22 @@ impl AsByteSequence for ClientIdMask {
     #[inline]
     fn size(&self) -> usize {
         self.inner.size()
+    }
+}
+impl core::ops::Not for ClientIdMask {
+    type Output = ClientIdMask;
+    #[inline]
+    fn not(self) -> ClientIdMask {
+        ClientIdMask { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for ClientIdMask {
+    type Output = ClientIdMask;
+    #[inline]
+    fn bitand(self, rhs: ClientIdMask) -> ClientIdMask {
+        ClientIdMask {
+            inner: self.inner & rhs.inner,
+        }
     }
 }
 #[derive(Clone, Debug, Default)]

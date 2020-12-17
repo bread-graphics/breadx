@@ -991,6 +991,39 @@ impl Request for FreeContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Cs {
+    CurrentClients = 1,
+    FutureClients = 2,
+    AllClients = 3,
+}
+impl AsByteSequence for Cs {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::CurrentClients, sz)),
+            2 => Some((Self::FutureClients, sz)),
+            3 => Some((Self::AllClients, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Cs {
+    #[inline]
+    fn default() -> Cs {
+        Cs::CurrentClients
+    }
+}
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HType {
@@ -1041,20 +1074,18 @@ impl HType {
         let mut inner: i32 = 0;
         if from_server_time {
             inner |= 1 << 0;
-        } else {
-            inner &= !(1 << 0);
         }
         if from_client_time {
             inner |= 1 << 1;
-        } else {
-            inner &= !(1 << 1);
         }
         if from_client_sequence {
             inner |= 1 << 2;
-        } else {
-            inner &= !(1 << 2);
         }
         HType { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
     }
 }
 impl AsByteSequence for HType {
@@ -1072,37 +1103,20 @@ impl AsByteSequence for HType {
         self.inner.size()
     }
 }
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Cs {
-    CurrentClients = 1,
-    FutureClients = 2,
-    AllClients = 3,
-}
-impl AsByteSequence for Cs {
+impl core::ops::Not for HType {
+    type Output = HType;
     #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
+    fn not(self) -> HType {
+        HType { inner: !self.inner }
     }
+}
+impl core::ops::BitAnd for HType {
+    type Output = HType;
     #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::CurrentClients, sz)),
-            2 => Some((Self::FutureClients, sz)),
-            3 => Some((Self::AllClients, sz)),
-            _ => None,
+    fn bitand(self, rhs: HType) -> HType {
+        HType {
+            inner: self.inner & rhs.inner,
         }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Cs {
-    #[inline]
-    fn default() -> Cs {
-        Cs::CurrentClients
     }
 }
 #[derive(Clone, Debug, Default)]
