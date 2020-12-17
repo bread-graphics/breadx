@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["John 'not_a_seagull' Nunley <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -14,7 +14,6 @@ async-net = { version = "1.5.0", optional = true }
 blocking = { version = "1.0.2", optional = true }
 bytemuck = "1.4.1"
 cfg-if = "0.1.10"
-const_fn = "0.4.3"
 cty = "0.2.1"
 futures-io = { version = "0.3.6", optional = true }
 futures-lite = { version = "1.11.2", optional = true }

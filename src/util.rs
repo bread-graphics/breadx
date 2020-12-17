@@ -73,7 +73,6 @@ pub(crate) fn reverse_bytes(bytes: &mut [u8]) {
 }
 
 /// Round up an object to a multiple of the given number.
-#[const_fn::const_fn("1.47")]
 #[inline]
 pub(crate) const fn roundup(dividend: usize, divisor: usize) -> usize {
     dividend.wrapping_add(divisor.wrapping_sub(1)) / divisor * divisor

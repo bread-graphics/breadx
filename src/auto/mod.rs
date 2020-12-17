@@ -142,7 +142,6 @@ pub(crate) fn string_as_bytes(string: &str, bytes: &mut [u8]) -> usize {
 }
 
 /// The addition necessary to pad out the buffer, given the align and the current block length.
-#[const_fn::const_fn("1.47")]
 #[inline]
 pub(crate) const fn buffer_pad(block_len: usize, align_to: usize) -> usize {
     block_len.wrapping_neg() & align_to.wrapping_sub(1)

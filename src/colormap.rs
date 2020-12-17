@@ -8,7 +8,6 @@ use crate::{
 };
 
 /// Convenience function for producing an RGB pixel value for supported monitors.
-#[const_fn::const_fn("1.47")]
 #[inline]
 #[must_use]
 pub const fn rgb(r: u8, g: u8, b: u8) -> u32 {
