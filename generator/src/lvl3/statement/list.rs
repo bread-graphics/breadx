@@ -27,6 +27,12 @@ pub struct FromBytesList {
     pub pad: Option<usize>,
 }
 
+#[derive(Debug, Clone)]
+pub struct FromBytesListRemainder {
+    pub name: Box<str>,
+    pub ty: MaybeString,
+}
+
 impl fmt::Debug for FromBytesList {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -10,8 +10,8 @@ use super::xproto::*;
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major_version: Card32,
     pub length: u16,
+    pub client_major_version: Card32,
     pub client_minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -20,8 +20,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -31,17 +32,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major_version: client_major_version,
                 length: length,
+                client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
             },
             index,
@@ -50,8 +52,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major_version.size()
+            + 1
             + self.length.size()
+            + self.client_major_version.size()
             + self.client_minor_version.size()
     }
 }
@@ -124,8 +127,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct RedirectWindowRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub update: Redirect,
 }
 impl RedirectWindowRequest {}
@@ -134,8 +137,9 @@ impl AsByteSequence for RedirectWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.update.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -146,9 +150,10 @@ impl AsByteSequence for RedirectWindowRequest {
         log::trace!("Deserializing RedirectWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (update, sz): (Redirect, usize) = <Redirect>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -156,8 +161,8 @@ impl AsByteSequence for RedirectWindowRequest {
         Some((
             RedirectWindowRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 update: update,
             },
             index,
@@ -165,7 +170,7 @@ impl AsByteSequence for RedirectWindowRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.update.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.update.size() + 3
     }
 }
 impl Request for RedirectWindowRequest {
@@ -208,8 +213,8 @@ impl Default for Redirect {
 #[derive(Clone, Debug, Default)]
 pub struct RedirectSubwindowsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub update: Redirect,
 }
 impl RedirectSubwindowsRequest {}
@@ -218,8 +223,9 @@ impl AsByteSequence for RedirectSubwindowsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.update.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -230,9 +236,10 @@ impl AsByteSequence for RedirectSubwindowsRequest {
         log::trace!("Deserializing RedirectSubwindowsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (update, sz): (Redirect, usize) = <Redirect>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -240,8 +247,8 @@ impl AsByteSequence for RedirectSubwindowsRequest {
         Some((
             RedirectSubwindowsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 update: update,
             },
             index,
@@ -249,7 +256,7 @@ impl AsByteSequence for RedirectSubwindowsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.update.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.update.size() + 3
     }
 }
 impl Request for RedirectSubwindowsRequest {
@@ -261,8 +268,8 @@ impl Request for RedirectSubwindowsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UnredirectWindowRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub update: Redirect,
 }
 impl UnredirectWindowRequest {}
@@ -271,8 +278,9 @@ impl AsByteSequence for UnredirectWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.update.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -283,9 +291,10 @@ impl AsByteSequence for UnredirectWindowRequest {
         log::trace!("Deserializing UnredirectWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (update, sz): (Redirect, usize) = <Redirect>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -293,8 +302,8 @@ impl AsByteSequence for UnredirectWindowRequest {
         Some((
             UnredirectWindowRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 update: update,
             },
             index,
@@ -302,7 +311,7 @@ impl AsByteSequence for UnredirectWindowRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.update.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.update.size() + 3
     }
 }
 impl Request for UnredirectWindowRequest {
@@ -314,8 +323,8 @@ impl Request for UnredirectWindowRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UnredirectSubwindowsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub update: Redirect,
 }
 impl UnredirectSubwindowsRequest {}
@@ -324,8 +333,9 @@ impl AsByteSequence for UnredirectSubwindowsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.update.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -336,9 +346,10 @@ impl AsByteSequence for UnredirectSubwindowsRequest {
         log::trace!("Deserializing UnredirectSubwindowsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (update, sz): (Redirect, usize) = <Redirect>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -346,8 +357,8 @@ impl AsByteSequence for UnredirectSubwindowsRequest {
         Some((
             UnredirectSubwindowsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 update: update,
             },
             index,
@@ -355,7 +366,7 @@ impl AsByteSequence for UnredirectSubwindowsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.update.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.update.size() + 3
     }
 }
 impl Request for UnredirectSubwindowsRequest {
@@ -418,8 +429,8 @@ impl Request for CreateRegionFromBorderClipRequest {
 #[derive(Clone, Debug, Default)]
 pub struct NameWindowPixmapRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub pixmap: Pixmap,
 }
 impl NameWindowPixmapRequest {}
@@ -428,8 +439,9 @@ impl AsByteSequence for NameWindowPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.pixmap.as_bytes(&mut bytes[index..]);
         index
     }
@@ -439,17 +451,18 @@ impl AsByteSequence for NameWindowPixmapRequest {
         log::trace!("Deserializing NameWindowPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             NameWindowPixmapRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 pixmap: pixmap,
             },
             index,
@@ -457,7 +470,7 @@ impl AsByteSequence for NameWindowPixmapRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.pixmap.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.pixmap.size()
     }
 }
 impl Request for NameWindowPixmapRequest {
@@ -469,8 +482,8 @@ impl Request for NameWindowPixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetOverlayWindowRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetOverlayWindowRequest {}
 impl AsByteSequence for GetOverlayWindowRequest {
@@ -478,8 +491,9 @@ impl AsByteSequence for GetOverlayWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -488,22 +502,23 @@ impl AsByteSequence for GetOverlayWindowRequest {
         log::trace!("Deserializing GetOverlayWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetOverlayWindowRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetOverlayWindowRequest {
@@ -569,8 +584,8 @@ impl AsByteSequence for GetOverlayWindowReply {
 #[derive(Clone, Debug, Default)]
 pub struct ReleaseOverlayWindowRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl ReleaseOverlayWindowRequest {}
 impl AsByteSequence for ReleaseOverlayWindowRequest {
@@ -578,8 +593,9 @@ impl AsByteSequence for ReleaseOverlayWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -588,22 +604,23 @@ impl AsByteSequence for ReleaseOverlayWindowRequest {
         log::trace!("Deserializing ReleaseOverlayWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ReleaseOverlayWindowRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for ReleaseOverlayWindowRequest {

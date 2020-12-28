@@ -11,8 +11,8 @@ use super::xproto::*;
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major_version: Card32,
     pub length: u16,
+    pub client_major_version: Card32,
     pub client_minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -21,8 +21,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -32,17 +33,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major_version: client_major_version,
                 length: length,
+                client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
             },
             index,
@@ -51,8 +53,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major_version.size()
+            + 1
             + self.length.size()
+            + self.client_major_version.size()
             + self.client_minor_version.size()
     }
 }
@@ -320,8 +323,8 @@ impl Default for SelectionEvent {
 #[derive(Clone, Debug, Default)]
 pub struct SelectSelectionInputRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub selection: Atom,
     pub event_mask: SelectionEventMask,
 }
@@ -331,8 +334,9 @@ impl AsByteSequence for SelectSelectionInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.selection.as_bytes(&mut bytes[index..]);
         index += self.event_mask.as_bytes(&mut bytes[index..]);
         index
@@ -343,9 +347,10 @@ impl AsByteSequence for SelectSelectionInputRequest {
         log::trace!("Deserializing SelectSelectionInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -355,8 +360,8 @@ impl AsByteSequence for SelectSelectionInputRequest {
         Some((
             SelectSelectionInputRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 selection: selection,
                 event_mask: event_mask,
             },
@@ -366,8 +371,9 @@ impl AsByteSequence for SelectSelectionInputRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.selection.size()
             + self.event_mask.size()
     }
@@ -445,6 +451,10 @@ impl SelectionEventMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const SET_SELECTION_OWNER: Self = Self { inner: 1 };
+    pub const SELECTION_WINDOW_DESTROY: Self = Self { inner: 2 };
+    pub const SELECTION_CLIENT_CLOSE: Self = Self { inner: 4 };
+    pub const COMPLETE: Self = Self { inner: 7 };
 }
 impl AsByteSequence for SelectionEventMask {
     #[inline]
@@ -477,11 +487,29 @@ impl core::ops::BitAnd for SelectionEventMask {
         }
     }
 }
+impl core::ops::BitOr for SelectionEventMask {
+    type Output = SelectionEventMask;
+    #[inline]
+    fn bitor(self, rhs: SelectionEventMask) -> SelectionEventMask {
+        SelectionEventMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for SelectionEventMask {
+    type Output = SelectionEventMask;
+    #[inline]
+    fn bitxor(self, rhs: SelectionEventMask) -> SelectionEventMask {
+        SelectionEventMask {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct SelectCursorInputRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub event_mask: CursorNotifyMask,
 }
 impl SelectCursorInputRequest {}
@@ -490,8 +518,9 @@ impl AsByteSequence for SelectCursorInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.event_mask.as_bytes(&mut bytes[index..]);
         index
     }
@@ -501,9 +530,10 @@ impl AsByteSequence for SelectCursorInputRequest {
         log::trace!("Deserializing SelectCursorInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (event_mask, sz): (CursorNotifyMask, usize) =
             <CursorNotifyMask>::from_bytes(&bytes[index..])?;
@@ -511,8 +541,8 @@ impl AsByteSequence for SelectCursorInputRequest {
         Some((
             SelectCursorInputRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 event_mask: event_mask,
             },
             index,
@@ -520,7 +550,7 @@ impl AsByteSequence for SelectCursorInputRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.event_mask.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.event_mask.size()
     }
 }
 impl Request for SelectCursorInputRequest {
@@ -560,6 +590,8 @@ impl CursorNotifyMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const DISPLAY_CURSOR: Self = Self { inner: 1 };
+    pub const COMPLETE: Self = Self { inner: 1 };
 }
 impl AsByteSequence for CursorNotifyMask {
     #[inline]
@@ -589,6 +621,24 @@ impl core::ops::BitAnd for CursorNotifyMask {
     fn bitand(self, rhs: CursorNotifyMask) -> CursorNotifyMask {
         CursorNotifyMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for CursorNotifyMask {
+    type Output = CursorNotifyMask;
+    #[inline]
+    fn bitor(self, rhs: CursorNotifyMask) -> CursorNotifyMask {
+        CursorNotifyMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for CursorNotifyMask {
+    type Output = CursorNotifyMask;
+    #[inline]
+    fn bitxor(self, rhs: CursorNotifyMask) -> CursorNotifyMask {
+        CursorNotifyMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -1728,8 +1778,8 @@ pub const REGION_NONE: Region = <Region>::const_from_xid(0);
 #[derive(Clone, Debug, Default)]
 pub struct SetWindowShapeRegionRequest {
     pub req_type: u8,
-    pub dest: Window,
     pub length: u16,
+    pub dest: Window,
     pub dest_kind: Sk,
     pub x_offset: Int16,
     pub y_offset: Int16,
@@ -1741,8 +1791,9 @@ impl AsByteSequence for SetWindowShapeRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.dest.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.dest.as_bytes(&mut bytes[index..]);
         index += self.dest_kind.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.x_offset.as_bytes(&mut bytes[index..]);
@@ -1756,9 +1807,10 @@ impl AsByteSequence for SetWindowShapeRegionRequest {
         log::trace!("Deserializing SetWindowShapeRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (dest, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dest, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dest_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1772,8 +1824,8 @@ impl AsByteSequence for SetWindowShapeRegionRequest {
         Some((
             SetWindowShapeRegionRequest {
                 req_type: req_type,
-                dest: dest,
                 length: length,
+                dest: dest,
                 dest_kind: dest_kind,
                 x_offset: x_offset,
                 y_offset: y_offset,
@@ -1785,8 +1837,9 @@ impl AsByteSequence for SetWindowShapeRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.dest.size()
+            + 1
             + self.length.size()
+            + self.dest.size()
             + self.dest_kind.size()
             + 3
             + self.x_offset.size()
@@ -2423,8 +2476,8 @@ impl Request for ExpandRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct HideCursorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl HideCursorRequest {}
 impl AsByteSequence for HideCursorRequest {
@@ -2432,8 +2485,9 @@ impl AsByteSequence for HideCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2442,22 +2496,23 @@ impl AsByteSequence for HideCursorRequest {
         log::trace!("Deserializing HideCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             HideCursorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for HideCursorRequest {
@@ -2469,8 +2524,8 @@ impl Request for HideCursorRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ShowCursorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl ShowCursorRequest {}
 impl AsByteSequence for ShowCursorRequest {
@@ -2478,8 +2533,9 @@ impl AsByteSequence for ShowCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2488,22 +2544,23 @@ impl AsByteSequence for ShowCursorRequest {
         log::trace!("Deserializing ShowCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ShowCursorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for ShowCursorRequest {
@@ -2718,6 +2775,11 @@ impl BarrierDirections {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const POSITIVE_X: Self = Self { inner: 1 };
+    pub const POSITIVE_Y: Self = Self { inner: 2 };
+    pub const NEGATIVE_X: Self = Self { inner: 4 };
+    pub const NEGATIVE_Y: Self = Self { inner: 8 };
+    pub const COMPLETE: Self = Self { inner: 15 };
 }
 impl AsByteSequence for BarrierDirections {
     #[inline]
@@ -2747,6 +2809,24 @@ impl core::ops::BitAnd for BarrierDirections {
     fn bitand(self, rhs: BarrierDirections) -> BarrierDirections {
         BarrierDirections {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for BarrierDirections {
+    type Output = BarrierDirections;
+    #[inline]
+    fn bitor(self, rhs: BarrierDirections) -> BarrierDirections {
+        BarrierDirections {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for BarrierDirections {
+    type Output = BarrierDirections;
+    #[inline]
+    fn bitxor(self, rhs: BarrierDirections) -> BarrierDirections {
+        BarrierDirections {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -2795,6 +2875,78 @@ impl Request for DeletePointerBarrierRequest {
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
+}
+#[derive(Clone, Debug, Default)]
+pub struct CursorNotifyEvent {
+    pub event_type: u8,
+    pub subtype: Card8,
+    pub sequence: u16,
+    pub window: Window,
+    pub cursor_serial: Card32,
+    pub timestamp: Timestamp,
+    pub name: Atom,
+}
+impl CursorNotifyEvent {}
+impl AsByteSequence for CursorNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.subtype.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.name.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            CursorNotifyEvent {
+                event_type: event_type,
+                subtype: subtype,
+                sequence: sequence,
+                window: window,
+                cursor_serial: cursor_serial,
+                timestamp: timestamp,
+                name: name,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.subtype.size()
+            + self.sequence.size()
+            + self.window.size()
+            + self.cursor_serial.size()
+            + self.timestamp.size()
+            + self.name.size()
+            + 12
+    }
+}
+impl crate::auto::Event for CursorNotifyEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct SelectionNotifyEvent {
@@ -2874,76 +3026,4 @@ impl AsByteSequence for SelectionNotifyEvent {
 }
 impl crate::auto::Event for SelectionNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct CursorNotifyEvent {
-    pub event_type: u8,
-    pub subtype: Card8,
-    pub sequence: u16,
-    pub window: Window,
-    pub cursor_serial: Card32,
-    pub timestamp: Timestamp,
-    pub name: Atom,
-}
-impl CursorNotifyEvent {}
-impl AsByteSequence for CursorNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.subtype.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.name.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            CursorNotifyEvent {
-                event_type: event_type,
-                subtype: subtype,
-                sequence: sequence,
-                window: window,
-                cursor_serial: cursor_serial,
-                timestamp: timestamp,
-                name: name,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.subtype.size()
-            + self.sequence.size()
-            + self.window.size()
-            + self.cursor_serial.size()
-            + self.timestamp.size()
-            + self.name.size()
-            + 12
-    }
-}
-impl crate::auto::Event for CursorNotifyEvent {
-    const OPCODE: u8 = 1;
 }

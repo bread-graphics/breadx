@@ -1092,6 +1092,13 @@ impl Ca {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const COUNTER: Self = Self { inner: 1 };
+    pub const VALUE_TYPE: Self = Self { inner: 2 };
+    pub const VALUE: Self = Self { inner: 4 };
+    pub const TEST_TYPE: Self = Self { inner: 8 };
+    pub const DELTA: Self = Self { inner: 16 };
+    pub const EVENTS: Self = Self { inner: 32 };
+    pub const COMPLETE: Self = Self { inner: 63 };
 }
 impl AsByteSequence for Ca {
     #[inline]
@@ -1121,6 +1128,24 @@ impl core::ops::BitAnd for Ca {
     fn bitand(self, rhs: Ca) -> Ca {
         Ca {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Ca {
+    type Output = Ca;
+    #[inline]
+    fn bitor(self, rhs: Ca) -> Ca {
+        Ca {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Ca {
+    type Output = Ca;
+    #[inline]
+    fn bitxor(self, rhs: Ca) -> Ca {
+        Ca {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -1458,8 +1483,8 @@ impl Default for Alarmstate {
 #[derive(Clone, Debug, Default)]
 pub struct SetPriorityRequest {
     pub req_type: u8,
-    pub id: Card32,
     pub length: u16,
+    pub id: Card32,
     pub priority: Int32,
 }
 impl SetPriorityRequest {}
@@ -1468,8 +1493,9 @@ impl AsByteSequence for SetPriorityRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.id.as_bytes(&mut bytes[index..]);
         index += self.priority.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1479,17 +1505,18 @@ impl AsByteSequence for SetPriorityRequest {
         log::trace!("Deserializing SetPriorityRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (priority, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetPriorityRequest {
                 req_type: req_type,
-                id: id,
                 length: length,
+                id: id,
                 priority: priority,
             },
             index,
@@ -1497,7 +1524,7 @@ impl AsByteSequence for SetPriorityRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.id.size() + self.length.size() + self.priority.size()
+        self.req_type.size() + 1 + self.length.size() + self.id.size() + self.priority.size()
     }
 }
 impl Request for SetPriorityRequest {
@@ -1509,8 +1536,8 @@ impl Request for SetPriorityRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetPriorityRequest {
     pub req_type: u8,
-    pub id: Card32,
     pub length: u16,
+    pub id: Card32,
 }
 impl GetPriorityRequest {}
 impl AsByteSequence for GetPriorityRequest {
@@ -1518,8 +1545,9 @@ impl AsByteSequence for GetPriorityRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1528,22 +1556,23 @@ impl AsByteSequence for GetPriorityRequest {
         log::trace!("Deserializing GetPriorityRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPriorityRequest {
                 req_type: req_type,
-                id: id,
                 length: length,
+                id: id,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.id.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.id.size()
     }
 }
 impl Request for GetPriorityRequest {
@@ -1606,8 +1635,8 @@ impl AsByteSequence for GetPriorityReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateFenceRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub fence: Fence,
     pub initially_triggered: bool,
 }
@@ -1617,8 +1646,9 @@ impl AsByteSequence for CreateFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.fence.as_bytes(&mut bytes[index..]);
         index += self.initially_triggered.as_bytes(&mut bytes[index..]);
         index
@@ -1629,9 +1659,10 @@ impl AsByteSequence for CreateFenceRequest {
         log::trace!("Deserializing CreateFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1640,8 +1671,8 @@ impl AsByteSequence for CreateFenceRequest {
         Some((
             CreateFenceRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 fence: fence,
                 initially_triggered: initially_triggered,
             },
@@ -1651,8 +1682,9 @@ impl AsByteSequence for CreateFenceRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.fence.size()
             + self.initially_triggered.size()
     }

@@ -158,6 +158,9 @@ impl ClientIdMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const CLIENT_XID: Self = Self { inner: 1 };
+    pub const LOCAL_CLIENT_PID: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for ClientIdMask {
     #[inline]
@@ -187,6 +190,24 @@ impl core::ops::BitAnd for ClientIdMask {
     fn bitand(self, rhs: ClientIdMask) -> ClientIdMask {
         ClientIdMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ClientIdMask {
+    type Output = ClientIdMask;
+    #[inline]
+    fn bitor(self, rhs: ClientIdMask) -> ClientIdMask {
+        ClientIdMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ClientIdMask {
+    type Output = ClientIdMask;
+    #[inline]
+    fn bitxor(self, rhs: ClientIdMask) -> ClientIdMask {
+        ClientIdMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -588,8 +609,8 @@ impl AsByteSequence for QueryClientsReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryClientResourcesRequest {
     pub req_type: u8,
-    pub xid: Card32,
     pub length: u16,
+    pub xid: Card32,
 }
 impl QueryClientResourcesRequest {}
 impl AsByteSequence for QueryClientResourcesRequest {
@@ -597,8 +618,9 @@ impl AsByteSequence for QueryClientResourcesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.xid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.xid.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -607,22 +629,23 @@ impl AsByteSequence for QueryClientResourcesRequest {
         log::trace!("Deserializing QueryClientResourcesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (xid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryClientResourcesRequest {
                 req_type: req_type,
-                xid: xid,
                 length: length,
+                xid: xid,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.xid.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.xid.size()
     }
 }
 impl Request for QueryClientResourcesRequest {
@@ -700,8 +723,8 @@ impl AsByteSequence for QueryClientResourcesReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryClientPixmapBytesRequest {
     pub req_type: u8,
-    pub xid: Card32,
     pub length: u16,
+    pub xid: Card32,
 }
 impl QueryClientPixmapBytesRequest {}
 impl AsByteSequence for QueryClientPixmapBytesRequest {
@@ -709,8 +732,9 @@ impl AsByteSequence for QueryClientPixmapBytesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.xid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.xid.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -719,22 +743,23 @@ impl AsByteSequence for QueryClientPixmapBytesRequest {
         log::trace!("Deserializing QueryClientPixmapBytesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (xid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryClientPixmapBytesRequest {
                 req_type: req_type,
-                xid: xid,
                 length: length,
+                xid: xid,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.xid.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.xid.size()
     }
 }
 impl Request for QueryClientPixmapBytesRequest {
@@ -812,8 +837,9 @@ impl AsByteSequence for QueryClientIdsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.specs.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.specs.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.specs, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdSpec>());
@@ -825,9 +851,10 @@ impl AsByteSequence for QueryClientIdsRequest {
         log::trace!("Deserializing QueryClientIdsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (specs, block_len): (Vec<ClientIdSpec>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
@@ -844,7 +871,7 @@ impl AsByteSequence for QueryClientIdsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.specs.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<ClientIdSpec>());
             block_len + pad
@@ -926,8 +953,8 @@ impl AsByteSequence for QueryClientIdsReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryResourceBytesRequest {
     pub req_type: u8,
-    pub client: Card32,
     pub length: u16,
+    pub client: Card32,
     pub specs: Vec<ResourceIdSpec>,
 }
 impl QueryResourceBytesRequest {}
@@ -936,8 +963,9 @@ impl AsByteSequence for QueryResourceBytesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client.as_bytes(&mut bytes[index..]);
         index += (self.specs.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.specs, &mut bytes[index..]);
         index += block_len;
@@ -950,9 +978,10 @@ impl AsByteSequence for QueryResourceBytesRequest {
         log::trace!("Deserializing QueryResourceBytesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -963,8 +992,8 @@ impl AsByteSequence for QueryResourceBytesRequest {
         Some((
             QueryResourceBytesRequest {
                 req_type: req_type,
-                client: client,
                 length: length,
+                client: client,
                 specs: specs,
             },
             index,
@@ -973,8 +1002,9 @@ impl AsByteSequence for QueryResourceBytesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client.size()
+            + 1
             + self.length.size()
+            + self.client.size()
             + ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.specs.iter().map(|i| i.size()).sum();

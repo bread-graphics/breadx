@@ -7,6 +7,7 @@ use tinyvec::TinyVec;
 pub struct Event {
     pub base: XStruct,
     pub opcode: u64,
+    pub skip_sequence: bool,
 }
 
 #[derive(Default, Debug)]

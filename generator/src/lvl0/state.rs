@@ -84,7 +84,7 @@ pub enum StructLike {
     /// Reading in a basic struct.
     Struct(String),
     /// Reading in an event.
-    Event(String, u64),
+    Event(String, u64, bool),
     /// Reading in an error.
     Error(String, u64),
     /// Reading in a request.
@@ -363,17 +363,19 @@ impl Lvl0State {
                                 return Some(Item::Struct(XStruct { name, fields, docs }));
                             }
                         }
-                        StructLike::Event(name, number) => {
+                        StructLike::Event(name, number, nsn) => {
                             if e.name() == b"event" {
                                 let name = mem::take(name);
                                 let fields = mem::take(fields);
                                 let docs = mem::take(docs);
+                                let nsn = mem::take(nsn);
                                 let opcode = *number;
 
                                 *self = Self::AwaitingTopLevel;
                                 return Some(Item::Event(crate::lvl1::Event {
                                     base: XStruct { name, fields, docs },
                                     opcode,
+                                    skip_sequence: nsn,
                                 }));
                             }
                         }
@@ -955,12 +957,27 @@ impl Lvl0State {
             }
             b"event" => {
                 // change state machine to await event inputs
-                let mut map =
-                    get_attributes(&b, &[b"name".as_ref(), b"number".as_ref()], &[true, true])?;
+                let mut map = get_attributes(
+                    &b,
+                    &[
+                        b"name".as_ref(),
+                        b"number".as_ref(),
+                        b"no-sequence-number".as_ref(),
+                    ],
+                    &[true, true, false],
+                )?;
                 let name = map.remove(b"name".as_ref()).unwrap();
                 let number = map.remove(b"number".as_ref()).unwrap().parse().ok()?;
+                let no_sequence_number = map
+                    .remove(b"no-sequence-number".as_ref())
+                    .map(|nsn| nsn.to_lowercase().as_str() == "true")
+                    .unwrap_or(false);
 
-                *self = Lvl0State::StructLike(StructLike::Event(name, number), tiny_vec![], None);
+                *self = Lvl0State::StructLike(
+                    StructLike::Event(name, number, no_sequence_number),
+                    tiny_vec![],
+                    None,
+                );
                 None
             }
             b"error" => {

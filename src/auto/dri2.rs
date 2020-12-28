@@ -147,8 +147,8 @@ impl AsByteSequence for AttachFormat {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -157,8 +157,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -168,17 +169,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -187,8 +189,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
     }
 }
@@ -258,8 +261,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct ConnectRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub driver_type: DriverType,
 }
 impl ConnectRequest {}
@@ -268,8 +271,9 @@ impl AsByteSequence for ConnectRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.driver_type.as_bytes(&mut bytes[index..]);
         index
     }
@@ -279,17 +283,18 @@ impl AsByteSequence for ConnectRequest {
         log::trace!("Deserializing ConnectRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (driver_type, sz): (DriverType, usize) = <DriverType>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ConnectRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 driver_type: driver_type,
             },
             index,
@@ -297,7 +302,7 @@ impl AsByteSequence for ConnectRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.driver_type.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.driver_type.size()
     }
 }
 impl Request for ConnectRequest {
@@ -443,8 +448,8 @@ impl Default for DriverType {
 #[derive(Clone, Debug, Default)]
 pub struct AuthenticateRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub magic: Card32,
 }
 impl AuthenticateRequest {}
@@ -453,8 +458,9 @@ impl AsByteSequence for AuthenticateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.magic.as_bytes(&mut bytes[index..]);
         index
     }
@@ -464,17 +470,18 @@ impl AsByteSequence for AuthenticateRequest {
         log::trace!("Deserializing AuthenticateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (magic, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             AuthenticateRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 magic: magic,
             },
             index,
@@ -482,7 +489,7 @@ impl AsByteSequence for AuthenticateRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.magic.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.magic.size()
     }
 }
 impl Request for AuthenticateRequest {
@@ -545,8 +552,8 @@ impl AsByteSequence for AuthenticateReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateDrawableRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl CreateDrawableRequest {}
 impl AsByteSequence for CreateDrawableRequest {
@@ -554,8 +561,9 @@ impl AsByteSequence for CreateDrawableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -564,22 +572,23 @@ impl AsByteSequence for CreateDrawableRequest {
         log::trace!("Deserializing CreateDrawableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateDrawableRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for CreateDrawableRequest {
@@ -591,8 +600,8 @@ impl Request for CreateDrawableRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyDrawableRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl DestroyDrawableRequest {}
 impl AsByteSequence for DestroyDrawableRequest {
@@ -600,8 +609,9 @@ impl AsByteSequence for DestroyDrawableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -610,22 +620,23 @@ impl AsByteSequence for DestroyDrawableRequest {
         log::trace!("Deserializing DestroyDrawableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyDrawableRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for DestroyDrawableRequest {
@@ -637,8 +648,8 @@ impl Request for DestroyDrawableRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetBuffersRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub count: Card32,
     pub attachments: Vec<Card32>,
 }
@@ -648,8 +659,9 @@ impl AsByteSequence for GetBuffersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.attachments, &mut bytes[index..]);
         index += block_len;
@@ -662,9 +674,10 @@ impl AsByteSequence for GetBuffersRequest {
         log::trace!("Deserializing GetBuffersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -675,8 +688,8 @@ impl AsByteSequence for GetBuffersRequest {
         Some((
             GetBuffersRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 count: count,
                 attachments: attachments,
             },
@@ -685,7 +698,7 @@ impl AsByteSequence for GetBuffersRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.count.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.count.size() + {
             let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
             block_len + pad
@@ -779,8 +792,8 @@ impl AsByteSequence for GetBuffersReply {
 #[derive(Clone, Debug, Default)]
 pub struct CopyRegionRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub region: Card32,
     pub dest: Card32,
     pub src: Card32,
@@ -791,8 +804,9 @@ impl AsByteSequence for CopyRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.region.as_bytes(&mut bytes[index..]);
         index += self.dest.as_bytes(&mut bytes[index..]);
         index += self.src.as_bytes(&mut bytes[index..]);
@@ -804,9 +818,10 @@ impl AsByteSequence for CopyRegionRequest {
         log::trace!("Deserializing CopyRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (region, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -817,8 +832,8 @@ impl AsByteSequence for CopyRegionRequest {
         Some((
             CopyRegionRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 region: region,
                 dest: dest,
                 src: src,
@@ -829,8 +844,9 @@ impl AsByteSequence for CopyRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.region.size()
             + self.dest.size()
             + self.src.size()
@@ -887,8 +903,8 @@ impl AsByteSequence for CopyRegionReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetBuffersWithFormatRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub count: Card32,
     pub attachments: Vec<AttachFormat>,
 }
@@ -898,8 +914,9 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.attachments, &mut bytes[index..]);
         index += block_len;
@@ -912,9 +929,10 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         log::trace!("Deserializing GetBuffersWithFormatRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -925,8 +943,8 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         Some((
             GetBuffersWithFormatRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 count: count,
                 attachments: attachments,
             },
@@ -935,7 +953,7 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.count.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.count.size() + {
             let block_len: usize = self.attachments.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
             block_len + pad
@@ -1029,8 +1047,8 @@ impl AsByteSequence for GetBuffersWithFormatReply {
 #[derive(Clone, Debug, Default)]
 pub struct SwapBuffersRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub target_msc_hi: Card32,
     pub target_msc_lo: Card32,
     pub divisor_hi: Card32,
@@ -1044,8 +1062,9 @@ impl AsByteSequence for SwapBuffersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.target_msc_hi.as_bytes(&mut bytes[index..]);
         index += self.target_msc_lo.as_bytes(&mut bytes[index..]);
         index += self.divisor_hi.as_bytes(&mut bytes[index..]);
@@ -1060,9 +1079,10 @@ impl AsByteSequence for SwapBuffersRequest {
         log::trace!("Deserializing SwapBuffersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target_msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1079,8 +1099,8 @@ impl AsByteSequence for SwapBuffersRequest {
         Some((
             SwapBuffersRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 target_msc_hi: target_msc_hi,
                 target_msc_lo: target_msc_lo,
                 divisor_hi: divisor_hi,
@@ -1094,8 +1114,9 @@ impl AsByteSequence for SwapBuffersRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.target_msc_hi.size()
             + self.target_msc_lo.size()
             + self.divisor_hi.size()
@@ -1170,8 +1191,8 @@ impl AsByteSequence for SwapBuffersReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMscRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl GetMscRequest {}
 impl AsByteSequence for GetMscRequest {
@@ -1179,8 +1200,9 @@ impl AsByteSequence for GetMscRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1189,22 +1211,23 @@ impl AsByteSequence for GetMscRequest {
         log::trace!("Deserializing GetMscRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetMscRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for GetMscRequest {
@@ -1297,8 +1320,8 @@ impl AsByteSequence for GetMscReply {
 #[derive(Clone, Debug, Default)]
 pub struct WaitMscRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub target_msc_hi: Card32,
     pub target_msc_lo: Card32,
     pub divisor_hi: Card32,
@@ -1312,8 +1335,9 @@ impl AsByteSequence for WaitMscRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.target_msc_hi.as_bytes(&mut bytes[index..]);
         index += self.target_msc_lo.as_bytes(&mut bytes[index..]);
         index += self.divisor_hi.as_bytes(&mut bytes[index..]);
@@ -1328,9 +1352,10 @@ impl AsByteSequence for WaitMscRequest {
         log::trace!("Deserializing WaitMscRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target_msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1347,8 +1372,8 @@ impl AsByteSequence for WaitMscRequest {
         Some((
             WaitMscRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 target_msc_hi: target_msc_hi,
                 target_msc_lo: target_msc_lo,
                 divisor_hi: divisor_hi,
@@ -1362,8 +1387,9 @@ impl AsByteSequence for WaitMscRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.target_msc_hi.size()
             + self.target_msc_lo.size()
             + self.divisor_hi.size()
@@ -1462,8 +1488,8 @@ impl AsByteSequence for WaitMscReply {
 #[derive(Clone, Debug, Default)]
 pub struct WaitSbcRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub target_sbc_hi: Card32,
     pub target_sbc_lo: Card32,
 }
@@ -1473,8 +1499,9 @@ impl AsByteSequence for WaitSbcRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.target_sbc_hi.as_bytes(&mut bytes[index..]);
         index += self.target_sbc_lo.as_bytes(&mut bytes[index..]);
         index
@@ -1485,9 +1512,10 @@ impl AsByteSequence for WaitSbcRequest {
         log::trace!("Deserializing WaitSbcRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target_sbc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1496,8 +1524,8 @@ impl AsByteSequence for WaitSbcRequest {
         Some((
             WaitSbcRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 target_sbc_hi: target_sbc_hi,
                 target_sbc_lo: target_sbc_lo,
             },
@@ -1507,8 +1535,9 @@ impl AsByteSequence for WaitSbcRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.target_sbc_hi.size()
             + self.target_sbc_lo.size()
     }
@@ -1603,8 +1632,8 @@ impl AsByteSequence for WaitSbcReply {
 #[derive(Clone, Debug, Default)]
 pub struct SwapIntervalRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub interval: Card32,
 }
 impl SwapIntervalRequest {}
@@ -1613,8 +1642,9 @@ impl AsByteSequence for SwapIntervalRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.interval.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1624,17 +1654,18 @@ impl AsByteSequence for SwapIntervalRequest {
         log::trace!("Deserializing SwapIntervalRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (interval, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SwapIntervalRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 interval: interval,
             },
             index,
@@ -1642,7 +1673,7 @@ impl AsByteSequence for SwapIntervalRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.interval.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.interval.size()
     }
 }
 impl Request for SwapIntervalRequest {
@@ -1654,8 +1685,8 @@ impl Request for SwapIntervalRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetParamRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub param: Card32,
 }
 impl GetParamRequest {}
@@ -1664,8 +1695,9 @@ impl AsByteSequence for GetParamRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.param.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1675,17 +1707,18 @@ impl AsByteSequence for GetParamRequest {
         log::trace!("Deserializing GetParamRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (param, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetParamRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 param: param,
             },
             index,
@@ -1693,7 +1726,7 @@ impl AsByteSequence for GetParamRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.param.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.param.size()
     }
 }
 impl Request for GetParamRequest {
@@ -1796,51 +1829,6 @@ impl Default for EventType {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct InvalidateBuffersEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub drawable: Drawable,
-}
-impl InvalidateBuffersEvent {}
-impl AsByteSequence for InvalidateBuffersEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing InvalidateBuffersEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            InvalidateBuffersEvent {
-                event_type: event_type,
-                sequence: sequence,
-                drawable: drawable,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + 1 + self.sequence.size() + self.drawable.size()
-    }
-}
-impl crate::auto::Event for InvalidateBuffersEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
 pub struct BufferSwapCompleteEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -1926,4 +1914,49 @@ impl AsByteSequence for BufferSwapCompleteEvent {
 }
 impl crate::auto::Event for BufferSwapCompleteEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct InvalidateBuffersEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub drawable: Drawable,
+}
+impl InvalidateBuffersEvent {}
+impl AsByteSequence for InvalidateBuffersEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing InvalidateBuffersEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            InvalidateBuffersEvent {
+                event_type: event_type,
+                sequence: sequence,
+                drawable: drawable,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + 1 + self.sequence.size() + self.drawable.size()
+    }
+}
+impl crate::auto::Event for InvalidateBuffersEvent {
+    const OPCODE: u8 = 1;
 }

@@ -4,7 +4,7 @@
 // https://commons.wikimedia.org/wiki/File:Dwight_D._Eisenhower,_official_photo_portrait,_May_29,_1959.jpg
 
 use breadx::{drawable, rgb, BreadError, DisplayConnection, Event, EventMask, Image, ImageFormat};
-use image::{io::Reader, GenericImageView, ImageFormat::Jpeg};
+use image::{io::Reader, GenericImageView};
 use std::{io::Cursor, iter};
 
 // Data of the image (.jpg)
@@ -46,10 +46,7 @@ fn main() -> Result<(), BreadError> {
     )?;
     window.set_title(&mut conn, "Eisenhower")?;
     window.map(&mut conn)?;
-
-    let mut em: EventMask = Default::default();
-    em.set_exposure(true);
-    window.set_event_mask(&mut conn, em)?;
+    window.set_event_mask(&mut conn, EventMask::EXPOSURE)?;
 
     // Set up a graphics context.
     let gc = conn.create_gc(window, Default::default())?;
@@ -84,7 +81,7 @@ fn main() -> Result<(), BreadError> {
     let pixmap = drawable::create_pixmap(&mut conn, window, width as _, height as _, depth)?;
     drawable::put_image(
         &mut conn,
-        window,
+        pixmap,
         gc,
         &image,
         0,
@@ -111,7 +108,7 @@ fn main() -> Result<(), BreadError> {
             }
             Event::Expose(_) => {
                 // Copy the Eisenhower image from the pixmap to this window.
-                /*drawable::copy_area(
+                drawable::copy_area(
                     &mut conn,
                     pixmap,
                     window,
@@ -122,19 +119,6 @@ fn main() -> Result<(), BreadError> {
                     height as _,
                     0,
                     0,
-                )?;*/
-
-                drawable::put_image(
-                    &mut conn,
-                    window,
-                    gc,
-                    &image,
-                    0,
-                    0,
-                    0,
-                    0,
-                    width as _,
-                    height as _,
                 )?;
             }
             _ => (),

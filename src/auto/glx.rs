@@ -641,8 +641,8 @@ impl AsByteSequence for IsDirectReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -651,8 +651,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -662,17 +663,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -681,8 +683,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
     }
 }
@@ -1039,8 +1042,8 @@ impl Request for UseXFontRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateGlxPixmapRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub visual: Visualid,
     pub pixmap: super::xproto::Pixmap,
     pub glx_pixmap: super::glx::Pixmap,
@@ -1051,8 +1054,9 @@ impl AsByteSequence for CreateGlxPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.visual.as_bytes(&mut bytes[index..]);
         index += self.pixmap.as_bytes(&mut bytes[index..]);
         index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
@@ -1064,9 +1068,10 @@ impl AsByteSequence for CreateGlxPixmapRequest {
         log::trace!("Deserializing CreateGlxPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (visual, sz): (Visualid, usize) = <Visualid>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1079,8 +1084,8 @@ impl AsByteSequence for CreateGlxPixmapRequest {
         Some((
             CreateGlxPixmapRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 visual: visual,
                 pixmap: pixmap,
                 glx_pixmap: glx_pixmap,
@@ -1091,8 +1096,9 @@ impl AsByteSequence for CreateGlxPixmapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.visual.size()
             + self.pixmap.size()
             + self.glx_pixmap.size()
@@ -1107,8 +1113,8 @@ impl Request for CreateGlxPixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetVisualConfigsRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl GetVisualConfigsRequest {}
 impl AsByteSequence for GetVisualConfigsRequest {
@@ -1116,8 +1122,9 @@ impl AsByteSequence for GetVisualConfigsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1126,22 +1133,23 @@ impl AsByteSequence for GetVisualConfigsRequest {
         log::trace!("Deserializing GetVisualConfigsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetVisualConfigsRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for GetVisualConfigsRequest {
@@ -1154,6 +1162,7 @@ impl Request for GetVisualConfigsRequest {
 pub struct GetVisualConfigsReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub num_visuals: Card32,
     pub num_properties: Card32,
     pub property_list: Vec<Card32>,
@@ -1166,7 +1175,7 @@ impl AsByteSequence for GetVisualConfigsReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.property_list.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.num_visuals.as_bytes(&mut bytes[index..]);
         index += self.num_properties.as_bytes(&mut bytes[index..]);
         index += 16;
@@ -1184,7 +1193,7 @@ impl AsByteSequence for GetVisualConfigsReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (num_visuals, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1192,13 +1201,14 @@ impl AsByteSequence for GetVisualConfigsReply {
         index += sz;
         index += 16;
         let (property_list, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             GetVisualConfigsReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 num_visuals: num_visuals,
                 num_properties: num_properties,
                 property_list: property_list,
@@ -1211,7 +1221,7 @@ impl AsByteSequence for GetVisualConfigsReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.num_visuals.size()
             + self.num_properties.size()
             + 16
@@ -1272,8 +1282,8 @@ impl Request for DestroyGlxPixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct VendorPrivateRequest {
     pub req_type: u8,
-    pub vendor_code: Card32,
     pub length: u16,
+    pub vendor_code: Card32,
     pub context_tag: ContextTag,
     pub data: Vec<Byte>,
 }
@@ -1283,8 +1293,9 @@ impl AsByteSequence for VendorPrivateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.vendor_code.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.vendor_code.as_bytes(&mut bytes[index..]);
         index += self.context_tag.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
@@ -1297,9 +1308,10 @@ impl AsByteSequence for VendorPrivateRequest {
         log::trace!("Deserializing VendorPrivateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (vendor_code, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (vendor_code, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1310,8 +1322,8 @@ impl AsByteSequence for VendorPrivateRequest {
         Some((
             VendorPrivateRequest {
                 req_type: req_type,
-                vendor_code: vendor_code,
                 length: length,
+                vendor_code: vendor_code,
                 context_tag: context_tag,
                 data: data,
             },
@@ -1321,8 +1333,9 @@ impl AsByteSequence for VendorPrivateRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.vendor_code.size()
+            + 1
             + self.length.size()
+            + self.vendor_code.size()
             + self.context_tag.size()
             + {
                 let block_len: usize = self.data.iter().map(|i| i.size()).sum();
@@ -1340,8 +1353,8 @@ impl Request for VendorPrivateRequest {
 #[derive(Clone, Debug, Default)]
 pub struct VendorPrivateWithReplyRequest {
     pub req_type: u8,
-    pub vendor_code: Card32,
     pub length: u16,
+    pub vendor_code: Card32,
     pub context_tag: ContextTag,
     pub data: Vec<Byte>,
 }
@@ -1351,8 +1364,9 @@ impl AsByteSequence for VendorPrivateWithReplyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.vendor_code.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.vendor_code.as_bytes(&mut bytes[index..]);
         index += self.context_tag.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
@@ -1365,9 +1379,10 @@ impl AsByteSequence for VendorPrivateWithReplyRequest {
         log::trace!("Deserializing VendorPrivateWithReplyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (vendor_code, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (vendor_code, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1378,8 +1393,8 @@ impl AsByteSequence for VendorPrivateWithReplyRequest {
         Some((
             VendorPrivateWithReplyRequest {
                 req_type: req_type,
-                vendor_code: vendor_code,
                 length: length,
+                vendor_code: vendor_code,
                 context_tag: context_tag,
                 data: data,
             },
@@ -1389,8 +1404,9 @@ impl AsByteSequence for VendorPrivateWithReplyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.vendor_code.size()
+            + 1
             + self.length.size()
+            + self.vendor_code.size()
             + self.context_tag.size()
             + {
                 let block_len: usize = self.data.iter().map(|i| i.size()).sum();
@@ -1479,8 +1495,8 @@ impl AsByteSequence for VendorPrivateWithReplyReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryExtensionsStringRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl QueryExtensionsStringRequest {}
 impl AsByteSequence for QueryExtensionsStringRequest {
@@ -1488,8 +1504,9 @@ impl AsByteSequence for QueryExtensionsStringRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1498,22 +1515,23 @@ impl AsByteSequence for QueryExtensionsStringRequest {
         log::trace!("Deserializing QueryExtensionsStringRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryExtensionsStringRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for QueryExtensionsStringRequest {
@@ -1582,8 +1600,8 @@ impl AsByteSequence for QueryExtensionsStringReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryServerStringRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub name: Card32,
 }
 impl QueryServerStringRequest {}
@@ -1592,8 +1610,9 @@ impl AsByteSequence for QueryServerStringRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.name.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1603,17 +1622,18 @@ impl AsByteSequence for QueryServerStringRequest {
         log::trace!("Deserializing QueryServerStringRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (name, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryServerStringRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 name: name,
             },
             index,
@@ -1621,7 +1641,7 @@ impl AsByteSequence for QueryServerStringRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.name.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.name.size()
     }
 }
 impl Request for QueryServerStringRequest {
@@ -1702,8 +1722,8 @@ impl AsByteSequence for QueryServerStringReply {
 #[derive(Clone, Debug, Default)]
 pub struct ClientInfoRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
     pub string: String,
 }
@@ -1713,8 +1733,9 @@ impl AsByteSequence for ClientInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index += (self.string.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.string, &mut bytes[index..]);
@@ -1728,9 +1749,10 @@ impl AsByteSequence for ClientInfoRequest {
         log::trace!("Deserializing ClientInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1743,8 +1765,8 @@ impl AsByteSequence for ClientInfoRequest {
         Some((
             ClientInfoRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
                 string: string,
             },
@@ -1754,8 +1776,9 @@ impl AsByteSequence for ClientInfoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
             + ::core::mem::size_of::<Card32>()
             + {
@@ -1774,8 +1797,8 @@ impl Request for ClientInfoRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetFbConfigsRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl GetFbConfigsRequest {}
 impl AsByteSequence for GetFbConfigsRequest {
@@ -1783,8 +1806,9 @@ impl AsByteSequence for GetFbConfigsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1793,22 +1817,23 @@ impl AsByteSequence for GetFbConfigsRequest {
         log::trace!("Deserializing GetFbConfigsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetFbConfigsRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for GetFbConfigsRequest {
@@ -1821,6 +1846,7 @@ impl Request for GetFbConfigsRequest {
 pub struct GetFbConfigsReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub num_fb_configs: Card32,
     pub num_properties: Card32,
     pub property_list: Vec<Card32>,
@@ -1833,7 +1859,7 @@ impl AsByteSequence for GetFbConfigsReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.property_list.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.num_fb_configs.as_bytes(&mut bytes[index..]);
         index += self.num_properties.as_bytes(&mut bytes[index..]);
         index += 16;
@@ -1851,7 +1877,7 @@ impl AsByteSequence for GetFbConfigsReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (num_fb_configs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1859,13 +1885,14 @@ impl AsByteSequence for GetFbConfigsReply {
         index += sz;
         index += 16;
         let (property_list, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             GetFbConfigsReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 num_fb_configs: num_fb_configs,
                 num_properties: num_properties,
                 property_list: property_list,
@@ -1878,7 +1905,7 @@ impl AsByteSequence for GetFbConfigsReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.num_fb_configs.size()
             + self.num_properties.size()
             + 16
@@ -1892,8 +1919,8 @@ impl AsByteSequence for GetFbConfigsReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreatePixmapRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub fbconfig: Fbconfig,
     pub pixmap: super::xproto::Pixmap,
     pub glx_pixmap: super::glx::Pixmap,
@@ -1906,8 +1933,9 @@ impl AsByteSequence for CreatePixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.fbconfig.as_bytes(&mut bytes[index..]);
         index += self.pixmap.as_bytes(&mut bytes[index..]);
         index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
@@ -1923,9 +1951,10 @@ impl AsByteSequence for CreatePixmapRequest {
         log::trace!("Deserializing CreatePixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fbconfig, sz): (Fbconfig, usize) = <Fbconfig>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1944,8 +1973,8 @@ impl AsByteSequence for CreatePixmapRequest {
         Some((
             CreatePixmapRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 fbconfig: fbconfig,
                 pixmap: pixmap,
                 glx_pixmap: glx_pixmap,
@@ -1958,8 +1987,9 @@ impl AsByteSequence for CreatePixmapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.fbconfig.size()
             + self.pixmap.size()
             + self.glx_pixmap.size()
@@ -2348,8 +2378,8 @@ impl AsByteSequence for MakeContextCurrentReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreatePbufferRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub fbconfig: Fbconfig,
     pub pbuffer: Pbuffer,
     pub num_attribs: Card32,
@@ -2361,8 +2391,9 @@ impl AsByteSequence for CreatePbufferRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.fbconfig.as_bytes(&mut bytes[index..]);
         index += self.pbuffer.as_bytes(&mut bytes[index..]);
         index += self.num_attribs.as_bytes(&mut bytes[index..]);
@@ -2377,9 +2408,10 @@ impl AsByteSequence for CreatePbufferRequest {
         log::trace!("Deserializing CreatePbufferRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fbconfig, sz): (Fbconfig, usize) = <Fbconfig>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2394,8 +2426,8 @@ impl AsByteSequence for CreatePbufferRequest {
         Some((
             CreatePbufferRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 fbconfig: fbconfig,
                 pbuffer: pbuffer,
                 num_attribs: num_attribs,
@@ -2407,8 +2439,9 @@ impl AsByteSequence for CreatePbufferRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.fbconfig.size()
             + self.pbuffer.size()
             + self.num_attribs.size()
@@ -2658,8 +2691,8 @@ impl Request for ChangeDrawableAttributesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateWindowRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub fbconfig: Fbconfig,
     pub window: super::xproto::Window,
     pub glx_window: super::glx::Window,
@@ -2672,8 +2705,9 @@ impl AsByteSequence for CreateWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.fbconfig.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index += self.glx_window.as_bytes(&mut bytes[index..]);
@@ -2689,9 +2723,10 @@ impl AsByteSequence for CreateWindowRequest {
         log::trace!("Deserializing CreateWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fbconfig, sz): (Fbconfig, usize) = <Fbconfig>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2710,8 +2745,8 @@ impl AsByteSequence for CreateWindowRequest {
         Some((
             CreateWindowRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 fbconfig: fbconfig,
                 window: window,
                 glx_window: glx_window,
@@ -2724,8 +2759,9 @@ impl AsByteSequence for CreateWindowRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.fbconfig.size()
             + self.window.size()
             + self.glx_window.size()
@@ -2793,8 +2829,8 @@ impl Request for DeleteWindowRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetClientInfoArbRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
     pub num_versions: Card32,
     pub gl_versions: Vec<Card32>,
@@ -2807,8 +2843,9 @@ impl AsByteSequence for SetClientInfoArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index += self.num_versions.as_bytes(&mut bytes[index..]);
         index += (self.gl_extension_string.len() as Card32).as_bytes(&mut bytes[index..]);
@@ -2830,9 +2867,10 @@ impl AsByteSequence for SetClientInfoArbRequest {
         log::trace!("Deserializing SetClientInfoArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2857,8 +2895,8 @@ impl AsByteSequence for SetClientInfoArbRequest {
         Some((
             SetClientInfoArbRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
                 num_versions: num_versions,
                 gl_versions: gl_versions,
@@ -2871,8 +2909,9 @@ impl AsByteSequence for SetClientInfoArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
             + self.num_versions.size()
             + ::core::mem::size_of::<Card32>()
@@ -3000,8 +3039,8 @@ impl Request for CreateContextAttribsArbRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetClientInfo2ArbRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
     pub num_versions: Card32,
     pub gl_versions: Vec<Card32>,
@@ -3014,8 +3053,9 @@ impl AsByteSequence for SetClientInfo2ArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index += self.num_versions.as_bytes(&mut bytes[index..]);
         index += (self.gl_extension_string.len() as Card32).as_bytes(&mut bytes[index..]);
@@ -3037,9 +3077,10 @@ impl AsByteSequence for SetClientInfo2ArbRequest {
         log::trace!("Deserializing SetClientInfo2ArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3064,8 +3105,8 @@ impl AsByteSequence for SetClientInfo2ArbRequest {
         Some((
             SetClientInfo2ArbRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
                 num_versions: num_versions,
                 gl_versions: gl_versions,
@@ -3078,8 +3119,9 @@ impl AsByteSequence for SetClientInfo2ArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
             + self.num_versions.size()
             + ::core::mem::size_of::<Card32>()
@@ -8113,6 +8155,7 @@ impl Request for GenTexturesRequest {
 pub struct GenTexturesReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub data: Vec<Card32>,
 }
 impl GenTexturesReply {}
@@ -8123,7 +8166,7 @@ impl AsByteSequence for GenTexturesReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.data.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += 24;
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
@@ -8139,17 +8182,18 @@ impl AsByteSequence for GenTexturesReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
         let (data, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             GenTexturesReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 data: data,
             },
             index,
@@ -8157,7 +8201,7 @@ impl AsByteSequence for GenTexturesReply {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.reply_type.size() + 1 + self.sequence.size() + ::core::mem::size_of::<u32>() + 24 + {
+        self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24 + {
             let block_len: usize = self.data.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
             block_len + pad
@@ -10313,6 +10357,7 @@ impl Request for GenQueriesArbRequest {
 pub struct GenQueriesArbReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub data: Vec<Card32>,
 }
 impl GenQueriesArbReply {}
@@ -10323,7 +10368,7 @@ impl AsByteSequence for GenQueriesArbReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.data.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += 24;
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
@@ -10339,17 +10384,18 @@ impl AsByteSequence for GenQueriesArbReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
         let (data, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             GenQueriesArbReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 data: data,
             },
             index,
@@ -10357,7 +10403,7 @@ impl AsByteSequence for GenQueriesArbReply {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.reply_type.size() + 1 + self.sequence.size() + ::core::mem::size_of::<u32>() + 24 + {
+        self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24 + {
             let block_len: usize = self.data.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
             block_len + pad
@@ -10867,6 +10913,68 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
             }
     }
 }
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Pbcdt {
+    Window = 32793,
+    Pbuffer = 32794,
+}
+impl AsByteSequence for Pbcdt {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            32793 => Some((Self::Window, sz)),
+            32794 => Some((Self::Pbuffer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Pbcdt {
+    #[inline]
+    fn default() -> Pbcdt {
+        Pbcdt::Window
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Pbcet {
+    Damaged = 32791,
+    Saved = 32792,
+}
+impl AsByteSequence for Pbcet {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            32791 => Some((Self::Damaged, sz)),
+            32792 => Some((Self::Saved, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Pbcet {
+    #[inline]
+    fn default() -> Pbcet {
+        Pbcet::Damaged
+    }
+}
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Gc {
@@ -11223,6 +11331,27 @@ impl Gc {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const GL_CURRENT_BIT: Self = Self { inner: 1 };
+    pub const GL_POINT_BIT: Self = Self { inner: 2 };
+    pub const GL_LINE_BIT: Self = Self { inner: 4 };
+    pub const GL_POLYGON_BIT: Self = Self { inner: 8 };
+    pub const GL_POLYGON_STIPPLE_BIT: Self = Self { inner: 16 };
+    pub const GL_PIXEL_MODE_BIT: Self = Self { inner: 32 };
+    pub const GL_LIGHTING_BIT: Self = Self { inner: 64 };
+    pub const GL_FOG_BIT: Self = Self { inner: 128 };
+    pub const GL_DEPTH_BUFFER_BIT: Self = Self { inner: 256 };
+    pub const GL_ACCUM_BUFFER_BIT: Self = Self { inner: 512 };
+    pub const GL_STENCIL_BUFFER_BIT: Self = Self { inner: 1024 };
+    pub const GL_VIEWPORT_BIT: Self = Self { inner: 2048 };
+    pub const GL_TRANSFORM_BIT: Self = Self { inner: 4096 };
+    pub const GL_ENABLE_BIT: Self = Self { inner: 8192 };
+    pub const GL_COLOR_BUFFER_BIT: Self = Self { inner: 16384 };
+    pub const GL_HINT_BIT: Self = Self { inner: 32768 };
+    pub const GL_EVAL_BIT: Self = Self { inner: 65536 };
+    pub const GL_LIST_BIT: Self = Self { inner: 131072 };
+    pub const GL_TEXTURE_BIT: Self = Self { inner: 262144 };
+    pub const GL_SCISSOR_BIT: Self = Self { inner: 524288 };
+    pub const COMPLETE: Self = Self { inner: 1048575 };
 }
 impl AsByteSequence for Gc {
     #[inline]
@@ -11252,6 +11381,24 @@ impl core::ops::BitAnd for Gc {
     fn bitand(self, rhs: Gc) -> Gc {
         Gc {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Gc {
+    type Output = Gc;
+    #[inline]
+    fn bitor(self, rhs: Gc) -> Gc {
+        Gc {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Gc {
+    type Output = Gc;
+    #[inline]
+    fn bitxor(self, rhs: Gc) -> Gc {
+        Gc {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -11287,156 +11434,6 @@ impl Default for Rm {
     fn default() -> Rm {
         Rm::GlRender
     }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcet {
-    Damaged = 32791,
-    Saved = 32792,
-}
-impl AsByteSequence for Pbcet {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            32791 => Some((Self::Damaged, sz)),
-            32792 => Some((Self::Saved, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Pbcet {
-    #[inline]
-    fn default() -> Pbcet {
-        Pbcet::Damaged
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcdt {
-    Window = 32793,
-    Pbuffer = 32794,
-}
-impl AsByteSequence for Pbcdt {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            32793 => Some((Self::Window, sz)),
-            32794 => Some((Self::Pbuffer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Pbcdt {
-    #[inline]
-    fn default() -> Pbcdt {
-        Pbcdt::Window
-    }
-}
-#[derive(Clone, Debug, Default)]
-pub struct BufferSwapCompleteEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event_type_: Card16,
-    pub drawable: super::glx::Drawable,
-    pub ust_hi: Card32,
-    pub ust_lo: Card32,
-    pub msc_hi: Card32,
-    pub msc_lo: Card32,
-    pub sbc: Card32,
-}
-impl BufferSwapCompleteEvent {}
-impl AsByteSequence for BufferSwapCompleteEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event_type_.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index += self.ust_hi.as_bytes(&mut bytes[index..]);
-        index += self.ust_lo.as_bytes(&mut bytes[index..]);
-        index += self.msc_hi.as_bytes(&mut bytes[index..]);
-        index += self.msc_lo.as_bytes(&mut bytes[index..]);
-        index += self.sbc.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (drawable, sz): (super::glx::Drawable, usize) =
-            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            BufferSwapCompleteEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event_type_: event_type_,
-                drawable: drawable,
-                ust_hi: ust_hi,
-                ust_lo: ust_lo,
-                msc_hi: msc_hi,
-                msc_lo: msc_lo,
-                sbc: sbc,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event_type_.size()
-            + 2
-            + self.drawable.size()
-            + self.ust_hi.size()
-            + self.ust_lo.size()
-            + self.msc_hi.size()
-            + self.msc_lo.size()
-            + self.sbc.size()
-    }
-}
-impl crate::auto::Event for BufferSwapCompleteEvent {
-    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct PbufferClobberEvent {
@@ -11543,4 +11540,92 @@ impl AsByteSequence for PbufferClobberEvent {
 }
 impl crate::auto::Event for PbufferClobberEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct BufferSwapCompleteEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event_type_: Card16,
+    pub drawable: super::glx::Drawable,
+    pub ust_hi: Card32,
+    pub ust_lo: Card32,
+    pub msc_hi: Card32,
+    pub msc_lo: Card32,
+    pub sbc: Card32,
+}
+impl BufferSwapCompleteEvent {}
+impl AsByteSequence for BufferSwapCompleteEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event_type_.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += self.ust_hi.as_bytes(&mut bytes[index..]);
+        index += self.ust_lo.as_bytes(&mut bytes[index..]);
+        index += self.msc_hi.as_bytes(&mut bytes[index..]);
+        index += self.msc_lo.as_bytes(&mut bytes[index..]);
+        index += self.sbc.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (drawable, sz): (super::glx::Drawable, usize) =
+            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            BufferSwapCompleteEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event_type_: event_type_,
+                drawable: drawable,
+                ust_hi: ust_hi,
+                ust_lo: ust_lo,
+                msc_hi: msc_hi,
+                msc_lo: msc_lo,
+                sbc: sbc,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.event_type_.size()
+            + 2
+            + self.drawable.size()
+            + self.ust_hi.size()
+            + self.ust_lo.size()
+            + self.msc_hi.size()
+            + self.msc_lo.size()
+            + self.sbc.size()
+    }
+}
+impl crate::auto::Event for BufferSwapCompleteEvent {
+    const OPCODE: u8 = 1;
 }

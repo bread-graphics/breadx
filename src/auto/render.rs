@@ -667,8 +667,8 @@ impl AsByteSequence for Glyphinfo {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major_version: Card32,
     pub length: u16,
+    pub client_major_version: Card32,
     pub client_minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -677,8 +677,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -688,17 +689,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major_version: client_major_version,
                 length: length,
+                client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
             },
             index,
@@ -707,8 +709,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major_version.size()
+            + 1
             + self.length.size()
+            + self.client_major_version.size()
             + self.client_minor_version.size()
     }
 }
@@ -1522,6 +1525,20 @@ impl Cp {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const REPEAT: Self = Self { inner: 1 };
+    pub const ALPHA_MAP: Self = Self { inner: 2 };
+    pub const ALPHA_X_ORIGIN: Self = Self { inner: 4 };
+    pub const ALPHA_Y_ORIGIN: Self = Self { inner: 8 };
+    pub const CLIP_X_ORIGIN: Self = Self { inner: 16 };
+    pub const CLIP_Y_ORIGIN: Self = Self { inner: 32 };
+    pub const CLIP_MASK: Self = Self { inner: 64 };
+    pub const GRAPHICS_EXPOSURE: Self = Self { inner: 128 };
+    pub const SUBWINDOW_MODE: Self = Self { inner: 256 };
+    pub const POLY_EDGE: Self = Self { inner: 512 };
+    pub const POLY_MODE: Self = Self { inner: 1024 };
+    pub const DITHER: Self = Self { inner: 2048 };
+    pub const COMPONENT_ALPHA: Self = Self { inner: 4096 };
+    pub const COMPLETE: Self = Self { inner: 8191 };
 }
 impl AsByteSequence for Cp {
     #[inline]
@@ -1551,6 +1568,24 @@ impl core::ops::BitAnd for Cp {
     fn bitand(self, rhs: Cp) -> Cp {
         Cp {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Cp {
+    type Output = Cp;
+    #[inline]
+    fn bitor(self, rhs: Cp) -> Cp {
+        Cp {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Cp {
+    type Output = Cp;
+    #[inline]
+    fn bitxor(self, rhs: Cp) -> Cp {
+        Cp {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -3412,8 +3447,8 @@ impl Request for SetPictureTransformRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryFiltersRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl QueryFiltersRequest {}
 impl AsByteSequence for QueryFiltersRequest {
@@ -3421,8 +3456,9 @@ impl AsByteSequence for QueryFiltersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3431,22 +3467,23 @@ impl AsByteSequence for QueryFiltersRequest {
         log::trace!("Deserializing QueryFiltersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryFiltersRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for QueryFiltersRequest {
@@ -4199,6 +4236,45 @@ impl Request for CreateConicalGradientRequest {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SubPixel {
+    Unknown = 0,
+    HorizontalRgb = 1,
+    HorizontalBgr = 2,
+    VerticalRgb = 3,
+    VerticalBgr = 4,
+    None = 5,
+}
+impl AsByteSequence for SubPixel {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Unknown, sz)),
+            1 => Some((Self::HorizontalRgb, sz)),
+            2 => Some((Self::HorizontalBgr, sz)),
+            3 => Some((Self::VerticalRgb, sz)),
+            4 => Some((Self::VerticalBgr, sz)),
+            5 => Some((Self::None, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for SubPixel {
+    #[inline]
+    fn default() -> SubPixel {
+        SubPixel::Unknown
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Repeat {
     None = 0,
     Normal = 1,
@@ -4261,45 +4337,6 @@ impl Default for PolyMode {
     #[inline]
     fn default() -> PolyMode {
         PolyMode::Precise
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SubPixel {
-    Unknown = 0,
-    HorizontalRgb = 1,
-    HorizontalBgr = 2,
-    VerticalRgb = 3,
-    VerticalBgr = 4,
-    None = 5,
-}
-impl AsByteSequence for SubPixel {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Unknown, sz)),
-            1 => Some((Self::HorizontalRgb, sz)),
-            2 => Some((Self::HorizontalBgr, sz)),
-            3 => Some((Self::VerticalRgb, sz)),
-            4 => Some((Self::VerticalBgr, sz)),
-            5 => Some((Self::None, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for SubPixel {
-    #[inline]
-    fn default() -> SubPixel {
-        SubPixel::Unknown
     }
 }
 #[repr(i32)]

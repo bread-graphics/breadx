@@ -2,6 +2,7 @@
 
 //! This module provides structures used in error handling of `breadx` functions.
 
+use alloc::borrow::Cow;
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
 use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
@@ -24,7 +25,9 @@ pub enum BreadError {
     /// BadReadError
     BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
-    ExtensionNotPresent,
+    ExtensionNotPresent(Cow<'static, str>),
+    /// Required request was not present.
+    NoMatchingRequest(u16),
     /// An error propogated by the X11 server.
     XProtocol {
         error_code: ErrorCode,
@@ -80,7 +83,8 @@ impl fmt::Display for BreadError {
                 "Unable to read object of type from bytes: {}",
                 name.unwrap_or("Unknown")
             ),
-            Self::ExtensionNotPresent => f.write_str("Extension was not found on X server"),
+Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
+            Self::ExtensionNotPresent(ext) => write!(f, "Extension was not found on X server: {}", ext),
             Self::XProtocol {
                 error_code,
                 minor_code,

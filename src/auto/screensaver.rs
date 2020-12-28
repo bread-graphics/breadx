@@ -126,8 +126,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryInfoRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl QueryInfoRequest {}
 impl AsByteSequence for QueryInfoRequest {
@@ -135,8 +135,9 @@ impl AsByteSequence for QueryInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -145,22 +146,23 @@ impl AsByteSequence for QueryInfoRequest {
         log::trace!("Deserializing QueryInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryInfoRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for QueryInfoRequest {
@@ -286,8 +288,8 @@ impl Default for Kind {
 #[derive(Clone, Debug, Default)]
 pub struct SelectInputRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub event_mask: Event,
 }
 impl SelectInputRequest {}
@@ -296,8 +298,9 @@ impl AsByteSequence for SelectInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.event_mask.as_bytes(&mut bytes[index..]);
         index
     }
@@ -307,17 +310,18 @@ impl AsByteSequence for SelectInputRequest {
         log::trace!("Deserializing SelectInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (event_mask, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SelectInputRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 event_mask: event_mask,
             },
             index,
@@ -325,7 +329,11 @@ impl AsByteSequence for SelectInputRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.event_mask.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.drawable.size()
+            + self.event_mask.size()
     }
 }
 impl Request for SelectInputRequest {
@@ -381,6 +389,9 @@ impl Event {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const NOTIFY_MASK: Self = Self { inner: 1 };
+    pub const CYCLE_MASK: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for Event {
     #[inline]
@@ -413,11 +424,29 @@ impl core::ops::BitAnd for Event {
         }
     }
 }
+impl core::ops::BitOr for Event {
+    type Output = Event;
+    #[inline]
+    fn bitor(self, rhs: Event) -> Event {
+        Event {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Event {
+    type Output = Event;
+    #[inline]
+    fn bitxor(self, rhs: Event) -> Event {
+        Event {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct SetAttributesRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub x: Int16,
     pub y: Int16,
     pub width: Card16,
@@ -449,8 +478,9 @@ impl AsByteSequence for SetAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -514,9 +544,10 @@ impl AsByteSequence for SetAttributesRequest {
         log::trace!("Deserializing SetAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -647,8 +678,8 @@ impl AsByteSequence for SetAttributesRequest {
         Some((
             SetAttributesRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 x: x,
                 y: y,
                 width: width,
@@ -680,8 +711,9 @@ impl AsByteSequence for SetAttributesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.x.size()
             + self.y.size()
             + self.width.size()
@@ -717,8 +749,8 @@ impl Request for SetAttributesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UnsetAttributesRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
 }
 impl UnsetAttributesRequest {}
 impl AsByteSequence for UnsetAttributesRequest {
@@ -726,8 +758,9 @@ impl AsByteSequence for UnsetAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -736,22 +769,23 @@ impl AsByteSequence for UnsetAttributesRequest {
         log::trace!("Deserializing UnsetAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             UnsetAttributesRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for UnsetAttributesRequest {
@@ -763,8 +797,8 @@ impl Request for UnsetAttributesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SuspendRequest {
     pub req_type: u8,
-    pub suspend: Card32,
     pub length: u16,
+    pub suspend: Card32,
 }
 impl SuspendRequest {}
 impl AsByteSequence for SuspendRequest {
@@ -772,8 +806,9 @@ impl AsByteSequence for SuspendRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.suspend.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.suspend.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -782,22 +817,23 @@ impl AsByteSequence for SuspendRequest {
         log::trace!("Deserializing SuspendRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (suspend, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (suspend, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SuspendRequest {
                 req_type: req_type,
-                suspend: suspend,
                 length: length,
+                suspend: suspend,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.suspend.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.suspend.size()
     }
 }
 impl Request for SuspendRequest {

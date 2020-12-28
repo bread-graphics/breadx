@@ -196,8 +196,8 @@ impl AsByteSequence for RefreshRates {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -206,8 +206,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -217,17 +218,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -236,8 +238,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
     }
 }
@@ -310,8 +313,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetScreenConfigRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub timestamp: Timestamp,
     pub config_timestamp: Timestamp,
     pub size_id: Card16,
@@ -324,8 +327,9 @@ impl AsByteSequence for SetScreenConfigRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.timestamp.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index += self.size_id.as_bytes(&mut bytes[index..]);
@@ -340,9 +344,10 @@ impl AsByteSequence for SetScreenConfigRequest {
         log::trace!("Deserializing SetScreenConfigRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -358,8 +363,8 @@ impl AsByteSequence for SetScreenConfigRequest {
         Some((
             SetScreenConfigRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 timestamp: timestamp,
                 config_timestamp: config_timestamp,
                 size_id: size_id,
@@ -372,8 +377,9 @@ impl AsByteSequence for SetScreenConfigRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.timestamp.size()
             + self.config_timestamp.size()
             + self.size_id.size()
@@ -581,6 +587,13 @@ impl Rotation {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const ROTATE_0: Self = Self { inner: 1 };
+    pub const ROTATE_90: Self = Self { inner: 2 };
+    pub const ROTATE_180: Self = Self { inner: 4 };
+    pub const ROTATE_270: Self = Self { inner: 8 };
+    pub const REFLECT_X: Self = Self { inner: 16 };
+    pub const REFLECT_Y: Self = Self { inner: 32 };
+    pub const COMPLETE: Self = Self { inner: 63 };
 }
 impl AsByteSequence for Rotation {
     #[inline]
@@ -610,6 +623,24 @@ impl core::ops::BitAnd for Rotation {
     fn bitand(self, rhs: Rotation) -> Rotation {
         Rotation {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Rotation {
+    type Output = Rotation;
+    #[inline]
+    fn bitor(self, rhs: Rotation) -> Rotation {
+        Rotation {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Rotation {
+    type Output = Rotation;
+    #[inline]
+    fn bitxor(self, rhs: Rotation) -> Rotation {
+        Rotation {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -651,8 +682,8 @@ impl Default for SetConfig {
 #[derive(Clone, Debug, Default)]
 pub struct SelectInputRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub enable: NotifyMask,
 }
 impl SelectInputRequest {}
@@ -661,8 +692,9 @@ impl AsByteSequence for SelectInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.enable.as_bytes(&mut bytes[index..]);
         index += 2;
         index
@@ -673,9 +705,10 @@ impl AsByteSequence for SelectInputRequest {
         log::trace!("Deserializing SelectInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (enable, sz): (NotifyMask, usize) = <NotifyMask>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -683,8 +716,8 @@ impl AsByteSequence for SelectInputRequest {
         Some((
             SelectInputRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 enable: enable,
             },
             index,
@@ -692,7 +725,7 @@ impl AsByteSequence for SelectInputRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.enable.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.enable.size() + 2
     }
 }
 impl Request for SelectInputRequest {
@@ -853,6 +886,15 @@ impl NotifyMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const SCREEN_CHANGE: Self = Self { inner: 1 };
+    pub const CRTC_CHANGE: Self = Self { inner: 2 };
+    pub const OUTPUT_CHANGE: Self = Self { inner: 4 };
+    pub const OUTPUT_PROPERTY: Self = Self { inner: 8 };
+    pub const PROVIDER_CHANGE: Self = Self { inner: 16 };
+    pub const PROVIDER_PROPERTY: Self = Self { inner: 32 };
+    pub const RESOURCE_CHANGE: Self = Self { inner: 64 };
+    pub const LEASE: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 255 };
 }
 impl AsByteSequence for NotifyMask {
     #[inline]
@@ -885,11 +927,29 @@ impl core::ops::BitAnd for NotifyMask {
         }
     }
 }
+impl core::ops::BitOr for NotifyMask {
+    type Output = NotifyMask;
+    #[inline]
+    fn bitor(self, rhs: NotifyMask) -> NotifyMask {
+        NotifyMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for NotifyMask {
+    type Output = NotifyMask;
+    #[inline]
+    fn bitxor(self, rhs: NotifyMask) -> NotifyMask {
+        NotifyMask {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct GetScreenInfoRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetScreenInfoRequest {}
 impl AsByteSequence for GetScreenInfoRequest {
@@ -897,8 +957,9 @@ impl AsByteSequence for GetScreenInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -907,22 +968,23 @@ impl AsByteSequence for GetScreenInfoRequest {
         log::trace!("Deserializing GetScreenInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetScreenInfoRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetScreenInfoRequest {
@@ -1063,8 +1125,8 @@ impl AsByteSequence for GetScreenInfoReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetScreenSizeRangeRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetScreenSizeRangeRequest {}
 impl AsByteSequence for GetScreenSizeRangeRequest {
@@ -1072,8 +1134,9 @@ impl AsByteSequence for GetScreenSizeRangeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1082,22 +1145,23 @@ impl AsByteSequence for GetScreenSizeRangeRequest {
         log::trace!("Deserializing GetScreenSizeRangeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetScreenSizeRangeRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetScreenSizeRangeRequest {
@@ -1181,8 +1245,8 @@ impl AsByteSequence for GetScreenSizeRangeReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetScreenSizeRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub width: Card16,
     pub height: Card16,
     pub mm_width: Card32,
@@ -1194,8 +1258,9 @@ impl AsByteSequence for SetScreenSizeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
         index += self.height.as_bytes(&mut bytes[index..]);
         index += self.mm_width.as_bytes(&mut bytes[index..]);
@@ -1208,9 +1273,10 @@ impl AsByteSequence for SetScreenSizeRequest {
         log::trace!("Deserializing SetScreenSizeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (width, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1223,8 +1289,8 @@ impl AsByteSequence for SetScreenSizeRequest {
         Some((
             SetScreenSizeRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 width: width,
                 height: height,
                 mm_width: mm_width,
@@ -1236,8 +1302,9 @@ impl AsByteSequence for SetScreenSizeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.width.size()
             + self.height.size()
             + self.mm_width.size()
@@ -1606,6 +1673,21 @@ impl ModeFlag {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const HSYNC_POSITIVE: Self = Self { inner: 1 };
+    pub const HSYNC_NEGATIVE: Self = Self { inner: 2 };
+    pub const VSYNC_POSITIVE: Self = Self { inner: 4 };
+    pub const VSYNC_NEGATIVE: Self = Self { inner: 8 };
+    pub const INTERLACE: Self = Self { inner: 16 };
+    pub const DOUBLE_SCAN: Self = Self { inner: 32 };
+    pub const CSYNC: Self = Self { inner: 64 };
+    pub const CSYNC_POSITIVE: Self = Self { inner: 128 };
+    pub const CSYNC_NEGATIVE: Self = Self { inner: 256 };
+    pub const HSKEW_PRESENT: Self = Self { inner: 512 };
+    pub const BCAST: Self = Self { inner: 1024 };
+    pub const PIXEL_MULTIPLEX: Self = Self { inner: 2048 };
+    pub const DOUBLE_CLOCK: Self = Self { inner: 4096 };
+    pub const HALVE_CLOCK: Self = Self { inner: 8192 };
+    pub const COMPLETE: Self = Self { inner: 16383 };
 }
 impl AsByteSequence for ModeFlag {
     #[inline]
@@ -1638,11 +1720,29 @@ impl core::ops::BitAnd for ModeFlag {
         }
     }
 }
+impl core::ops::BitOr for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitor(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitxor(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct GetScreenResourcesRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetScreenResourcesRequest {}
 impl AsByteSequence for GetScreenResourcesRequest {
@@ -1650,8 +1750,9 @@ impl AsByteSequence for GetScreenResourcesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1660,22 +1761,23 @@ impl AsByteSequence for GetScreenResourcesRequest {
         log::trace!("Deserializing GetScreenResourcesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetScreenResourcesRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetScreenResourcesRequest {
@@ -2232,6 +2334,7 @@ impl Request for QueryOutputPropertyRequest {
 pub struct QueryOutputPropertyReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub pending: bool,
     pub range: bool,
     pub immutable: bool,
@@ -2245,7 +2348,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.valid_values.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.pending.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
         index += self.immutable.as_bytes(&mut bytes[index..]);
@@ -2264,7 +2367,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pending, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2274,13 +2377,14 @@ impl AsByteSequence for QueryOutputPropertyReply {
         index += sz;
         index += 21;
         let (valid_values, block_len): (Vec<Int32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
         Some((
             QueryOutputPropertyReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 pending: pending,
                 range: range,
                 immutable: immutable,
@@ -2294,7 +2398,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.pending.size()
             + self.range.size()
             + self.immutable.size()
@@ -2712,8 +2816,8 @@ impl AsByteSequence for GetOutputPropertyReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateModeRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub mode_info: ModeInfo,
     pub name: String,
 }
@@ -2723,8 +2827,9 @@ impl AsByteSequence for CreateModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.mode_info.as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.name, &mut bytes[index..]);
         index += block_len;
@@ -2737,9 +2842,10 @@ impl AsByteSequence for CreateModeRequest {
         log::trace!("Deserializing CreateModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (mode_info, sz): (ModeInfo, usize) = <ModeInfo>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2750,8 +2856,8 @@ impl AsByteSequence for CreateModeRequest {
         Some((
             CreateModeRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 mode_info: mode_info,
                 name: name,
             },
@@ -2760,11 +2866,16 @@ impl AsByteSequence for CreateModeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.mode_info.size() + {
-            let block_len: usize = self.name.len();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-            block_len + pad
-        }
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.window.size()
+            + self.mode_info.size()
+            + {
+                let block_len: usize = self.name.len();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
+                block_len + pad
+            }
     }
 }
 impl Request for CreateModeRequest {
@@ -3660,8 +3771,8 @@ impl Request for SetCrtcGammaRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetScreenResourcesCurrentRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetScreenResourcesCurrentRequest {}
 impl AsByteSequence for GetScreenResourcesCurrentRequest {
@@ -3669,8 +3780,9 @@ impl AsByteSequence for GetScreenResourcesCurrentRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3679,22 +3791,23 @@ impl AsByteSequence for GetScreenResourcesCurrentRequest {
         log::trace!("Deserializing GetScreenResourcesCurrentRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetScreenResourcesCurrentRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetScreenResourcesCurrentRequest {
@@ -4466,8 +4579,8 @@ impl AsByteSequence for SetPanningReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetOutputPrimaryRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub output: Output,
 }
 impl SetOutputPrimaryRequest {}
@@ -4476,8 +4589,9 @@ impl AsByteSequence for SetOutputPrimaryRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.output.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4487,17 +4601,18 @@ impl AsByteSequence for SetOutputPrimaryRequest {
         log::trace!("Deserializing SetOutputPrimaryRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetOutputPrimaryRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 output: output,
             },
             index,
@@ -4505,7 +4620,7 @@ impl AsByteSequence for SetOutputPrimaryRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.output.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.output.size()
     }
 }
 impl Request for SetOutputPrimaryRequest {
@@ -4517,8 +4632,8 @@ impl Request for SetOutputPrimaryRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetOutputPrimaryRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetOutputPrimaryRequest {}
 impl AsByteSequence for GetOutputPrimaryRequest {
@@ -4526,8 +4641,9 @@ impl AsByteSequence for GetOutputPrimaryRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -4536,22 +4652,23 @@ impl AsByteSequence for GetOutputPrimaryRequest {
         log::trace!("Deserializing GetOutputPrimaryRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetOutputPrimaryRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetOutputPrimaryRequest {
@@ -4610,8 +4727,8 @@ impl AsByteSequence for GetOutputPrimaryReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetProvidersRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetProvidersRequest {}
 impl AsByteSequence for GetProvidersRequest {
@@ -4619,8 +4736,9 @@ impl AsByteSequence for GetProvidersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -4629,22 +4747,23 @@ impl AsByteSequence for GetProvidersRequest {
         log::trace!("Deserializing GetProvidersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetProvidersRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetProvidersRequest {
@@ -5019,6 +5138,11 @@ impl ProviderCapability {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const SOURCE_OUTPUT: Self = Self { inner: 1 };
+    pub const SINK_OUTPUT: Self = Self { inner: 2 };
+    pub const SOURCE_OFFLOAD: Self = Self { inner: 4 };
+    pub const SINK_OFFLOAD: Self = Self { inner: 8 };
+    pub const COMPLETE: Self = Self { inner: 15 };
 }
 impl AsByteSequence for ProviderCapability {
     #[inline]
@@ -5048,6 +5172,24 @@ impl core::ops::BitAnd for ProviderCapability {
     fn bitand(self, rhs: ProviderCapability) -> ProviderCapability {
         ProviderCapability {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ProviderCapability {
+    type Output = ProviderCapability;
+    #[inline]
+    fn bitor(self, rhs: ProviderCapability) -> ProviderCapability {
+        ProviderCapability {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ProviderCapability {
+    type Output = ProviderCapability;
+    #[inline]
+    fn bitxor(self, rhs: ProviderCapability) -> ProviderCapability {
+        ProviderCapability {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -5338,6 +5480,7 @@ impl Request for QueryProviderPropertyRequest {
 pub struct QueryProviderPropertyReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub pending: bool,
     pub range: bool,
     pub immutable: bool,
@@ -5351,7 +5494,7 @@ impl AsByteSequence for QueryProviderPropertyReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.valid_values.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.pending.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
         index += self.immutable.as_bytes(&mut bytes[index..]);
@@ -5370,7 +5513,7 @@ impl AsByteSequence for QueryProviderPropertyReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pending, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5380,13 +5523,14 @@ impl AsByteSequence for QueryProviderPropertyReply {
         index += sz;
         index += 21;
         let (valid_values, block_len): (Vec<Int32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
         Some((
             QueryProviderPropertyReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 pending: pending,
                 range: range,
                 immutable: immutable,
@@ -5400,7 +5544,7 @@ impl AsByteSequence for QueryProviderPropertyReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.pending.size()
             + self.range.size()
             + self.immutable.size()
@@ -6267,8 +6411,8 @@ impl AsByteSequence for MonitorInfo {
 #[derive(Clone, Debug, Default)]
 pub struct GetMonitorsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub get_active: bool,
 }
 impl GetMonitorsRequest {}
@@ -6277,8 +6421,9 @@ impl AsByteSequence for GetMonitorsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.get_active.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6288,17 +6433,18 @@ impl AsByteSequence for GetMonitorsRequest {
         log::trace!("Deserializing GetMonitorsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (get_active, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetMonitorsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 get_active: get_active,
             },
             index,
@@ -6306,7 +6452,7 @@ impl AsByteSequence for GetMonitorsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.get_active.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.get_active.size()
     }
 }
 impl Request for GetMonitorsRequest {
@@ -6396,8 +6542,8 @@ impl AsByteSequence for GetMonitorsReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetMonitorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub monitorinfo: MonitorInfo,
 }
 impl SetMonitorRequest {}
@@ -6406,8 +6552,9 @@ impl AsByteSequence for SetMonitorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.monitorinfo.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6417,17 +6564,18 @@ impl AsByteSequence for SetMonitorRequest {
         log::trace!("Deserializing SetMonitorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (monitorinfo, sz): (MonitorInfo, usize) = <MonitorInfo>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetMonitorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 monitorinfo: monitorinfo,
             },
             index,
@@ -6435,7 +6583,7 @@ impl AsByteSequence for SetMonitorRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.monitorinfo.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.monitorinfo.size()
     }
 }
 impl Request for SetMonitorRequest {
@@ -6447,8 +6595,8 @@ impl Request for SetMonitorRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteMonitorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub name: Atom,
 }
 impl DeleteMonitorRequest {}
@@ -6457,8 +6605,9 @@ impl AsByteSequence for DeleteMonitorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.name.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6468,17 +6617,18 @@ impl AsByteSequence for DeleteMonitorRequest {
         log::trace!("Deserializing DeleteMonitorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeleteMonitorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 name: name,
             },
             index,
@@ -6486,7 +6636,7 @@ impl AsByteSequence for DeleteMonitorRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.name.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.name.size()
     }
 }
 impl Request for DeleteMonitorRequest {
@@ -6498,8 +6648,8 @@ impl Request for DeleteMonitorRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateLeaseRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub lid: Lease,
     pub crtcs: Vec<Crtc>,
     pub outputs: Vec<Output>,
@@ -6510,8 +6660,9 @@ impl AsByteSequence for CreateLeaseRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.lid.as_bytes(&mut bytes[index..]);
         index += (self.crtcs.len() as Card16).as_bytes(&mut bytes[index..]);
         index += (self.outputs.len() as Card16).as_bytes(&mut bytes[index..]);
@@ -6529,9 +6680,10 @@ impl AsByteSequence for CreateLeaseRequest {
         log::trace!("Deserializing CreateLeaseRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (lid, sz): (Lease, usize) = <Lease>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6550,8 +6702,8 @@ impl AsByteSequence for CreateLeaseRequest {
         Some((
             CreateLeaseRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 lid: lid,
                 crtcs: crtcs,
                 outputs: outputs,
@@ -6562,8 +6714,9 @@ impl AsByteSequence for CreateLeaseRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.lid.size()
             + ::core::mem::size_of::<Card16>()
             + ::core::mem::size_of::<Card16>()
@@ -6822,6 +6975,11 @@ impl Transform {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const UNIT: Self = Self { inner: 1 };
+    pub const SCALE_UP: Self = Self { inner: 2 };
+    pub const SCALE_DOWN: Self = Self { inner: 4 };
+    pub const PROJECTIVE: Self = Self { inner: 8 };
+    pub const COMPLETE: Self = Self { inner: 15 };
 }
 impl AsByteSequence for Transform {
     #[inline]
@@ -6851,6 +7009,24 @@ impl core::ops::BitAnd for Transform {
     fn bitand(self, rhs: Transform) -> Transform {
         Transform {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Transform {
+    type Output = Transform;
+    #[inline]
+    fn bitor(self, rhs: Transform) -> Transform {
+        Transform {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Transform {
+    type Output = Transform;
+    #[inline]
+    fn bitxor(self, rhs: Transform) -> Transform {
+        Transform {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }

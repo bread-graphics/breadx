@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{Connection, PendingRequestFlags, RequestCookie, EXT_KEY_SIZE};
+use super::{Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE};
 use crate::{util::cycled_zeroes, Fd, Request};
 use alloc::{string::ToString, vec, vec::Vec};
 use core::iter;
@@ -26,7 +26,8 @@ impl<Conn: Connection> super::Display<Conn> {
             Some(code) => Ok(*code),
             None => {
                 let code = self
-                    .query_extension_immediate(extname.to_string())?
+                    .query_extension_immediate(extname.to_string())
+                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
                     .major_opcode;
                 self.extensions.insert(sarr, code);
                 Ok(code)
@@ -43,7 +44,8 @@ impl<Conn: Connection> super::Display<Conn> {
             None => {
                 let code = self
                     .query_extension_immediate_async(extname.to_string())
-                    .await?
+                    .await
+                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
                     .major_opcode;
                 self.extensions.insert(sarr, code);
                 Ok(code)
@@ -102,10 +104,38 @@ impl<Conn: Connection> super::Display<Conn> {
 
         log::trace!("Request has bytes {:?}", &bytes);
 
-        let flags = PendingRequestFlags {
+        let mut flags = PendingRequestFlags {
             expects_fds: R::REPLY_EXPECTS_FDS,
             ..Default::default()
         };
+
+        // there exists a very enraging bug in the X server, where certain GLX requests have the wrong size
+        // attached to them. this bug has become so widespread that we have to assume that it exists in all
+        // versions of the X server.
+        //
+        // to summarize, the X server makes an arithmatic error when calculating the length of the reply of
+        // requests GetFBConfigs and VendorPrivate. in these replies, they forget to multiply the length value
+        // by two. therefore, on the input end, we have to multiply it by two ourselves.
+        //
+        // the reason why this is enraging is because i just came out of combing through the codebase of both
+        // breadglx and breadx for why this would happen, when it turns out the answer is just "X server broke,
+        // multiply value by two, lol". the rage i feel that this bug is now baked into the X protocol is
+        // immeasurable, but not immeasurable enough for me to switch to Wayland
+        match (
+            R::EXTENSION,
+            R::OPCODE,
+            bytes.get(32..36).map(|a| {
+                let mut arr: [u8; 4] = [0; 4];
+                arr.copy_from_slice(a);
+                u32::from_ne_bytes(arr)
+            }),
+        ) {
+            (Some("GLX"), 17, Some(0x10004)) | (Some("GLX"), 21, _) => {
+                log::debug!("Applying GLX FbConfig workaround to request");
+                flags.workaround = RequestWorkaround::GlxFbconfigBug;
+            }
+            _ => (),
+        }
 
         self.expect_reply(sequence, flags);
 

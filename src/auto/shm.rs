@@ -263,8 +263,8 @@ impl Request for DetachRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PutImageRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub gc: Gcontext,
     pub total_width: Card16,
     pub total_height: Card16,
@@ -286,8 +286,9 @@ impl AsByteSequence for PutImageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.total_width.as_bytes(&mut bytes[index..]);
         index += self.total_height.as_bytes(&mut bytes[index..]);
@@ -311,9 +312,10 @@ impl AsByteSequence for PutImageRequest {
         log::trace!("Deserializing PutImageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -347,8 +349,8 @@ impl AsByteSequence for PutImageRequest {
         Some((
             PutImageRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 gc: gc,
                 total_width: total_width,
                 total_height: total_height,
@@ -370,8 +372,9 @@ impl AsByteSequence for PutImageRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.gc.size()
             + self.total_width.size()
             + self.total_height.size()
@@ -398,8 +401,8 @@ impl Request for PutImageRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetImageRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub x: Int16,
     pub y: Int16,
     pub width: Card16,
@@ -415,8 +418,9 @@ impl AsByteSequence for GetImageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -434,9 +438,10 @@ impl AsByteSequence for GetImageRequest {
         log::trace!("Deserializing GetImageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -458,8 +463,8 @@ impl AsByteSequence for GetImageRequest {
         Some((
             GetImageRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 x: x,
                 y: y,
                 width: width,
@@ -475,8 +480,9 @@ impl AsByteSequence for GetImageRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.x.size()
             + self.y.size()
             + self.width.size()

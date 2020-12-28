@@ -1,10 +1,12 @@
 // MIT/Apache2 License
 
 use super::{
-    syn_util::{item_field, str_to_ty},
+    syn_util::{item_field, pub_vis, str_to_path, str_to_ty},
     Asb, InputParameter, Method, ParameterUsage, RStruct, SizeSumPart, SumOfSizes, Trait, Type,
 };
 use crate::lvl2::{Bitflags, Field, StructureItem, Type as Lvl2Type};
+use heck::ShoutySnakeCase;
+use proc_macro2::Span;
 use std::{iter, rc::Rc};
 
 /// Convert a bitflags conversion to a rust struct.
@@ -34,10 +36,13 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
             ty: underlying.clone(),
             ..Default::default()
         })],
-        methods: vec![],
+        methods: Vec::with_capacity(bits.len() * 2),
+        other_impl_items: Vec::with_capacity(bits.len() + 1),
         traits: vec![
             Trait::BitflagsNot(name.clone().into_boxed_str()),
             Trait::BitflagsAnd(name.clone().into_boxed_str()),
+            Trait::BitflagsOr(name.clone().into_boxed_str()),
+            Trait::BitflagsXor(name.clone().into_boxed_str()),
         ],
         asb: Default::default(),
     };
@@ -83,6 +88,12 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
             ]);
             method
         });
+
+        // const
+        rstruct.other_impl_items.push(bitflags_const_field(
+            &bitname.to_shouty_snake_case(),
+            1u64 << (*bitval as u64),
+        ));
     });
 
     // also have a new() method with each
@@ -145,6 +156,14 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
     );
     rstruct.methods.push(count_ones);
 
+    // also have an "all" const
+    rstruct
+        .other_impl_items
+        .push(bitflags_const_field("COMPLETE", {
+            bits.iter()
+                .fold(0u64, |d, (_, bitval)| d | (1 << *bitval as u64))
+        }));
+
     // asb should forward to inner
     rstruct.asb.size = SumOfSizes(vec![SizeSumPart::SizeofField("inner".into())]);
     rstruct
@@ -160,4 +179,36 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
     );
 
     vec![rstruct]
+}
+
+#[inline]
+fn bitflags_const_field(name: &str, val: u64) -> syn::ImplItem {
+    syn::ImplItem::Const(syn::ImplItemConst {
+        attrs: vec![],
+        vis: pub_vis(),
+        defaultness: None,
+        const_token: Default::default(),
+        ident: syn::Ident::new(name, Span::call_site()),
+        colon_token: Default::default(),
+        ty: str_to_ty("Self"),
+        eq_token: Default::default(),
+        expr: syn::Expr::Struct(syn::ExprStruct {
+            attrs: vec![],
+            path: str_to_path("Self"),
+            brace_token: Default::default(),
+            fields: iter::once(syn::FieldValue {
+                attrs: vec![],
+                member: syn::Member::Named(syn::Ident::new("inner", Span::call_site())),
+                colon_token: Some(Default::default()),
+                expr: syn::Expr::Lit(syn::ExprLit {
+                    attrs: vec![],
+                    lit: syn::Lit::Int(syn::LitInt::new(&format!("{}", val), Span::call_site())),
+                }),
+            })
+            .collect(),
+            dot2_token: None,
+            rest: None,
+        }),
+        semi_token: Default::default(),
+    })
 }

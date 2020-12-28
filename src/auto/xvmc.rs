@@ -441,6 +441,7 @@ impl Request for CreateContextRequest {
 pub struct CreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub width_actual: Card16,
     pub height_actual: Card16,
     pub flags_return: Card32,
@@ -454,7 +455,7 @@ impl AsByteSequence for CreateContextReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.priv_data.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.width_actual.as_bytes(&mut bytes[index..]);
         index += self.height_actual.as_bytes(&mut bytes[index..]);
         index += self.flags_return.as_bytes(&mut bytes[index..]);
@@ -473,7 +474,7 @@ impl AsByteSequence for CreateContextReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (width_actual, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -483,13 +484,14 @@ impl AsByteSequence for CreateContextReply {
         index += sz;
         index += 20;
         let (priv_data, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             CreateContextReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 width_actual: width_actual,
                 height_actual: height_actual,
                 flags_return: flags_return,
@@ -503,7 +505,7 @@ impl AsByteSequence for CreateContextReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.width_actual.size()
             + self.height_actual.size()
             + self.flags_return.size()
@@ -616,6 +618,7 @@ impl Request for CreateSurfaceRequest {
 pub struct CreateSurfaceReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub priv_data: Vec<Card32>,
 }
 impl CreateSurfaceReply {}
@@ -626,7 +629,7 @@ impl AsByteSequence for CreateSurfaceReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.priv_data.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += 24;
         let block_len: usize = vector_as_bytes(&self.priv_data, &mut bytes[index..]);
         index += block_len;
@@ -642,17 +645,18 @@ impl AsByteSequence for CreateSurfaceReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
         let (priv_data, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             CreateSurfaceReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 priv_data: priv_data,
             },
             index,
@@ -660,7 +664,7 @@ impl AsByteSequence for CreateSurfaceReply {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.reply_type.size() + 1 + self.sequence.size() + ::core::mem::size_of::<u32>() + 24 + {
+        self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24 + {
             let block_len: usize = self.priv_data.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
             block_len + pad
@@ -789,6 +793,7 @@ impl Request for CreateSubpictureRequest {
 pub struct CreateSubpictureReply {
     pub reply_type: u8,
     pub sequence: u16,
+    pub length: u32,
     pub width_actual: Card16,
     pub height_actual: Card16,
     pub num_palette_entries: Card16,
@@ -804,7 +809,7 @@ impl AsByteSequence for CreateSubpictureReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.priv_data.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.width_actual.as_bytes(&mut bytes[index..]);
         index += self.height_actual.as_bytes(&mut bytes[index..]);
         index += self.num_palette_entries.as_bytes(&mut bytes[index..]);
@@ -825,7 +830,7 @@ impl AsByteSequence for CreateSubpictureReply {
         index += 1;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (width_actual, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -839,13 +844,14 @@ impl AsByteSequence for CreateSubpictureReply {
         index += sz;
         index += 12;
         let (priv_data, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
             CreateSubpictureReply {
                 reply_type: reply_type,
                 sequence: sequence,
+                length: length,
                 width_actual: width_actual,
                 height_actual: height_actual,
                 num_palette_entries: num_palette_entries,
@@ -861,7 +867,7 @@ impl AsByteSequence for CreateSubpictureReply {
         self.reply_type.size()
             + 1
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.width_actual.size()
             + self.height_actual.size()
             + self.num_palette_entries.size()

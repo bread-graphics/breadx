@@ -1171,8 +1171,8 @@ impl AsByteSequence for SetDeviceModeReply {
 #[derive(Clone, Debug, Default)]
 pub struct SelectExtensionEventRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub classes: Vec<EventClass>,
 }
 impl SelectExtensionEventRequest {}
@@ -1181,8 +1181,9 @@ impl AsByteSequence for SelectExtensionEventRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
@@ -1196,9 +1197,10 @@ impl AsByteSequence for SelectExtensionEventRequest {
         log::trace!("Deserializing SelectExtensionEventRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1210,8 +1212,8 @@ impl AsByteSequence for SelectExtensionEventRequest {
         Some((
             SelectExtensionEventRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 classes: classes,
             },
             index,
@@ -1220,8 +1222,9 @@ impl AsByteSequence for SelectExtensionEventRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
@@ -1240,8 +1243,8 @@ impl Request for SelectExtensionEventRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetSelectedExtensionEventsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetSelectedExtensionEventsRequest {}
 impl AsByteSequence for GetSelectedExtensionEventsRequest {
@@ -1249,8 +1252,9 @@ impl AsByteSequence for GetSelectedExtensionEventsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1259,22 +1263,23 @@ impl AsByteSequence for GetSelectedExtensionEventsRequest {
         log::trace!("Deserializing GetSelectedExtensionEventsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetSelectedExtensionEventsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetSelectedExtensionEventsRequest {
@@ -1373,8 +1378,8 @@ impl AsByteSequence for GetSelectedExtensionEventsReply {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeDeviceDontPropagateListRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub mode: PropagateMode,
     pub classes: Vec<EventClass>,
 }
@@ -1384,8 +1389,9 @@ impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
         index += self.mode.as_bytes(&mut bytes[index..]);
         index += 1;
@@ -1400,9 +1406,10 @@ impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
         log::trace!("Deserializing ChangeDeviceDontPropagateListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1416,8 +1423,8 @@ impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
         Some((
             ChangeDeviceDontPropagateListRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 mode: mode,
                 classes: classes,
             },
@@ -1427,8 +1434,9 @@ impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + ::core::mem::size_of::<Card16>()
             + self.mode.size()
             + 1
@@ -1479,8 +1487,8 @@ impl Default for PropagateMode {
 #[derive(Clone, Debug, Default)]
 pub struct GetDeviceDontPropagateListRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetDeviceDontPropagateListRequest {}
 impl AsByteSequence for GetDeviceDontPropagateListRequest {
@@ -1488,8 +1496,9 @@ impl AsByteSequence for GetDeviceDontPropagateListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1498,22 +1507,23 @@ impl AsByteSequence for GetDeviceDontPropagateListRequest {
         log::trace!("Deserializing GetDeviceDontPropagateListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDeviceDontPropagateListRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetDeviceDontPropagateListRequest {
@@ -1819,8 +1829,8 @@ impl AsByteSequence for ChangePointerDeviceReply {
 #[derive(Clone, Debug, Default)]
 pub struct GrabDeviceRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub time: Timestamp,
     pub this_device_mode: GrabMode,
     pub other_device_mode: GrabMode,
@@ -1834,8 +1844,9 @@ impl AsByteSequence for GrabDeviceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
         index += self.this_device_mode.as_bytes(&mut bytes[index..]);
@@ -1854,9 +1865,10 @@ impl AsByteSequence for GrabDeviceRequest {
         log::trace!("Deserializing GrabDeviceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1878,8 +1890,8 @@ impl AsByteSequence for GrabDeviceRequest {
         Some((
             GrabDeviceRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 time: time,
                 this_device_mode: this_device_mode,
                 other_device_mode: other_device_mode,
@@ -1893,8 +1905,9 @@ impl AsByteSequence for GrabDeviceRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + self.time.size()
             + ::core::mem::size_of::<Card16>()
             + self.this_device_mode.size()
@@ -2028,8 +2041,8 @@ impl Request for UngrabDeviceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GrabDeviceKeyRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub modifiers: ModMask,
     pub modifier_device: Card8,
     pub grabbed_device: Card8,
@@ -2045,8 +2058,9 @@ impl AsByteSequence for GrabDeviceKeyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
         index += self.modifiers.as_bytes(&mut bytes[index..]);
         index += self.modifier_device.as_bytes(&mut bytes[index..]);
@@ -2067,9 +2081,10 @@ impl AsByteSequence for GrabDeviceKeyRequest {
         log::trace!("Deserializing GrabDeviceKeyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2095,8 +2110,8 @@ impl AsByteSequence for GrabDeviceKeyRequest {
         Some((
             GrabDeviceKeyRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 modifiers: modifiers,
                 modifier_device: modifier_device,
                 grabbed_device: grabbed_device,
@@ -2112,8 +2127,9 @@ impl AsByteSequence for GrabDeviceKeyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + ::core::mem::size_of::<Card16>()
             + self.modifiers.size()
             + self.modifier_device.size()
@@ -2168,8 +2184,8 @@ impl Default for ModifierDevice {
 #[derive(Clone, Debug, Default)]
 pub struct UngrabDeviceKeyRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub modifiers: ModMask,
     pub modifier_device: Card8,
     pub key: Card8,
@@ -2181,8 +2197,9 @@ impl AsByteSequence for UngrabDeviceKeyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += self.modifiers.as_bytes(&mut bytes[index..]);
         index += self.modifier_device.as_bytes(&mut bytes[index..]);
         index += self.key.as_bytes(&mut bytes[index..]);
@@ -2195,9 +2212,10 @@ impl AsByteSequence for UngrabDeviceKeyRequest {
         log::trace!("Deserializing UngrabDeviceKeyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (modifiers, sz): (ModMask, usize) = <ModMask>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2210,8 +2228,8 @@ impl AsByteSequence for UngrabDeviceKeyRequest {
         Some((
             UngrabDeviceKeyRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 modifiers: modifiers,
                 modifier_device: modifier_device,
                 key: key,
@@ -2223,8 +2241,9 @@ impl AsByteSequence for UngrabDeviceKeyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + self.modifiers.size()
             + self.modifier_device.size()
             + self.key.size()
@@ -2240,8 +2259,8 @@ impl Request for UngrabDeviceKeyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GrabDeviceButtonRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub grabbed_device: Card8,
     pub modifier_device: Card8,
     pub modifiers: ModMask,
@@ -2257,8 +2276,9 @@ impl AsByteSequence for GrabDeviceButtonRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += self.grabbed_device.as_bytes(&mut bytes[index..]);
         index += self.modifier_device.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
@@ -2279,9 +2299,10 @@ impl AsByteSequence for GrabDeviceButtonRequest {
         log::trace!("Deserializing GrabDeviceButtonRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (grabbed_device, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2307,8 +2328,8 @@ impl AsByteSequence for GrabDeviceButtonRequest {
         Some((
             GrabDeviceButtonRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 grabbed_device: grabbed_device,
                 modifier_device: modifier_device,
                 modifiers: modifiers,
@@ -2324,8 +2345,9 @@ impl AsByteSequence for GrabDeviceButtonRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + self.grabbed_device.size()
             + self.modifier_device.size()
             + ::core::mem::size_of::<Card16>()
@@ -2351,8 +2373,8 @@ impl Request for GrabDeviceButtonRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UngrabDeviceButtonRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub modifiers: ModMask,
     pub modifier_device: Card8,
     pub button: Card8,
@@ -2364,8 +2386,9 @@ impl AsByteSequence for UngrabDeviceButtonRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += self.modifiers.as_bytes(&mut bytes[index..]);
         index += self.modifier_device.as_bytes(&mut bytes[index..]);
         index += self.button.as_bytes(&mut bytes[index..]);
@@ -2379,9 +2402,10 @@ impl AsByteSequence for UngrabDeviceButtonRequest {
         log::trace!("Deserializing UngrabDeviceButtonRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (modifiers, sz): (ModMask, usize) = <ModMask>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2395,8 +2419,8 @@ impl AsByteSequence for UngrabDeviceButtonRequest {
         Some((
             UngrabDeviceButtonRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 modifiers: modifiers,
                 modifier_device: modifier_device,
                 button: button,
@@ -2408,8 +2432,9 @@ impl AsByteSequence for UngrabDeviceButtonRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + self.modifiers.size()
             + self.modifier_device.size()
             + self.button.size()
@@ -2645,8 +2670,8 @@ impl AsByteSequence for GetDeviceFocusReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetDeviceFocusRequest {
     pub req_type: u8,
-    pub focus: Window,
     pub length: u16,
+    pub focus: Window,
     pub time: Timestamp,
     pub revert_to: InputFocus,
     pub device_id: Card8,
@@ -2657,8 +2682,9 @@ impl AsByteSequence for SetDeviceFocusRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.focus.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.focus.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.revert_to.as_bytes(&mut bytes[index..]);
         index += self.device_id.as_bytes(&mut bytes[index..]);
@@ -2671,9 +2697,10 @@ impl AsByteSequence for SetDeviceFocusRequest {
         log::trace!("Deserializing SetDeviceFocusRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (focus, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (focus, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2685,8 +2712,8 @@ impl AsByteSequence for SetDeviceFocusRequest {
         Some((
             SetDeviceFocusRequest {
                 req_type: req_type,
-                focus: focus,
                 length: length,
+                focus: focus,
                 time: time,
                 revert_to: revert_to,
                 device_id: device_id,
@@ -2697,8 +2724,9 @@ impl AsByteSequence for SetDeviceFocusRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.focus.size()
+            + 1
             + self.length.size()
+            + self.focus.size()
             + self.time.size()
             + self.revert_to.size()
             + self.device_id.size()
@@ -4482,6 +4510,15 @@ impl ChangeFeedbackControlMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const KEY_CLICK_PERCENT: Self = Self { inner: 1 };
+    pub const PERCENT: Self = Self { inner: 2 };
+    pub const PITCH: Self = Self { inner: 4 };
+    pub const DURATION: Self = Self { inner: 8 };
+    pub const LED: Self = Self { inner: 16 };
+    pub const LED_MODE: Self = Self { inner: 32 };
+    pub const KEY: Self = Self { inner: 64 };
+    pub const AUTO_REPEAT_MODE: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 255 };
 }
 impl AsByteSequence for ChangeFeedbackControlMask {
     #[inline]
@@ -4511,6 +4548,24 @@ impl core::ops::BitAnd for ChangeFeedbackControlMask {
     fn bitand(self, rhs: ChangeFeedbackControlMask) -> ChangeFeedbackControlMask {
         ChangeFeedbackControlMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ChangeFeedbackControlMask {
+    type Output = ChangeFeedbackControlMask;
+    #[inline]
+    fn bitor(self, rhs: ChangeFeedbackControlMask) -> ChangeFeedbackControlMask {
+        ChangeFeedbackControlMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ChangeFeedbackControlMask {
+    type Output = ChangeFeedbackControlMask;
+    #[inline]
+    fn bitxor(self, rhs: ChangeFeedbackControlMask) -> ChangeFeedbackControlMask {
+        ChangeFeedbackControlMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -4582,6 +4637,7 @@ pub struct GetDeviceKeyMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
+    pub length: u32,
     pub keysyms_per_keycode: Card8,
     pub keysyms: Vec<Keysym>,
 }
@@ -4593,7 +4649,7 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
         index += self.reply_type.as_bytes(&mut bytes[index..]);
         index += self.xi_reply_type.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += (self.keysyms.len() as u32).as_bytes(&mut bytes[index..]);
+        index += self.length.as_bytes(&mut bytes[index..]);
         index += self.keysyms_per_keycode.as_bytes(&mut bytes[index..]);
         index += 23;
         let block_len: usize = vector_as_bytes(&self.keysyms, &mut bytes[index..]);
@@ -4611,13 +4667,13 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
+        let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (keysyms_per_keycode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
         let (keysyms, block_len): (Vec<Keysym>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
+            vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
         Some((
@@ -4625,6 +4681,7 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
                 reply_type: reply_type,
                 xi_reply_type: xi_reply_type,
                 sequence: sequence,
+                length: length,
                 keysyms_per_keycode: keysyms_per_keycode,
                 keysyms: keysyms,
             },
@@ -4636,7 +4693,7 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
         self.reply_type.size()
             + self.xi_reply_type.size()
             + self.sequence.size()
-            + ::core::mem::size_of::<u32>()
+            + self.length.size()
             + self.keysyms_per_keycode.size()
             + 23
             + {
@@ -5424,6 +5481,9 @@ impl ValuatorStateModeMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const DEVICE_MODE_ABSOLUTE: Self = Self { inner: 1 };
+    pub const OUT_OF_PROXIMITY: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for ValuatorStateModeMask {
     #[inline]
@@ -5453,6 +5513,24 @@ impl core::ops::BitAnd for ValuatorStateModeMask {
     fn bitand(self, rhs: ValuatorStateModeMask) -> ValuatorStateModeMask {
         ValuatorStateModeMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ValuatorStateModeMask {
+    type Output = ValuatorStateModeMask;
+    #[inline]
+    fn bitor(self, rhs: ValuatorStateModeMask) -> ValuatorStateModeMask {
+        ValuatorStateModeMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ValuatorStateModeMask {
+    type Output = ValuatorStateModeMask;
+    #[inline]
+    fn bitxor(self, rhs: ValuatorStateModeMask) -> ValuatorStateModeMask {
+        ValuatorStateModeMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -8037,8 +8115,8 @@ impl AsByteSequence for ModifierInfo {
 #[derive(Clone, Debug, Default)]
 pub struct XiQueryPointerRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub deviceid: DeviceId,
 }
 impl XiQueryPointerRequest {}
@@ -8047,8 +8125,9 @@ impl AsByteSequence for XiQueryPointerRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += 2;
         index
@@ -8059,9 +8138,10 @@ impl AsByteSequence for XiQueryPointerRequest {
         log::trace!("Deserializing XiQueryPointerRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8069,8 +8149,8 @@ impl AsByteSequence for XiQueryPointerRequest {
         Some((
             XiQueryPointerRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 deviceid: deviceid,
             },
             index,
@@ -8078,7 +8158,12 @@ impl AsByteSequence for XiQueryPointerRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.deviceid.size() + 2
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.window.size()
+            + self.deviceid.size()
+            + 2
     }
 }
 impl Request for XiQueryPointerRequest {
@@ -8238,8 +8323,8 @@ impl Default for Device {
 #[derive(Clone, Debug, Default)]
 pub struct XiWarpPointerRequest {
     pub req_type: u8,
-    pub src_win: Window,
     pub length: u16,
+    pub src_win: Window,
     pub dst_win: Window,
     pub src_x: Fp1616,
     pub src_y: Fp1616,
@@ -8255,8 +8340,9 @@ impl AsByteSequence for XiWarpPointerRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.src_win.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.src_win.as_bytes(&mut bytes[index..]);
         index += self.dst_win.as_bytes(&mut bytes[index..]);
         index += self.src_x.as_bytes(&mut bytes[index..]);
         index += self.src_y.as_bytes(&mut bytes[index..]);
@@ -8274,9 +8360,10 @@ impl AsByteSequence for XiWarpPointerRequest {
         log::trace!("Deserializing XiWarpPointerRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (src_win, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (src_win, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dst_win, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8298,8 +8385,8 @@ impl AsByteSequence for XiWarpPointerRequest {
         Some((
             XiWarpPointerRequest {
                 req_type: req_type,
-                src_win: src_win,
                 length: length,
+                src_win: src_win,
                 dst_win: dst_win,
                 src_x: src_x,
                 src_y: src_y,
@@ -8315,8 +8402,9 @@ impl AsByteSequence for XiWarpPointerRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.src_win.size()
+            + 1
             + self.length.size()
+            + self.src_win.size()
             + self.dst_win.size()
             + self.src_x.size()
             + self.src_y.size()
@@ -8337,8 +8425,8 @@ impl Request for XiWarpPointerRequest {
 #[derive(Clone, Debug, Default)]
 pub struct XiChangeCursorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub cursor: Cursor,
     pub deviceid: DeviceId,
 }
@@ -8348,8 +8436,9 @@ impl AsByteSequence for XiChangeCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.cursor.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += 2;
@@ -8361,9 +8450,10 @@ impl AsByteSequence for XiChangeCursorRequest {
         log::trace!("Deserializing XiChangeCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8373,8 +8463,8 @@ impl AsByteSequence for XiChangeCursorRequest {
         Some((
             XiChangeCursorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 cursor: cursor,
                 deviceid: deviceid,
             },
@@ -8384,8 +8474,9 @@ impl AsByteSequence for XiChangeCursorRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.cursor.size()
             + self.deviceid.size()
             + 2
@@ -8926,8 +9017,8 @@ impl Request for XiChangeHierarchyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct XiSetClientPointerRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub deviceid: DeviceId,
 }
 impl XiSetClientPointerRequest {}
@@ -8936,8 +9027,9 @@ impl AsByteSequence for XiSetClientPointerRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += 2;
         index
@@ -8948,9 +9040,10 @@ impl AsByteSequence for XiSetClientPointerRequest {
         log::trace!("Deserializing XiSetClientPointerRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8958,8 +9051,8 @@ impl AsByteSequence for XiSetClientPointerRequest {
         Some((
             XiSetClientPointerRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 deviceid: deviceid,
             },
             index,
@@ -8967,7 +9060,12 @@ impl AsByteSequence for XiSetClientPointerRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.deviceid.size() + 2
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.window.size()
+            + self.deviceid.size()
+            + 2
     }
 }
 impl Request for XiSetClientPointerRequest {
@@ -8979,8 +9077,8 @@ impl Request for XiSetClientPointerRequest {
 #[derive(Clone, Debug, Default)]
 pub struct XiGetClientPointerRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl XiGetClientPointerRequest {}
 impl AsByteSequence for XiGetClientPointerRequest {
@@ -8988,8 +9086,9 @@ impl AsByteSequence for XiGetClientPointerRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -8998,22 +9097,23 @@ impl AsByteSequence for XiGetClientPointerRequest {
         log::trace!("Deserializing XiGetClientPointerRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             XiGetClientPointerRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for XiGetClientPointerRequest {
@@ -9131,8 +9231,8 @@ impl AsByteSequence for EventMask {
 #[derive(Clone, Debug, Default)]
 pub struct XiSelectEventsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub masks: Vec<EventMask>,
 }
 impl XiSelectEventsRequest {}
@@ -9141,8 +9241,9 @@ impl AsByteSequence for XiSelectEventsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += (self.masks.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = vector_as_bytes(&self.masks, &mut bytes[index..]);
@@ -9156,9 +9257,10 @@ impl AsByteSequence for XiSelectEventsRequest {
         log::trace!("Deserializing XiSelectEventsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9170,8 +9272,8 @@ impl AsByteSequence for XiSelectEventsRequest {
         Some((
             XiSelectEventsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 masks: masks,
             },
             index,
@@ -9180,8 +9282,9 @@ impl AsByteSequence for XiSelectEventsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
@@ -9633,6 +9736,9 @@ impl ScrollFlags {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const NO_EMULATION: Self = Self { inner: 1 };
+    pub const PREFERRED: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for ScrollFlags {
     #[inline]
@@ -9662,6 +9768,24 @@ impl core::ops::BitAnd for ScrollFlags {
     fn bitand(self, rhs: ScrollFlags) -> ScrollFlags {
         ScrollFlags {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ScrollFlags {
+    type Output = ScrollFlags;
+    #[inline]
+    fn bitor(self, rhs: ScrollFlags) -> ScrollFlags {
+        ScrollFlags {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ScrollFlags {
+    type Output = ScrollFlags;
+    #[inline]
+    fn bitxor(self, rhs: ScrollFlags) -> ScrollFlags {
+        ScrollFlags {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -10357,8 +10481,8 @@ impl AsByteSequence for XiQueryDeviceReply {
 #[derive(Clone, Debug, Default)]
 pub struct XiSetFocusRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub time: Timestamp,
     pub deviceid: DeviceId,
 }
@@ -10368,8 +10492,9 @@ impl AsByteSequence for XiSetFocusRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += 2;
@@ -10381,9 +10506,10 @@ impl AsByteSequence for XiSetFocusRequest {
         log::trace!("Deserializing XiSetFocusRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10393,8 +10519,8 @@ impl AsByteSequence for XiSetFocusRequest {
         Some((
             XiSetFocusRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 time: time,
                 deviceid: deviceid,
             },
@@ -10404,8 +10530,9 @@ impl AsByteSequence for XiSetFocusRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.time.size()
             + self.deviceid.size()
             + 2
@@ -10522,8 +10649,8 @@ impl AsByteSequence for XiGetFocusReply {
 #[derive(Clone, Debug, Default)]
 pub struct XiGrabDeviceRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub time: Timestamp,
     pub cursor: Cursor,
     pub deviceid: DeviceId,
@@ -10538,8 +10665,9 @@ impl AsByteSequence for XiGrabDeviceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.cursor.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
@@ -10559,9 +10687,10 @@ impl AsByteSequence for XiGrabDeviceRequest {
         log::trace!("Deserializing XiGrabDeviceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10585,8 +10714,8 @@ impl AsByteSequence for XiGrabDeviceRequest {
         Some((
             XiGrabDeviceRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 time: time,
                 cursor: cursor,
                 deviceid: deviceid,
@@ -10601,8 +10730,9 @@ impl AsByteSequence for XiGrabDeviceRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.time.size()
             + self.cursor.size()
             + self.deviceid.size()
@@ -10948,6 +11078,8 @@ impl ModifierMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const ANY: Self = Self { inner: 2147483648 };
+    pub const COMPLETE: Self = Self { inner: 2147483648 };
 }
 impl AsByteSequence for ModifierMask {
     #[inline]
@@ -10977,6 +11109,24 @@ impl core::ops::BitAnd for ModifierMask {
     fn bitand(self, rhs: ModifierMask) -> ModifierMask {
         ModifierMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ModifierMask {
+    type Output = ModifierMask;
+    #[inline]
+    fn bitor(self, rhs: ModifierMask) -> ModifierMask {
+        ModifierMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ModifierMask {
+    type Output = ModifierMask;
+    #[inline]
+    fn bitxor(self, rhs: ModifierMask) -> ModifierMask {
+        ModifierMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -11254,8 +11404,8 @@ impl Default for GrabMode22 {
 #[derive(Clone, Debug, Default)]
 pub struct XiPassiveUngrabDeviceRequest {
     pub req_type: u8,
-    pub grab_window: Window,
     pub length: u16,
+    pub grab_window: Window,
     pub detail: Card32,
     pub deviceid: DeviceId,
     pub grab_type: GrabType,
@@ -11267,8 +11417,9 @@ impl AsByteSequence for XiPassiveUngrabDeviceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.grab_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.grab_window.as_bytes(&mut bytes[index..]);
         index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += (self.modifiers.len() as Card16).as_bytes(&mut bytes[index..]);
@@ -11285,9 +11436,10 @@ impl AsByteSequence for XiPassiveUngrabDeviceRequest {
         log::trace!("Deserializing XiPassiveUngrabDeviceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (grab_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -11305,8 +11457,8 @@ impl AsByteSequence for XiPassiveUngrabDeviceRequest {
         Some((
             XiPassiveUngrabDeviceRequest {
                 req_type: req_type,
-                grab_window: grab_window,
                 length: length,
+                grab_window: grab_window,
                 detail: detail,
                 deviceid: deviceid,
                 grab_type: grab_type,
@@ -11318,8 +11470,9 @@ impl AsByteSequence for XiPassiveUngrabDeviceRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.grab_window.size()
+            + 1
             + self.length.size()
+            + self.grab_window.size()
             + self.detail.size()
             + self.deviceid.size()
             + ::core::mem::size_of::<Card16>()
@@ -11829,8 +11982,8 @@ impl AsByteSequence for XiGetPropertyReply {
 #[derive(Clone, Debug, Default)]
 pub struct XiGetSelectedEventsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl XiGetSelectedEventsRequest {}
 impl AsByteSequence for XiGetSelectedEventsRequest {
@@ -11838,8 +11991,9 @@ impl AsByteSequence for XiGetSelectedEventsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -11848,22 +12002,23 @@ impl AsByteSequence for XiGetSelectedEventsRequest {
         log::trace!("Deserializing XiGetSelectedEventsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             XiGetSelectedEventsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for XiGetSelectedEventsRequest {
@@ -11992,8 +12147,9 @@ impl AsByteSequence for XiBarrierReleasePointerRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.barriers.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.barriers.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.barriers, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(
@@ -12008,9 +12164,10 @@ impl AsByteSequence for XiBarrierReleasePointerRequest {
         log::trace!("Deserializing XiBarrierReleasePointerRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (barriers, block_len): (Vec<BarrierReleasePointerInfo>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
@@ -12030,7 +12187,7 @@ impl AsByteSequence for XiBarrierReleasePointerRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.barriers.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(
                 block_len,
@@ -12147,6 +12304,12 @@ impl ClassesReportedMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const REPORTING_KEYS: Self = Self { inner: 1 };
+    pub const REPORTING_BUTTONS: Self = Self { inner: 2 };
+    pub const REPORTING_VALUATORS: Self = Self { inner: 4 };
+    pub const DEVICE_MODE_ABSOLUTE: Self = Self { inner: 64 };
+    pub const OUT_OF_PROXIMITY: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 199 };
 }
 impl AsByteSequence for ClassesReportedMask {
     #[inline]
@@ -12176,6 +12339,24 @@ impl core::ops::BitAnd for ClassesReportedMask {
     fn bitand(self, rhs: ClassesReportedMask) -> ClassesReportedMask {
         ClassesReportedMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ClassesReportedMask {
+    type Output = ClassesReportedMask;
+    #[inline]
+    fn bitor(self, rhs: ClassesReportedMask) -> ClassesReportedMask {
+        ClassesReportedMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ClassesReportedMask {
+    type Output = ClassesReportedMask;
+    #[inline]
+    fn bitxor(self, rhs: ClassesReportedMask) -> ClassesReportedMask {
+        ClassesReportedMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -12311,6 +12492,8 @@ impl KeyEventFlags {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const KEY_REPEAT: Self = Self { inner: 65536 };
+    pub const COMPLETE: Self = Self { inner: 65536 };
 }
 impl AsByteSequence for KeyEventFlags {
     #[inline]
@@ -12340,6 +12523,24 @@ impl core::ops::BitAnd for KeyEventFlags {
     fn bitand(self, rhs: KeyEventFlags) -> KeyEventFlags {
         KeyEventFlags {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for KeyEventFlags {
+    type Output = KeyEventFlags;
+    #[inline]
+    fn bitor(self, rhs: KeyEventFlags) -> KeyEventFlags {
+        KeyEventFlags {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for KeyEventFlags {
+    type Output = KeyEventFlags;
+    #[inline]
+    fn bitxor(self, rhs: KeyEventFlags) -> KeyEventFlags {
+        KeyEventFlags {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -12374,6 +12575,8 @@ impl PointerEventFlags {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const POINTER_EMULATED: Self = Self { inner: 65536 };
+    pub const COMPLETE: Self = Self { inner: 65536 };
 }
 impl AsByteSequence for PointerEventFlags {
     #[inline]
@@ -12403,6 +12606,24 @@ impl core::ops::BitAnd for PointerEventFlags {
     fn bitand(self, rhs: PointerEventFlags) -> PointerEventFlags {
         PointerEventFlags {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for PointerEventFlags {
+    type Output = PointerEventFlags;
+    #[inline]
+    fn bitor(self, rhs: PointerEventFlags) -> PointerEventFlags {
+        PointerEventFlags {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for PointerEventFlags {
+    type Output = PointerEventFlags;
+    #[inline]
+    fn bitxor(self, rhs: PointerEventFlags) -> PointerEventFlags {
+        PointerEventFlags {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -12615,6 +12836,15 @@ impl HierarchyMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const MASTER_ADDED: Self = Self { inner: 1 };
+    pub const MASTER_REMOVED: Self = Self { inner: 2 };
+    pub const SLAVE_ADDED: Self = Self { inner: 4 };
+    pub const SLAVE_REMOVED: Self = Self { inner: 8 };
+    pub const SLAVE_ATTACHED: Self = Self { inner: 16 };
+    pub const SLAVE_DETACHED: Self = Self { inner: 32 };
+    pub const DEVICE_ENABLED: Self = Self { inner: 64 };
+    pub const DEVICE_DISABLED: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 255 };
 }
 impl AsByteSequence for HierarchyMask {
     #[inline]
@@ -12644,6 +12874,24 @@ impl core::ops::BitAnd for HierarchyMask {
     fn bitand(self, rhs: HierarchyMask) -> HierarchyMask {
         HierarchyMask {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for HierarchyMask {
+    type Output = HierarchyMask;
+    #[inline]
+    fn bitor(self, rhs: HierarchyMask) -> HierarchyMask {
+        HierarchyMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for HierarchyMask {
+    type Output = HierarchyMask;
+    #[inline]
+    fn bitxor(self, rhs: HierarchyMask) -> HierarchyMask {
+        HierarchyMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -12727,6 +12975,9 @@ impl TouchEventFlags {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const TOUCH_PENDING_END: Self = Self { inner: 65536 };
+    pub const TOUCH_EMULATING_POINTER: Self = Self { inner: 131072 };
+    pub const COMPLETE: Self = Self { inner: 196608 };
 }
 impl AsByteSequence for TouchEventFlags {
     #[inline]
@@ -12756,6 +13007,24 @@ impl core::ops::BitAnd for TouchEventFlags {
     fn bitand(self, rhs: TouchEventFlags) -> TouchEventFlags {
         TouchEventFlags {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for TouchEventFlags {
+    type Output = TouchEventFlags;
+    #[inline]
+    fn bitor(self, rhs: TouchEventFlags) -> TouchEventFlags {
+        TouchEventFlags {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for TouchEventFlags {
+    type Output = TouchEventFlags;
+    #[inline]
+    fn bitxor(self, rhs: TouchEventFlags) -> TouchEventFlags {
+        TouchEventFlags {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -12835,6 +13104,9 @@ impl BarrierFlags {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const POINTER_RELEASED: Self = Self { inner: 1 };
+    pub const DEVICE_IS_GRABBED: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for BarrierFlags {
     #[inline]
@@ -12867,11 +13139,29 @@ impl core::ops::BitAnd for BarrierFlags {
         }
     }
 }
+impl core::ops::BitOr for BarrierFlags {
+    type Output = BarrierFlags;
+    #[inline]
+    fn bitor(self, rhs: BarrierFlags) -> BarrierFlags {
+        BarrierFlags {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for BarrierFlags {
+    type Output = BarrierFlags;
+    #[inline]
+    fn bitxor(self, rhs: BarrierFlags) -> BarrierFlags {
+        BarrierFlags {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
 #[derive(Clone, Debug, Default)]
 pub struct SendExtensionEventRequest {
     pub req_type: u8,
-    pub destination: Window,
     pub length: u16,
+    pub destination: Window,
     pub device_id: Card8,
     pub propagate: bool,
     pub events: Vec<EventForSend>,
@@ -12883,8 +13173,9 @@ impl AsByteSequence for SendExtensionEventRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.destination.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.destination.as_bytes(&mut bytes[index..]);
         index += self.device_id.as_bytes(&mut bytes[index..]);
         index += self.propagate.as_bytes(&mut bytes[index..]);
         index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
@@ -12904,9 +13195,10 @@ impl AsByteSequence for SendExtensionEventRequest {
         log::trace!("Deserializing SendExtensionEventRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (destination, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (destination, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -12928,8 +13220,8 @@ impl AsByteSequence for SendExtensionEventRequest {
         Some((
             SendExtensionEventRequest {
                 req_type: req_type,
-                destination: destination,
                 length: length,
+                destination: destination,
                 device_id: device_id,
                 propagate: propagate,
                 events: events,
@@ -12941,8 +13233,9 @@ impl AsByteSequence for SendExtensionEventRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.destination.size()
+            + 1
             + self.length.size()
+            + self.destination.size()
             + self.device_id.size()
             + self.propagate.size()
             + ::core::mem::size_of::<Card16>()
@@ -12965,6 +13258,89 @@ impl Request for SendExtensionEventRequest {
     const EXTENSION: Option<&'static str> = Some("XInputExtension");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MoreEventsMask {
+    pub inner: i32,
+}
+impl MoreEventsMask {
+    #[inline]
+    pub fn more_events(&self) -> bool {
+        self.inner & (1 << 7) != 0
+    }
+    #[inline]
+    pub fn set_more_events(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 7;
+        } else {
+            self.inner &= !(1 << 7);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(more_events: bool) -> Self {
+        let mut inner: i32 = 0;
+        if more_events {
+            inner |= 1 << 7;
+        }
+        MoreEventsMask { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+    pub const MORE_EVENTS: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 128 };
+}
+impl AsByteSequence for MoreEventsMask {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((MoreEventsMask { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for MoreEventsMask {
+    type Output = MoreEventsMask;
+    #[inline]
+    fn not(self) -> MoreEventsMask {
+        MoreEventsMask { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for MoreEventsMask {
+    type Output = MoreEventsMask;
+    #[inline]
+    fn bitand(self, rhs: MoreEventsMask) -> MoreEventsMask {
+        MoreEventsMask {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for MoreEventsMask {
+    type Output = MoreEventsMask;
+    #[inline]
+    fn bitor(self, rhs: MoreEventsMask) -> MoreEventsMask {
+        MoreEventsMask {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for MoreEventsMask {
+    type Output = MoreEventsMask;
+    #[inline]
+    fn bitxor(self, rhs: MoreEventsMask) -> MoreEventsMask {
+        MoreEventsMask {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -13003,6 +13379,49 @@ impl Default for NotifyMode {
     #[inline]
     fn default() -> NotifyMode {
         NotifyMode::Normal
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum NotifyDetail {
+    Ancestor = 0,
+    Virtual = 1,
+    Inferior = 2,
+    Nonlinear = 3,
+    NonlinearVirtual = 4,
+    Pointer = 5,
+    PointerRoot = 6,
+    None = 7,
+}
+impl AsByteSequence for NotifyDetail {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Ancestor, sz)),
+            1 => Some((Self::Virtual, sz)),
+            2 => Some((Self::Inferior, sz)),
+            3 => Some((Self::Nonlinear, sz)),
+            4 => Some((Self::NonlinearVirtual, sz)),
+            5 => Some((Self::Pointer, sz)),
+            6 => Some((Self::PointerRoot, sz)),
+            7 => Some((Self::None, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for NotifyDetail {
+    #[inline]
+    fn default() -> NotifyDetail {
+        NotifyDetail::Ancestor
     }
 }
 #[repr(transparent)]
@@ -13463,6 +13882,33 @@ impl XiEventMask {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const DEVICE_CHANGED: Self = Self { inner: 2 };
+    pub const KEY_PRESS: Self = Self { inner: 4 };
+    pub const KEY_RELEASE: Self = Self { inner: 8 };
+    pub const BUTTON_PRESS: Self = Self { inner: 16 };
+    pub const BUTTON_RELEASE: Self = Self { inner: 32 };
+    pub const MOTION: Self = Self { inner: 64 };
+    pub const ENTER: Self = Self { inner: 128 };
+    pub const LEAVE: Self = Self { inner: 256 };
+    pub const FOCUS_IN: Self = Self { inner: 512 };
+    pub const FOCUS_OUT: Self = Self { inner: 1024 };
+    pub const HIERARCHY: Self = Self { inner: 2048 };
+    pub const PROPERTY: Self = Self { inner: 4096 };
+    pub const RAW_KEY_PRESS: Self = Self { inner: 8192 };
+    pub const RAW_KEY_RELEASE: Self = Self { inner: 16384 };
+    pub const RAW_BUTTON_PRESS: Self = Self { inner: 32768 };
+    pub const RAW_BUTTON_RELEASE: Self = Self { inner: 65536 };
+    pub const RAW_MOTION: Self = Self { inner: 131072 };
+    pub const TOUCH_BEGIN: Self = Self { inner: 262144 };
+    pub const TOUCH_UPDATE: Self = Self { inner: 524288 };
+    pub const TOUCH_END: Self = Self { inner: 1048576 };
+    pub const TOUCH_OWNERSHIP: Self = Self { inner: 2097152 };
+    pub const RAW_TOUCH_BEGIN: Self = Self { inner: 4194304 };
+    pub const RAW_TOUCH_UPDATE: Self = Self { inner: 8388608 };
+    pub const RAW_TOUCH_END: Self = Self { inner: 16777216 };
+    pub const BARRIER_HIT: Self = Self { inner: 33554432 };
+    pub const BARRIER_LEAVE: Self = Self { inner: 67108864 };
+    pub const COMPLETE: Self = Self { inner: 134217726 };
 }
 impl AsByteSequence for XiEventMask {
     #[inline]
@@ -13495,136 +13941,39 @@ impl core::ops::BitAnd for XiEventMask {
         }
     }
 }
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum NotifyDetail {
-    Ancestor = 0,
-    Virtual = 1,
-    Inferior = 2,
-    Nonlinear = 3,
-    NonlinearVirtual = 4,
-    Pointer = 5,
-    PointerRoot = 6,
-    None = 7,
-}
-impl AsByteSequence for NotifyDetail {
+impl core::ops::BitOr for XiEventMask {
+    type Output = XiEventMask;
     #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Ancestor, sz)),
-            1 => Some((Self::Virtual, sz)),
-            2 => Some((Self::Inferior, sz)),
-            3 => Some((Self::Nonlinear, sz)),
-            4 => Some((Self::NonlinearVirtual, sz)),
-            5 => Some((Self::Pointer, sz)),
-            6 => Some((Self::PointerRoot, sz)),
-            7 => Some((Self::None, sz)),
-            _ => None,
+    fn bitor(self, rhs: XiEventMask) -> XiEventMask {
+        XiEventMask {
+            inner: self.inner | rhs.inner,
         }
     }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
 }
-impl Default for NotifyDetail {
+impl core::ops::BitXor for XiEventMask {
+    type Output = XiEventMask;
     #[inline]
-    fn default() -> NotifyDetail {
-        NotifyDetail::Ancestor
-    }
-}
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MoreEventsMask {
-    pub inner: i32,
-}
-impl MoreEventsMask {
-    #[inline]
-    pub fn more_events(&self) -> bool {
-        self.inner & (1 << 7) != 0
-    }
-    #[inline]
-    pub fn set_more_events(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 7;
-        } else {
-            self.inner &= !(1 << 7);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(more_events: bool) -> Self {
-        let mut inner: i32 = 0;
-        if more_events {
-            inner |= 1 << 7;
-        }
-        MoreEventsMask { inner: inner }
-    }
-    #[inline]
-    pub fn count_ones(&self) -> usize {
-        self.inner.count_ones() as usize
-    }
-}
-impl AsByteSequence for MoreEventsMask {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((MoreEventsMask { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-impl core::ops::Not for MoreEventsMask {
-    type Output = MoreEventsMask;
-    #[inline]
-    fn not(self) -> MoreEventsMask {
-        MoreEventsMask { inner: !self.inner }
-    }
-}
-impl core::ops::BitAnd for MoreEventsMask {
-    type Output = MoreEventsMask;
-    #[inline]
-    fn bitand(self, rhs: MoreEventsMask) -> MoreEventsMask {
-        MoreEventsMask {
-            inner: self.inner & rhs.inner,
+    fn bitxor(self, rhs: XiEventMask) -> XiEventMask {
+        XiEventMask {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct MotionEvent {
+pub struct TouchOwnershipEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
-    pub detail: Card32,
+    pub touchid: Card32,
     pub root: Window,
     pub event: Window,
     pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
     pub sourceid: DeviceId,
-    pub flags: PointerEventFlags,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub flags: TouchOwnershipFlags,
 }
-impl MotionEvent {}
-impl AsByteSequence for MotionEvent {
+impl TouchOwnershipEvent {}
+impl AsByteSequence for TouchOwnershipEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13632,36 +13981,20 @@ impl AsByteSequence for MotionEvent {
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.touchid.as_bytes(&mut bytes[index..]);
         index += self.root.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
         index += self.sourceid.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index += 8;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing MotionEvent from byte buffer");
+        log::trace!("Deserializing TouchOwnershipEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
@@ -13670,7 +14003,7 @@ impl AsByteSequence for MotionEvent {
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (touchid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -13678,69 +14011,25 @@ impl AsByteSequence for MotionEvent {
         index += sz;
         let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
         let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (flags, sz): (PointerEventFlags, usize) =
-            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        let (flags, sz): (TouchOwnershipFlags, usize) =
+            <TouchOwnershipFlags>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len1 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index += 8;
         Some((
-            MotionEvent {
+            TouchOwnershipEvent {
                 event_type: event_type,
                 deviceid: deviceid,
                 sequence: sequence,
                 time: time,
-                detail: detail,
+                touchid: touchid,
                 root: root,
                 event: event,
                 child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
                 sourceid: sourceid,
                 flags: flags,
-                mods: mods,
-                group: group,
-                button_mask: button_mask,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
             },
             index,
         ))
@@ -13751,43 +14040,95 @@ impl AsByteSequence for MotionEvent {
             + self.deviceid.size()
             + self.sequence.size()
             + self.time.size()
-            + self.detail.size()
+            + self.touchid.size()
             + self.root.size()
             + self.event.size()
             + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + ::core::mem::size_of::<Card16>()
-            + ::core::mem::size_of::<Card16>()
             + self.sourceid.size()
             + 2
             + self.flags.size()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
+            + 8
     }
 }
-impl crate::auto::Event for MotionEvent {
+impl crate::auto::Event for TouchOwnershipEvent {
+    const OPCODE: u8 = 21;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceFocusInEvent {
+    pub event_type: u8,
+    pub detail: super::xproto::NotifyDetail,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub window: Window,
+    pub mode: super::xproto::NotifyMode,
+    pub device_id: Card8,
+}
+impl DeviceFocusInEvent {}
+impl AsByteSequence for DeviceFocusInEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += 18;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceFocusInEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (super::xproto::NotifyDetail, usize) =
+            <super::xproto::NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (super::xproto::NotifyMode, usize) =
+            <super::xproto::NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 18;
+        Some((
+            DeviceFocusInEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                window: window,
+                mode: mode,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.window.size()
+            + self.mode.size()
+            + self.device_id.size()
+            + 18
+    }
+}
+impl crate::auto::Event for DeviceFocusInEvent {
     const OPCODE: u8 = 6;
 }
 #[derive(Clone, Debug, Default)]
-pub struct TouchEndEvent {
+pub struct KeyReleaseEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -13801,15 +14142,15 @@ pub struct TouchEndEvent {
     pub event_x: Fp1616,
     pub event_y: Fp1616,
     pub sourceid: DeviceId,
-    pub flags: TouchEventFlags,
+    pub flags: KeyEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
     pub button_mask: Vec<Card32>,
     pub valuator_mask: Vec<Card32>,
     pub axisvalues: Vec<Fp3232>,
 }
-impl TouchEndEvent {}
-impl AsByteSequence for TouchEndEvent {
+impl KeyReleaseEvent {}
+impl AsByteSequence for KeyReleaseEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13846,7 +14187,7 @@ impl AsByteSequence for TouchEndEvent {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing TouchEndEvent from byte buffer");
+        log::trace!("Deserializing KeyReleaseEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
@@ -13878,7 +14219,7 @@ impl AsByteSequence for TouchEndEvent {
         let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -13905,7 +14246,7 @@ impl AsByteSequence for TouchEndEvent {
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
         Some((
-            TouchEndEvent {
+            KeyReleaseEvent {
                 event_type: event_type,
                 deviceid: deviceid,
                 sequence: sequence,
@@ -13967,8 +14308,367 @@ impl AsByteSequence for TouchEndEvent {
             }
     }
 }
-impl crate::auto::Event for TouchEndEvent {
-    const OPCODE: u8 = 20;
+impl crate::auto::Event for KeyReleaseEvent {
+    const OPCODE: u8 = 3;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawButtonReleaseEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: PointerEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawButtonReleaseEvent {}
+impl AsByteSequence for RawButtonReleaseEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawButtonReleaseEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (PointerEventFlags, usize) =
+            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawButtonReleaseEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawButtonReleaseEvent {
+    const OPCODE: u8 = 16;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DevicePresenceNotifyEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub devchange: DeviceChange,
+    pub device_id: Byte,
+    pub control: Card16,
+}
+impl DevicePresenceNotifyEvent {}
+impl AsByteSequence for DevicePresenceNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.devchange.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.control.as_bytes(&mut bytes[index..]);
+        index += 20;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DevicePresenceNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (devchange, sz): (DeviceChange, usize) = <DeviceChange>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (control, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 20;
+        Some((
+            DevicePresenceNotifyEvent {
+                event_type: event_type,
+                sequence: sequence,
+                time: time,
+                devchange: devchange,
+                device_id: device_id,
+                control: control,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.time.size()
+            + self.devchange.size()
+            + self.device_id.size()
+            + self.control.size()
+            + 20
+    }
+}
+impl crate::auto::Event for DevicePresenceNotifyEvent {
+    const OPCODE: u8 = 15;
+}
+#[derive(Clone, Debug, Default)]
+pub struct EnterEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub sourceid: DeviceId,
+    pub mode: super::xinput::NotifyMode,
+    pub detail: super::xinput::NotifyDetail,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub same_screen: bool,
+    pub focus: bool,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub buttons: Vec<Card32>,
+}
+impl EnterEvent {}
+impl AsByteSequence for EnterEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.focus.as_bytes(&mut bytes[index..]);
+        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing EnterEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (super::xinput::NotifyMode, usize) =
+            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (super::xinput::NotifyDetail, usize) =
+            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (buttons, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        Some((
+            EnterEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                sourceid: sourceid,
+                mode: mode,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                same_screen: same_screen,
+                focus: focus,
+                mods: mods,
+                group: group,
+                buttons: buttons,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.sourceid.size()
+            + self.mode.size()
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.same_screen.size()
+            + self.focus.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for EnterEvent {
+    const OPCODE: u8 = 7;
 }
 #[derive(Clone, Debug, Default)]
 pub struct RawKeyPressEvent {
@@ -14103,6 +14803,953 @@ impl AsByteSequence for RawKeyPressEvent {
 }
 impl crate::auto::Event for RawKeyPressEvent {
     const OPCODE: u8 = 13;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceButtonReleaseEvent {
+    pub event_type: u8,
+    pub detail: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+    pub device_id: Card8,
+}
+impl DeviceButtonReleaseEvent {}
+impl AsByteSequence for DeviceButtonReleaseEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceButtonReleaseEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceButtonReleaseEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + self.device_id.size()
+    }
+}
+impl crate::auto::Event for DeviceButtonReleaseEvent {
+    const OPCODE: u8 = 4;
+}
+#[derive(Clone, Debug, Default)]
+pub struct FocusInEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub sourceid: DeviceId,
+    pub mode: super::xinput::NotifyMode,
+    pub detail: super::xinput::NotifyDetail,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub same_screen: bool,
+    pub focus: bool,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub buttons: Vec<Card32>,
+}
+impl FocusInEvent {}
+impl AsByteSequence for FocusInEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.focus.as_bytes(&mut bytes[index..]);
+        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing FocusInEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (super::xinput::NotifyMode, usize) =
+            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (super::xinput::NotifyDetail, usize) =
+            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (buttons, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        Some((
+            FocusInEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                sourceid: sourceid,
+                mode: mode,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                same_screen: same_screen,
+                focus: focus,
+                mods: mods,
+                group: group,
+                buttons: buttons,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.sourceid.size()
+            + self.mode.size()
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.same_screen.size()
+            + self.focus.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for FocusInEvent {
+    const OPCODE: u8 = 9;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawMotionEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: PointerEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawMotionEvent {}
+impl AsByteSequence for RawMotionEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawMotionEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (PointerEventFlags, usize) =
+            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawMotionEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawMotionEvent {
+    const OPCODE: u8 = 17;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceValuatorEvent {
+    pub event_type: u8,
+    pub device_id: Card8,
+    pub sequence: u16,
+    pub device_state: Card16,
+    pub num_valuators: Card8,
+    pub first_valuator: Card8,
+    pub valuators: [Int32; 6],
+}
+impl DeviceValuatorEvent {}
+impl AsByteSequence for DeviceValuatorEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.device_state.as_bytes(&mut bytes[index..]);
+        index += self.num_valuators.as_bytes(&mut bytes[index..]);
+        index += self.first_valuator.as_bytes(&mut bytes[index..]);
+        index += self.valuators.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceValuatorEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_state, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (num_valuators, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_valuator, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (valuators, sz): ([Int32; 6], usize) = <[Int32; 6]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceValuatorEvent {
+                event_type: event_type,
+                device_id: device_id,
+                sequence: sequence,
+                device_state: device_state,
+                num_valuators: num_valuators,
+                first_valuator: first_valuator,
+                valuators: valuators,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.device_id.size()
+            + self.sequence.size()
+            + self.device_state.size()
+            + self.num_valuators.size()
+            + self.first_valuator.size()
+            + self.valuators.size()
+    }
+}
+impl crate::auto::Event for DeviceValuatorEvent {
+    const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawTouchBeginEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: TouchEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawTouchBeginEvent {}
+impl AsByteSequence for RawTouchBeginEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawTouchBeginEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawTouchBeginEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawTouchBeginEvent {
+    const OPCODE: u8 = 22;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceButtonPressEvent {
+    pub event_type: u8,
+    pub detail: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+    pub device_id: Card8,
+}
+impl DeviceButtonPressEvent {}
+impl AsByteSequence for DeviceButtonPressEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceButtonPressEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceButtonPressEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + self.device_id.size()
+    }
+}
+impl crate::auto::Event for DeviceButtonPressEvent {
+    const OPCODE: u8 = 3;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceKeyStateNotifyEvent {
+    pub event_type: u8,
+    pub device_id: Byte,
+    pub sequence: u16,
+    pub keys: [Card8; 28],
+}
+impl DeviceKeyStateNotifyEvent {}
+impl AsByteSequence for DeviceKeyStateNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.keys.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceKeyStateNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (keys, sz): ([Card8; 28], usize) = <[Card8; 28]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceKeyStateNotifyEvent {
+                event_type: event_type,
+                device_id: device_id,
+                sequence: sequence,
+                keys: keys,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + self.device_id.size() + self.sequence.size() + self.keys.size()
+    }
+}
+impl crate::auto::Event for DeviceKeyStateNotifyEvent {
+    const OPCODE: u8 = 13;
+}
+#[derive(Clone, Debug, Default)]
+pub struct TouchBeginEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub sourceid: DeviceId,
+    pub flags: TouchEventFlags,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub button_mask: Vec<Card32>,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+}
+impl TouchBeginEvent {}
+impl AsByteSequence for TouchBeginEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing TouchBeginEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (button_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            TouchBeginEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                sourceid: sourceid,
+                flags: flags,
+                mods: mods,
+                group: group,
+                button_mask: button_mask,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + ::core::mem::size_of::<Card16>()
+            + ::core::mem::size_of::<Card16>()
+            + self.sourceid.size()
+            + 2
+            + self.flags.size()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for TouchBeginEvent {
+    const OPCODE: u8 = 18;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ButtonReleaseEvent {
@@ -14290,201 +15937,6 @@ impl crate::auto::Event for ButtonReleaseEvent {
     const OPCODE: u8 = 5;
 }
 #[derive(Clone, Debug, Default)]
-pub struct DeviceChangedEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub sourceid: DeviceId,
-    pub reason: ChangeReason,
-    pub classes: Vec<DeviceClass>,
-}
-impl DeviceChangedEvent {}
-impl AsByteSequence for DeviceChangedEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += self.reason.as_bytes(&mut bytes[index..]);
-        index += 11;
-        let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceChangedEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (reason, sz): (ChangeReason, usize) = <ChangeReason>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 11;
-        let (classes, block_len): (Vec<DeviceClass>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
-        Some((
-            DeviceChangedEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                sourceid: sourceid,
-                reason: reason,
-                classes: classes,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.sourceid.size()
-            + self.reason.size()
-            + 11
-            + {
-                let block_len: usize = self.classes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for DeviceChangedEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceKeyPressEvent {
-    pub event_type: u8,
-    pub detail: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-    pub device_id: Card8,
-}
-impl DeviceKeyPressEvent {}
-impl AsByteSequence for DeviceKeyPressEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceKeyPressEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceKeyPressEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for DeviceKeyPressEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
 pub struct DeviceButtonStateNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -14531,540 +15983,6 @@ impl AsByteSequence for DeviceButtonStateNotifyEvent {
 }
 impl crate::auto::Event for DeviceButtonStateNotifyEvent {
     const OPCODE: u8 = 14;
-}
-#[derive(Clone, Debug, Default)]
-pub struct FocusInEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub sourceid: DeviceId,
-    pub mode: super::xinput::NotifyMode,
-    pub detail: super::xinput::NotifyDetail,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub same_screen: bool,
-    pub focus: bool,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
-}
-impl FocusInEvent {}
-impl AsByteSequence for FocusInEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.focus.as_bytes(&mut bytes[index..]);
-        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing FocusInEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (super::xinput::NotifyMode, usize) =
-            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (super::xinput::NotifyDetail, usize) =
-            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        Some((
-            FocusInEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                sourceid: sourceid,
-                mode: mode,
-                detail: detail,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                same_screen: same_screen,
-                focus: focus,
-                mods: mods,
-                group: group,
-                buttons: buttons,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.sourceid.size()
-            + self.mode.size()
-            + self.detail.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.same_screen.size()
-            + self.focus.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for FocusInEvent {
-    const OPCODE: u8 = 9;
-}
-#[derive(Clone, Debug, Default)]
-pub struct RawKeyReleaseEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub sourceid: DeviceId,
-    pub flags: KeyEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
-}
-impl RawKeyReleaseEvent {}
-impl AsByteSequence for RawKeyReleaseEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RawKeyReleaseEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            RawKeyReleaseEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                sourceid: sourceid,
-                flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RawKeyReleaseEvent {
-    const OPCODE: u8 = 14;
-}
-#[derive(Clone, Debug, Default)]
-pub struct RawTouchBeginEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub sourceid: DeviceId,
-    pub flags: TouchEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
-}
-impl RawTouchBeginEvent {}
-impl AsByteSequence for RawTouchBeginEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RawTouchBeginEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            RawTouchBeginEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                sourceid: sourceid,
-                flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RawTouchBeginEvent {
-    const OPCODE: u8 = 22;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ProximityInEvent {
-    pub event_type: u8,
-    pub detail: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-    pub device_id: Card8,
-}
-impl ProximityInEvent {}
-impl AsByteSequence for ProximityInEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ProximityInEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ProximityInEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for ProximityInEvent {
-    const OPCODE: u8 = 8;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ButtonPressEvent {
@@ -15252,94 +16170,29 @@ impl crate::auto::Event for ButtonPressEvent {
     const OPCODE: u8 = 4;
 }
 #[derive(Clone, Debug, Default)]
-pub struct DeviceFocusInEvent {
-    pub event_type: u8,
-    pub detail: super::xproto::NotifyDetail,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub window: Window,
-    pub mode: super::xproto::NotifyMode,
-    pub device_id: Card8,
-}
-impl DeviceFocusInEvent {}
-impl AsByteSequence for DeviceFocusInEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 18;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceFocusInEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (super::xproto::NotifyDetail, usize) =
-            <super::xproto::NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (super::xproto::NotifyMode, usize) =
-            <super::xproto::NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 18;
-        Some((
-            DeviceFocusInEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                window: window,
-                mode: mode,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.window.size()
-            + self.mode.size()
-            + self.device_id.size()
-            + 18
-    }
-}
-impl crate::auto::Event for DeviceFocusInEvent {
-    const OPCODE: u8 = 6;
-}
-#[derive(Clone, Debug, Default)]
-pub struct TouchOwnershipEvent {
+pub struct FocusOutEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
-    pub touchid: Card32,
+    pub sourceid: DeviceId,
+    pub mode: super::xinput::NotifyMode,
+    pub detail: super::xinput::NotifyDetail,
     pub root: Window,
     pub event: Window,
     pub child: Window,
-    pub sourceid: DeviceId,
-    pub flags: TouchOwnershipFlags,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub same_screen: bool,
+    pub focus: bool,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub buttons: Vec<Card32>,
 }
-impl TouchOwnershipEvent {}
-impl AsByteSequence for TouchOwnershipEvent {
+impl FocusOutEvent {}
+impl AsByteSequence for FocusOutEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15347,20 +16200,30 @@ impl AsByteSequence for TouchOwnershipEvent {
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.touchid.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.root.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 8;
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.focus.as_bytes(&mut bytes[index..]);
+        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing TouchOwnershipEvent from byte buffer");
+        log::trace!("Deserializing FocusOutEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
@@ -15369,7 +16232,13 @@ impl AsByteSequence for TouchOwnershipEvent {
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (touchid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (super::xinput::NotifyMode, usize) =
+            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (super::xinput::NotifyDetail, usize) =
+            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
         index += sz;
         let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -15377,25 +16246,49 @@ impl AsByteSequence for TouchOwnershipEvent {
         index += sz;
         let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 2;
-        let (flags, sz): (TouchOwnershipFlags, usize) =
-            <TouchOwnershipFlags>::from_bytes(&bytes[index..])?;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 8;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (buttons, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
         Some((
-            TouchOwnershipEvent {
+            FocusOutEvent {
                 event_type: event_type,
                 deviceid: deviceid,
                 sequence: sequence,
                 time: time,
-                touchid: touchid,
+                sourceid: sourceid,
+                mode: mode,
+                detail: detail,
                 root: root,
                 event: event,
                 child: child,
-                sourceid: sourceid,
-                flags: flags,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                same_screen: same_screen,
+                focus: focus,
+                mods: mods,
+                group: group,
+                buttons: buttons,
             },
             index,
         ))
@@ -15406,34 +16299,51 @@ impl AsByteSequence for TouchOwnershipEvent {
             + self.deviceid.size()
             + self.sequence.size()
             + self.time.size()
-            + self.touchid.size()
+            + self.sourceid.size()
+            + self.mode.size()
+            + self.detail.size()
             + self.root.size()
             + self.event.size()
             + self.child.size()
-            + self.sourceid.size()
-            + 2
-            + self.flags.size()
-            + 8
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.same_screen.size()
+            + self.focus.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
     }
 }
-impl crate::auto::Event for TouchOwnershipEvent {
-    const OPCODE: u8 = 21;
+impl crate::auto::Event for FocusOutEvent {
+    const OPCODE: u8 = 10;
 }
 #[derive(Clone, Debug, Default)]
-pub struct RawButtonReleaseEvent {
+pub struct BarrierLeaveEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
-    pub detail: Card32,
+    pub eventid: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub barrier: Barrier,
+    pub dtime: Card32,
+    pub flags: BarrierFlags,
     pub sourceid: DeviceId,
-    pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub dx: Fp3232,
+    pub dy: Fp3232,
 }
-impl RawButtonReleaseEvent {}
-impl AsByteSequence for RawButtonReleaseEvent {
+impl BarrierLeaveEvent {}
+impl AsByteSequence for BarrierLeaveEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15441,26 +16351,24 @@ impl AsByteSequence for RawButtonReleaseEvent {
         index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.eventid.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.barrier.as_bytes(&mut bytes[index..]);
+        index += self.dtime.as_bytes(&mut bytes[index..]);
         index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.dx.as_bytes(&mut bytes[index..]);
+        index += self.dy.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing RawButtonReleaseEvent from byte buffer");
+        log::trace!("Deserializing BarrierLeaveEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
@@ -15469,56 +16377,46 @@ impl AsByteSequence for RawButtonReleaseEvent {
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        let (eventid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dtime, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (BarrierFlags, usize) = <BarrierFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += 2;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (flags, sz): (PointerEventFlags, usize) =
-            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (dx, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dy, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
+        index += sz;
         Some((
-            RawButtonReleaseEvent {
+            BarrierLeaveEvent {
                 event_type: event_type,
                 deviceid: deviceid,
                 sequence: sequence,
                 time: time,
-                detail: detail,
-                sourceid: sourceid,
+                eventid: eventid,
+                root: root,
+                event: event,
+                barrier: barrier,
+                dtime: dtime,
                 flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
+                sourceid: sourceid,
+                root_x: root_x,
+                root_y: root_y,
+                dx: dx,
+                dy: dy,
             },
             index,
         ))
@@ -15529,33 +16427,145 @@ impl AsByteSequence for RawButtonReleaseEvent {
             + self.deviceid.size()
             + self.sequence.size()
             + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
+            + self.eventid.size()
+            + self.root.size()
+            + self.event.size()
+            + self.barrier.size()
+            + self.dtime.size()
             + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
+            + self.sourceid.size()
+            + 2
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.dx.size()
+            + self.dy.size()
     }
 }
-impl crate::auto::Event for RawButtonReleaseEvent {
-    const OPCODE: u8 = 16;
+impl crate::auto::Event for BarrierLeaveEvent {
+    const OPCODE: u8 = 26;
 }
 #[derive(Clone, Debug, Default)]
-pub struct DeviceButtonPressEvent {
+pub struct BarrierHitEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub eventid: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub barrier: Barrier,
+    pub dtime: Card32,
+    pub flags: BarrierFlags,
+    pub sourceid: DeviceId,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub dx: Fp3232,
+    pub dy: Fp3232,
+}
+impl BarrierHitEvent {}
+impl AsByteSequence for BarrierHitEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.eventid.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.barrier.as_bytes(&mut bytes[index..]);
+        index += self.dtime.as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.dx.as_bytes(&mut bytes[index..]);
+        index += self.dy.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BarrierHitEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (eventid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dtime, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (BarrierFlags, usize) = <BarrierFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dx, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (dy, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            BarrierHitEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                eventid: eventid,
+                root: root,
+                event: event,
+                barrier: barrier,
+                dtime: dtime,
+                flags: flags,
+                sourceid: sourceid,
+                root_x: root_x,
+                root_y: root_y,
+                dx: dx,
+                dy: dy,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.eventid.size()
+            + self.root.size()
+            + self.event.size()
+            + self.barrier.size()
+            + self.dtime.size()
+            + self.flags.size()
+            + self.sourceid.size()
+            + 2
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.dx.size()
+            + self.dy.size()
+    }
+}
+impl crate::auto::Event for BarrierHitEvent {
+    const OPCODE: u8 = 25;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceMotionNotifyEvent {
     pub event_type: u8,
     pub detail: Byte,
     pub sequence: u16,
@@ -15571,8 +16581,8 @@ pub struct DeviceButtonPressEvent {
     pub same_screen: bool,
     pub device_id: Card8,
 }
-impl DeviceButtonPressEvent {}
-impl AsByteSequence for DeviceButtonPressEvent {
+impl DeviceMotionNotifyEvent {}
+impl AsByteSequence for DeviceMotionNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15595,7 +16605,7 @@ impl AsByteSequence for DeviceButtonPressEvent {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing DeviceButtonPressEvent from byte buffer");
+        log::trace!("Deserializing DeviceMotionNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
@@ -15625,7 +16635,7 @@ impl AsByteSequence for DeviceButtonPressEvent {
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
-            DeviceButtonPressEvent {
+            DeviceMotionNotifyEvent {
                 event_type: event_type,
                 detail: detail,
                 sequence: sequence,
@@ -15662,52 +16672,148 @@ impl AsByteSequence for DeviceButtonPressEvent {
             + self.device_id.size()
     }
 }
-impl crate::auto::Event for DeviceButtonPressEvent {
-    const OPCODE: u8 = 3;
+impl crate::auto::Event for DeviceMotionNotifyEvent {
+    const OPCODE: u8 = 5;
 }
 #[derive(Clone, Debug, Default)]
-pub struct ChangeDeviceNotifyEvent {
+pub struct TouchEndEvent {
     pub event_type: u8,
-    pub device_id: Byte,
+    pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
-    pub request: ChangeDevice,
+    pub detail: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub sourceid: DeviceId,
+    pub flags: TouchEventFlags,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub button_mask: Vec<Card32>,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
 }
-impl ChangeDeviceNotifyEvent {}
-impl AsByteSequence for ChangeDeviceNotifyEvent {
+impl TouchEndEvent {}
+impl AsByteSequence for TouchEndEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.request.as_bytes(&mut bytes[index..]);
-        index += 23;
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing ChangeDeviceNotifyEvent from byte buffer");
+        log::trace!("Deserializing TouchEndEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (request, sz): (ChangeDevice, usize) = <ChangeDevice>::from_bytes(&bytes[index..])?;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 23;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (button_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
         Some((
-            ChangeDeviceNotifyEvent {
+            TouchEndEvent {
                 event_type: event_type,
-                device_id: device_id,
+                deviceid: deviceid,
                 sequence: sequence,
                 time: time,
-                request: request,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                sourceid: sourceid,
+                flags: flags,
+                mods: mods,
+                group: group,
+                button_mask: button_mask,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
             },
             index,
         ))
@@ -15715,63 +16821,43 @@ impl AsByteSequence for ChangeDeviceNotifyEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + self.device_id.size()
+            + self.deviceid.size()
             + self.sequence.size()
             + self.time.size()
-            + self.request.size()
-            + 23
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + ::core::mem::size_of::<Card16>()
+            + ::core::mem::size_of::<Card16>()
+            + self.sourceid.size()
+            + 2
+            + self.flags.size()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
     }
 }
-impl crate::auto::Event for ChangeDeviceNotifyEvent {
-    const OPCODE: u8 = 12;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceKeyStateNotifyEvent {
-    pub event_type: u8,
-    pub device_id: Byte,
-    pub sequence: u16,
-    pub keys: [Card8; 28],
-}
-impl DeviceKeyStateNotifyEvent {}
-impl AsByteSequence for DeviceKeyStateNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.keys.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceKeyStateNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (keys, sz): ([Card8; 28], usize) = <[Card8; 28]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceKeyStateNotifyEvent {
-                event_type: event_type,
-                device_id: device_id,
-                sequence: sequence,
-                keys: keys,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + self.device_id.size() + self.sequence.size() + self.keys.size()
-    }
-}
-impl crate::auto::Event for DeviceKeyStateNotifyEvent {
-    const OPCODE: u8 = 13;
+impl crate::auto::Event for TouchEndEvent {
+    const OPCODE: u8 = 20;
 }
 #[derive(Clone, Debug, Default)]
 pub struct DeviceMappingNotifyEvent {
@@ -15849,7 +16935,671 @@ impl crate::auto::Event for DeviceMappingNotifyEvent {
     const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default)]
-pub struct DeviceButtonReleaseEvent {
+pub struct DevicePropertyNotifyEvent {
+    pub event_type: u8,
+    pub state: Property,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub property: Atom,
+    pub device_id: Card8,
+}
+impl DevicePropertyNotifyEvent {}
+impl AsByteSequence for DevicePropertyNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.property.as_bytes(&mut bytes[index..]);
+        index += 19;
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DevicePropertyNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (Property, usize) = <Property>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 19;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DevicePropertyNotifyEvent {
+                event_type: event_type,
+                state: state,
+                sequence: sequence,
+                time: time,
+                property: property,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.state.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.property.size()
+            + 19
+            + self.device_id.size()
+    }
+}
+impl crate::auto::Event for DevicePropertyNotifyEvent {
+    const OPCODE: u8 = 16;
+}
+#[derive(Clone, Debug, Default)]
+pub struct TouchUpdateEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub sourceid: DeviceId,
+    pub flags: TouchEventFlags,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub button_mask: Vec<Card32>,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+}
+impl TouchUpdateEvent {}
+impl AsByteSequence for TouchUpdateEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing TouchUpdateEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (button_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            TouchUpdateEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                sourceid: sourceid,
+                flags: flags,
+                mods: mods,
+                group: group,
+                button_mask: button_mask,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + ::core::mem::size_of::<Card16>()
+            + ::core::mem::size_of::<Card16>()
+            + self.sourceid.size()
+            + 2
+            + self.flags.size()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for TouchUpdateEvent {
+    const OPCODE: u8 = 19;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceStateNotifyEvent {
+    pub event_type: u8,
+    pub device_id: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub num_keys: Card8,
+    pub num_buttons: Card8,
+    pub num_valuators: Card8,
+    pub classes_reported: ClassesReportedMask,
+    pub buttons: [Card8; 4],
+    pub keys: [Card8; 4],
+    pub valuators: [Card32; 3],
+}
+impl DeviceStateNotifyEvent {}
+impl AsByteSequence for DeviceStateNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.num_keys.as_bytes(&mut bytes[index..]);
+        index += self.num_buttons.as_bytes(&mut bytes[index..]);
+        index += self.num_valuators.as_bytes(&mut bytes[index..]);
+        index += self.classes_reported.as_bytes(&mut bytes[index..]);
+        index += self.buttons.as_bytes(&mut bytes[index..]);
+        index += self.keys.as_bytes(&mut bytes[index..]);
+        index += self.valuators.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceStateNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (num_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (num_buttons, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (num_valuators, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (classes_reported, sz): (ClassesReportedMask, usize) =
+            <ClassesReportedMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (buttons, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (keys, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (valuators, sz): ([Card32; 3], usize) = <[Card32; 3]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceStateNotifyEvent {
+                event_type: event_type,
+                device_id: device_id,
+                sequence: sequence,
+                time: time,
+                num_keys: num_keys,
+                num_buttons: num_buttons,
+                num_valuators: num_valuators,
+                classes_reported: classes_reported,
+                buttons: buttons,
+                keys: keys,
+                valuators: valuators,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.device_id.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.num_keys.size()
+            + self.num_buttons.size()
+            + self.num_valuators.size()
+            + self.classes_reported.size()
+            + self.buttons.size()
+            + self.keys.size()
+            + self.valuators.size()
+    }
+}
+impl crate::auto::Event for DeviceStateNotifyEvent {
+    const OPCODE: u8 = 10;
+}
+#[derive(Clone, Debug, Default)]
+pub struct MotionEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Fp1616,
+    pub root_y: Fp1616,
+    pub event_x: Fp1616,
+    pub event_y: Fp1616,
+    pub sourceid: DeviceId,
+    pub flags: PointerEventFlags,
+    pub mods: ModifierInfo,
+    pub group: GroupInfo,
+    pub button_mask: Vec<Card32>,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+}
+impl MotionEvent {}
+impl AsByteSequence for MotionEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing MotionEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (flags, sz): (PointerEventFlags, usize) =
+            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (button_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len1 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            MotionEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                sourceid: sourceid,
+                flags: flags,
+                mods: mods,
+                group: group,
+                button_mask: button_mask,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + ::core::mem::size_of::<Card16>()
+            + ::core::mem::size_of::<Card16>()
+            + self.sourceid.size()
+            + 2
+            + self.flags.size()
+            + self.mods.size()
+            + self.group.size()
+            + {
+                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for MotionEvent {
+    const OPCODE: u8 = 6;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawButtonPressEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: PointerEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawButtonPressEvent {}
+impl AsByteSequence for RawButtonPressEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawButtonPressEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (PointerEventFlags, usize) =
+            <PointerEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawButtonPressEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawButtonPressEvent {
+    const OPCODE: u8 = 15;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ProximityOutEvent {
     pub event_type: u8,
     pub detail: Byte,
     pub sequence: u16,
@@ -15865,8 +17615,8 @@ pub struct DeviceButtonReleaseEvent {
     pub same_screen: bool,
     pub device_id: Card8,
 }
-impl DeviceButtonReleaseEvent {}
-impl AsByteSequence for DeviceButtonReleaseEvent {
+impl ProximityOutEvent {}
+impl AsByteSequence for ProximityOutEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15889,7 +17639,7 @@ impl AsByteSequence for DeviceButtonReleaseEvent {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing DeviceButtonReleaseEvent from byte buffer");
+        log::trace!("Deserializing ProximityOutEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
@@ -15919,7 +17669,7 @@ impl AsByteSequence for DeviceButtonReleaseEvent {
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
-            DeviceButtonReleaseEvent {
+            ProximityOutEvent {
                 event_type: event_type,
                 detail: detail,
                 sequence: sequence,
@@ -15956,8 +17706,208 @@ impl AsByteSequence for DeviceButtonReleaseEvent {
             + self.device_id.size()
     }
 }
-impl crate::auto::Event for DeviceButtonReleaseEvent {
-    const OPCODE: u8 = 4;
+impl crate::auto::Event for ProximityOutEvent {
+    const OPCODE: u8 = 9;
+}
+#[derive(Clone, Debug, Default)]
+pub struct PropertyEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub property: Atom,
+    pub what: PropertyFlag,
+}
+impl PropertyEvent {}
+impl AsByteSequence for PropertyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.property.as_bytes(&mut bytes[index..]);
+        index += self.what.as_bytes(&mut bytes[index..]);
+        index += 11;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing PropertyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (what, sz): (PropertyFlag, usize) = <PropertyFlag>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 11;
+        Some((
+            PropertyEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                property: property,
+                what: what,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.property.size()
+            + self.what.size()
+            + 11
+    }
+}
+impl crate::auto::Event for PropertyEvent {
+    const OPCODE: u8 = 12;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawKeyReleaseEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: KeyEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawKeyReleaseEvent {}
+impl AsByteSequence for RawKeyReleaseEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawKeyReleaseEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawKeyReleaseEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawKeyReleaseEvent {
+    const OPCODE: u8 = 14;
 }
 #[derive(Clone, Debug, Default)]
 pub struct RawTouchUpdateEvent {
@@ -16092,6 +18042,580 @@ impl AsByteSequence for RawTouchUpdateEvent {
 }
 impl crate::auto::Event for RawTouchUpdateEvent {
     const OPCODE: u8 = 23;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceFocusOutEvent {
+    pub event_type: u8,
+    pub detail: super::xproto::NotifyDetail,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub window: Window,
+    pub mode: super::xproto::NotifyMode,
+    pub device_id: Card8,
+}
+impl DeviceFocusOutEvent {}
+impl AsByteSequence for DeviceFocusOutEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += 18;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceFocusOutEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (super::xproto::NotifyDetail, usize) =
+            <super::xproto::NotifyDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (super::xproto::NotifyMode, usize) =
+            <super::xproto::NotifyMode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 18;
+        Some((
+            DeviceFocusOutEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                window: window,
+                mode: mode,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.window.size()
+            + self.mode.size()
+            + self.device_id.size()
+            + 18
+    }
+}
+impl crate::auto::Event for DeviceFocusOutEvent {
+    const OPCODE: u8 = 7;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ProximityInEvent {
+    pub event_type: u8,
+    pub detail: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+    pub device_id: Card8,
+}
+impl ProximityInEvent {}
+impl AsByteSequence for ProximityInEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ProximityInEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            ProximityInEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + self.device_id.size()
+    }
+}
+impl crate::auto::Event for ProximityInEvent {
+    const OPCODE: u8 = 8;
+}
+#[derive(Clone, Debug, Default)]
+pub struct RawTouchEndEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub detail: Card32,
+    pub sourceid: DeviceId,
+    pub flags: TouchEventFlags,
+    pub valuator_mask: Vec<Card32>,
+    pub axisvalues: Vec<Fp3232>,
+    pub axisvalues_raw: Vec<Fp3232>,
+}
+impl RawTouchEndEvent {}
+impl AsByteSequence for RawTouchEndEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.flags.as_bytes(&mut bytes[index..]);
+        index += 4;
+        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing RawTouchEndEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
+        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+            &bytes[index..],
+            (valuator_mask
+                .iter()
+                .map(|a| {
+                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
+                        .count_ones()) as usize
+                })
+                .sum::<usize>()) as usize,
+        )?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        Some((
+            RawTouchEndEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                detail: detail,
+                sourceid: sourceid,
+                flags: flags,
+                valuator_mask: valuator_mask,
+                axisvalues: axisvalues,
+                axisvalues_raw: axisvalues_raw,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.detail.size()
+            + self.sourceid.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.flags.size()
+            + 4
+            + {
+                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+            + {
+                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for RawTouchEndEvent {
+    const OPCODE: u8 = 24;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ChangeDeviceNotifyEvent {
+    pub event_type: u8,
+    pub device_id: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub request: ChangeDevice,
+}
+impl ChangeDeviceNotifyEvent {}
+impl AsByteSequence for ChangeDeviceNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.request.as_bytes(&mut bytes[index..]);
+        index += 23;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ChangeDeviceNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request, sz): (ChangeDevice, usize) = <ChangeDevice>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 23;
+        Some((
+            ChangeDeviceNotifyEvent {
+                event_type: event_type,
+                device_id: device_id,
+                sequence: sequence,
+                time: time,
+                request: request,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.device_id.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.request.size()
+            + 23
+    }
+}
+impl crate::auto::Event for ChangeDeviceNotifyEvent {
+    const OPCODE: u8 = 12;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceKeyReleaseEvent {
+    pub event_type: u8,
+    pub detail: Byte,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub root: Window,
+    pub event: Window,
+    pub child: Window,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+    pub device_id: Card8,
+}
+impl DeviceKeyReleaseEvent {}
+impl AsByteSequence for DeviceKeyReleaseEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.root.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
+        index += self.child.as_bytes(&mut bytes[index..]);
+        index += self.root_x.as_bytes(&mut bytes[index..]);
+        index += self.root_y.as_bytes(&mut bytes[index..]);
+        index += self.event_x.as_bytes(&mut bytes[index..]);
+        index += self.event_y.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceKeyReleaseEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            DeviceKeyReleaseEvent {
+                event_type: event_type,
+                detail: detail,
+                sequence: sequence,
+                time: time,
+                root: root,
+                event: event,
+                child: child,
+                root_x: root_x,
+                root_y: root_y,
+                event_x: event_x,
+                event_y: event_y,
+                state: state,
+                same_screen: same_screen,
+                device_id: device_id,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.detail.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.root.size()
+            + self.event.size()
+            + self.child.size()
+            + self.root_x.size()
+            + self.root_y.size()
+            + self.event_x.size()
+            + self.event_y.size()
+            + self.state.size()
+            + self.same_screen.size()
+            + self.device_id.size()
+    }
+}
+impl crate::auto::Event for DeviceKeyReleaseEvent {
+    const OPCODE: u8 = 2;
+}
+#[derive(Clone, Debug, Default)]
+pub struct DeviceChangedEvent {
+    pub event_type: u8,
+    pub deviceid: DeviceId,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub sourceid: DeviceId,
+    pub reason: ChangeReason,
+    pub classes: Vec<DeviceClass>,
+}
+impl DeviceChangedEvent {}
+impl AsByteSequence for DeviceChangedEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += (self.classes.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += self.sourceid.as_bytes(&mut bytes[index..]);
+        index += self.reason.as_bytes(&mut bytes[index..]);
+        index += 11;
+        let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing DeviceChangedEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (reason, sz): (ChangeReason, usize) = <ChangeReason>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 11;
+        let (classes, block_len): (Vec<DeviceClass>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
+        index += block_len;
+        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        Some((
+            DeviceChangedEvent {
+                event_type: event_type,
+                deviceid: deviceid,
+                sequence: sequence,
+                time: time,
+                sourceid: sourceid,
+                reason: reason,
+                classes: classes,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.deviceid.size()
+            + self.sequence.size()
+            + self.time.size()
+            + ::core::mem::size_of::<Card16>()
+            + self.sourceid.size()
+            + self.reason.size()
+            + 11
+            + {
+                let block_len: usize = self.classes.iter().map(|i| i.size()).sum();
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+                block_len + pad
+            }
+    }
+}
+impl crate::auto::Event for DeviceChangedEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct LeaveEvent {
@@ -16247,1898 +18771,6 @@ impl AsByteSequence for LeaveEvent {
 }
 impl crate::auto::Event for LeaveEvent {
     const OPCODE: u8 = 8;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ProximityOutEvent {
-    pub event_type: u8,
-    pub detail: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-    pub device_id: Card8,
-}
-impl ProximityOutEvent {}
-impl AsByteSequence for ProximityOutEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ProximityOutEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            ProximityOutEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for ProximityOutEvent {
-    const OPCODE: u8 = 9;
-}
-#[derive(Clone, Debug, Default)]
-pub struct RawButtonPressEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub sourceid: DeviceId,
-    pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
-}
-impl RawButtonPressEvent {}
-impl AsByteSequence for RawButtonPressEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RawButtonPressEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (PointerEventFlags, usize) =
-            <PointerEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            RawButtonPressEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                sourceid: sourceid,
-                flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RawButtonPressEvent {
-    const OPCODE: u8 = 15;
-}
-#[derive(Clone, Debug, Default)]
-pub struct BarrierHitEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub eventid: Card32,
-    pub root: Window,
-    pub event: Window,
-    pub barrier: Barrier,
-    pub dtime: Card32,
-    pub flags: BarrierFlags,
-    pub sourceid: DeviceId,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub dx: Fp3232,
-    pub dy: Fp3232,
-}
-impl BarrierHitEvent {}
-impl AsByteSequence for BarrierHitEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.eventid.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.barrier.as_bytes(&mut bytes[index..]);
-        index += self.dtime.as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.dx.as_bytes(&mut bytes[index..]);
-        index += self.dy.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BarrierHitEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (eventid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dtime, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (BarrierFlags, usize) = <BarrierFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dx, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dy, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            BarrierHitEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                eventid: eventid,
-                root: root,
-                event: event,
-                barrier: barrier,
-                dtime: dtime,
-                flags: flags,
-                sourceid: sourceid,
-                root_x: root_x,
-                root_y: root_y,
-                dx: dx,
-                dy: dy,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.eventid.size()
-            + self.root.size()
-            + self.event.size()
-            + self.barrier.size()
-            + self.dtime.size()
-            + self.flags.size()
-            + self.sourceid.size()
-            + 2
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.dx.size()
-            + self.dy.size()
-    }
-}
-impl crate::auto::Event for BarrierHitEvent {
-    const OPCODE: u8 = 25;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceKeyReleaseEvent {
-    pub event_type: u8,
-    pub detail: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-    pub device_id: Card8,
-}
-impl DeviceKeyReleaseEvent {}
-impl AsByteSequence for DeviceKeyReleaseEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceKeyReleaseEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceKeyReleaseEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for DeviceKeyReleaseEvent {
-    const OPCODE: u8 = 2;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceValuatorEvent {
-    pub event_type: u8,
-    pub device_id: Card8,
-    pub sequence: u16,
-    pub device_state: Card16,
-    pub num_valuators: Card8,
-    pub first_valuator: Card8,
-    pub valuators: [Int32; 6],
-}
-impl DeviceValuatorEvent {}
-impl AsByteSequence for DeviceValuatorEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.device_state.as_bytes(&mut bytes[index..]);
-        index += self.num_valuators.as_bytes(&mut bytes[index..]);
-        index += self.first_valuator.as_bytes(&mut bytes[index..]);
-        index += self.valuators.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceValuatorEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_state, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (num_valuators, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_valuator, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (valuators, sz): ([Int32; 6], usize) = <[Int32; 6]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceValuatorEvent {
-                event_type: event_type,
-                device_id: device_id,
-                sequence: sequence,
-                device_state: device_state,
-                num_valuators: num_valuators,
-                first_valuator: first_valuator,
-                valuators: valuators,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.device_id.size()
-            + self.sequence.size()
-            + self.device_state.size()
-            + self.num_valuators.size()
-            + self.first_valuator.size()
-            + self.valuators.size()
-    }
-}
-impl crate::auto::Event for DeviceValuatorEvent {
-    const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DevicePresenceNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub devchange: DeviceChange,
-    pub device_id: Byte,
-    pub control: Card16,
-}
-impl DevicePresenceNotifyEvent {}
-impl AsByteSequence for DevicePresenceNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.devchange.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.control.as_bytes(&mut bytes[index..]);
-        index += 20;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DevicePresenceNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (devchange, sz): (DeviceChange, usize) = <DeviceChange>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (control, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 20;
-        Some((
-            DevicePresenceNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                time: time,
-                devchange: devchange,
-                device_id: device_id,
-                control: control,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.time.size()
-            + self.devchange.size()
-            + self.device_id.size()
-            + self.control.size()
-            + 20
-    }
-}
-impl crate::auto::Event for DevicePresenceNotifyEvent {
-    const OPCODE: u8 = 15;
-}
-#[derive(Clone, Debug, Default)]
-pub struct TouchBeginEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub sourceid: DeviceId,
-    pub flags: TouchEventFlags,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-}
-impl TouchBeginEvent {}
-impl AsByteSequence for TouchBeginEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing TouchBeginEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len1 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            TouchBeginEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                sourceid: sourceid,
-                flags: flags,
-                mods: mods,
-                group: group,
-                button_mask: button_mask,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + ::core::mem::size_of::<Card16>()
-            + ::core::mem::size_of::<Card16>()
-            + self.sourceid.size()
-            + 2
-            + self.flags.size()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for TouchBeginEvent {
-    const OPCODE: u8 = 18;
-}
-#[derive(Clone, Debug, Default)]
-pub struct RawTouchEndEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub sourceid: DeviceId,
-    pub flags: TouchEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
-}
-impl RawTouchEndEvent {}
-impl AsByteSequence for RawTouchEndEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RawTouchEndEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            RawTouchEndEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                sourceid: sourceid,
-                flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RawTouchEndEvent {
-    const OPCODE: u8 = 24;
-}
-#[derive(Clone, Debug, Default)]
-pub struct BarrierLeaveEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub eventid: Card32,
-    pub root: Window,
-    pub event: Window,
-    pub barrier: Barrier,
-    pub dtime: Card32,
-    pub flags: BarrierFlags,
-    pub sourceid: DeviceId,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub dx: Fp3232,
-    pub dy: Fp3232,
-}
-impl BarrierLeaveEvent {}
-impl AsByteSequence for BarrierLeaveEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.eventid.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.barrier.as_bytes(&mut bytes[index..]);
-        index += self.dtime.as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.dx.as_bytes(&mut bytes[index..]);
-        index += self.dy.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BarrierLeaveEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (eventid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dtime, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (BarrierFlags, usize) = <BarrierFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dx, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (dy, sz): (Fp3232, usize) = <Fp3232>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            BarrierLeaveEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                eventid: eventid,
-                root: root,
-                event: event,
-                barrier: barrier,
-                dtime: dtime,
-                flags: flags,
-                sourceid: sourceid,
-                root_x: root_x,
-                root_y: root_y,
-                dx: dx,
-                dy: dy,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.eventid.size()
-            + self.root.size()
-            + self.event.size()
-            + self.barrier.size()
-            + self.dtime.size()
-            + self.flags.size()
-            + self.sourceid.size()
-            + 2
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.dx.size()
-            + self.dy.size()
-    }
-}
-impl crate::auto::Event for BarrierLeaveEvent {
-    const OPCODE: u8 = 26;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceFocusOutEvent {
-    pub event_type: u8,
-    pub detail: super::xproto::NotifyDetail,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub window: Window,
-    pub mode: super::xproto::NotifyMode,
-    pub device_id: Card8,
-}
-impl DeviceFocusOutEvent {}
-impl AsByteSequence for DeviceFocusOutEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 18;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceFocusOutEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (super::xproto::NotifyDetail, usize) =
-            <super::xproto::NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (super::xproto::NotifyMode, usize) =
-            <super::xproto::NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 18;
-        Some((
-            DeviceFocusOutEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                window: window,
-                mode: mode,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.window.size()
-            + self.mode.size()
-            + self.device_id.size()
-            + 18
-    }
-}
-impl crate::auto::Event for DeviceFocusOutEvent {
-    const OPCODE: u8 = 7;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DevicePropertyNotifyEvent {
-    pub event_type: u8,
-    pub state: Property,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub property: Atom,
-    pub device_id: Card8,
-}
-impl DevicePropertyNotifyEvent {}
-impl AsByteSequence for DevicePropertyNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.property.as_bytes(&mut bytes[index..]);
-        index += 19;
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DevicePropertyNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (Property, usize) = <Property>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 19;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DevicePropertyNotifyEvent {
-                event_type: event_type,
-                state: state,
-                sequence: sequence,
-                time: time,
-                property: property,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.state.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.property.size()
-            + 19
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for DevicePropertyNotifyEvent {
-    const OPCODE: u8 = 16;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceMotionNotifyEvent {
-    pub event_type: u8,
-    pub detail: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Int16,
-    pub root_y: Int16,
-    pub event_x: Int16,
-    pub event_y: Int16,
-    pub state: KeyButMask,
-    pub same_screen: bool,
-    pub device_id: Card8,
-}
-impl DeviceMotionNotifyEvent {}
-impl AsByteSequence for DeviceMotionNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceMotionNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceMotionNotifyEvent {
-                event_type: event_type,
-                detail: detail,
-                sequence: sequence,
-                time: time,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                state: state,
-                same_screen: same_screen,
-                device_id: device_id,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.detail.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.state.size()
-            + self.same_screen.size()
-            + self.device_id.size()
-    }
-}
-impl crate::auto::Event for DeviceMotionNotifyEvent {
-    const OPCODE: u8 = 5;
-}
-#[derive(Clone, Debug, Default)]
-pub struct DeviceStateNotifyEvent {
-    pub event_type: u8,
-    pub device_id: Byte,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub num_keys: Card8,
-    pub num_buttons: Card8,
-    pub num_valuators: Card8,
-    pub classes_reported: ClassesReportedMask,
-    pub buttons: [Card8; 4],
-    pub keys: [Card8; 4],
-    pub valuators: [Card32; 3],
-}
-impl DeviceStateNotifyEvent {}
-impl AsByteSequence for DeviceStateNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.num_keys.as_bytes(&mut bytes[index..]);
-        index += self.num_buttons.as_bytes(&mut bytes[index..]);
-        index += self.num_valuators.as_bytes(&mut bytes[index..]);
-        index += self.classes_reported.as_bytes(&mut bytes[index..]);
-        index += self.buttons.as_bytes(&mut bytes[index..]);
-        index += self.keys.as_bytes(&mut bytes[index..]);
-        index += self.valuators.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing DeviceStateNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (num_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (num_buttons, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (num_valuators, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (classes_reported, sz): (ClassesReportedMask, usize) =
-            <ClassesReportedMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (buttons, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (keys, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (valuators, sz): ([Card32; 3], usize) = <[Card32; 3]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            DeviceStateNotifyEvent {
-                event_type: event_type,
-                device_id: device_id,
-                sequence: sequence,
-                time: time,
-                num_keys: num_keys,
-                num_buttons: num_buttons,
-                num_valuators: num_valuators,
-                classes_reported: classes_reported,
-                buttons: buttons,
-                keys: keys,
-                valuators: valuators,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.device_id.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.num_keys.size()
-            + self.num_buttons.size()
-            + self.num_valuators.size()
-            + self.classes_reported.size()
-            + self.buttons.size()
-            + self.keys.size()
-            + self.valuators.size()
-    }
-}
-impl crate::auto::Event for DeviceStateNotifyEvent {
-    const OPCODE: u8 = 10;
-}
-#[derive(Clone, Debug, Default)]
-pub struct EnterEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub sourceid: DeviceId,
-    pub mode: super::xinput::NotifyMode,
-    pub detail: super::xinput::NotifyDetail,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub same_screen: bool,
-    pub focus: bool,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
-}
-impl EnterEvent {}
-impl AsByteSequence for EnterEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.focus.as_bytes(&mut bytes[index..]);
-        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing EnterEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (super::xinput::NotifyMode, usize) =
-            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (super::xinput::NotifyDetail, usize) =
-            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        Some((
-            EnterEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                sourceid: sourceid,
-                mode: mode,
-                detail: detail,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                same_screen: same_screen,
-                focus: focus,
-                mods: mods,
-                group: group,
-                buttons: buttons,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.sourceid.size()
-            + self.mode.size()
-            + self.detail.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.same_screen.size()
-            + self.focus.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for EnterEvent {
-    const OPCODE: u8 = 7;
-}
-#[derive(Clone, Debug, Default)]
-pub struct KeyReleaseEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub sourceid: DeviceId,
-    pub flags: KeyEventFlags,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-}
-impl KeyReleaseEvent {}
-impl AsByteSequence for KeyReleaseEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing KeyReleaseEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len1 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            KeyReleaseEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                sourceid: sourceid,
-                flags: flags,
-                mods: mods,
-                group: group,
-                button_mask: button_mask,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + ::core::mem::size_of::<Card16>()
-            + ::core::mem::size_of::<Card16>()
-            + self.sourceid.size()
-            + 2
-            + self.flags.size()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for KeyReleaseEvent {
-    const OPCODE: u8 = 3;
-}
-#[derive(Clone, Debug, Default)]
-pub struct FocusOutEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub sourceid: DeviceId,
-    pub mode: super::xinput::NotifyMode,
-    pub detail: super::xinput::NotifyDetail,
-    pub root: Window,
-    pub event: Window,
-    pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub same_screen: bool,
-    pub focus: bool,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
-}
-impl FocusOutEvent {}
-impl AsByteSequence for FocusOutEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.root.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.child.as_bytes(&mut bytes[index..]);
-        index += self.root_x.as_bytes(&mut bytes[index..]);
-        index += self.root_y.as_bytes(&mut bytes[index..]);
-        index += self.event_x.as_bytes(&mut bytes[index..]);
-        index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += self.same_screen.as_bytes(&mut bytes[index..]);
-        index += self.focus.as_bytes(&mut bytes[index..]);
-        index += (self.buttons.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.buttons, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing FocusOutEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mode, sz): (super::xinput::NotifyMode, usize) =
-            <super::xinput::NotifyMode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (super::xinput::NotifyDetail, usize) =
-            <super::xinput::NotifyDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (focus, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        Some((
-            FocusOutEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                sourceid: sourceid,
-                mode: mode,
-                detail: detail,
-                root: root,
-                event: event,
-                child: child,
-                root_x: root_x,
-                root_y: root_y,
-                event_x: event_x,
-                event_y: event_y,
-                same_screen: same_screen,
-                focus: focus,
-                mods: mods,
-                group: group,
-                buttons: buttons,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.sourceid.size()
-            + self.mode.size()
-            + self.detail.size()
-            + self.root.size()
-            + self.event.size()
-            + self.child.size()
-            + self.root_x.size()
-            + self.root_y.size()
-            + self.event_x.size()
-            + self.event_y.size()
-            + self.same_screen.size()
-            + self.focus.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.buttons.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for FocusOutEvent {
-    const OPCODE: u8 = 10;
 }
 #[derive(Clone, Debug, Default)]
 pub struct KeyPressEvent {
@@ -18403,103 +19035,31 @@ impl crate::auto::Event for HierarchyEvent {
     const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default)]
-pub struct PropertyEvent {
+pub struct DeviceKeyPressEvent {
     pub event_type: u8,
-    pub deviceid: DeviceId,
+    pub detail: Byte,
     pub sequence: u16,
     pub time: Timestamp,
-    pub property: Atom,
-    pub what: PropertyFlag,
-}
-impl PropertyEvent {}
-impl AsByteSequence for PropertyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.property.as_bytes(&mut bytes[index..]);
-        index += self.what.as_bytes(&mut bytes[index..]);
-        index += 11;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing PropertyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (what, sz): (PropertyFlag, usize) = <PropertyFlag>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 11;
-        Some((
-            PropertyEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                property: property,
-                what: what,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.property.size()
-            + self.what.size()
-            + 11
-    }
-}
-impl crate::auto::Event for PropertyEvent {
-    const OPCODE: u8 = 12;
-}
-#[derive(Clone, Debug, Default)]
-pub struct TouchUpdateEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
     pub root: Window,
     pub event: Window,
     pub child: Window,
-    pub root_x: Fp1616,
-    pub root_y: Fp1616,
-    pub event_x: Fp1616,
-    pub event_y: Fp1616,
-    pub sourceid: DeviceId,
-    pub flags: TouchEventFlags,
-    pub mods: ModifierInfo,
-    pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub root_x: Int16,
+    pub root_y: Int16,
+    pub event_x: Int16,
+    pub event_y: Int16,
+    pub state: KeyButMask,
+    pub same_screen: bool,
+    pub device_id: Card8,
 }
-impl TouchUpdateEvent {}
-impl AsByteSequence for TouchUpdateEvent {
+impl DeviceKeyPressEvent {}
+impl AsByteSequence for DeviceKeyPressEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
+        index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
         index += self.root.as_bytes(&mut bytes[index..]);
         index += self.event.as_bytes(&mut bytes[index..]);
         index += self.child.as_bytes(&mut bytes[index..]);
@@ -18507,37 +19067,22 @@ impl AsByteSequence for TouchUpdateEvent {
         index += self.root_y.as_bytes(&mut bytes[index..]);
         index += self.event_x.as_bytes(&mut bytes[index..]);
         index += self.event_y.as_bytes(&mut bytes[index..]);
-        index += (self.button_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        let block_len: usize = vector_as_bytes(&self.button_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.same_screen.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing TouchUpdateEvent from byte buffer");
+        log::trace!("Deserializing DeviceKeyPressEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (root, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -18545,54 +19090,26 @@ impl AsByteSequence for TouchUpdateEvent {
         index += sz;
         let (child, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (root_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        let (root_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (root_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        let (root_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event_x, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        let (event_x, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event_y, sz): (Fp1616, usize) = <Fp1616>::from_bytes(&bytes[index..])?;
+        let (event_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (state, sz): (KeyButMask, usize) = <KeyButMask>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (same_screen, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 2;
-        let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModifierInfo, usize) = <ModifierInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len1 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
         Some((
-            TouchUpdateEvent {
+            DeviceKeyPressEvent {
                 event_type: event_type,
-                deviceid: deviceid,
+                detail: detail,
                 sequence: sequence,
                 time: time,
-                detail: detail,
                 root: root,
                 event: event,
                 child: child,
@@ -18600,13 +19117,9 @@ impl AsByteSequence for TouchUpdateEvent {
                 root_y: root_y,
                 event_x: event_x,
                 event_y: event_y,
-                sourceid: sourceid,
-                flags: flags,
-                mods: mods,
-                group: group,
-                button_mask: button_mask,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
+                state: state,
+                same_screen: same_screen,
+                device_id: device_id,
             },
             index,
         ))
@@ -18614,10 +19127,9 @@ impl AsByteSequence for TouchUpdateEvent {
     #[inline]
     fn size(&self) -> usize {
         self.event_type.size()
-            + self.deviceid.size()
+            + self.detail.size()
             + self.sequence.size()
             + self.time.size()
-            + self.detail.size()
             + self.root.size()
             + self.event.size()
             + self.child.size()
@@ -18625,165 +19137,11 @@ impl AsByteSequence for TouchUpdateEvent {
             + self.root_y.size()
             + self.event_x.size()
             + self.event_y.size()
-            + ::core::mem::size_of::<Card16>()
-            + ::core::mem::size_of::<Card16>()
-            + self.sourceid.size()
-            + 2
-            + self.flags.size()
-            + self.mods.size()
-            + self.group.size()
-            + {
-                let block_len: usize = self.button_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
+            + self.state.size()
+            + self.same_screen.size()
+            + self.device_id.size()
     }
 }
-impl crate::auto::Event for TouchUpdateEvent {
-    const OPCODE: u8 = 19;
-}
-#[derive(Clone, Debug, Default)]
-pub struct RawMotionEvent {
-    pub event_type: u8,
-    pub deviceid: DeviceId,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub detail: Card32,
-    pub sourceid: DeviceId,
-    pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
-}
-impl RawMotionEvent {}
-impl AsByteSequence for RawMotionEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.deviceid.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.detail.as_bytes(&mut bytes[index..]);
-        index += self.sourceid.as_bytes(&mut bytes[index..]);
-        index += (self.valuator_mask.len() as Card16).as_bytes(&mut bytes[index..]);
-        index += self.flags.as_bytes(&mut bytes[index..]);
-        index += 4;
-        let block_len: usize = vector_as_bytes(&self.valuator_mask, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let block_len: usize = vector_as_bytes(&self.axisvalues_raw, &mut bytes[index..]);
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing RawMotionEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (deviceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (detail, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sourceid, sz): (DeviceId, usize) = <DeviceId>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (flags, sz): (PointerEventFlags, usize) =
-            <PointerEventFlags>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
-            vector_from_bytes(&bytes[index..], len0 as usize)?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (valuator_mask
-                .iter()
-                .map(|a| {
-                    ((TryInto::<usize>::try_into(*a).expect("Unable to cast type to usize"))
-                        .count_ones()) as usize
-                })
-                .sum::<usize>()) as usize,
-        )?;
-        index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        Some((
-            RawMotionEvent {
-                event_type: event_type,
-                deviceid: deviceid,
-                sequence: sequence,
-                time: time,
-                detail: detail,
-                sourceid: sourceid,
-                flags: flags,
-                valuator_mask: valuator_mask,
-                axisvalues: axisvalues,
-                axisvalues_raw: axisvalues_raw,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.deviceid.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.detail.size()
-            + self.sourceid.size()
-            + ::core::mem::size_of::<Card16>()
-            + self.flags.size()
-            + 4
-            + {
-                let block_len: usize = self.valuator_mask.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-            + {
-                let block_len: usize = self.axisvalues_raw.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-                block_len + pad
-            }
-    }
-}
-impl crate::auto::Event for RawMotionEvent {
-    const OPCODE: u8 = 17;
+impl crate::auto::Event for DeviceKeyPressEvent {
+    const OPCODE: u8 = 1;
 }

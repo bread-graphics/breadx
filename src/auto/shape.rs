@@ -513,8 +513,8 @@ impl Request for OffsetRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryExtentsRequest {
     pub req_type: u8,
-    pub destination_window: Window,
     pub length: u16,
+    pub destination_window: Window,
 }
 impl QueryExtentsRequest {}
 impl AsByteSequence for QueryExtentsRequest {
@@ -522,8 +522,9 @@ impl AsByteSequence for QueryExtentsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.destination_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.destination_window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -532,22 +533,23 @@ impl AsByteSequence for QueryExtentsRequest {
         log::trace!("Deserializing QueryExtentsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryExtentsRequest {
                 req_type: req_type,
-                destination_window: destination_window,
                 length: length,
+                destination_window: destination_window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.destination_window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.destination_window.size()
     }
 }
 impl Request for QueryExtentsRequest {
@@ -675,8 +677,8 @@ impl AsByteSequence for QueryExtentsReply {
 #[derive(Clone, Debug, Default)]
 pub struct SelectInputRequest {
     pub req_type: u8,
-    pub destination_window: Window,
     pub length: u16,
+    pub destination_window: Window,
     pub enable: bool,
 }
 impl SelectInputRequest {}
@@ -685,8 +687,9 @@ impl AsByteSequence for SelectInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.destination_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.destination_window.as_bytes(&mut bytes[index..]);
         index += self.enable.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -697,9 +700,10 @@ impl AsByteSequence for SelectInputRequest {
         log::trace!("Deserializing SelectInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (enable, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -707,8 +711,8 @@ impl AsByteSequence for SelectInputRequest {
         Some((
             SelectInputRequest {
                 req_type: req_type,
-                destination_window: destination_window,
                 length: length,
+                destination_window: destination_window,
                 enable: enable,
             },
             index,
@@ -717,8 +721,9 @@ impl AsByteSequence for SelectInputRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.destination_window.size()
+            + 1
             + self.length.size()
+            + self.destination_window.size()
             + self.enable.size()
             + 3
     }
@@ -732,8 +737,8 @@ impl Request for SelectInputRequest {
 #[derive(Clone, Debug, Default)]
 pub struct InputSelectedRequest {
     pub req_type: u8,
-    pub destination_window: Window,
     pub length: u16,
+    pub destination_window: Window,
 }
 impl InputSelectedRequest {}
 impl AsByteSequence for InputSelectedRequest {
@@ -741,8 +746,9 @@ impl AsByteSequence for InputSelectedRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.destination_window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.destination_window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -751,22 +757,23 @@ impl AsByteSequence for InputSelectedRequest {
         log::trace!("Deserializing InputSelectedRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             InputSelectedRequest {
                 req_type: req_type,
-                destination_window: destination_window,
                 length: length,
+                destination_window: destination_window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.destination_window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.destination_window.size()
     }
 }
 impl Request for InputSelectedRequest {
@@ -823,8 +830,8 @@ impl AsByteSequence for InputSelectedReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetRectanglesRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub source_kind: Sk,
 }
 impl GetRectanglesRequest {}
@@ -833,8 +840,9 @@ impl AsByteSequence for GetRectanglesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.source_kind.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -845,9 +853,10 @@ impl AsByteSequence for GetRectanglesRequest {
         log::trace!("Deserializing GetRectanglesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -855,8 +864,8 @@ impl AsByteSequence for GetRectanglesRequest {
         Some((
             GetRectanglesRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 source_kind: source_kind,
             },
             index,
@@ -864,7 +873,12 @@ impl AsByteSequence for GetRectanglesRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.source_kind.size() + 3
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.window.size()
+            + self.source_kind.size()
+            + 3
     }
 }
 impl Request for GetRectanglesRequest {

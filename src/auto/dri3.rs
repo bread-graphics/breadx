@@ -9,8 +9,8 @@ use super::xproto::*;
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub major_version: Card32,
     pub length: u16,
+    pub major_version: Card32,
     pub minor_version: Card32,
 }
 impl QueryVersionRequest {}
@@ -19,8 +19,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -30,17 +31,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -49,8 +51,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
     }
 }
@@ -120,8 +123,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct OpenRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub provider: Card32,
 }
 impl OpenRequest {}
@@ -130,8 +133,9 @@ impl AsByteSequence for OpenRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.provider.as_bytes(&mut bytes[index..]);
         index
     }
@@ -141,17 +145,18 @@ impl AsByteSequence for OpenRequest {
         log::trace!("Deserializing OpenRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (provider, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             OpenRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 provider: provider,
             },
             index,
@@ -159,7 +164,7 @@ impl AsByteSequence for OpenRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.provider.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.provider.size()
     }
 }
 impl Request for OpenRequest {
@@ -459,8 +464,8 @@ impl AsByteSequence for BufferFromPixmapReply {
 #[derive(Clone, Debug, Default)]
 pub struct FenceFromFdRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub fence: Card32,
     pub initially_triggered: bool,
     pub fence_fd: Vec<Fd>,
@@ -471,8 +476,9 @@ impl AsByteSequence for FenceFromFdRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.fence.as_bytes(&mut bytes[index..]);
         index += self.initially_triggered.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -484,9 +490,10 @@ impl AsByteSequence for FenceFromFdRequest {
         log::trace!("Deserializing FenceFromFdRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fence, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -496,8 +503,8 @@ impl AsByteSequence for FenceFromFdRequest {
         Some((
             FenceFromFdRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 fence: fence,
                 initially_triggered: initially_triggered,
                 fence_fd: vec![],
@@ -508,8 +515,9 @@ impl AsByteSequence for FenceFromFdRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.fence.size()
             + self.initially_triggered.size()
             + 3
@@ -528,8 +536,8 @@ impl Request for FenceFromFdRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FdFromFenceRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub fence: Card32,
 }
 impl FdFromFenceRequest {}
@@ -538,8 +546,9 @@ impl AsByteSequence for FdFromFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.fence.as_bytes(&mut bytes[index..]);
         index
     }
@@ -549,17 +558,18 @@ impl AsByteSequence for FdFromFenceRequest {
         log::trace!("Deserializing FdFromFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fence, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FdFromFenceRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 fence: fence,
             },
             index,
@@ -567,7 +577,7 @@ impl AsByteSequence for FdFromFenceRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.fence.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.fence.size()
     }
 }
 impl Request for FdFromFenceRequest {
@@ -632,8 +642,8 @@ impl AsByteSequence for FdFromFenceReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetSupportedModifiersRequest {
     pub req_type: u8,
-    pub window: Card32,
     pub length: u16,
+    pub window: Card32,
     pub depth: Card8,
     pub bpp: Card8,
 }
@@ -643,8 +653,9 @@ impl AsByteSequence for GetSupportedModifiersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.depth.as_bytes(&mut bytes[index..]);
         index += self.bpp.as_bytes(&mut bytes[index..]);
         index += 2;
@@ -656,9 +667,10 @@ impl AsByteSequence for GetSupportedModifiersRequest {
         log::trace!("Deserializing GetSupportedModifiersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (depth, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -668,8 +680,8 @@ impl AsByteSequence for GetSupportedModifiersRequest {
         Some((
             GetSupportedModifiersRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 depth: depth,
                 bpp: bpp,
             },
@@ -679,8 +691,9 @@ impl AsByteSequence for GetSupportedModifiersRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.window.size()
+            + 1
             + self.length.size()
+            + self.window.size()
             + self.depth.size()
             + self.bpp.size()
             + 2

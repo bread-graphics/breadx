@@ -79,7 +79,7 @@ pub struct Display<Conn> {
 
     // input variables
     pub(crate) event_queue: VecDeque<Event>,
-    pub(crate) pending_requests: VecDeque<PendingRequest>,
+    pub(crate) pending_requests: HashMap<u16, PendingRequest>,
     #[allow(clippy::type_complexity)]
     pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
@@ -96,6 +96,20 @@ pub struct Display<Conn> {
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
+}
+
+impl<Conn> AsRef<Display<Conn>> for Display<Conn> {
+    #[inline]
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl<Conn> AsMut<Display<Conn>> for Display<Conn> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Self {
+        self
+    }
 }
 
 /// Unique identifier for a context.
@@ -138,19 +152,31 @@ impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct PendingRequest {
-    first_request: u64,
-    last_request: u64,
-    flags: PendingRequestFlags,
-    expects_fds: bool,
+    pub request: u64,
+    pub flags: PendingRequestFlags,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub(crate) struct PendingRequestFlags {
     pub discard_reply: bool,
     pub checked: bool,
     pub expects_fds: bool,
+    pub workaround: RequestWorkaround,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) enum RequestWorkaround {
+    NoWorkaround,
+    GlxFbconfigBug,
+}
+
+impl Default for RequestWorkaround {
+    #[inline]
+    fn default() -> Self {
+        Self::NoWorkaround
+    }
 }
 
 #[inline]
@@ -269,7 +295,7 @@ impl<Conn: Connection> Display<Conn> {
             xid: Default::default(),
             default_screen: 0,
             event_queue: VecDeque::with_capacity(8),
-            pending_requests: VecDeque::new(),
+            pending_requests: HashMap::with_capacity(4),
             pending_replies: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
@@ -418,6 +444,16 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn default_root(&self) -> Window {
         self.default_screen().root
+    }
+
+    #[inline]
+    pub fn screens(&self) -> &[Screen] {
+        &self.setup.roots
+    }
+
+    #[inline]
+    pub fn default_screen_index(&self) -> usize {
+        self.default_screen
     }
 
     #[inline]

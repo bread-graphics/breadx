@@ -1054,6 +1054,10 @@ impl HType {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const FROM_SERVER_TIME: Self = Self { inner: 1 };
+    pub const FROM_CLIENT_TIME: Self = Self { inner: 2 };
+    pub const FROM_CLIENT_SEQUENCE: Self = Self { inner: 4 };
+    pub const COMPLETE: Self = Self { inner: 7 };
 }
 impl AsByteSequence for HType {
     #[inline]
@@ -1083,6 +1087,24 @@ impl core::ops::BitAnd for HType {
     fn bitand(self, rhs: HType) -> HType {
         HType {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for HType {
+    type Output = HType;
+    #[inline]
+    fn bitor(self, rhs: HType) -> HType {
+        HType {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for HType {
+    type Output = HType;
+    #[inline]
+    fn bitxor(self, rhs: HType) -> HType {
+        HType {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{Connection, PendingRequestFlags};
+use super::{Connection, PendingRequest, PendingRequestFlags, RequestWorkaround};
 use crate::{event::Event, util::cycled_zeroes, Fd};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
@@ -8,6 +8,8 @@ use tinyvec::TinyVec;
 
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
+const GENERIC_EVENT: u8 = 32;
+const GE_MASK: u8 = 0x7f;
 
 impl<Conn: Connection> super::Display<Conn> {
     // process a set of 32 bytes into the system
@@ -19,6 +21,11 @@ impl<Conn: Connection> super::Display<Conn> {
 
         if bytes[0] == TYPE_REPLY {
             log::debug!("Received bytes of type REPLY");
+
+            let _pereq = self
+                .pending_requests
+                .remove(&sequence)
+                .ok_or_else(move || crate::BreadError::NoMatchingRequest(sequence))?;
 
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
@@ -49,16 +56,49 @@ impl<Conn: Connection> super::Display<Conn> {
         Ok(())
     }
 
+    // if necessary, fix the GLX FbConfigs bug
+    // I already ranted about this in output.rs
+    #[inline]
+    fn fix_glx_workaround(&self, bytes: &mut TinyVec<[u8; 32]>) -> crate::Result<()> {
+        // this will only ever apply to replies
+        if bytes[0] == TYPE_REPLY {
+            // grab the pending request
+            let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
+            let pereq = self
+                .pending_requests
+                .get(&sequence)
+                .ok_or_else(move || crate::BreadError::NoMatchingRequest(sequence))?;
+
+            if let RequestWorkaround::GlxFbconfigBug = pereq.flags.workaround {
+                log::debug!("Applying GLX FbConfig workaround to reply");
+
+                // length is the 1st u32, numVisuals is the 2nd u32, numProps in the 3rd u32
+                // numVisuals is 8..12, numProps is 12..16, length is 4..8
+                let (mut visuals, mut props): ([u8; 4], [u8; 4]) = ([0; 4], [0; 4]);
+                visuals.copy_from_slice(&bytes[8..12]);
+                props.copy_from_slice(&bytes[12..16]);
+
+                let (visuals, props) = (u32::from_ne_bytes(visuals), u32::from_ne_bytes(props));
+
+                let length = (visuals * props * 2).to_ne_bytes();
+                (&mut bytes[4..8]).copy_from_slice(&length);
+            }
+        }
+ 
+        Ok(())
+    }
+
     // add an entry to the pending elements linked list
     #[allow(clippy::unused_self)]
     #[inline]
-    pub(crate) fn expect_reply(&mut self, _req: u64, _flags: PendingRequestFlags) {
-        /*let pereq = PendingRequest {
-            first_request: req,
-            last_request: req,
+    pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
+        let pereq = PendingRequest {
+            request: req,
             flags,
         };
-        self.pending_requests.push_back(pereq);*/
+        if let Some(_) = self.pending_requests.insert(req as _, pereq) {
+            panic!("Sequence number overlap; too many requests!");
+        }
     }
 
     // wait for bytes to appear
@@ -69,6 +109,8 @@ impl<Conn: Connection> super::Display<Conn> {
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let mut fds: Vec<Fd> = vec![];
         self.connection.read_packet(&mut bytes, &mut fds)?;
+
+        self.fix_glx_workaround(&mut bytes)?;
 
         // in certain cases, we may have to read more bytes
         if let Some(ab) = additional_bytes(&bytes[..8]) {
@@ -95,6 +137,8 @@ impl<Conn: Connection> super::Display<Conn> {
             .read_packet_async(&mut bytes, &mut fds)
             .await?;
 
+        self.fix_glx_workaround(&mut bytes)?;
+
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             bytes.extend(iter::once(0).cycle().take(ab * 4));
             self.connection
@@ -108,7 +152,7 @@ impl<Conn: Connection> super::Display<Conn> {
 
 #[inline]
 fn additional_bytes(bytes: &[u8]) -> Option<usize> {
-    if bytes[0] == TYPE_REPLY {
+    if bytes[0] == TYPE_REPLY || bytes[0] & GE_MASK == GENERIC_EVENT {
         let mut len_bytes = [0; 4];
         len_bytes.copy_from_slice(&bytes[4..8]);
         Some(u32::from_ne_bytes(len_bytes) as usize)
