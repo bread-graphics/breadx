@@ -2,7 +2,6 @@
 
 #![allow(clippy::similar_names)]
 
-use super::{Connection, Display, RequestCookie};
 use crate::{
     auto::xproto::{
         AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
@@ -14,10 +13,10 @@ use crate::{
         ScreenSaver, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
         Visualid, Window, WindowClass,
     },
+    display::{Connection, Display, RequestCookie},
     Extension, XidType,
 };
 use alloc::string::String;
-use core::convert::TryInto;
 
 crate::create_paramaterizer! {
     pub struct WindowParameters : (Cw, CreateWindowRequest) {
@@ -178,10 +177,10 @@ impl<Conn: Connection> Display<Conn> {
     /// returned when the extension is not found.
     #[inline]
     pub fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
-        let tok = self.query_extension(name)?;
+        let tok = self.query_extension(name.clone())?;
         let qer = self.resolve_request(tok)?;
 
-        qer.try_into()
+        Extension::from_reply(qer, name.into())
     }
 
     /// Query for extension information, but resolve immediately, async redox . The `Error::ExtensionNotPresent`
@@ -192,10 +191,10 @@ impl<Conn: Connection> Display<Conn> {
         &mut self,
         name: String,
     ) -> crate::Result<Extension> {
-        let tok = self.query_extension_async(name).await?;
+        let tok = self.query_extension_async(name.clone()).await?;
         let qer = self.resolve_request_async(tok).await?;
 
-        qer.try_into()
+        Extension::from_reply(qer, name.into())
     }
 
     #[inline]

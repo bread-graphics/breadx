@@ -219,8 +219,8 @@ impl AsByteSequence for GetXidRangeReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetXidListRequest {
     pub req_type: u8,
-    pub count: Card32,
     pub length: u16,
+    pub count: Card32,
 }
 impl GetXidListRequest {}
 impl AsByteSequence for GetXidListRequest {
@@ -228,8 +228,9 @@ impl AsByteSequence for GetXidListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.count.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.count.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -238,22 +239,23 @@ impl AsByteSequence for GetXidListRequest {
         log::trace!("Deserializing GetXidListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetXidListRequest {
                 req_type: req_type,
-                count: count,
                 length: length,
+                count: count,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.count.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.count.size()
     }
 }
 impl Request for GetXidListRequest {

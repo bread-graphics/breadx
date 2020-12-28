@@ -56,8 +56,7 @@
 //!
 //!     // NEW: create an event mask that listens for ButtonPress events
 //!     //      the default event mask is empty
-//!     let mut event_mask: EventMask = Default::default();
-//!     event_mask.set_button_press(true);
+//!     let mut event_mask: EventMask = EventMask::BUTTON_PRESS;
 //!
 //!     // NEW: call set_event_mask on the window
 //!     window.set_event_mask(&mut conn, event_mask)?;

@@ -32,6 +32,7 @@ impl From<XidType> for RStruct {
                 ..Default::default()
             })],
             methods: vec![],
+            other_impl_items: vec![],
             traits: vec![],
             asb: Asb::none(),
         };

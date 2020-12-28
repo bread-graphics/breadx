@@ -92,6 +92,16 @@ impl Expression {
         }
     }
 
+    /// Tell if this expression is just the remainder.
+    #[inline]
+    pub fn is_remainder(&self) -> bool {
+        if self.postfix.len() != 1 {
+            false
+        } else {
+            matches!(self.postfix[0], ExpressionItem::Remainder)
+        }
+    }
+
     /// Tell if this item involves a certain field.
     #[inline]
     pub fn involves_field(&self, f: &str) -> bool {

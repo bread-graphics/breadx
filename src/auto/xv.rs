@@ -302,6 +302,12 @@ impl Type {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const INPUT_MASK: Self = Self { inner: 1 };
+    pub const OUTPUT_MASK: Self = Self { inner: 2 };
+    pub const VIDEO_MASK: Self = Self { inner: 4 };
+    pub const STILL_MASK: Self = Self { inner: 8 };
+    pub const IMAGE_MASK: Self = Self { inner: 16 };
+    pub const COMPLETE: Self = Self { inner: 31 };
 }
 impl AsByteSequence for Type {
     #[inline]
@@ -331,6 +337,24 @@ impl core::ops::BitAnd for Type {
     fn bitand(self, rhs: Type) -> Type {
         Type {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Type {
+    type Output = Type;
+    #[inline]
+    fn bitor(self, rhs: Type) -> Type {
+        Type {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Type {
+    type Output = Type;
+    #[inline]
+    fn bitxor(self, rhs: Type) -> Type {
+        Type {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -598,6 +622,9 @@ impl AttributeFlag {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const GETTABLE: Self = Self { inner: 1 };
+    pub const SETTABLE: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for AttributeFlag {
     #[inline]
@@ -627,6 +654,24 @@ impl core::ops::BitAnd for AttributeFlag {
     fn bitand(self, rhs: AttributeFlag) -> AttributeFlag {
         AttributeFlag {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for AttributeFlag {
+    type Output = AttributeFlag;
+    #[inline]
+    fn bitor(self, rhs: AttributeFlag) -> AttributeFlag {
+        AttributeFlag {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for AttributeFlag {
+    type Output = AttributeFlag;
+    #[inline]
+    fn bitxor(self, rhs: AttributeFlag) -> AttributeFlag {
+        AttributeFlag {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -1031,8 +1076,8 @@ impl AsByteSequence for QueryExtensionReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryAdaptorsRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl QueryAdaptorsRequest {}
 impl AsByteSequence for QueryAdaptorsRequest {
@@ -1040,8 +1085,9 @@ impl AsByteSequence for QueryAdaptorsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1050,22 +1096,23 @@ impl AsByteSequence for QueryAdaptorsRequest {
         log::trace!("Deserializing QueryAdaptorsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryAdaptorsRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for QueryAdaptorsRequest {
@@ -1924,8 +1971,8 @@ impl Request for StopVideoRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SelectVideoNotifyRequest {
     pub req_type: u8,
-    pub drawable: Drawable,
     pub length: u16,
+    pub drawable: Drawable,
     pub onoff: bool,
 }
 impl SelectVideoNotifyRequest {}
@@ -1934,8 +1981,9 @@ impl AsByteSequence for SelectVideoNotifyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.onoff.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -1946,9 +1994,10 @@ impl AsByteSequence for SelectVideoNotifyRequest {
         log::trace!("Deserializing SelectVideoNotifyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         let (onoff, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1956,8 +2005,8 @@ impl AsByteSequence for SelectVideoNotifyRequest {
         Some((
             SelectVideoNotifyRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 onoff: onoff,
             },
             index,
@@ -1965,7 +2014,7 @@ impl AsByteSequence for SelectVideoNotifyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size() + self.onoff.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size() + self.onoff.size() + 3
     }
 }
 impl Request for SelectVideoNotifyRequest {

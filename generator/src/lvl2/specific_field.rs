@@ -2,6 +2,7 @@
 
 use super::{Field, StructureItem, Type};
 use std::{
+    borrow::Cow,
     hash::{Hash, Hasher},
     mem,
     ops::Deref,
@@ -13,7 +14,24 @@ pub enum StructVariant {
     Reply,
     Request,
     Error,
-    Event,
+    Event(bool),
+}
+
+#[inline]
+fn doesnt_need_pad_pop(field: &StructureItem) -> bool {
+    let s = match field {
+        StructureItem::Field(Field { ty, .. }) => match ty {
+            Type::BasicType(Cow::Borrowed(s)) => s,
+            Type::BasicType(Cow::Owned(s)) => s.as_str(),
+            _ => return false,
+        },
+        _ => return false,
+    };
+
+    match s {
+        "u32" | "Card32" | "CARD32" | "Drawable" | "DRAWABLE" | "Window" | "WINDOW" => true,
+        _ => false,
+    }
 }
 
 /// Configure a set of fields, given its struct variant.
@@ -36,21 +54,26 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
 
     // secondly, if the first field has a size of one, we could potentially optimize it
     const ONE_PAD: Option<StructureItem> = Some(StructureItem::Padding { bytes: 1 });
-    let opt_field =
-        if let StructVariant::Request | StructVariant::Reply | StructVariant::Event = variant {
-            if fields.is_empty() || matches!(fields[0], StructureItem::List(_)) {
-                ONE_PAD
-            } else {
-                Some(fields.remove(0))
-            }
-        } else {
+    let opt_field = if let StructVariant::Request
+    | StructVariant::Reply
+    | StructVariant::Event(false) = variant
+    {
+        if fields.is_empty()
+            || matches!(fields[0], StructureItem::List(_))
+            || doesnt_need_pad_pop(&fields[0])
+        {
             ONE_PAD
-        };
+        } else {
+            Some(fields.remove(0))
+        }
+    } else {
+        ONE_PAD
+    };
 
     match variant {
         StructVariant::No => (),
         StructVariant::Reply => {
-            let header: ArrayVec<[StructureItem; 4]> = ArrayVec::from([
+            let mut header: ArrayVec<[StructureItem; 4]> = ArrayVec::from([
                 // type field, this is always X_Reply
                 StructureItem::Field(Field {
                     name: "reply_type".to_string(),
@@ -72,26 +95,47 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
                     ..Default::default()
                 }),
             ]);
+
             let f = mem::take(fields);
             *fields = header.into_iter().chain(f.into_iter()).collect();
+
+            if !fields.iter().any(|f| {
+                if let StructureItem::Field(Field { name, .. }) = f {
+                    name == "length"
+                } else {
+                    false
+                }
+            }) {
+                panic!("how");
+            }
         }
-        StructVariant::Event => {
-            let header: ArrayVec<[StructureItem; 3]> = ArrayVec::from([
-                // type field, as always
-                StructureItem::Field(Field {
-                    name: "event_type".to_string(),
-                    ty: Type::BasicType("u8".into()),
-                    ..Default::default()
-                }),
-                opt_field.unwrap(),
-                // sequence number
-                // sequence number
-                StructureItem::Field(Field {
-                    name: "sequence".to_string(),
-                    ty: Type::BasicType("u16".into()),
-                    ..Default::default()
-                }),
-            ]);
+        StructVariant::Event(skip_sequence) => {
+            let mut header: ArrayVec<[StructureItem; 3]> = ArrayVec::from_array_len(
+                [
+                    // type field, as always
+                    StructureItem::Field(Field {
+                        name: "event_type".to_string(),
+                        ty: Type::BasicType("u8".into()),
+                        ..Default::default()
+                    }),
+                    Default::default(),
+                    Default::default(),
+                ],
+                1,
+            );
+
+            // sequence number
+            if !skip_sequence {
+                header.extend(vec![
+                    opt_field.unwrap(),
+                    StructureItem::Field(Field {
+                        name: "sequence".to_string(),
+                        ty: Type::BasicType("u16".into()),
+                        ..Default::default()
+                    }),
+                ]);
+            }
+
             let f = mem::take(fields);
             *fields = header.into_iter().chain(f.into_iter()).collect();
         }

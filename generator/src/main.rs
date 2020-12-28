@@ -20,7 +20,7 @@ use std::{
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Error)
         .init();
 
     // open the file
@@ -105,3 +105,6 @@ use super::prelude::*;
 
     Ok(())
 }
+
+#[inline]
+pub fn any_field_length(_fields: &[lvl2::StructureItem]) {}

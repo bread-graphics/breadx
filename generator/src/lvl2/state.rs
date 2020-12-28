@@ -151,7 +151,7 @@ impl Lvl2State {
         let mut fields = fields
             .into_iter()
             .enumerate()
-            .filter_map(|(i, f)| {
+            .flat_map(|(i, f)| {
                 let mut resolution = None;
                 let res = StructureItem::from_lvl1(f, &mut resolution, fds);
 
@@ -161,9 +161,8 @@ impl Lvl2State {
                             .push(Item::Enum((gen)(Type::BasicType(enum_repr_conv(ty)))));
                     }
                 }
-                Some(res.into_iter().map(move |r| (i, r)))
+                res.into_iter().map(move |r| (i, r))
             })
-            .flatten()
             .map(|(i, mut f)| {
                 if let StructureItem::List(ref mut l) = f {
                     if let Some(b) = align_indices.get(&i) {
@@ -254,18 +253,20 @@ impl Lvl2State {
                 let reply = match reply {
                     Some(XStruct { name, fields, docs }) => {
                         let mut fds2: Vec<String> = vec![];
-                        let (fields, se2) =
+                        let (fields2, se2) =
                             self.convert_fields(fields, StructVariant::Reply, &mut fds2);
                         let (brief, desc) = (None, None);
 
                         se.extend(se2);
+
+                        crate::any_field_length(&fields2);
 
                         Some(Box::new(Struct {
                             name: name.to_camel_case().into_boxed_str(),
                             brief,
                             desc,
                             fds: fds2,
-                            fields: fields.to_vec(),
+                            fields: fields2.to_vec(),
                             special: StructSpecial::Regular,
                         }))
                     }
@@ -286,9 +287,11 @@ impl Lvl2State {
             Lvl1Item::Event(crate::lvl1::Event {
                 base: XStruct { name, docs, fields },
                 opcode,
+                skip_sequence,
             }) => {
                 let (brief, desc) = (None, None);
-                let (fields, se) = self.convert_fields(fields, StructVariant::Event, &mut fds);
+                let (fields, se) =
+                    self.convert_fields(fields, StructVariant::Event(skip_sequence), &mut fds);
                 let sname = safe_name(name.to_camel_case()).into_boxed_str();
 
                 self.events.insert(
@@ -299,7 +302,7 @@ impl Lvl2State {
                         desc,
                         fds,
                         fields: fields.to_vec(),
-                        special: StructSpecial::Event(opcode),
+                        special: StructSpecial::Event(opcode, skip_sequence),
                     },
                 );
                 Some(se)
@@ -307,7 +310,7 @@ impl Lvl2State {
             Lvl1Item::EventCopy(crate::lvl1::EventCopy { name, opcode, base }) => {
                 if let Some(event) = self.events.get(base.as_str()) {
                     let mut event = event.clone();
-                    if let StructSpecial::Event(ref mut o) = event.special {
+                    if let StructSpecial::Event(ref mut o, _) = event.special {
                         *o = opcode;
                     }
                     event.name = safe_name(name.to_camel_case()).into_boxed_str();
@@ -354,7 +357,7 @@ impl Lvl2State {
 /// Go over each field an eliminate unnecessary ones, such as fields expressing the
 /// length of vectors.
 #[inline]
-fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
+fn normalize_fields(fields: &mut [StructureItem]) {
     for i in 0..fields.len() {
         // if the item is a non-zero fixed-size list, replace it with an array type
         if let StructureItem::List(l) = &mut fields[i] {
@@ -382,6 +385,10 @@ fn normalize_fields(fields: &mut TinyVec<[StructureItem; 6]>) {
                     l.list_length = Expression::remainder();
                 }
             } else if let Some(item) = l.list_length.single_item() {
+                if item == "length" {
+                    continue;
+                }
+
                 let lname = l.name.clone();
                 let item = item.to_owned();
 

@@ -159,8 +159,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryDirectRenderingCapableRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl QueryDirectRenderingCapableRequest {}
 impl AsByteSequence for QueryDirectRenderingCapableRequest {
@@ -168,8 +168,9 @@ impl AsByteSequence for QueryDirectRenderingCapableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -178,22 +179,23 @@ impl AsByteSequence for QueryDirectRenderingCapableRequest {
         log::trace!("Deserializing QueryDirectRenderingCapableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryDirectRenderingCapableRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for QueryDirectRenderingCapableRequest {
@@ -256,8 +258,8 @@ impl AsByteSequence for QueryDirectRenderingCapableReply {
 #[derive(Clone, Debug, Default)]
 pub struct OpenConnectionRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl OpenConnectionRequest {}
 impl AsByteSequence for OpenConnectionRequest {
@@ -265,8 +267,9 @@ impl AsByteSequence for OpenConnectionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -275,22 +278,23 @@ impl AsByteSequence for OpenConnectionRequest {
         log::trace!("Deserializing OpenConnectionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             OpenConnectionRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for OpenConnectionRequest {
@@ -380,8 +384,8 @@ impl AsByteSequence for OpenConnectionReply {
 #[derive(Clone, Debug, Default)]
 pub struct CloseConnectionRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl CloseConnectionRequest {}
 impl AsByteSequence for CloseConnectionRequest {
@@ -389,8 +393,9 @@ impl AsByteSequence for CloseConnectionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -399,22 +404,23 @@ impl AsByteSequence for CloseConnectionRequest {
         log::trace!("Deserializing CloseConnectionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CloseConnectionRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for CloseConnectionRequest {
@@ -426,8 +432,8 @@ impl Request for CloseConnectionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetClientDriverNameRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl GetClientDriverNameRequest {}
 impl AsByteSequence for GetClientDriverNameRequest {
@@ -435,8 +441,9 @@ impl AsByteSequence for GetClientDriverNameRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -445,22 +452,23 @@ impl AsByteSequence for GetClientDriverNameRequest {
         log::trace!("Deserializing GetClientDriverNameRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetClientDriverNameRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for GetClientDriverNameRequest {
@@ -565,8 +573,8 @@ impl AsByteSequence for GetClientDriverNameReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContextRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub visual: Card32,
     pub context: Card32,
 }
@@ -576,8 +584,9 @@ impl AsByteSequence for CreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.visual.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
         index
@@ -588,9 +597,10 @@ impl AsByteSequence for CreateContextRequest {
         log::trace!("Deserializing CreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (visual, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -599,8 +609,8 @@ impl AsByteSequence for CreateContextRequest {
         Some((
             CreateContextRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 visual: visual,
                 context: context,
             },
@@ -610,8 +620,9 @@ impl AsByteSequence for CreateContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.visual.size()
             + self.context.size()
     }
@@ -676,8 +687,8 @@ impl AsByteSequence for CreateContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub context: Card32,
 }
 impl DestroyContextRequest {}
@@ -686,8 +697,9 @@ impl AsByteSequence for DestroyContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
@@ -697,17 +709,18 @@ impl AsByteSequence for DestroyContextRequest {
         log::trace!("Deserializing DestroyContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyContextRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 context: context,
             },
             index,
@@ -715,7 +728,7 @@ impl AsByteSequence for DestroyContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.context.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.context.size()
     }
 }
 impl Request for DestroyContextRequest {
@@ -727,8 +740,8 @@ impl Request for DestroyContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateDrawableRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub drawable: Card32,
 }
 impl CreateDrawableRequest {}
@@ -737,8 +750,9 @@ impl AsByteSequence for CreateDrawableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
@@ -748,17 +762,18 @@ impl AsByteSequence for CreateDrawableRequest {
         log::trace!("Deserializing CreateDrawableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateDrawableRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 drawable: drawable,
             },
             index,
@@ -766,7 +781,7 @@ impl AsByteSequence for CreateDrawableRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.drawable.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.drawable.size()
     }
 }
 impl Request for CreateDrawableRequest {
@@ -829,8 +844,8 @@ impl AsByteSequence for CreateDrawableReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyDrawableRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub drawable: Card32,
 }
 impl DestroyDrawableRequest {}
@@ -839,8 +854,9 @@ impl AsByteSequence for DestroyDrawableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
@@ -850,17 +866,18 @@ impl AsByteSequence for DestroyDrawableRequest {
         log::trace!("Deserializing DestroyDrawableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyDrawableRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 drawable: drawable,
             },
             index,
@@ -868,7 +885,7 @@ impl AsByteSequence for DestroyDrawableRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.drawable.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.drawable.size()
     }
 }
 impl Request for DestroyDrawableRequest {
@@ -880,8 +897,8 @@ impl Request for DestroyDrawableRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetDrawableInfoRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub drawable: Card32,
 }
 impl GetDrawableInfoRequest {}
@@ -890,8 +907,9 @@ impl AsByteSequence for GetDrawableInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
@@ -901,17 +919,18 @@ impl AsByteSequence for GetDrawableInfoRequest {
         log::trace!("Deserializing GetDrawableInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDrawableInfoRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 drawable: drawable,
             },
             index,
@@ -919,7 +938,7 @@ impl AsByteSequence for GetDrawableInfoRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.drawable.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.drawable.size()
     }
 }
 impl Request for GetDrawableInfoRequest {
@@ -1060,8 +1079,8 @@ impl AsByteSequence for GetDrawableInfoReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetDeviceInfoRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl GetDeviceInfoRequest {}
 impl AsByteSequence for GetDeviceInfoRequest {
@@ -1069,8 +1088,9 @@ impl AsByteSequence for GetDeviceInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1079,22 +1099,23 @@ impl AsByteSequence for GetDeviceInfoRequest {
         log::trace!("Deserializing GetDeviceInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDeviceInfoRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for GetDeviceInfoRequest {
@@ -1200,8 +1221,8 @@ impl AsByteSequence for GetDeviceInfoReply {
 #[derive(Clone, Debug, Default)]
 pub struct AuthConnectionRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub magic: Card32,
 }
 impl AuthConnectionRequest {}
@@ -1210,8 +1231,9 @@ impl AsByteSequence for AuthConnectionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.magic.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1221,17 +1243,18 @@ impl AsByteSequence for AuthConnectionRequest {
         log::trace!("Deserializing AuthConnectionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (magic, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             AuthConnectionRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 magic: magic,
             },
             index,
@@ -1239,7 +1262,7 @@ impl AsByteSequence for AuthConnectionRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.magic.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.magic.size()
     }
 }
 impl Request for AuthConnectionRequest {

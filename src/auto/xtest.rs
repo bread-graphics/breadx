@@ -120,8 +120,8 @@ impl AsByteSequence for GetVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct CompareCursorRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub cursor: Cursor,
 }
 impl CompareCursorRequest {}
@@ -130,8 +130,9 @@ impl AsByteSequence for CompareCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.cursor.as_bytes(&mut bytes[index..]);
         index
     }
@@ -141,17 +142,18 @@ impl AsByteSequence for CompareCursorRequest {
         log::trace!("Deserializing CompareCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CompareCursorRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 cursor: cursor,
             },
             index,
@@ -159,7 +161,7 @@ impl AsByteSequence for CompareCursorRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.cursor.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.cursor.size()
     }
 }
 impl Request for CompareCursorRequest {

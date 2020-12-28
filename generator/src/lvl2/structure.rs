@@ -19,7 +19,7 @@ pub enum StructSpecial {
     /// Just a regular struct
     Regular,
     /// This is an event with an associated opcode.
-    Event(u64),
+    Event(u64, bool),
     /// This is an error with an associated number.
     Error(u64),
     /// This is a request with an associated opcode and reply.

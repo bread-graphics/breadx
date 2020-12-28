@@ -122,8 +122,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct StartRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
 }
 impl StartRequest {}
 impl AsByteSequence for StartRequest {
@@ -131,8 +131,9 @@ impl AsByteSequence for StartRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -141,22 +142,23 @@ impl AsByteSequence for StartRequest {
         log::trace!("Deserializing StartRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             StartRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size()
     }
 }
 impl Request for StartRequest {
@@ -212,8 +214,8 @@ impl AsByteSequence for StartReply {
 #[derive(Clone, Debug, Default)]
 pub struct EndRequest {
     pub req_type: u8,
-    pub cmap: Card32,
     pub length: u16,
+    pub cmap: Card32,
 }
 impl EndRequest {}
 impl AsByteSequence for EndRequest {
@@ -221,8 +223,9 @@ impl AsByteSequence for EndRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cmap.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -231,22 +234,23 @@ impl AsByteSequence for EndRequest {
         log::trace!("Deserializing EndRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cmap, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cmap, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             EndRequest {
                 req_type: req_type,
-                cmap: cmap,
                 length: length,
+                cmap: cmap,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cmap.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.cmap.size()
     }
 }
 impl Request for EndRequest {
@@ -421,8 +425,8 @@ impl AsByteSequence for SendReply {
 #[derive(Clone, Debug, Default)]
 pub struct SelectInputRequest {
     pub req_type: u8,
-    pub event_mask: Card32,
     pub length: u16,
+    pub event_mask: Card32,
 }
 impl SelectInputRequest {}
 impl AsByteSequence for SelectInputRequest {
@@ -430,8 +434,9 @@ impl AsByteSequence for SelectInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.event_mask.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.event_mask.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -440,22 +445,23 @@ impl AsByteSequence for SelectInputRequest {
         log::trace!("Deserializing SelectInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event_mask, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_mask, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SelectInputRequest {
                 req_type: req_type,
-                event_mask: event_mask,
                 length: length,
+                event_mask: event_mask,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.event_mask.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.event_mask.size()
     }
 }
 impl Request for SelectInputRequest {

@@ -11,24 +11,55 @@ use crate::lvl2::{
 use proc_macro2::Span;
 use std::{
     collections::HashMap,
+    fmt,
     hash::{Hash, Hasher},
-    iter,
+    iter, mem,
     ops::Deref,
     rc::Rc,
 };
 use tinyvec::ArrayVec;
 
 /// Rust structure.
-#[derive(Debug)]
 pub struct RStruct {
     pub name: Box<str>,
     pub derives: Vec<&'static str>,
     pub is_transparent: bool,
     pub fields: Vec<StructureItem>,
     pub methods: Vec<Method>,
+    pub other_impl_items: Vec<syn::ImplItem>,
     pub traits: Vec<Trait>,
     pub fds: Vec<String>,
     pub asb: Asb,
+}
+
+impl fmt::Debug for RStruct {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        struct Filler(usize);
+
+        impl fmt::Debug for Filler {
+            #[inline]
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                if self.0 == 0 {
+                    f.write_str("[]")
+                } else {
+                    f.write_str("[..]")
+                }
+            }
+        }
+
+        f.debug_struct("RStruct")
+            .field("name", &self.name)
+            .field("derives", &self.derives)
+            .field("is_transparent", &self.is_transparent)
+            .field("fields", &self.fields)
+            .field("methods", &self.methods)
+            .field("other_impl_items", &Filler(self.other_impl_items.len()))
+            .field("traits", &self.traits)
+            .field("fds", &self.fds)
+            .field("asb", &self.asb)
+            .finish()
+    }
 }
 
 #[inline]
@@ -249,7 +280,7 @@ impl RStruct {
 
 impl ToSyn for RStruct {
     #[inline]
-    fn to_syn_item(self) -> Vec<syn::Item> {
+    fn to_syn_item(mut self) -> Vec<syn::Item> {
         let s = syn::Item::Struct(syn::ItemStruct {
             attrs: (match self.is_transparent {
                 false => None,
@@ -284,6 +315,7 @@ impl ToSyn for RStruct {
             semi_token: None,
         });
 
+        let other_impl_items = mem::take(&mut self.other_impl_items);
         let methods = syn::Item::Impl(syn::ItemImpl {
             attrs: vec![],
             defaultness: None,
@@ -297,6 +329,7 @@ impl ToSyn for RStruct {
                 .methods
                 .iter()
                 .map(|m| m.to_syn_impl_item(false))
+                .chain(other_impl_items)
                 .collect(),
         });
 
@@ -327,11 +360,24 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
 
     // special-dependent stuff
     let other: Option<RStruct> = if is_reply {
+        if !fields.iter().any(|f| {
+            if let StructureItem::Field(Field { name, .. }) = f {
+                name == "length"
+            } else {
+                false
+            }
+        }) {
+            log::error!(
+                "For some reason, reply \"{}\" doesn't have length field",
+                &name
+            );
+        }
+
         None
     } else {
         match special {
             StructSpecial::Regular => None,
-            StructSpecial::Event(opcode) => {
+            StructSpecial::Event(opcode, _) => {
                 traits.push(Trait::Event(opcode));
                 name = format!("{}Event", name).into_boxed_str();
                 None
@@ -375,6 +421,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         fields,
         fds,
         methods: vec![],
+        other_impl_items: vec![],
         traits,
         asb: Default::default(),
     };

@@ -19,6 +19,8 @@ pub enum Trait {
     FromXid(Box<str>),
     BitflagsNot(Box<str>),
     BitflagsAnd(Box<str>),
+    BitflagsOr(Box<str>),
+    BitflagsXor(Box<str>),
 }
 
 #[inline]
@@ -181,6 +183,26 @@ impl Trait {
                         .into_iter()
                         .collect(),
                     },
+                    Self::BitflagsOr(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("core"),
+                            str_to_pathseg("ops"),
+                            str_to_pathseg("BitOr"),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    },
+                    Self::BitflagsXor(_) => syn::Path {
+                        leading_colon: None,
+                        segments: vec![
+                            str_to_pathseg("core"),
+                            str_to_pathseg("ops"),
+                            str_to_pathseg("BitXor"),
+                        ]
+                        .into_iter()
+                        .collect(),
+                    },
                 },
                 Default::default(),
             )),
@@ -323,6 +345,82 @@ impl Trait {
                                 expr: syn::Expr::Binary(syn::ExprBinary {
                                     attrs: vec![],
                                     op: syn::BinOp::BitAnd(Default::default()),
+                                    left: Box::new(i),
+                                    right: Box::new(item_field(str_to_exprpath("rhs"), "inner")),
+                                }),
+                            })
+                            .collect(),
+                            dot2_token: None,
+                            rest: None,
+                        })
+                    }))
+                    .into()];
+                    method.to_syn_impl_item(true)
+                }],
+                Self::BitflagsOr(ty) => vec![bitflags_output_ty(&ty), {
+                    let mut method = Method::new(
+                        "bitor".into(),
+                        Some(ParameterUsage::Owned),
+                        vec![InputParameter {
+                            name: "rhs".into(),
+                            ty: Type::Basic(ty.to_string().into()),
+                            usage: ParameterUsage::Owned,
+                        }],
+                        Some(Type::Basic(ty.to_string().into())),
+                    );
+                    method.statements = vec![super::ForwardToInner(Rc::new(move |i| {
+                        syn::Expr::Struct(syn::ExprStruct {
+                            attrs: vec![],
+                            path: str_to_path(&ty),
+                            brace_token: Default::default(),
+                            fields: iter::once(syn::FieldValue {
+                                attrs: vec![],
+                                member: syn::Member::Named(syn::Ident::new(
+                                    "inner",
+                                    Span::call_site(),
+                                )),
+                                colon_token: Some(Default::default()),
+                                expr: syn::Expr::Binary(syn::ExprBinary {
+                                    attrs: vec![],
+                                    op: syn::BinOp::BitOr(Default::default()),
+                                    left: Box::new(i),
+                                    right: Box::new(item_field(str_to_exprpath("rhs"), "inner")),
+                                }),
+                            })
+                            .collect(),
+                            dot2_token: None,
+                            rest: None,
+                        })
+                    }))
+                    .into()];
+                    method.to_syn_impl_item(true)
+                }],
+                Self::BitflagsXor(ty) => vec![bitflags_output_ty(&ty), {
+                    let mut method = Method::new(
+                        "bitxor".into(),
+                        Some(ParameterUsage::Owned),
+                        vec![InputParameter {
+                            name: "rhs".into(),
+                            ty: Type::Basic(ty.to_string().into()),
+                            usage: ParameterUsage::Owned,
+                        }],
+                        Some(Type::Basic(ty.to_string().into())),
+                    );
+                    method.statements = vec![super::ForwardToInner(Rc::new(move |i| {
+                        syn::Expr::Struct(syn::ExprStruct {
+                            attrs: vec![],
+                            path: str_to_path(&ty),
+                            brace_token: Default::default(),
+                            fields: iter::once(syn::FieldValue {
+                                attrs: vec![],
+                                member: syn::Member::Named(syn::Ident::new(
+                                    "inner",
+                                    Span::call_site(),
+                                )),
+                                colon_token: Some(Default::default()),
+                                expr: syn::Expr::Binary(syn::ExprBinary {
+                                    attrs: vec![],
+                                    op: syn::BinOp::BitXor(Default::default()),
                                     left: Box::new(i),
                                     right: Box::new(item_field(str_to_exprpath("rhs"), "inner")),
                                 }),

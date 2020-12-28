@@ -129,8 +129,9 @@ impl AsByteSequence for SetDeviceCreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -142,9 +143,10 @@ impl AsByteSequence for SetDeviceCreateContextRequest {
         log::trace!("Deserializing SetDeviceCreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -161,7 +163,7 @@ impl AsByteSequence for SetDeviceCreateContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -286,8 +288,8 @@ impl AsByteSequence for GetDeviceCreateContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetDeviceContextRequest {
     pub req_type: u8,
-    pub device: Card32,
     pub length: u16,
+    pub device: Card32,
     pub context: String,
 }
 impl SetDeviceContextRequest {}
@@ -296,8 +298,9 @@ impl AsByteSequence for SetDeviceContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device.as_bytes(&mut bytes[index..]);
         index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
@@ -310,9 +313,10 @@ impl AsByteSequence for SetDeviceContextRequest {
         log::trace!("Deserializing SetDeviceContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -323,8 +327,8 @@ impl AsByteSequence for SetDeviceContextRequest {
         Some((
             SetDeviceContextRequest {
                 req_type: req_type,
-                device: device,
                 length: length,
+                device: device,
                 context: context,
             },
             index,
@@ -333,8 +337,9 @@ impl AsByteSequence for SetDeviceContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device.size()
+            + 1
             + self.length.size()
+            + self.device.size()
             + ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.context.len();
@@ -352,8 +357,8 @@ impl Request for SetDeviceContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetDeviceContextRequest {
     pub req_type: u8,
-    pub device: Card32,
     pub length: u16,
+    pub device: Card32,
 }
 impl GetDeviceContextRequest {}
 impl AsByteSequence for GetDeviceContextRequest {
@@ -361,8 +366,9 @@ impl AsByteSequence for GetDeviceContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -371,22 +377,23 @@ impl AsByteSequence for GetDeviceContextRequest {
         log::trace!("Deserializing GetDeviceContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDeviceContextRequest {
                 req_type: req_type,
-                device: device,
                 length: length,
+                device: device,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.device.size()
     }
 }
 impl Request for GetDeviceContextRequest {
@@ -473,8 +480,9 @@ impl AsByteSequence for SetWindowCreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -486,9 +494,10 @@ impl AsByteSequence for SetWindowCreateContextRequest {
         log::trace!("Deserializing SetWindowCreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -505,7 +514,7 @@ impl AsByteSequence for SetWindowCreateContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -630,8 +639,8 @@ impl AsByteSequence for GetWindowCreateContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetWindowContextRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl GetWindowContextRequest {}
 impl AsByteSequence for GetWindowContextRequest {
@@ -639,8 +648,9 @@ impl AsByteSequence for GetWindowContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -649,22 +659,23 @@ impl AsByteSequence for GetWindowContextRequest {
         log::trace!("Deserializing GetWindowContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetWindowContextRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for GetWindowContextRequest {
@@ -817,8 +828,9 @@ impl AsByteSequence for SetPropertyCreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -830,9 +842,10 @@ impl AsByteSequence for SetPropertyCreateContextRequest {
         log::trace!("Deserializing SetPropertyCreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -849,7 +862,7 @@ impl AsByteSequence for SetPropertyCreateContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -983,8 +996,9 @@ impl AsByteSequence for SetPropertyUseContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -996,9 +1010,10 @@ impl AsByteSequence for SetPropertyUseContextRequest {
         log::trace!("Deserializing SetPropertyUseContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -1015,7 +1030,7 @@ impl AsByteSequence for SetPropertyUseContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -1140,8 +1155,8 @@ impl AsByteSequence for GetPropertyUseContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPropertyContextRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub property: Atom,
 }
 impl GetPropertyContextRequest {}
@@ -1150,8 +1165,9 @@ impl AsByteSequence for GetPropertyContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1161,17 +1177,18 @@ impl AsByteSequence for GetPropertyContextRequest {
         log::trace!("Deserializing GetPropertyContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPropertyContextRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 property: property,
             },
             index,
@@ -1179,7 +1196,7 @@ impl AsByteSequence for GetPropertyContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.property.size()
     }
 }
 impl Request for GetPropertyContextRequest {
@@ -1257,8 +1274,8 @@ impl AsByteSequence for GetPropertyContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPropertyDataContextRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
     pub property: Atom,
 }
 impl GetPropertyDataContextRequest {}
@@ -1267,8 +1284,9 @@ impl AsByteSequence for GetPropertyDataContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1278,17 +1296,18 @@ impl AsByteSequence for GetPropertyDataContextRequest {
         log::trace!("Deserializing GetPropertyDataContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPropertyDataContextRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
                 property: property,
             },
             index,
@@ -1296,7 +1315,7 @@ impl AsByteSequence for GetPropertyDataContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size() + self.property.size()
     }
 }
 impl Request for GetPropertyDataContextRequest {
@@ -1374,8 +1393,8 @@ impl AsByteSequence for GetPropertyDataContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct ListPropertiesRequest {
     pub req_type: u8,
-    pub window: Window,
     pub length: u16,
+    pub window: Window,
 }
 impl ListPropertiesRequest {}
 impl AsByteSequence for ListPropertiesRequest {
@@ -1383,8 +1402,9 @@ impl AsByteSequence for ListPropertiesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1393,22 +1413,23 @@ impl AsByteSequence for ListPropertiesRequest {
         log::trace!("Deserializing ListPropertiesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListPropertiesRequest {
                 req_type: req_type,
-                window: window,
                 length: length,
+                window: window,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.window.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.window.size()
     }
 }
 impl Request for ListPropertiesRequest {
@@ -1495,8 +1516,9 @@ impl AsByteSequence for SetSelectionCreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1508,9 +1530,10 @@ impl AsByteSequence for SetSelectionCreateContextRequest {
         log::trace!("Deserializing SetSelectionCreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -1527,7 +1550,7 @@ impl AsByteSequence for SetSelectionCreateContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -1661,8 +1684,9 @@ impl AsByteSequence for SetSelectionUseContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.context.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = string_as_bytes(&self.context, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1674,9 +1698,10 @@ impl AsByteSequence for SetSelectionUseContextRequest {
         log::trace!("Deserializing SetSelectionUseContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, block_len): (String, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
@@ -1693,7 +1718,7 @@ impl AsByteSequence for SetSelectionUseContextRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + ::core::mem::size_of::<Card32>() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card32>() + {
             let block_len: usize = self.context.len();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<c_char>());
             block_len + pad
@@ -2151,8 +2176,8 @@ impl AsByteSequence for ListSelectionsReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetClientContextRequest {
     pub req_type: u8,
-    pub resource: Card32,
     pub length: u16,
+    pub resource: Card32,
 }
 impl GetClientContextRequest {}
 impl AsByteSequence for GetClientContextRequest {
@@ -2160,8 +2185,9 @@ impl AsByteSequence for GetClientContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.resource.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.resource.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2170,22 +2196,23 @@ impl AsByteSequence for GetClientContextRequest {
         log::trace!("Deserializing GetClientContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (resource, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (resource, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetClientContextRequest {
                 req_type: req_type,
-                resource: resource,
                 length: length,
+                resource: resource,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.resource.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.resource.size()
     }
 }
 impl Request for GetClientContextRequest {

@@ -347,6 +347,20 @@ impl ModeFlag {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const POSITIVE_H_SYNC: Self = Self { inner: 1 };
+    pub const NEGATIVE_H_SYNC: Self = Self { inner: 2 };
+    pub const POSITIVE_V_SYNC: Self = Self { inner: 4 };
+    pub const NEGATIVE_V_SYNC: Self = Self { inner: 8 };
+    pub const INTERLACE: Self = Self { inner: 16 };
+    pub const COMPOSITE_SYNC: Self = Self { inner: 32 };
+    pub const POSITIVE_C_SYNC: Self = Self { inner: 64 };
+    pub const NEGATIVE_C_SYNC: Self = Self { inner: 128 };
+    pub const H_SKEW: Self = Self { inner: 256 };
+    pub const BROADCAST: Self = Self { inner: 512 };
+    pub const PIXMUX: Self = Self { inner: 1024 };
+    pub const DOUBLE_CLOCK: Self = Self { inner: 2048 };
+    pub const HALF_CLOCK: Self = Self { inner: 4096 };
+    pub const COMPLETE: Self = Self { inner: 8191 };
 }
 impl AsByteSequence for ModeFlag {
     #[inline]
@@ -376,6 +390,24 @@ impl core::ops::BitAnd for ModeFlag {
     fn bitand(self, rhs: ModeFlag) -> ModeFlag {
         ModeFlag {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitor(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for ModeFlag {
+    type Output = ModeFlag;
+    #[inline]
+    fn bitxor(self, rhs: ModeFlag) -> ModeFlag {
+        ModeFlag {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
@@ -665,8 +697,8 @@ impl AsByteSequence for GetModeLineReply {
 #[derive(Clone, Debug, Default)]
 pub struct ModModeLineRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub hdisplay: Card16,
     pub hsyncstart: Card16,
     pub hsyncend: Card16,
@@ -685,8 +717,9 @@ impl AsByteSequence for ModModeLineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.hdisplay.as_bytes(&mut bytes[index..]);
         index += self.hsyncstart.as_bytes(&mut bytes[index..]);
         index += self.hsyncend.as_bytes(&mut bytes[index..]);
@@ -711,9 +744,10 @@ impl AsByteSequence for ModModeLineRequest {
         log::trace!("Deserializing ModModeLineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (hdisplay, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -746,8 +780,8 @@ impl AsByteSequence for ModModeLineRequest {
         Some((
             ModModeLineRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 hdisplay: hdisplay,
                 hsyncstart: hsyncstart,
                 hsyncend: hsyncend,
@@ -766,8 +800,9 @@ impl AsByteSequence for ModModeLineRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.hdisplay.size()
             + self.hsyncstart.size()
             + self.hsyncend.size()
@@ -1199,8 +1234,8 @@ impl AsByteSequence for GetAllModeLinesReply {
 #[derive(Clone, Debug, Default)]
 pub struct AddModeLineRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub dotclock: Dotclock,
     pub hdisplay: Card16,
     pub hsyncstart: Card16,
@@ -1231,8 +1266,9 @@ impl AsByteSequence for AddModeLineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.dotclock.as_bytes(&mut bytes[index..]);
         index += self.hdisplay.as_bytes(&mut bytes[index..]);
         index += self.hsyncstart.as_bytes(&mut bytes[index..]);
@@ -1269,9 +1305,10 @@ impl AsByteSequence for AddModeLineRequest {
         log::trace!("Deserializing AddModeLineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dotclock, sz): (Dotclock, usize) = <Dotclock>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1328,8 +1365,8 @@ impl AsByteSequence for AddModeLineRequest {
         Some((
             AddModeLineRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 dotclock: dotclock,
                 hdisplay: hdisplay,
                 hsyncstart: hsyncstart,
@@ -1360,8 +1397,9 @@ impl AsByteSequence for AddModeLineRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.dotclock.size()
             + self.hdisplay.size()
             + self.hsyncstart.size()
@@ -1403,8 +1441,8 @@ impl Request for AddModeLineRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteModeLineRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub dotclock: Dotclock,
     pub hdisplay: Card16,
     pub hsyncstart: Card16,
@@ -1424,8 +1462,9 @@ impl AsByteSequence for DeleteModeLineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.dotclock.as_bytes(&mut bytes[index..]);
         index += self.hdisplay.as_bytes(&mut bytes[index..]);
         index += self.hsyncstart.as_bytes(&mut bytes[index..]);
@@ -1451,9 +1490,10 @@ impl AsByteSequence for DeleteModeLineRequest {
         log::trace!("Deserializing DeleteModeLineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dotclock, sz): (Dotclock, usize) = <Dotclock>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1488,8 +1528,8 @@ impl AsByteSequence for DeleteModeLineRequest {
         Some((
             DeleteModeLineRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 dotclock: dotclock,
                 hdisplay: hdisplay,
                 hsyncstart: hsyncstart,
@@ -1509,8 +1549,9 @@ impl AsByteSequence for DeleteModeLineRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.dotclock.size()
             + self.hdisplay.size()
             + self.hsyncstart.size()
@@ -1541,8 +1582,8 @@ impl Request for DeleteModeLineRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ValidateModeLineRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub dotclock: Dotclock,
     pub hdisplay: Card16,
     pub hsyncstart: Card16,
@@ -1562,8 +1603,9 @@ impl AsByteSequence for ValidateModeLineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.dotclock.as_bytes(&mut bytes[index..]);
         index += self.hdisplay.as_bytes(&mut bytes[index..]);
         index += self.hsyncstart.as_bytes(&mut bytes[index..]);
@@ -1589,9 +1631,10 @@ impl AsByteSequence for ValidateModeLineRequest {
         log::trace!("Deserializing ValidateModeLineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dotclock, sz): (Dotclock, usize) = <Dotclock>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1626,8 +1669,8 @@ impl AsByteSequence for ValidateModeLineRequest {
         Some((
             ValidateModeLineRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 dotclock: dotclock,
                 hdisplay: hdisplay,
                 hsyncstart: hsyncstart,
@@ -1647,8 +1690,9 @@ impl AsByteSequence for ValidateModeLineRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.dotclock.size()
             + self.hdisplay.size()
             + self.hsyncstart.size()
@@ -1733,8 +1777,8 @@ impl AsByteSequence for ValidateModeLineReply {
 #[derive(Clone, Debug, Default)]
 pub struct SwitchToModeRequest {
     pub req_type: u8,
-    pub screen: Card32,
     pub length: u16,
+    pub screen: Card32,
     pub dotclock: Dotclock,
     pub hdisplay: Card16,
     pub hsyncstart: Card16,
@@ -1754,8 +1798,9 @@ impl AsByteSequence for SwitchToModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.dotclock.as_bytes(&mut bytes[index..]);
         index += self.hdisplay.as_bytes(&mut bytes[index..]);
         index += self.hsyncstart.as_bytes(&mut bytes[index..]);
@@ -1781,9 +1826,10 @@ impl AsByteSequence for SwitchToModeRequest {
         log::trace!("Deserializing SwitchToModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dotclock, sz): (Dotclock, usize) = <Dotclock>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1818,8 +1864,8 @@ impl AsByteSequence for SwitchToModeRequest {
         Some((
             SwitchToModeRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 dotclock: dotclock,
                 hdisplay: hdisplay,
                 hsyncstart: hsyncstart,
@@ -1839,8 +1885,9 @@ impl AsByteSequence for SwitchToModeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.dotclock.size()
             + self.hdisplay.size()
             + self.hsyncstart.size()
@@ -2901,6 +2948,9 @@ impl Permission {
     pub fn count_ones(&self) -> usize {
         self.inner.count_ones() as usize
     }
+    pub const READ: Self = Self { inner: 1 };
+    pub const WRITE: Self = Self { inner: 2 };
+    pub const COMPLETE: Self = Self { inner: 3 };
 }
 impl AsByteSequence for Permission {
     #[inline]
@@ -2930,6 +2980,24 @@ impl core::ops::BitAnd for Permission {
     fn bitand(self, rhs: Permission) -> Permission {
         Permission {
             inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for Permission {
+    type Output = Permission;
+    #[inline]
+    fn bitor(self, rhs: Permission) -> Permission {
+        Permission {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for Permission {
+    type Output = Permission;
+    #[inline]
+    fn bitxor(self, rhs: Permission) -> Permission {
+        Permission {
+            inner: self.inner ^ rhs.inner,
         }
     }
 }
