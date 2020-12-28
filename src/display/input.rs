@@ -25,7 +25,7 @@ impl<Conn: Connection> super::Display<Conn> {
             let _pereq = self
                 .pending_requests
                 .remove(&sequence)
-                .ok_or_else(move || crate::BreadError::NoMatchingRequest(sequence))?;
+                .ok_or(crate::BreadError::NoMatchingRequest(sequence))?;
 
             // convert bytes to a boxed slice
             bytes.move_to_the_heap();
@@ -67,7 +67,7 @@ impl<Conn: Connection> super::Display<Conn> {
             let pereq = self
                 .pending_requests
                 .get(&sequence)
-                .ok_or_else(move || crate::BreadError::NoMatchingRequest(sequence))?;
+                .ok_or(crate::BreadError::NoMatchingRequest(sequence))?;
 
             if let RequestWorkaround::GlxFbconfigBug = pereq.flags.workaround {
                 log::debug!("Applying GLX FbConfig workaround to reply");
@@ -84,7 +84,7 @@ impl<Conn: Connection> super::Display<Conn> {
                 (&mut bytes[4..8]).copy_from_slice(&length);
             }
         }
- 
+
         Ok(())
     }
 
@@ -96,7 +96,7 @@ impl<Conn: Connection> super::Display<Conn> {
             request: req,
             flags,
         };
-        if let Some(_) = self.pending_requests.insert(req as _, pereq) {
+        if self.pending_requests.insert(req as _, pereq).is_some() {
             panic!("Sequence number overlap; too many requests!");
         }
     }
