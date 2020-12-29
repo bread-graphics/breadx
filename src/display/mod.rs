@@ -373,7 +373,7 @@ impl<Conn: Connection> Display<Conn> {
         let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
-        
+
         log::trace!("Reading remainder of setup.");
         self.connection.read_packet(&mut bytes[8..], &mut _fds)?;
 
