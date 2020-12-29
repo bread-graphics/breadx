@@ -10,9 +10,7 @@ use std::{env, fs::File, io::Read};
 #[cfg(feature = "async")]
 use blocking::{unblock, Unblock};
 #[cfg(feature = "async")]
-use futures_io::AsyncRead;
-#[cfg(feature = "async")]
-use futures_lite::AsyncReadExt;
+use futures_lite::{AsyncRead, AsyncReadExt};
 
 /// Information needed to authorize a user to use an X11 connection.
 #[derive(Default, Debug)]

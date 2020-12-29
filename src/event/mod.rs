@@ -72,10 +72,53 @@ impl Event {
         Ok(e)
     }
 
+    #[inline]
+    pub(crate) fn as_bytes(&self, bytes: &mut [u8]) {
+        match self {
+            Self::ConfigureNotify(cne) => cne.as_bytes(bytes),
+            Self::ClientMessage(cne) => cne.as_bytes(bytes),
+            Self::Expose(ee) => ee.as_bytes(bytes),
+            Self::ButtonPress(bpe) => bpe.as_bytes(bytes),
+            Self::ButtonRelease(bre) => bre.as_bytes(bytes),
+            Self::CirculateNotify(cne) => cne.as_bytes(bytes),
+            Self::CirculateRequest(cre) => cre.as_bytes(bytes),
+            Self::ConfigureRequest(cre) => cre.as_bytes(bytes),
+            Self::CreateNotify(cne) => cne.as_bytes(bytes),
+            Self::DestroyNotify(dne) => dne.as_bytes(bytes),
+            Self::EnterNotify(ene) => ene.as_bytes(bytes),
+            Self::FocusIn(fie) => fie.as_bytes(bytes),
+            Self::FocusOut(foe) => foe.as_bytes(bytes),
+            Self::GraphicsExposure(gee) => gee.as_bytes(bytes),
+            Self::GravityNotify(gne) => gne.as_bytes(bytes),
+            Self::KeyPress(kpe) => kpe.as_bytes(bytes),
+            Self::KeyRelease(kre) => kre.as_bytes(bytes),
+            Self::KeymapNotify(kne) => kne.as_bytes(bytes),
+            Self::LeaveNotify(lne) => lne.as_bytes(bytes),
+            Self::MapNotify(mne) => mne.as_bytes(bytes),
+            Self::MapRequest(mre) => mre.as_bytes(bytes),
+            Self::MappingNotify(mne) => mne.as_bytes(bytes),
+            Self::NoExposure(nee) => nee.as_bytes(bytes),
+            Self::PropertyNotify(pne) => pne.as_bytes(bytes),
+            Self::ReparentNotify(rne) => rne.as_bytes(bytes),
+            Self::ResizeRequest(rre) => rre.as_bytes(bytes),
+            Self::SelectionClear(sce) => sce.as_bytes(bytes),
+            Self::SelectionNotify(sne) => sne.as_bytes(bytes),
+            Self::SelectionRequest(sre) => sre.as_bytes(bytes),
+            Self::UnmapNotify(une) => une.as_bytes(bytes),
+            Self::VisibilityNotify(vne) => vne.as_bytes(bytes),
+            Self::NoneOfTheAbove { bytes: b, .. } => {
+                (&mut bytes[0..b.len()]).copy_from_slice(b);
+                0
+            }
+        };
+    }
+
     #[allow(clippy::too_many_lines)]
     #[inline]
     pub(crate) fn differentiate(&mut self) -> crate::Result {
         if let Event::NoneOfTheAbove { opcode, ref bytes } = self {
+            log::debug!("Differentiating event bytes: {}", bytes);
+
             let opcode = *opcode;
             if opcode == ConfigureNotifyEvent::OPCODE {
                 let cne = ConfigureNotifyEvent::from_bytes(bytes).ok_or(

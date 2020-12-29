@@ -374,13 +374,15 @@ impl<'a> XConnection<'a> {
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
         {
-            return self.open_tcp_async().await;
+            if let Ok(c) = self.clone().open_tcp_async().await {
+                return Ok(c);
+            }
         }
 
         // the next part only applies with unix semantics
         #[cfg(unix)]
         {
-            if let Ok(u) = self.clone().open_unix() {
+            if let Ok(u) = self.clone().open_unix_async().await {
                 return Ok(u);
             }
 

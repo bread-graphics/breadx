@@ -3,7 +3,7 @@
 use super::{Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE};
 use crate::{util::cycled_zeroes, Fd, Request};
 use alloc::{string::ToString, vec, vec::Vec};
-use core::iter;
+use core::{iter, mem};
 use tinyvec::TinyVec;
 
 #[inline]
@@ -137,7 +137,9 @@ impl<Conn: Connection> super::Display<Conn> {
             _ => (),
         }
 
-        self.expect_reply(sequence, flags);
+        if mem::size_of::<R::Reply>() != 0 {
+            self.expect_reply(sequence, flags);
+        }
 
         (sequence, bytes)
     }

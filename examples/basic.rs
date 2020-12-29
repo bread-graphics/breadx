@@ -7,7 +7,7 @@ use breadx::{
 use std::{env, process};
 
 fn main() {
-    env::set_var("RUST_LOG", "breadx=warn");
+    env::set_var("RUST_LOG", "breadx=trace");
     env_logger::init();
 
     let mut conn = DisplayConnection::create(None, None).unwrap();
@@ -80,8 +80,6 @@ fn main() {
                 process::exit(1);
             }
         };
-
-        //        println!("{:?}", &ev);
 
         match ev {
             Event::ClientMessage(cme) => {

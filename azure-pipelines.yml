@@ -43,7 +43,7 @@ jobs:
        WindowsStable:
          toolchain: stable
          vmImage: windows-latest
-       OSX:
+       OSXStable:
          toolchain: stable
          vmImage: macOS-latest
    pool:
@@ -66,5 +66,5 @@ jobs:
       displayName: "Async Test"
     - bash: cargo build --all-features
       displayName: "All Features Build"
-    - bash: cargo build --examples
+    - bash: cargo build --examples --all-features
       displayName: "Build Examples"

@@ -10,13 +10,14 @@ use crate::{
         CreateCursorRequest, CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask,
         FillRule, FillStyle, Font, ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx,
         InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
-        ScreenSaver, SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
-        Visualid, Window, WindowClass,
+        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
+        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
     },
     display::{Connection, Display, RequestCookie},
-    Extension, XidType,
+    Event, Extension, XidType,
 };
 use alloc::string::String;
+use cty::c_char;
 
 crate::create_paramaterizer! {
     pub struct WindowParameters : (Cw, CreateWindowRequest) {
@@ -834,6 +835,47 @@ impl<Conn: Connection> Display<Conn> {
         log::debug!("Sending ForceScreenSaverRequest to server.");
         let tok = self.send_request_async(fssr).await?;
         log::debug!("Sent ForceScreenSaverRequest to server.");
+        self.resolve_request_async(tok).await
+    }
+
+    #[inline]
+    fn send_event_request(target: Window, em: EventMask, event: Event) -> SendEventRequest {
+        let mut bytes: [u8; 32] = [0; 32];
+        event.as_bytes(&mut bytes);
+
+        bytes[0] = event.opcode();
+
+        SendEventRequest {
+            destination: target,
+            event_mask: em,
+            event: bytemuck::cast::<_, [c_char; 32]>(bytes),
+            ..Default::default()
+        }
+    }
+
+    /// Send an event to the X server.
+    #[inline]
+    pub fn send_event(&mut self, target: Window, mask: EventMask, event: Event) -> crate::Result {
+        let ser = Self::send_event_request(target, mask, event);
+        log::debug!("Sending SendEventRequest to server.");
+        let tok = self.send_request(ser)?;
+        log::debug!("Sent SendEventRequest to server.");
+        self.resolve_request(tok)
+    }
+
+    /// Send an event to the X server, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn send_event_async(
+        &mut self,
+        target: Window,
+        mask: EventMask,
+        event: Event,
+    ) -> crate::Result {
+        let ser = Self::send_event_request(target, mask, event);
+        log::debug!("Sending SendEventRequest to server.");
+        let tok = self.send_request_async(ser).await?;
+        log::debug!("Sent SendEventRequest to server.");
         self.resolve_request_async(tok).await
     }
 }

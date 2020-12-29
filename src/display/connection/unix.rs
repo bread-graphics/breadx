@@ -22,11 +22,22 @@ use async_io::Async;
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()> {
     #[inline]
-    fn sendmsg_loop(conn: RawFd, data: &[u8], cmsgs: &[ControlMessage<'_>]) -> io::Result<()> {
-        let data = [IoVec::from_slice(data)];
+    fn sendmsg_loop(
+        conn: RawFd,
+        mut data: &[u8],
+        mut cmsgs: &[ControlMessage<'_>],
+    ) -> io::Result<()> {
+        let mut datavec = [IoVec::from_slice(data)];
         loop {
-            match sendmsg(conn, &data[..], cmsgs, MsgFlags::empty(), None) {
-                Ok(_) => return Ok(()),
+            match sendmsg(conn, &datavec, cmsgs, MsgFlags::empty(), None) {
+                Ok(0) => return Ok(()),
+                Ok(m) => {
+                    log::debug!("sendmsg: yet to send {} bytes", data.len() - m);
+                    data = &data[m..];
+                    datavec = [IoVec::from_slice(data)];
+                    // ensure we never send the file descriptors more than once
+                    cmsgs = &[];
+                }
                 Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
                 Err(e) => return Err(convert_nix_error(e)),
             }
@@ -81,15 +92,25 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
 /// Read a packet, unix style. Includes fds.
 #[allow(clippy::similar_names)]
 #[inline]
-fn read_msg_packet(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
+fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
     const MAX_FDS: usize = 16;
     let mut cmsg = nix::cmsg_space!([Fd; MAX_FDS]);
-    let data = [IoVec::from_mut_slice(data)];
+    let mut datalen = data.len();
+    let mut datavec = [IoVec::from_mut_slice(data)];
 
     let msg = loop {
-        match recvmsg(conn, &data, Some(&mut cmsg), MsgFlags::empty()) {
-            Ok(m) => break m,
-            Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
+        match recvmsg(conn, &datavec, Some(&mut cmsg), MsgFlags::empty()) {
+            Ok(m) if m.bytes == 0 => break m,
+            Ok(m) if m.bytes == datalen => break m,
+            Ok(m) => {
+                log::debug!("recvmsg: yet to receive {} bytes", data.len() - m.bytes);
+                data = &mut data[m.bytes..];
+                datalen = data.len();
+                datavec = [IoVec::from_mut_slice(data)];
+            }
+            Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => {
+                log::debug!("Interrupt occurred during read ");
+            }
             Err(e) => return Err(convert_nix_error(e)),
         }
     };
