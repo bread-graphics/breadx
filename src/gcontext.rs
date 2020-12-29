@@ -39,7 +39,7 @@ impl Gcontext {
     /// Change the properties of this GC, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn change_async<Conn: Connection>(
         self,
         dpy: &mut Display<Conn>,
         params: GcParameters,

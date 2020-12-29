@@ -345,6 +345,8 @@ impl<Conn: Connection> Display<Conn> {
     /// Initialize the setup.
     #[inline]
     fn init(&mut self, auth: Option<AuthInfo>) -> crate::Result {
+        log::debug!("Establishing connection to server.");
+
         let setup = Self::create_setup(match auth {
             Some(auth) => auth,
             None => AuthInfo::get(),
@@ -353,8 +355,12 @@ impl<Conn: Connection> Display<Conn> {
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
+
+        log::trace!("Sending setup request to server.");
         self.connection.send_packet(&bytes[0..len], &mut _fds)?;
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
+
+        log::trace!("Reading setup response from server.");
         self.connection.read_packet(&mut bytes, &mut _fds)?;
 
         match bytes[0] {
@@ -367,6 +373,8 @@ impl<Conn: Connection> Display<Conn> {
         let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
+
+        log::trace!("Reading remainder of setup.");
         self.connection.read_packet(&mut bytes[8..], &mut _fds)?;
 
         let (setup, _) =
