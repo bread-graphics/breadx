@@ -151,9 +151,9 @@ impl<Conn: Connection> Display<Conn> {
             name,
             ..Default::default()
         };
-        log::warn!("Sending QueryExtensionRequest to server.");
+        log::debug!("Sending QueryExtensionRequest to server.");
         let tok = self.send_request(qer)?;
-        log::warn!("Sent QueryExtensionRequest to server.");
+        log::debug!("Sent QueryExtensionRequest to server.");
         Ok(tok)
     }
 
@@ -168,9 +168,9 @@ impl<Conn: Connection> Display<Conn> {
             name,
             ..Default::default()
         };
-        log::warn!("Sending QueryExtensionRequest to server.");
+        log::debug!("Sending QueryExtensionRequest to server.");
         let tok = self.send_request_async(qer).await?;
-        log::warn!("Sent QueryExtensionRequest to server.");
+        log::debug!("Sent QueryExtensionRequest to server.");
         Ok(tok)
     }
 
