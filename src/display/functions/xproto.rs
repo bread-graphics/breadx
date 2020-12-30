@@ -7,11 +7,12 @@ use crate::{
         AccessControl, ArcMode, Atom, AutoRepeatMode, BackingStore, BellRequest, CapStyle,
         ChangeActivePointerGrabRequest, ChangeGcRequest, ChangeKeyboardControlRequest,
         ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
-        CreateCursorRequest, CreateGcRequest, CreateWindowRequest, Cursor, Cw, Drawable, EventMask,
-        FillRule, FillStyle, Font, ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx,
-        InternAtomRequest, JoinStyle, Kb, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
-        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
-        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
+        ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
+        CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
+        ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx, InternAtomRequest, JoinStyle, Kb,
+        LedMode, LineStyle, Pixmap, QueryExtensionRequest, ScreenSaver, SendEventRequest,
+        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
+        Window, WindowClass,
     },
     display::{Connection, Display, RequestCookie},
     Event, Extension, XidType,
@@ -877,5 +878,57 @@ impl<Conn: Connection> Display<Conn> {
         let tok = self.send_request_async(ser).await?;
         log::debug!("Sent SendEventRequest to server.");
         self.resolve_request_async(tok).await
+    }
+
+    /// Create a new colormap request.
+    #[inline]
+    fn create_colormap_request(
+        alloc: ColormapAlloc,
+        id: Colormap,
+        win: Window,
+        visual: Visualid,
+    ) -> CreateColormapRequest {
+        CreateColormapRequest {
+            alloc,
+            mid: id,
+            window: win,
+            visual,
+            ..Default::default()
+        }
+    }
+
+    /// Create a new colormap.
+    #[inline]
+    pub fn create_colormap(
+        &mut self,
+        window: Window,
+        visual: Visualid,
+        alloc: ColormapAlloc,
+    ) -> crate::Result<Colormap> {
+        let cid = Colormap::const_from_xid(self.generate_xid()?);
+        let ccr = Self::create_colormap_request(alloc, cid, window, visual);
+        log::debug!("Sending CreateColormapRequest to server.");
+        let tok = self.send_request(ccr)?;
+        log::debug!("Sent CreateColormapRequest to server.");
+        self.resolve_request(tok)?;
+        Ok(cid)
+    }
+
+    /// Create a new colormap, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn create_colormap_async(
+        &mut self,
+        window: Window,
+        visual: Visualid,
+        alloc: ColormapAlloc,
+    ) -> crate::Result<Colormap> {
+        let cid = Colormap::const_from_xid(self.generate_xid()?);
+        let ccr = Self::create_colormap_request(alloc, cid, window, visual);
+        log::debug!("Sending CreateColormapRequest to server.");
+        let tok = self.send_request_async(ccr).await?;
+        log::debug!("Sent CreateColormapRequest to server.");
+        self.resolve_request_async(tok).await?;
+        Ok(cid)
     }
 }

@@ -505,6 +505,22 @@ impl<Conn: Connection> Display<Conn> {
             .find(|v| v.visual_id == id)
     }
 
+    /// Get the depth of the specified visual ID.
+    #[inline]
+    pub fn depth_of_visual(&self, id: Visualid) -> Option<u8> {
+        self.setup
+            .roots
+            .iter()
+            .flat_map(|s| s.allowed_depths.iter())
+            .find_map(|d| {
+                if d.visuals.iter().any(|v| v.visual_id == id) {
+                    Some(d.depth)
+                } else {
+                    None
+                }
+            })
+    }
+
     /// Generate a unique X ID for a window, colormap, or other object. Usually, `Display`'s helper functions
     /// will generate this for you. If you'd like to circumvent them, this will generate ID's for you.
     #[inline]
