@@ -5519,8 +5519,8 @@ impl Default for SymInterpretMatch {
 #[derive(Clone, Debug, Default)]
 pub struct UseExtensionRequest {
     pub req_type: u8,
-    pub wanted_major: Card16,
     pub length: u16,
+    pub wanted_major: Card16,
     pub wanted_minor: Card16,
 }
 impl UseExtensionRequest {}
@@ -5529,8 +5529,9 @@ impl AsByteSequence for UseExtensionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.wanted_major.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.wanted_major.as_bytes(&mut bytes[index..]);
         index += self.wanted_minor.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5540,17 +5541,18 @@ impl AsByteSequence for UseExtensionRequest {
         log::trace!("Deserializing UseExtensionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (wanted_major, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (wanted_major, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (wanted_minor, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             UseExtensionRequest {
                 req_type: req_type,
-                wanted_major: wanted_major,
                 length: length,
+                wanted_major: wanted_major,
                 wanted_minor: wanted_minor,
             },
             index,
@@ -5559,8 +5561,9 @@ impl AsByteSequence for UseExtensionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.wanted_major.size()
+            + 1
             + self.length.size()
+            + self.wanted_major.size()
             + self.wanted_minor.size()
     }
 }
@@ -5636,8 +5639,8 @@ impl AsByteSequence for UseExtensionReply {
 #[derive(Clone, Debug, Default)]
 pub struct SelectEventsRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub affect_which: EventType,
     pub clear: EventType,
     pub select_all: EventType,
@@ -5672,8 +5675,9 @@ impl AsByteSequence for SelectEventsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.affect_which.as_bytes(&mut bytes[index..]);
         index += self.clear.as_bytes(&mut bytes[index..]);
         index += self.select_all.as_bytes(&mut bytes[index..]);
@@ -5754,9 +5758,10 @@ impl AsByteSequence for SelectEventsRequest {
         log::trace!("Deserializing SelectEventsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (affect_which, sz): (EventType, usize) = <EventType>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5938,8 +5943,8 @@ impl AsByteSequence for SelectEventsRequest {
         Some((
             SelectEventsRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 affect_which: affect_which,
                 clear: clear,
                 select_all: select_all,
@@ -5974,8 +5979,9 @@ impl AsByteSequence for SelectEventsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.affect_which.size()
             + self.clear.size()
             + self.select_all.size()
@@ -6508,8 +6514,8 @@ impl core::ops::BitXor for MapPart {
 #[derive(Clone, Debug, Default)]
 pub struct BellRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub bell_class: BellClassSpec,
     pub bell_id: IdSpec,
     pub percent: Int8,
@@ -6526,8 +6532,9 @@ impl AsByteSequence for BellRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.bell_class.as_bytes(&mut bytes[index..]);
         index += self.bell_id.as_bytes(&mut bytes[index..]);
         index += self.percent.as_bytes(&mut bytes[index..]);
@@ -6547,9 +6554,10 @@ impl AsByteSequence for BellRequest {
         log::trace!("Deserializing BellRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (bell_class, sz): (BellClassSpec, usize) =
             <BellClassSpec>::from_bytes(&bytes[index..])?;
@@ -6575,8 +6583,8 @@ impl AsByteSequence for BellRequest {
         Some((
             BellRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 bell_class: bell_class,
                 bell_id: bell_id,
                 percent: percent,
@@ -6593,8 +6601,9 @@ impl AsByteSequence for BellRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.bell_class.size()
             + self.bell_id.size()
             + self.percent.size()
@@ -6617,8 +6626,8 @@ impl Request for BellRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetStateRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
 }
 impl GetStateRequest {}
 impl AsByteSequence for GetStateRequest {
@@ -6626,8 +6635,9 @@ impl AsByteSequence for GetStateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -6637,23 +6647,24 @@ impl AsByteSequence for GetStateRequest {
         log::trace!("Deserializing GetStateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetStateRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.device_spec.size() + 2
     }
 }
 impl Request for GetStateRequest {
@@ -6838,8 +6849,8 @@ impl Default for Group {
 #[derive(Clone, Debug, Default)]
 pub struct LatchLockStateRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub affect_mod_locks: ModMask,
     pub mod_locks: ModMask,
     pub lock_group: bool,
@@ -6854,8 +6865,9 @@ impl AsByteSequence for LatchLockStateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.affect_mod_locks.as_bytes(&mut bytes[index..]);
         index += self.mod_locks.as_bytes(&mut bytes[index..]);
         index += self.lock_group.as_bytes(&mut bytes[index..]);
@@ -6872,9 +6884,10 @@ impl AsByteSequence for LatchLockStateRequest {
         log::trace!("Deserializing LatchLockStateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (affect_mod_locks, sz): (ModMask, usize) = <ModMask>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6894,8 +6907,8 @@ impl AsByteSequence for LatchLockStateRequest {
         Some((
             LatchLockStateRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 affect_mod_locks: affect_mod_locks,
                 mod_locks: mod_locks,
                 lock_group: lock_group,
@@ -6910,8 +6923,9 @@ impl AsByteSequence for LatchLockStateRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.affect_mod_locks.size()
             + self.mod_locks.size()
             + self.lock_group.size()
@@ -6931,8 +6945,8 @@ impl Request for LatchLockStateRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetControlsRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
 }
 impl GetControlsRequest {}
 impl AsByteSequence for GetControlsRequest {
@@ -6940,8 +6954,9 @@ impl AsByteSequence for GetControlsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -6951,23 +6966,24 @@ impl AsByteSequence for GetControlsRequest {
         log::trace!("Deserializing GetControlsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetControlsRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.device_spec.size() + 2
     }
 }
 impl Request for GetControlsRequest {
@@ -7485,8 +7501,8 @@ impl core::ops::BitXor for AxOption {
 #[derive(Clone, Debug, Default)]
 pub struct SetControlsRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub affect_internal_real_mods: ModMask,
     pub internal_real_mods: ModMask,
     pub affect_ignore_lock_real_mods: ModMask,
@@ -7523,8 +7539,9 @@ impl AsByteSequence for SetControlsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.affect_internal_real_mods.as_bytes(&mut bytes[index..]);
         index += self.internal_real_mods.as_bytes(&mut bytes[index..]);
         index += self
@@ -7573,9 +7590,10 @@ impl AsByteSequence for SetControlsRequest {
         log::trace!("Deserializing SetControlsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (affect_internal_real_mods, sz): (ModMask, usize) =
             <ModMask>::from_bytes(&bytes[index..])?;
@@ -7649,8 +7667,8 @@ impl AsByteSequence for SetControlsRequest {
         Some((
             SetControlsRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 affect_internal_real_mods: affect_internal_real_mods,
                 internal_real_mods: internal_real_mods,
                 affect_ignore_lock_real_mods: affect_ignore_lock_real_mods,
@@ -7687,8 +7705,9 @@ impl AsByteSequence for SetControlsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.affect_internal_real_mods.size()
             + self.internal_real_mods.size()
             + self.affect_ignore_lock_real_mods.size()
@@ -7887,8 +7906,8 @@ impl core::ops::BitXor for Control {
 #[derive(Clone, Debug, Default)]
 pub struct GetMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub full: MapPart,
     pub partial: MapPart,
     pub first_type: Card8,
@@ -7913,8 +7932,9 @@ impl AsByteSequence for GetMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.full.as_bytes(&mut bytes[index..]);
         index += self.partial.as_bytes(&mut bytes[index..]);
         index += self.first_type.as_bytes(&mut bytes[index..]);
@@ -7941,9 +7961,10 @@ impl AsByteSequence for GetMapRequest {
         log::trace!("Deserializing GetMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (full, sz): (MapPart, usize) = <MapPart>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7983,8 +8004,8 @@ impl AsByteSequence for GetMapRequest {
         Some((
             GetMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 full: full,
                 partial: partial,
                 first_type: first_type,
@@ -8009,8 +8030,9 @@ impl AsByteSequence for GetMapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.full.size()
             + self.partial.size()
             + self.first_type.size()
@@ -8357,8 +8379,8 @@ impl AsByteSequence for GetMapReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub present: MapPart,
     pub flags: SetMapFlags,
     pub min_key_code: Keycode,
@@ -8392,8 +8414,9 @@ impl AsByteSequence for SetMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.present.as_bytes(&mut bytes[index..]);
         index += self.flags.as_bytes(&mut bytes[index..]);
         index += self.min_key_code.as_bytes(&mut bytes[index..]);
@@ -8455,9 +8478,10 @@ impl AsByteSequence for SetMapRequest {
         log::trace!("Deserializing SetMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (present, sz): (MapPart, usize) = <MapPart>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8549,8 +8573,8 @@ impl AsByteSequence for SetMapRequest {
         Some((
             SetMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 present: present,
                 flags: flags,
                 min_key_code: min_key_code,
@@ -8584,8 +8608,9 @@ impl AsByteSequence for SetMapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.present.size()
             + self.flags.size()
             + self.min_key_code.size()
@@ -8768,8 +8793,8 @@ impl core::ops::BitXor for SetMapFlags {
 #[derive(Clone, Debug, Default)]
 pub struct GetCompatMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub groups: SetOfGroup,
     pub get_all_si: bool,
     pub first_si: Card16,
@@ -8781,8 +8806,9 @@ impl AsByteSequence for GetCompatMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.groups.as_bytes(&mut bytes[index..]);
         index += self.get_all_si.as_bytes(&mut bytes[index..]);
         index += self.first_si.as_bytes(&mut bytes[index..]);
@@ -8795,9 +8821,10 @@ impl AsByteSequence for GetCompatMapRequest {
         log::trace!("Deserializing GetCompatMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (groups, sz): (SetOfGroup, usize) = <SetOfGroup>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8810,8 +8837,8 @@ impl AsByteSequence for GetCompatMapRequest {
         Some((
             GetCompatMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 groups: groups,
                 get_all_si: get_all_si,
                 first_si: first_si,
@@ -8823,8 +8850,9 @@ impl AsByteSequence for GetCompatMapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.groups.size()
             + self.get_all_si.size()
             + self.first_si.size()
@@ -8944,8 +8972,8 @@ impl AsByteSequence for GetCompatMapReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetCompatMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub recompute_actions: bool,
     pub truncate_si: bool,
     pub groups: SetOfGroup,
@@ -8959,8 +8987,9 @@ impl AsByteSequence for SetCompatMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.recompute_actions.as_bytes(&mut bytes[index..]);
         index += self.truncate_si.as_bytes(&mut bytes[index..]);
@@ -8982,9 +9011,10 @@ impl AsByteSequence for SetCompatMapRequest {
         log::trace!("Deserializing SetCompatMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (recompute_actions, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
@@ -9009,8 +9039,8 @@ impl AsByteSequence for SetCompatMapRequest {
         Some((
             SetCompatMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 recompute_actions: recompute_actions,
                 truncate_si: truncate_si,
                 groups: groups,
@@ -9024,8 +9054,9 @@ impl AsByteSequence for SetCompatMapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + 1
             + self.recompute_actions.size()
             + self.truncate_si.size()
@@ -9054,8 +9085,8 @@ impl Request for SetCompatMapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetIndicatorStateRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
 }
 impl GetIndicatorStateRequest {}
 impl AsByteSequence for GetIndicatorStateRequest {
@@ -9063,8 +9094,9 @@ impl AsByteSequence for GetIndicatorStateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -9074,23 +9106,24 @@ impl AsByteSequence for GetIndicatorStateRequest {
         log::trace!("Deserializing GetIndicatorStateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetIndicatorStateRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.device_spec.size() + 2
     }
 }
 impl Request for GetIndicatorStateRequest {
@@ -9159,8 +9192,8 @@ impl AsByteSequence for GetIndicatorStateReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetIndicatorMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub which: Card32,
 }
 impl GetIndicatorMapRequest {}
@@ -9169,8 +9202,9 @@ impl AsByteSequence for GetIndicatorMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.which.as_bytes(&mut bytes[index..]);
         index
@@ -9181,9 +9215,10 @@ impl AsByteSequence for GetIndicatorMapRequest {
         log::trace!("Deserializing GetIndicatorMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (which, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -9191,8 +9226,8 @@ impl AsByteSequence for GetIndicatorMapRequest {
         Some((
             GetIndicatorMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 which: which,
             },
             index,
@@ -9200,7 +9235,12 @@ impl AsByteSequence for GetIndicatorMapRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + 2 + self.which.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.device_spec.size()
+            + 2
+            + self.which.size()
     }
 }
 impl Request for GetIndicatorMapRequest {
@@ -9295,8 +9335,8 @@ impl AsByteSequence for GetIndicatorMapReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetIndicatorMapRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub which: Card32,
     pub maps: Vec<IndicatorMap>,
 }
@@ -9306,8 +9346,9 @@ impl AsByteSequence for SetIndicatorMapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.which.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.maps, &mut bytes[index..]);
@@ -9321,9 +9362,10 @@ impl AsByteSequence for SetIndicatorMapRequest {
         log::trace!("Deserializing SetIndicatorMapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (which, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -9335,8 +9377,8 @@ impl AsByteSequence for SetIndicatorMapRequest {
         Some((
             SetIndicatorMapRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 which: which,
                 maps: maps,
             },
@@ -9346,8 +9388,9 @@ impl AsByteSequence for SetIndicatorMapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + 2
             + self.which.size()
             + {
@@ -9366,8 +9409,8 @@ impl Request for SetIndicatorMapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetNamedIndicatorRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub led_class: LedClass,
     pub led_id: IdSpec,
     pub indicator: Atom,
@@ -9378,8 +9421,9 @@ impl AsByteSequence for GetNamedIndicatorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.led_class.as_bytes(&mut bytes[index..]);
         index += self.led_id.as_bytes(&mut bytes[index..]);
         index += 2;
@@ -9392,9 +9436,10 @@ impl AsByteSequence for GetNamedIndicatorRequest {
         log::trace!("Deserializing GetNamedIndicatorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (led_class, sz): (LedClass, usize) = <LedClass>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9406,8 +9451,8 @@ impl AsByteSequence for GetNamedIndicatorRequest {
         Some((
             GetNamedIndicatorRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 led_class: led_class,
                 led_id: led_id,
                 indicator: indicator,
@@ -9418,8 +9463,9 @@ impl AsByteSequence for GetNamedIndicatorRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.led_class.size()
             + self.led_id.size()
             + 2
@@ -9655,8 +9701,8 @@ impl core::ops::BitXor for SetOfGroups {
 #[derive(Clone, Debug, Default)]
 pub struct SetNamedIndicatorRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub led_class: LedClass,
     pub led_id: IdSpec,
     pub indicator: Atom,
@@ -9678,8 +9724,9 @@ impl AsByteSequence for SetNamedIndicatorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.led_class.as_bytes(&mut bytes[index..]);
         index += self.led_id.as_bytes(&mut bytes[index..]);
         index += 2;
@@ -9704,9 +9751,10 @@ impl AsByteSequence for SetNamedIndicatorRequest {
         log::trace!("Deserializing SetNamedIndicatorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (led_class, sz): (LedClass, usize) = <LedClass>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9743,8 +9791,8 @@ impl AsByteSequence for SetNamedIndicatorRequest {
         Some((
             SetNamedIndicatorRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 led_class: led_class,
                 led_id: led_id,
                 indicator: indicator,
@@ -9766,8 +9814,9 @@ impl AsByteSequence for SetNamedIndicatorRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.led_class.size()
             + self.led_id.size()
             + 2
@@ -9795,8 +9844,8 @@ impl Request for SetNamedIndicatorRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetNamesRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub which: NameDetail,
 }
 impl GetNamesRequest {}
@@ -9805,8 +9854,9 @@ impl AsByteSequence for GetNamesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.which.as_bytes(&mut bytes[index..]);
         index
@@ -9817,9 +9867,10 @@ impl AsByteSequence for GetNamesRequest {
         log::trace!("Deserializing GetNamesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (which, sz): (NameDetail, usize) = <NameDetail>::from_bytes(&bytes[index..])?;
@@ -9827,8 +9878,8 @@ impl AsByteSequence for GetNamesRequest {
         Some((
             GetNamesRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 which: which,
             },
             index,
@@ -9836,7 +9887,12 @@ impl AsByteSequence for GetNamesRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + 2 + self.which.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.device_spec.size()
+            + 2
+            + self.which.size()
     }
 }
 impl Request for GetNamesRequest {
@@ -10497,8 +10553,8 @@ impl core::ops::BitXor for NameDetail {
 #[derive(Clone, Debug, Default)]
 pub struct SetNamesRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub virtual_mods: VMod,
     pub which: NameDetail,
     pub first_type: Card8,
@@ -10531,8 +10587,9 @@ impl AsByteSequence for SetNamesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.virtual_mods.as_bytes(&mut bytes[index..]);
         index += self.which.as_bytes(&mut bytes[index..]);
         index += self.first_type.as_bytes(&mut bytes[index..]);
@@ -10602,9 +10659,10 @@ impl AsByteSequence for SetNamesRequest {
         log::trace!("Deserializing SetNamesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10723,8 +10781,8 @@ impl AsByteSequence for SetNamesRequest {
         Some((
             SetNamesRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 virtual_mods: virtual_mods,
                 which: which,
                 first_type: first_type,
@@ -10757,8 +10815,9 @@ impl AsByteSequence for SetNamesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.virtual_mods.size()
             + self.which.size()
             + self.first_type.size()
@@ -10836,8 +10895,8 @@ impl Request for SetNamesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PerClientFlagsRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub change: PerClientFlag,
     pub value: PerClientFlag,
     pub ctrls_to_change: BoolCtrl,
@@ -10850,8 +10909,9 @@ impl AsByteSequence for PerClientFlagsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.change.as_bytes(&mut bytes[index..]);
         index += self.value.as_bytes(&mut bytes[index..]);
@@ -10866,9 +10926,10 @@ impl AsByteSequence for PerClientFlagsRequest {
         log::trace!("Deserializing PerClientFlagsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (change, sz): (PerClientFlag, usize) = <PerClientFlag>::from_bytes(&bytes[index..])?;
@@ -10884,8 +10945,8 @@ impl AsByteSequence for PerClientFlagsRequest {
         Some((
             PerClientFlagsRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 change: change,
                 value: value,
                 ctrls_to_change: ctrls_to_change,
@@ -10898,8 +10959,9 @@ impl AsByteSequence for PerClientFlagsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + 2
             + self.change.size()
             + self.value.size()
@@ -11149,8 +11211,8 @@ impl core::ops::BitXor for PerClientFlag {
 #[derive(Clone, Debug, Default)]
 pub struct ListComponentsRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub max_names: Card16,
 }
 impl ListComponentsRequest {}
@@ -11159,8 +11221,9 @@ impl AsByteSequence for ListComponentsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.max_names.as_bytes(&mut bytes[index..]);
         index
     }
@@ -11170,17 +11233,18 @@ impl AsByteSequence for ListComponentsRequest {
         log::trace!("Deserializing ListComponentsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (max_names, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListComponentsRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 max_names: max_names,
             },
             index,
@@ -11188,7 +11252,11 @@ impl AsByteSequence for ListComponentsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.device_spec.size() + self.length.size() + self.max_names.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.device_spec.size()
+            + self.max_names.size()
     }
 }
 impl Request for ListComponentsRequest {
@@ -11365,8 +11433,8 @@ impl AsByteSequence for ListComponentsReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetKbdByNameRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub need: GbnDetail,
     pub want: GbnDetail,
     pub load: bool,
@@ -11377,8 +11445,9 @@ impl AsByteSequence for GetKbdByNameRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.need.as_bytes(&mut bytes[index..]);
         index += self.want.as_bytes(&mut bytes[index..]);
         index += self.load.as_bytes(&mut bytes[index..]);
@@ -11391,9 +11460,10 @@ impl AsByteSequence for GetKbdByNameRequest {
         log::trace!("Deserializing GetKbdByNameRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (need, sz): (GbnDetail, usize) = <GbnDetail>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -11405,8 +11475,8 @@ impl AsByteSequence for GetKbdByNameRequest {
         Some((
             GetKbdByNameRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 need: need,
                 want: want,
                 load: load,
@@ -11417,8 +11487,9 @@ impl AsByteSequence for GetKbdByNameRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.need.size()
             + self.want.size()
             + self.load.size()
@@ -13023,8 +13094,8 @@ impl core::ops::BitXor for GbnDetail {
 #[derive(Clone, Debug, Default)]
 pub struct GetDeviceInfoRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub wanted: XiFeature,
     pub all_buttons: bool,
     pub first_button: Card8,
@@ -13038,8 +13109,9 @@ impl AsByteSequence for GetDeviceInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.wanted.as_bytes(&mut bytes[index..]);
         index += self.all_buttons.as_bytes(&mut bytes[index..]);
         index += self.first_button.as_bytes(&mut bytes[index..]);
@@ -13055,9 +13127,10 @@ impl AsByteSequence for GetDeviceInfoRequest {
         log::trace!("Deserializing GetDeviceInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (wanted, sz): (XiFeature, usize) = <XiFeature>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -13075,8 +13148,8 @@ impl AsByteSequence for GetDeviceInfoRequest {
         Some((
             GetDeviceInfoRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 wanted: wanted,
                 all_buttons: all_buttons,
                 first_button: first_button,
@@ -13090,8 +13163,9 @@ impl AsByteSequence for GetDeviceInfoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.wanted.size()
             + self.all_buttons.size()
             + self.first_button.size()
@@ -13438,8 +13512,8 @@ impl core::ops::BitXor for XiFeature {
 #[derive(Clone, Debug, Default)]
 pub struct SetDeviceInfoRequest {
     pub req_type: u8,
-    pub device_spec: DeviceSpec,
     pub length: u16,
+    pub device_spec: DeviceSpec,
     pub first_btn: Card8,
     pub change: XiFeature,
     pub btn_actions: Vec<Action>,
@@ -13451,8 +13525,9 @@ impl AsByteSequence for SetDeviceInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.device_spec.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.device_spec.as_bytes(&mut bytes[index..]);
         index += self.first_btn.as_bytes(&mut bytes[index..]);
         index += (self.btn_actions.len() as Card8).as_bytes(&mut bytes[index..]);
         index += self.change.as_bytes(&mut bytes[index..]);
@@ -13471,9 +13546,10 @@ impl AsByteSequence for SetDeviceInfoRequest {
         log::trace!("Deserializing SetDeviceInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_spec, sz): (DeviceSpec, usize) = <DeviceSpec>::from_bytes(&bytes[index..])?;
         index += sz;
         let (first_btn, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -13494,8 +13570,8 @@ impl AsByteSequence for SetDeviceInfoRequest {
         Some((
             SetDeviceInfoRequest {
                 req_type: req_type,
-                device_spec: device_spec,
                 length: length,
+                device_spec: device_spec,
                 first_btn: first_btn,
                 change: change,
                 btn_actions: btn_actions,
@@ -13507,8 +13583,9 @@ impl AsByteSequence for SetDeviceInfoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.device_spec.size()
+            + 1
             + self.length.size()
+            + self.device_spec.size()
             + self.first_btn.size()
             + ::core::mem::size_of::<Card8>()
             + self.change.size()
@@ -13547,8 +13624,9 @@ impl AsByteSequence for SetDebuggingFlagsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += (self.message.len() as Card16).as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += (self.message.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.affect_flags.as_bytes(&mut bytes[index..]);
         index += self.flags.as_bytes(&mut bytes[index..]);
@@ -13565,9 +13643,10 @@ impl AsByteSequence for SetDebuggingFlagsRequest {
         log::trace!("Deserializing SetDebuggingFlagsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (affect_flags, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -13598,8 +13677,9 @@ impl AsByteSequence for SetDebuggingFlagsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + ::core::mem::size_of::<Card16>()
+            + 1
             + self.length.size()
+            + ::core::mem::size_of::<Card16>()
             + 2
             + self.affect_flags.size()
             + self.flags.size()
@@ -14383,11 +14463,14 @@ impl Default for LedClassResult {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Groups {
-    Any = 254,
-    All = 255,
+pub enum DoodadType {
+    Outline = 1,
+    Solid = 2,
+    Text = 3,
+    Indicator = 4,
+    Logo = 5,
 }
-impl AsByteSequence for Groups {
+impl AsByteSequence for DoodadType {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -14396,8 +14479,11 @@ impl AsByteSequence for Groups {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            254 => Some((Self::Any, sz)),
-            255 => Some((Self::All, sz)),
+            1 => Some((Self::Outline, sz)),
+            2 => Some((Self::Solid, sz)),
+            3 => Some((Self::Text, sz)),
+            4 => Some((Self::Indicator, sz)),
+            5 => Some((Self::Logo, sz)),
             _ => None,
         }
     }
@@ -14406,10 +14492,10 @@ impl AsByteSequence for Groups {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Groups {
+impl Default for DoodadType {
     #[inline]
-    fn default() -> Groups {
-        Groups::Any
+    fn default() -> DoodadType {
+        DoodadType::Outline
     }
 }
 #[repr(i32)]
@@ -14447,6 +14533,37 @@ impl Default for BellClass {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Groups {
+    Any = 254,
+    All = 255,
+}
+impl AsByteSequence for Groups {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            254 => Some((Self::Any, sz)),
+            255 => Some((Self::All, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Groups {
+    #[inline]
+    fn default() -> Groups {
+        Groups::Any
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error {
     BadId = 253,
     BadClass = 254,
@@ -14476,6 +14593,284 @@ impl Default for Error {
     #[inline]
     fn default() -> Error {
         Error::BadId
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BehaviorType {
+    Default = 0,
+    Lock = 1,
+    RadioGroup = 2,
+    Overlay1 = 3,
+    Overlay2 = 4,
+    PermamentLock = 129,
+    PermamentRadioGroup = 130,
+    PermamentOverlay1 = 131,
+    PermamentOverlay2 = 132,
+}
+impl AsByteSequence for BehaviorType {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Default, sz)),
+            1 => Some((Self::Lock, sz)),
+            2 => Some((Self::RadioGroup, sz)),
+            3 => Some((Self::Overlay1, sz)),
+            4 => Some((Self::Overlay2, sz)),
+            129 => Some((Self::PermamentLock, sz)),
+            130 => Some((Self::PermamentRadioGroup, sz)),
+            131 => Some((Self::PermamentOverlay1, sz)),
+            132 => Some((Self::PermamentOverlay2, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for BehaviorType {
+    #[inline]
+    fn default() -> BehaviorType {
+        BehaviorType::Default
+    }
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SwitchScreenFlag {
+    pub inner: i32,
+}
+impl SwitchScreenFlag {
+    #[inline]
+    pub fn application(&self) -> bool {
+        self.inner & (1 << 0) != 0
+    }
+    #[inline]
+    pub fn set_application(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 0;
+        } else {
+            self.inner &= !(1 << 0);
+        }
+        self
+    }
+    #[inline]
+    pub fn absolute(&self) -> bool {
+        self.inner & (1 << 2) != 0
+    }
+    #[inline]
+    pub fn set_absolute(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 2;
+        } else {
+            self.inner &= !(1 << 2);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(application: bool, absolute: bool) -> Self {
+        let mut inner: i32 = 0;
+        if application {
+            inner |= 1 << 0;
+        }
+        if absolute {
+            inner |= 1 << 2;
+        }
+        SwitchScreenFlag { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+    pub const APPLICATION: Self = Self { inner: 1 };
+    pub const ABSOLUTE: Self = Self { inner: 4 };
+    pub const COMPLETE: Self = Self { inner: 5 };
+}
+impl AsByteSequence for SwitchScreenFlag {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((SwitchScreenFlag { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn not(self) -> SwitchScreenFlag {
+        SwitchScreenFlag { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn bitand(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
+        SwitchScreenFlag {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn bitor(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
+        SwitchScreenFlag {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for SwitchScreenFlag {
+    type Output = SwitchScreenFlag;
+    #[inline]
+    fn bitxor(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
+        SwitchScreenFlag {
+            inner: self.inner ^ rhs.inner,
+        }
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Const {
+    KeyNameLength = 4,
+    PerKeyBitArraySize = 32,
+    MaxLegalKeyCode = 255,
+}
+impl AsByteSequence for Const {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            4 => Some((Self::KeyNameLength, sz)),
+            32 => Some((Self::PerKeyBitArraySize, sz)),
+            255 => Some((Self::MaxLegalKeyCode, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Const {
+    #[inline]
+    fn default() -> Const {
+        Const::KeyNameLength
+    }
+}
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct GroupsWrap {
+    pub inner: i32,
+}
+impl GroupsWrap {
+    #[inline]
+    pub fn clamp_into_range(&self) -> bool {
+        self.inner & (1 << 6) != 0
+    }
+    #[inline]
+    pub fn set_clamp_into_range(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 6;
+        } else {
+            self.inner &= !(1 << 6);
+        }
+        self
+    }
+    #[inline]
+    pub fn redirect_into_range(&self) -> bool {
+        self.inner & (1 << 7) != 0
+    }
+    #[inline]
+    pub fn set_redirect_into_range(&mut self, val: bool) -> &mut Self {
+        if val {
+            self.inner |= 1 << 7;
+        } else {
+            self.inner &= !(1 << 7);
+        }
+        self
+    }
+    #[inline]
+    pub fn new(clamp_into_range: bool, redirect_into_range: bool) -> Self {
+        let mut inner: i32 = 0;
+        if clamp_into_range {
+            inner |= 1 << 6;
+        }
+        if redirect_into_range {
+            inner |= 1 << 7;
+        }
+        GroupsWrap { inner: inner }
+    }
+    #[inline]
+    pub fn count_ones(&self) -> usize {
+        self.inner.count_ones() as usize
+    }
+    pub const CLAMP_INTO_RANGE: Self = Self { inner: 64 };
+    pub const REDIRECT_INTO_RANGE: Self = Self { inner: 128 };
+    pub const COMPLETE: Self = Self { inner: 192 };
+}
+impl AsByteSequence for GroupsWrap {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        self.inner.as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        Some((GroupsWrap { inner: inner }, sz))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.inner.size()
+    }
+}
+impl core::ops::Not for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn not(self) -> GroupsWrap {
+        GroupsWrap { inner: !self.inner }
+    }
+}
+impl core::ops::BitAnd for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn bitand(self, rhs: GroupsWrap) -> GroupsWrap {
+        GroupsWrap {
+            inner: self.inner & rhs.inner,
+        }
+    }
+}
+impl core::ops::BitOr for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn bitor(self, rhs: GroupsWrap) -> GroupsWrap {
+        GroupsWrap {
+            inner: self.inner | rhs.inner,
+        }
+    }
+}
+impl core::ops::BitXor for GroupsWrap {
+    type Output = GroupsWrap;
+    #[inline]
+    fn bitxor(self, rhs: GroupsWrap) -> GroupsWrap {
+        GroupsWrap {
+            inner: self.inner ^ rhs.inner,
+        }
     }
 }
 #[repr(transparent)]
@@ -14661,321 +15056,6 @@ impl core::ops::BitXor for SymInterpMatch {
         }
     }
 }
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GroupsWrap {
-    pub inner: i32,
-}
-impl GroupsWrap {
-    #[inline]
-    pub fn clamp_into_range(&self) -> bool {
-        self.inner & (1 << 6) != 0
-    }
-    #[inline]
-    pub fn set_clamp_into_range(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 6;
-        } else {
-            self.inner &= !(1 << 6);
-        }
-        self
-    }
-    #[inline]
-    pub fn redirect_into_range(&self) -> bool {
-        self.inner & (1 << 7) != 0
-    }
-    #[inline]
-    pub fn set_redirect_into_range(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 7;
-        } else {
-            self.inner &= !(1 << 7);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(clamp_into_range: bool, redirect_into_range: bool) -> Self {
-        let mut inner: i32 = 0;
-        if clamp_into_range {
-            inner |= 1 << 6;
-        }
-        if redirect_into_range {
-            inner |= 1 << 7;
-        }
-        GroupsWrap { inner: inner }
-    }
-    #[inline]
-    pub fn count_ones(&self) -> usize {
-        self.inner.count_ones() as usize
-    }
-    pub const CLAMP_INTO_RANGE: Self = Self { inner: 64 };
-    pub const REDIRECT_INTO_RANGE: Self = Self { inner: 128 };
-    pub const COMPLETE: Self = Self { inner: 192 };
-}
-impl AsByteSequence for GroupsWrap {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((GroupsWrap { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-impl core::ops::Not for GroupsWrap {
-    type Output = GroupsWrap;
-    #[inline]
-    fn not(self) -> GroupsWrap {
-        GroupsWrap { inner: !self.inner }
-    }
-}
-impl core::ops::BitAnd for GroupsWrap {
-    type Output = GroupsWrap;
-    #[inline]
-    fn bitand(self, rhs: GroupsWrap) -> GroupsWrap {
-        GroupsWrap {
-            inner: self.inner & rhs.inner,
-        }
-    }
-}
-impl core::ops::BitOr for GroupsWrap {
-    type Output = GroupsWrap;
-    #[inline]
-    fn bitor(self, rhs: GroupsWrap) -> GroupsWrap {
-        GroupsWrap {
-            inner: self.inner | rhs.inner,
-        }
-    }
-}
-impl core::ops::BitXor for GroupsWrap {
-    type Output = GroupsWrap;
-    #[inline]
-    fn bitxor(self, rhs: GroupsWrap) -> GroupsWrap {
-        GroupsWrap {
-            inner: self.inner ^ rhs.inner,
-        }
-    }
-}
-#[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SwitchScreenFlag {
-    pub inner: i32,
-}
-impl SwitchScreenFlag {
-    #[inline]
-    pub fn application(&self) -> bool {
-        self.inner & (1 << 0) != 0
-    }
-    #[inline]
-    pub fn set_application(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 0;
-        } else {
-            self.inner &= !(1 << 0);
-        }
-        self
-    }
-    #[inline]
-    pub fn absolute(&self) -> bool {
-        self.inner & (1 << 2) != 0
-    }
-    #[inline]
-    pub fn set_absolute(&mut self, val: bool) -> &mut Self {
-        if val {
-            self.inner |= 1 << 2;
-        } else {
-            self.inner &= !(1 << 2);
-        }
-        self
-    }
-    #[inline]
-    pub fn new(application: bool, absolute: bool) -> Self {
-        let mut inner: i32 = 0;
-        if application {
-            inner |= 1 << 0;
-        }
-        if absolute {
-            inner |= 1 << 2;
-        }
-        SwitchScreenFlag { inner: inner }
-    }
-    #[inline]
-    pub fn count_ones(&self) -> usize {
-        self.inner.count_ones() as usize
-    }
-    pub const APPLICATION: Self = Self { inner: 1 };
-    pub const ABSOLUTE: Self = Self { inner: 4 };
-    pub const COMPLETE: Self = Self { inner: 5 };
-}
-impl AsByteSequence for SwitchScreenFlag {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        self.inner.as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (inner, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        Some((SwitchScreenFlag { inner: inner }, sz))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.inner.size()
-    }
-}
-impl core::ops::Not for SwitchScreenFlag {
-    type Output = SwitchScreenFlag;
-    #[inline]
-    fn not(self) -> SwitchScreenFlag {
-        SwitchScreenFlag { inner: !self.inner }
-    }
-}
-impl core::ops::BitAnd for SwitchScreenFlag {
-    type Output = SwitchScreenFlag;
-    #[inline]
-    fn bitand(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
-        SwitchScreenFlag {
-            inner: self.inner & rhs.inner,
-        }
-    }
-}
-impl core::ops::BitOr for SwitchScreenFlag {
-    type Output = SwitchScreenFlag;
-    #[inline]
-    fn bitor(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
-        SwitchScreenFlag {
-            inner: self.inner | rhs.inner,
-        }
-    }
-}
-impl core::ops::BitXor for SwitchScreenFlag {
-    type Output = SwitchScreenFlag;
-    #[inline]
-    fn bitxor(self, rhs: SwitchScreenFlag) -> SwitchScreenFlag {
-        SwitchScreenFlag {
-            inner: self.inner ^ rhs.inner,
-        }
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Const {
-    KeyNameLength = 4,
-    PerKeyBitArraySize = 32,
-    MaxLegalKeyCode = 255,
-}
-impl AsByteSequence for Const {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            4 => Some((Self::KeyNameLength, sz)),
-            32 => Some((Self::PerKeyBitArraySize, sz)),
-            255 => Some((Self::MaxLegalKeyCode, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Const {
-    #[inline]
-    fn default() -> Const {
-        Const::KeyNameLength
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum BehaviorType {
-    Default = 0,
-    Lock = 1,
-    RadioGroup = 2,
-    Overlay1 = 3,
-    Overlay2 = 4,
-    PermamentLock = 129,
-    PermamentRadioGroup = 130,
-    PermamentOverlay1 = 131,
-    PermamentOverlay2 = 132,
-}
-impl AsByteSequence for BehaviorType {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Default, sz)),
-            1 => Some((Self::Lock, sz)),
-            2 => Some((Self::RadioGroup, sz)),
-            3 => Some((Self::Overlay1, sz)),
-            4 => Some((Self::Overlay2, sz)),
-            129 => Some((Self::PermamentLock, sz)),
-            130 => Some((Self::PermamentRadioGroup, sz)),
-            131 => Some((Self::PermamentOverlay1, sz)),
-            132 => Some((Self::PermamentOverlay2, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for BehaviorType {
-    #[inline]
-    fn default() -> BehaviorType {
-        BehaviorType::Default
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum DoodadType {
-    Outline = 1,
-    Solid = 2,
-    Text = 3,
-    Indicator = 4,
-    Logo = 5,
-}
-impl AsByteSequence for DoodadType {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::Outline, sz)),
-            2 => Some((Self::Solid, sz)),
-            3 => Some((Self::Text, sz)),
-            4 => Some((Self::Indicator, sz)),
-            5 => Some((Self::Logo, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for DoodadType {
-    #[inline]
-    fn default() -> DoodadType {
-        DoodadType::Outline
-    }
-}
 #[derive(Clone, Debug, Default)]
 pub struct KeyboardError {
     pub _error_type: u8,
@@ -15052,114 +15132,6 @@ impl AsByteSequence for KeyboardError {
     }
 }
 impl crate::auto::Error for KeyboardError {
-    const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NewKeyboardNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub old_device_id: Card8,
-    pub min_key_code: Keycode,
-    pub max_key_code: Keycode,
-    pub old_min_key_code: Keycode,
-    pub old_max_key_code: Keycode,
-    pub request_major: Card8,
-    pub request_minor: Card8,
-    pub changed: NknDetail,
-}
-impl NewKeyboardNotifyEvent {}
-impl AsByteSequence for NewKeyboardNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.old_device_id.as_bytes(&mut bytes[index..]);
-        index += self.min_key_code.as_bytes(&mut bytes[index..]);
-        index += self.max_key_code.as_bytes(&mut bytes[index..]);
-        index += self.old_min_key_code.as_bytes(&mut bytes[index..]);
-        index += self.old_max_key_code.as_bytes(&mut bytes[index..]);
-        index += self.request_major.as_bytes(&mut bytes[index..]);
-        index += self.request_minor.as_bytes(&mut bytes[index..]);
-        index += self.changed.as_bytes(&mut bytes[index..]);
-        index += 14;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NewKeyboardNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (old_max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (request_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (request_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed, sz): (NknDetail, usize) = <NknDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 14;
-        Some((
-            NewKeyboardNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                old_device_id: old_device_id,
-                min_key_code: min_key_code,
-                max_key_code: max_key_code,
-                old_min_key_code: old_min_key_code,
-                old_max_key_code: old_max_key_code,
-                request_major: request_major,
-                request_minor: request_minor,
-                changed: changed,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + self.old_device_id.size()
-            + self.min_key_code.size()
-            + self.max_key_code.size()
-            + self.old_min_key_code.size()
-            + self.old_max_key_code.size()
-            + self.request_major.size()
-            + self.request_minor.size()
-            + self.changed.size()
-            + 14
-    }
-}
-impl crate::auto::Event for NewKeyboardNotifyEvent {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
@@ -15245,102 +15217,6 @@ impl AsByteSequence for AccessXNotifyEvent {
 }
 impl crate::auto::Event for AccessXNotifyEvent {
     const OPCODE: u8 = 10;
-}
-#[derive(Clone, Debug, Default)]
-pub struct ActionMessageEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub keycode: Keycode,
-    pub press: bool,
-    pub key_event_follows: bool,
-    pub mods: ModMask,
-    pub group: Group,
-    pub message: [String8; 8],
-}
-impl ActionMessageEvent {}
-impl AsByteSequence for ActionMessageEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.keycode.as_bytes(&mut bytes[index..]);
-        index += self.press.as_bytes(&mut bytes[index..]);
-        index += self.key_event_follows.as_bytes(&mut bytes[index..]);
-        index += self.mods.as_bytes(&mut bytes[index..]);
-        index += self.group.as_bytes(&mut bytes[index..]);
-        index += self.message.as_bytes(&mut bytes[index..]);
-        index += 10;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing ActionMessageEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (press, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (key_event_follows, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (mods, sz): (ModMask, usize) = <ModMask>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (group, sz): (Group, usize) = <Group>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (message, sz): ([String8; 8], usize) = <[String8; 8]>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 10;
-        Some((
-            ActionMessageEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                keycode: keycode,
-                press: press,
-                key_event_follows: key_event_follows,
-                mods: mods,
-                group: group,
-                message: message,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + self.keycode.size()
-            + self.press.size()
-            + self.key_event_follows.size()
-            + self.mods.size()
-            + self.group.size()
-            + self.message.size()
-            + 10
-    }
-}
-impl crate::auto::Event for ActionMessageEvent {
-    const OPCODE: u8 = 9;
 }
 #[derive(Clone, Debug, Default)]
 pub struct ExtensionDeviceNotifyEvent {
@@ -15459,217 +15335,6 @@ impl AsByteSequence for ExtensionDeviceNotifyEvent {
 }
 impl crate::auto::Event for ExtensionDeviceNotifyEvent {
     const OPCODE: u8 = 11;
-}
-#[derive(Clone, Debug, Default)]
-pub struct IndicatorMapNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub state: Card32,
-    pub map_changed: Card32,
-}
-impl IndicatorMapNotifyEvent {}
-impl AsByteSequence for IndicatorMapNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.map_changed.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing IndicatorMapNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (map_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            IndicatorMapNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                state: state,
-                map_changed: map_changed,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + 3
-            + self.state.size()
-            + self.map_changed.size()
-            + 12
-    }
-}
-impl crate::auto::Event for IndicatorMapNotifyEvent {
-    const OPCODE: u8 = 5;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NamesNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub changed: NameDetail,
-    pub first_type: Card8,
-    pub n_types: Card8,
-    pub first_level_name: Card8,
-    pub n_level_names: Card8,
-    pub n_radio_groups: Card8,
-    pub n_key_aliases: Card8,
-    pub changed_group_names: SetOfGroup,
-    pub changed_virtual_mods: VMod,
-    pub first_key: Keycode,
-    pub n_keys: Card8,
-    pub changed_indicators: Card32,
-}
-impl NamesNotifyEvent {}
-impl AsByteSequence for NamesNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.changed.as_bytes(&mut bytes[index..]);
-        index += self.first_type.as_bytes(&mut bytes[index..]);
-        index += self.n_types.as_bytes(&mut bytes[index..]);
-        index += self.first_level_name.as_bytes(&mut bytes[index..]);
-        index += self.n_level_names.as_bytes(&mut bytes[index..]);
-        index += self.n_radio_groups.as_bytes(&mut bytes[index..]);
-        index += self.n_key_aliases.as_bytes(&mut bytes[index..]);
-        index += self.changed_group_names.as_bytes(&mut bytes[index..]);
-        index += self.changed_virtual_mods.as_bytes(&mut bytes[index..]);
-        index += self.first_key.as_bytes(&mut bytes[index..]);
-        index += self.n_keys.as_bytes(&mut bytes[index..]);
-        index += self.changed_indicators.as_bytes(&mut bytes[index..]);
-        index += 4;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NamesNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (changed, sz): (NameDetail, usize) = <NameDetail>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_types, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_level_name, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_level_names, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_radio_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_key_aliases, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_group_names, sz): (SetOfGroup, usize) =
-            <SetOfGroup>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (first_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (n_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (changed_indicators, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 4;
-        Some((
-            NamesNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                changed: changed,
-                first_type: first_type,
-                n_types: n_types,
-                first_level_name: first_level_name,
-                n_level_names: n_level_names,
-                n_radio_groups: n_radio_groups,
-                n_key_aliases: n_key_aliases,
-                changed_group_names: changed_group_names,
-                changed_virtual_mods: changed_virtual_mods,
-                first_key: first_key,
-                n_keys: n_keys,
-                changed_indicators: changed_indicators,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + 1
-            + self.changed.size()
-            + self.first_type.size()
-            + self.n_types.size()
-            + self.first_level_name.size()
-            + self.n_level_names.size()
-            + self.n_radio_groups.size()
-            + self.n_key_aliases.size()
-            + self.changed_group_names.size()
-            + self.changed_virtual_mods.size()
-            + self.first_key.size()
-            + self.n_keys.size()
-            + self.changed_indicators.size()
-            + 4
-    }
-}
-impl crate::auto::Event for NamesNotifyEvent {
-    const OPCODE: u8 = 6;
 }
 #[derive(Clone, Debug, Default)]
 pub struct MapNotifyEvent {
@@ -15846,6 +15511,394 @@ impl crate::auto::Event for MapNotifyEvent {
     const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
+pub struct IndicatorStateNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub state: Card32,
+    pub state_changed: Card32,
+}
+impl IndicatorStateNotifyEvent {}
+impl AsByteSequence for IndicatorStateNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.state_changed.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing IndicatorStateNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            IndicatorStateNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                state: state,
+                state_changed: state_changed,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + 3
+            + self.state.size()
+            + self.state_changed.size()
+            + 12
+    }
+}
+impl crate::auto::Event for IndicatorStateNotifyEvent {
+    const OPCODE: u8 = 4;
+}
+#[derive(Clone, Debug, Default)]
+pub struct BellNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub bell_class: BellClassResult,
+    pub bell_id: Card8,
+    pub percent: Card8,
+    pub pitch: Card16,
+    pub duration: Card16,
+    pub name: Atom,
+    pub window: Window,
+    pub event_only: bool,
+}
+impl BellNotifyEvent {}
+impl AsByteSequence for BellNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.bell_class.as_bytes(&mut bytes[index..]);
+        index += self.bell_id.as_bytes(&mut bytes[index..]);
+        index += self.percent.as_bytes(&mut bytes[index..]);
+        index += self.pitch.as_bytes(&mut bytes[index..]);
+        index += self.duration.as_bytes(&mut bytes[index..]);
+        index += self.name.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.event_only.as_bytes(&mut bytes[index..]);
+        index += 7;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BellNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bell_class, sz): (BellClassResult, usize) =
+            <BellClassResult>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (bell_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (percent, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pitch, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (duration, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_only, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 7;
+        Some((
+            BellNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                bell_class: bell_class,
+                bell_id: bell_id,
+                percent: percent,
+                pitch: pitch,
+                duration: duration,
+                name: name,
+                window: window,
+                event_only: event_only,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.bell_class.size()
+            + self.bell_id.size()
+            + self.percent.size()
+            + self.pitch.size()
+            + self.duration.size()
+            + self.name.size()
+            + self.window.size()
+            + self.event_only.size()
+            + 7
+    }
+}
+impl crate::auto::Event for BellNotifyEvent {
+    const OPCODE: u8 = 8;
+}
+#[derive(Clone, Debug, Default)]
+pub struct ActionMessageEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub keycode: Keycode,
+    pub press: bool,
+    pub key_event_follows: bool,
+    pub mods: ModMask,
+    pub group: Group,
+    pub message: [String8; 8],
+}
+impl ActionMessageEvent {}
+impl AsByteSequence for ActionMessageEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.keycode.as_bytes(&mut bytes[index..]);
+        index += self.press.as_bytes(&mut bytes[index..]);
+        index += self.key_event_follows.as_bytes(&mut bytes[index..]);
+        index += self.mods.as_bytes(&mut bytes[index..]);
+        index += self.group.as_bytes(&mut bytes[index..]);
+        index += self.message.as_bytes(&mut bytes[index..]);
+        index += 10;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing ActionMessageEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (press, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (key_event_follows, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mods, sz): (ModMask, usize) = <ModMask>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (group, sz): (Group, usize) = <Group>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (message, sz): ([String8; 8], usize) = <[String8; 8]>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 10;
+        Some((
+            ActionMessageEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                keycode: keycode,
+                press: press,
+                key_event_follows: key_event_follows,
+                mods: mods,
+                group: group,
+                message: message,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.keycode.size()
+            + self.press.size()
+            + self.key_event_follows.size()
+            + self.mods.size()
+            + self.group.size()
+            + self.message.size()
+            + 10
+    }
+}
+impl crate::auto::Event for ActionMessageEvent {
+    const OPCODE: u8 = 9;
+}
+#[derive(Clone, Debug, Default)]
+pub struct NewKeyboardNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub old_device_id: Card8,
+    pub min_key_code: Keycode,
+    pub max_key_code: Keycode,
+    pub old_min_key_code: Keycode,
+    pub old_max_key_code: Keycode,
+    pub request_major: Card8,
+    pub request_minor: Card8,
+    pub changed: NknDetail,
+}
+impl NewKeyboardNotifyEvent {}
+impl AsByteSequence for NewKeyboardNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.old_device_id.as_bytes(&mut bytes[index..]);
+        index += self.min_key_code.as_bytes(&mut bytes[index..]);
+        index += self.max_key_code.as_bytes(&mut bytes[index..]);
+        index += self.old_min_key_code.as_bytes(&mut bytes[index..]);
+        index += self.old_max_key_code.as_bytes(&mut bytes[index..]);
+        index += self.request_major.as_bytes(&mut bytes[index..]);
+        index += self.request_minor.as_bytes(&mut bytes[index..]);
+        index += self.changed.as_bytes(&mut bytes[index..]);
+        index += 14;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NewKeyboardNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (old_device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (old_min_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (old_max_key_code, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (request_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed, sz): (NknDetail, usize) = <NknDetail>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 14;
+        Some((
+            NewKeyboardNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                old_device_id: old_device_id,
+                min_key_code: min_key_code,
+                max_key_code: max_key_code,
+                old_min_key_code: old_min_key_code,
+                old_max_key_code: old_max_key_code,
+                request_major: request_major,
+                request_minor: request_minor,
+                changed: changed,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.old_device_id.size()
+            + self.min_key_code.size()
+            + self.max_key_code.size()
+            + self.old_min_key_code.size()
+            + self.old_max_key_code.size()
+            + self.request_major.size()
+            + self.request_minor.size()
+            + self.changed.size()
+            + 14
+    }
+}
+impl crate::auto::Event for NewKeyboardNotifyEvent {
+    const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
 pub struct ControlsNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15958,19 +16011,27 @@ impl crate::auto::Event for ControlsNotifyEvent {
     const OPCODE: u8 = 3;
 }
 #[derive(Clone, Debug, Default)]
-pub struct CompatMapNotifyEvent {
+pub struct NamesNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
     pub sequence: u16,
     pub time: Timestamp,
     pub device_id: Card8,
-    pub changed_groups: SetOfGroup,
-    pub first_si: Card16,
-    pub n_si: Card16,
-    pub n_total_si: Card16,
+    pub changed: NameDetail,
+    pub first_type: Card8,
+    pub n_types: Card8,
+    pub first_level_name: Card8,
+    pub n_level_names: Card8,
+    pub n_radio_groups: Card8,
+    pub n_key_aliases: Card8,
+    pub changed_group_names: SetOfGroup,
+    pub changed_virtual_mods: VMod,
+    pub first_key: Keycode,
+    pub n_keys: Card8,
+    pub changed_indicators: Card32,
 }
-impl CompatMapNotifyEvent {}
-impl AsByteSequence for CompatMapNotifyEvent {
+impl NamesNotifyEvent {}
+impl AsByteSequence for NamesNotifyEvent {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15979,17 +16040,26 @@ impl AsByteSequence for CompatMapNotifyEvent {
         index += self.sequence.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.changed_groups.as_bytes(&mut bytes[index..]);
-        index += self.first_si.as_bytes(&mut bytes[index..]);
-        index += self.n_si.as_bytes(&mut bytes[index..]);
-        index += self.n_total_si.as_bytes(&mut bytes[index..]);
-        index += 16;
+        index += 1;
+        index += self.changed.as_bytes(&mut bytes[index..]);
+        index += self.first_type.as_bytes(&mut bytes[index..]);
+        index += self.n_types.as_bytes(&mut bytes[index..]);
+        index += self.first_level_name.as_bytes(&mut bytes[index..]);
+        index += self.n_level_names.as_bytes(&mut bytes[index..]);
+        index += self.n_radio_groups.as_bytes(&mut bytes[index..]);
+        index += self.n_key_aliases.as_bytes(&mut bytes[index..]);
+        index += self.changed_group_names.as_bytes(&mut bytes[index..]);
+        index += self.changed_virtual_mods.as_bytes(&mut bytes[index..]);
+        index += self.first_key.as_bytes(&mut bytes[index..]);
+        index += self.n_keys.as_bytes(&mut bytes[index..]);
+        index += self.changed_indicators.as_bytes(&mut bytes[index..]);
+        index += 4;
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing CompatMapNotifyEvent from byte buffer");
+        log::trace!("Deserializing NamesNotifyEvent from byte buffer");
         let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
@@ -16000,26 +16070,52 @@ impl AsByteSequence for CompatMapNotifyEvent {
         index += sz;
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (changed_groups, sz): (SetOfGroup, usize) = <SetOfGroup>::from_bytes(&bytes[index..])?;
+        index += 1;
+        let (changed, sz): (NameDetail, usize) = <NameDetail>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (first_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (first_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (n_types, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (n_total_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        let (first_level_name, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        index += 16;
+        let (n_level_names, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_radio_groups, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_key_aliases, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed_group_names, sz): (SetOfGroup, usize) =
+            <SetOfGroup>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed_virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_key, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_keys, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed_indicators, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 4;
         Some((
-            CompatMapNotifyEvent {
+            NamesNotifyEvent {
                 event_type: event_type,
                 xkb_type: xkb_type,
                 sequence: sequence,
                 time: time,
                 device_id: device_id,
-                changed_groups: changed_groups,
-                first_si: first_si,
-                n_si: n_si,
-                n_total_si: n_total_si,
+                changed: changed,
+                first_type: first_type,
+                n_types: n_types,
+                first_level_name: first_level_name,
+                n_level_names: n_level_names,
+                n_radio_groups: n_radio_groups,
+                n_key_aliases: n_key_aliases,
+                changed_group_names: changed_group_names,
+                changed_virtual_mods: changed_virtual_mods,
+                first_key: first_key,
+                n_keys: n_keys,
+                changed_indicators: changed_indicators,
             },
             index,
         ))
@@ -16031,199 +16127,24 @@ impl AsByteSequence for CompatMapNotifyEvent {
             + self.sequence.size()
             + self.time.size()
             + self.device_id.size()
-            + self.changed_groups.size()
-            + self.first_si.size()
-            + self.n_si.size()
-            + self.n_total_si.size()
-            + 16
+            + 1
+            + self.changed.size()
+            + self.first_type.size()
+            + self.n_types.size()
+            + self.first_level_name.size()
+            + self.n_level_names.size()
+            + self.n_radio_groups.size()
+            + self.n_key_aliases.size()
+            + self.changed_group_names.size()
+            + self.changed_virtual_mods.size()
+            + self.first_key.size()
+            + self.n_keys.size()
+            + self.changed_indicators.size()
+            + 4
     }
 }
-impl crate::auto::Event for CompatMapNotifyEvent {
-    const OPCODE: u8 = 7;
-}
-#[derive(Clone, Debug, Default)]
-pub struct BellNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub bell_class: BellClassResult,
-    pub bell_id: Card8,
-    pub percent: Card8,
-    pub pitch: Card16,
-    pub duration: Card16,
-    pub name: Atom,
-    pub window: Window,
-    pub event_only: bool,
-}
-impl BellNotifyEvent {}
-impl AsByteSequence for BellNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += self.bell_class.as_bytes(&mut bytes[index..]);
-        index += self.bell_id.as_bytes(&mut bytes[index..]);
-        index += self.percent.as_bytes(&mut bytes[index..]);
-        index += self.pitch.as_bytes(&mut bytes[index..]);
-        index += self.duration.as_bytes(&mut bytes[index..]);
-        index += self.name.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.event_only.as_bytes(&mut bytes[index..]);
-        index += 7;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BellNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bell_class, sz): (BellClassResult, usize) =
-            <BellClassResult>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bell_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (percent, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pitch, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (duration, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_only, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 7;
-        Some((
-            BellNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                bell_class: bell_class,
-                bell_id: bell_id,
-                percent: percent,
-                pitch: pitch,
-                duration: duration,
-                name: name,
-                window: window,
-                event_only: event_only,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + self.bell_class.size()
-            + self.bell_id.size()
-            + self.percent.size()
-            + self.pitch.size()
-            + self.duration.size()
-            + self.name.size()
-            + self.window.size()
-            + self.event_only.size()
-            + 7
-    }
-}
-impl crate::auto::Event for BellNotifyEvent {
-    const OPCODE: u8 = 8;
-}
-#[derive(Clone, Debug, Default)]
-pub struct IndicatorStateNotifyEvent {
-    pub event_type: u8,
-    pub xkb_type: Card8,
-    pub sequence: u16,
-    pub time: Timestamp,
-    pub device_id: Card8,
-    pub state: Card32,
-    pub state_changed: Card32,
-}
-impl IndicatorStateNotifyEvent {}
-impl AsByteSequence for IndicatorStateNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.xkb_type.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.time.as_bytes(&mut bytes[index..]);
-        index += self.device_id.as_bytes(&mut bytes[index..]);
-        index += 3;
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += self.state_changed.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing IndicatorStateNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
-        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            IndicatorStateNotifyEvent {
-                event_type: event_type,
-                xkb_type: xkb_type,
-                sequence: sequence,
-                time: time,
-                device_id: device_id,
-                state: state,
-                state_changed: state_changed,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.xkb_type.size()
-            + self.sequence.size()
-            + self.time.size()
-            + self.device_id.size()
-            + 3
-            + self.state.size()
-            + self.state_changed.size()
-            + 12
-    }
-}
-impl crate::auto::Event for IndicatorStateNotifyEvent {
-    const OPCODE: u8 = 4;
+impl crate::auto::Event for NamesNotifyEvent {
+    const OPCODE: u8 = 6;
 }
 #[derive(Clone, Debug, Default)]
 pub struct StateNotifyEvent {
@@ -16395,4 +16316,163 @@ impl AsByteSequence for StateNotifyEvent {
 }
 impl crate::auto::Event for StateNotifyEvent {
     const OPCODE: u8 = 2;
+}
+#[derive(Clone, Debug, Default)]
+pub struct IndicatorMapNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub state: Card32,
+    pub map_changed: Card32,
+}
+impl IndicatorMapNotifyEvent {}
+impl AsByteSequence for IndicatorMapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += self.map_changed.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing IndicatorMapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (map_changed, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            IndicatorMapNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                state: state,
+                map_changed: map_changed,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + 3
+            + self.state.size()
+            + self.map_changed.size()
+            + 12
+    }
+}
+impl crate::auto::Event for IndicatorMapNotifyEvent {
+    const OPCODE: u8 = 5;
+}
+#[derive(Clone, Debug, Default)]
+pub struct CompatMapNotifyEvent {
+    pub event_type: u8,
+    pub xkb_type: Card8,
+    pub sequence: u16,
+    pub time: Timestamp,
+    pub device_id: Card8,
+    pub changed_groups: SetOfGroup,
+    pub first_si: Card16,
+    pub n_si: Card16,
+    pub n_total_si: Card16,
+}
+impl CompatMapNotifyEvent {}
+impl AsByteSequence for CompatMapNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.xkb_type.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.time.as_bytes(&mut bytes[index..]);
+        index += self.device_id.as_bytes(&mut bytes[index..]);
+        index += self.changed_groups.as_bytes(&mut bytes[index..]);
+        index += self.first_si.as_bytes(&mut bytes[index..]);
+        index += self.n_si.as_bytes(&mut bytes[index..]);
+        index += self.n_total_si.as_bytes(&mut bytes[index..]);
+        index += 16;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CompatMapNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (xkb_type, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (changed_groups, sz): (SetOfGroup, usize) = <SetOfGroup>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (first_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (n_total_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 16;
+        Some((
+            CompatMapNotifyEvent {
+                event_type: event_type,
+                xkb_type: xkb_type,
+                sequence: sequence,
+                time: time,
+                device_id: device_id,
+                changed_groups: changed_groups,
+                first_si: first_si,
+                n_si: n_si,
+                n_total_si: n_total_si,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.xkb_type.size()
+            + self.sequence.size()
+            + self.time.size()
+            + self.device_id.size()
+            + self.changed_groups.size()
+            + self.first_si.size()
+            + self.n_si.size()
+            + self.n_total_si.size()
+            + 16
+    }
+}
+impl crate::auto::Event for CompatMapNotifyEvent {
+    const OPCODE: u8 = 7;
 }

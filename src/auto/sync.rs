@@ -268,8 +268,8 @@ impl AsByteSequence for Waitcondition {
 #[derive(Clone, Debug, Default)]
 pub struct InitializeRequest {
     pub req_type: u8,
-    pub desired_major_version: Card8,
     pub length: u16,
+    pub desired_major_version: Card8,
     pub desired_minor_version: Card8,
 }
 impl InitializeRequest {}
@@ -278,8 +278,9 @@ impl AsByteSequence for InitializeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.desired_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.desired_major_version.as_bytes(&mut bytes[index..]);
         index += self.desired_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -289,17 +290,18 @@ impl AsByteSequence for InitializeRequest {
         log::trace!("Deserializing InitializeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (desired_major_version, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (desired_major_version, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (desired_minor_version, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             InitializeRequest {
                 req_type: req_type,
-                desired_major_version: desired_major_version,
                 length: length,
+                desired_major_version: desired_major_version,
                 desired_minor_version: desired_minor_version,
             },
             index,
@@ -308,8 +310,9 @@ impl AsByteSequence for InitializeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.desired_major_version.size()
+            + 1
             + self.length.size()
+            + self.desired_major_version.size()
             + self.desired_minor_version.size()
     }
 }
@@ -491,8 +494,8 @@ impl AsByteSequence for ListSystemCountersReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateCounterRequest {
     pub req_type: u8,
-    pub id: Counter,
     pub length: u16,
+    pub id: Counter,
     pub initial_value: Int64,
 }
 impl CreateCounterRequest {}
@@ -501,8 +504,9 @@ impl AsByteSequence for CreateCounterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.id.as_bytes(&mut bytes[index..]);
         index += self.initial_value.as_bytes(&mut bytes[index..]);
         index
     }
@@ -512,17 +516,18 @@ impl AsByteSequence for CreateCounterRequest {
         log::trace!("Deserializing CreateCounterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (id, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (id, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
         index += sz;
         let (initial_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateCounterRequest {
                 req_type: req_type,
-                id: id,
                 length: length,
+                id: id,
                 initial_value: initial_value,
             },
             index,
@@ -530,7 +535,7 @@ impl AsByteSequence for CreateCounterRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.id.size() + self.length.size() + self.initial_value.size()
+        self.req_type.size() + 1 + self.length.size() + self.id.size() + self.initial_value.size()
     }
 }
 impl Request for CreateCounterRequest {
@@ -542,8 +547,8 @@ impl Request for CreateCounterRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyCounterRequest {
     pub req_type: u8,
-    pub counter: Counter,
     pub length: u16,
+    pub counter: Counter,
 }
 impl DestroyCounterRequest {}
 impl AsByteSequence for DestroyCounterRequest {
@@ -551,8 +556,9 @@ impl AsByteSequence for DestroyCounterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.counter.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.counter.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -561,22 +567,23 @@ impl AsByteSequence for DestroyCounterRequest {
         log::trace!("Deserializing DestroyCounterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyCounterRequest {
                 req_type: req_type,
-                counter: counter,
                 length: length,
+                counter: counter,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.counter.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.counter.size()
     }
 }
 impl Request for DestroyCounterRequest {
@@ -588,8 +595,8 @@ impl Request for DestroyCounterRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryCounterRequest {
     pub req_type: u8,
-    pub counter: Counter,
     pub length: u16,
+    pub counter: Counter,
 }
 impl QueryCounterRequest {}
 impl AsByteSequence for QueryCounterRequest {
@@ -597,8 +604,9 @@ impl AsByteSequence for QueryCounterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.counter.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.counter.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -607,22 +615,23 @@ impl AsByteSequence for QueryCounterRequest {
         log::trace!("Deserializing QueryCounterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryCounterRequest {
                 req_type: req_type,
-                counter: counter,
                 length: length,
+                counter: counter,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.counter.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.counter.size()
     }
 }
 impl Request for QueryCounterRequest {
@@ -741,8 +750,8 @@ impl Request for AwaitRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeCounterRequest {
     pub req_type: u8,
-    pub counter: Counter,
     pub length: u16,
+    pub counter: Counter,
     pub amount: Int64,
 }
 impl ChangeCounterRequest {}
@@ -751,8 +760,9 @@ impl AsByteSequence for ChangeCounterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.counter.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.counter.as_bytes(&mut bytes[index..]);
         index += self.amount.as_bytes(&mut bytes[index..]);
         index
     }
@@ -762,17 +772,18 @@ impl AsByteSequence for ChangeCounterRequest {
         log::trace!("Deserializing ChangeCounterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
         index += sz;
         let (amount, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ChangeCounterRequest {
                 req_type: req_type,
-                counter: counter,
                 length: length,
+                counter: counter,
                 amount: amount,
             },
             index,
@@ -780,7 +791,7 @@ impl AsByteSequence for ChangeCounterRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.counter.size() + self.length.size() + self.amount.size()
+        self.req_type.size() + 1 + self.length.size() + self.counter.size() + self.amount.size()
     }
 }
 impl Request for ChangeCounterRequest {
@@ -792,8 +803,8 @@ impl Request for ChangeCounterRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetCounterRequest {
     pub req_type: u8,
-    pub counter: Counter,
     pub length: u16,
+    pub counter: Counter,
     pub value: Int64,
 }
 impl SetCounterRequest {}
@@ -802,8 +813,9 @@ impl AsByteSequence for SetCounterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.counter.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.counter.as_bytes(&mut bytes[index..]);
         index += self.value.as_bytes(&mut bytes[index..]);
         index
     }
@@ -813,17 +825,18 @@ impl AsByteSequence for SetCounterRequest {
         log::trace!("Deserializing SetCounterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter, sz): (Counter, usize) = <Counter>::from_bytes(&bytes[index..])?;
         index += sz;
         let (value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetCounterRequest {
                 req_type: req_type,
-                counter: counter,
                 length: length,
+                counter: counter,
                 value: value,
             },
             index,
@@ -831,7 +844,7 @@ impl AsByteSequence for SetCounterRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.counter.size() + self.length.size() + self.value.size()
+        self.req_type.size() + 1 + self.length.size() + self.counter.size() + self.value.size()
     }
 }
 impl Request for SetCounterRequest {
@@ -843,8 +856,8 @@ impl Request for SetCounterRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateAlarmRequest {
     pub req_type: u8,
-    pub id: Alarm,
     pub length: u16,
+    pub id: Alarm,
     pub value_mask: Ca,
     pub counter: Counter,
     pub value_type: Valuetype,
@@ -859,8 +872,9 @@ impl AsByteSequence for CreateAlarmRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.id.as_bytes(&mut bytes[index..]);
         index += self.value_mask.as_bytes(&mut bytes[index..]);
         let cond0 = (self.value_mask);
         if cond0.counter() {
@@ -889,9 +903,10 @@ impl AsByteSequence for CreateAlarmRequest {
         log::trace!("Deserializing CreateAlarmRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (id, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (id, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
         index += sz;
         let (value_mask, sz): (Ca, usize) = <Ca>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -941,8 +956,8 @@ impl AsByteSequence for CreateAlarmRequest {
         Some((
             CreateAlarmRequest {
                 req_type: req_type,
-                id: id,
                 length: length,
+                id: id,
                 value_mask: value_mask,
                 counter: counter,
                 value_type: value_type,
@@ -957,8 +972,9 @@ impl AsByteSequence for CreateAlarmRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.id.size()
+            + 1
             + self.length.size()
+            + self.id.size()
             + self.value_mask.size()
             + self.counter.size()
             + self.value_type.size()
@@ -1152,8 +1168,8 @@ impl core::ops::BitXor for Ca {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeAlarmRequest {
     pub req_type: u8,
-    pub id: Alarm,
     pub length: u16,
+    pub id: Alarm,
     pub value_mask: Ca,
     pub counter: Counter,
     pub value_type: Valuetype,
@@ -1168,8 +1184,9 @@ impl AsByteSequence for ChangeAlarmRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.id.as_bytes(&mut bytes[index..]);
         index += self.value_mask.as_bytes(&mut bytes[index..]);
         let cond0 = (self.value_mask);
         if cond0.counter() {
@@ -1198,9 +1215,10 @@ impl AsByteSequence for ChangeAlarmRequest {
         log::trace!("Deserializing ChangeAlarmRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (id, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (id, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
         index += sz;
         let (value_mask, sz): (Ca, usize) = <Ca>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1250,8 +1268,8 @@ impl AsByteSequence for ChangeAlarmRequest {
         Some((
             ChangeAlarmRequest {
                 req_type: req_type,
-                id: id,
                 length: length,
+                id: id,
                 value_mask: value_mask,
                 counter: counter,
                 value_type: value_type,
@@ -1266,8 +1284,9 @@ impl AsByteSequence for ChangeAlarmRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.id.size()
+            + 1
             + self.length.size()
+            + self.id.size()
             + self.value_mask.size()
             + self.counter.size()
             + self.value_type.size()
@@ -1286,8 +1305,8 @@ impl Request for ChangeAlarmRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyAlarmRequest {
     pub req_type: u8,
-    pub alarm: Alarm,
     pub length: u16,
+    pub alarm: Alarm,
 }
 impl DestroyAlarmRequest {}
 impl AsByteSequence for DestroyAlarmRequest {
@@ -1295,8 +1314,9 @@ impl AsByteSequence for DestroyAlarmRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.alarm.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.alarm.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1305,22 +1325,23 @@ impl AsByteSequence for DestroyAlarmRequest {
         log::trace!("Deserializing DestroyAlarmRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyAlarmRequest {
                 req_type: req_type,
-                alarm: alarm,
                 length: length,
+                alarm: alarm,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.alarm.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.alarm.size()
     }
 }
 impl Request for DestroyAlarmRequest {
@@ -1332,8 +1353,8 @@ impl Request for DestroyAlarmRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryAlarmRequest {
     pub req_type: u8,
-    pub alarm: Alarm,
     pub length: u16,
+    pub alarm: Alarm,
 }
 impl QueryAlarmRequest {}
 impl AsByteSequence for QueryAlarmRequest {
@@ -1341,8 +1362,9 @@ impl AsByteSequence for QueryAlarmRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.alarm.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.alarm.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1351,22 +1373,23 @@ impl AsByteSequence for QueryAlarmRequest {
         log::trace!("Deserializing QueryAlarmRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryAlarmRequest {
                 req_type: req_type,
-                alarm: alarm,
                 length: length,
+                alarm: alarm,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.alarm.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.alarm.size()
     }
 }
 impl Request for QueryAlarmRequest {
@@ -1698,8 +1721,8 @@ impl Request for CreateFenceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct TriggerFenceRequest {
     pub req_type: u8,
-    pub fence: Fence,
     pub length: u16,
+    pub fence: Fence,
 }
 impl TriggerFenceRequest {}
 impl AsByteSequence for TriggerFenceRequest {
@@ -1707,8 +1730,9 @@ impl AsByteSequence for TriggerFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.fence.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1717,22 +1741,23 @@ impl AsByteSequence for TriggerFenceRequest {
         log::trace!("Deserializing TriggerFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             TriggerFenceRequest {
                 req_type: req_type,
-                fence: fence,
                 length: length,
+                fence: fence,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.fence.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.fence.size()
     }
 }
 impl Request for TriggerFenceRequest {
@@ -1744,8 +1769,8 @@ impl Request for TriggerFenceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ResetFenceRequest {
     pub req_type: u8,
-    pub fence: Fence,
     pub length: u16,
+    pub fence: Fence,
 }
 impl ResetFenceRequest {}
 impl AsByteSequence for ResetFenceRequest {
@@ -1753,8 +1778,9 @@ impl AsByteSequence for ResetFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.fence.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1763,22 +1789,23 @@ impl AsByteSequence for ResetFenceRequest {
         log::trace!("Deserializing ResetFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ResetFenceRequest {
                 req_type: req_type,
-                fence: fence,
                 length: length,
+                fence: fence,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.fence.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.fence.size()
     }
 }
 impl Request for ResetFenceRequest {
@@ -1790,8 +1817,8 @@ impl Request for ResetFenceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyFenceRequest {
     pub req_type: u8,
-    pub fence: Fence,
     pub length: u16,
+    pub fence: Fence,
 }
 impl DestroyFenceRequest {}
 impl AsByteSequence for DestroyFenceRequest {
@@ -1799,8 +1826,9 @@ impl AsByteSequence for DestroyFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.fence.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1809,22 +1837,23 @@ impl AsByteSequence for DestroyFenceRequest {
         log::trace!("Deserializing DestroyFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyFenceRequest {
                 req_type: req_type,
-                fence: fence,
                 length: length,
+                fence: fence,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.fence.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.fence.size()
     }
 }
 impl Request for DestroyFenceRequest {
@@ -1836,8 +1865,8 @@ impl Request for DestroyFenceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryFenceRequest {
     pub req_type: u8,
-    pub fence: Fence,
     pub length: u16,
+    pub fence: Fence,
 }
 impl QueryFenceRequest {}
 impl AsByteSequence for QueryFenceRequest {
@@ -1845,8 +1874,9 @@ impl AsByteSequence for QueryFenceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.fence.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.fence.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1855,22 +1885,23 @@ impl AsByteSequence for QueryFenceRequest {
         log::trace!("Deserializing QueryFenceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryFenceRequest {
                 req_type: req_type,
-                fence: fence,
                 length: length,
+                fence: fence,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.fence.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.fence.size()
     }
 }
 impl Request for QueryFenceRequest {
@@ -1990,81 +2021,6 @@ impl Request for AwaitFenceRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
-pub struct AlarmError {
-    pub _error_type: u8,
-    pub error_code: u8,
-    pub major_code: u8,
-    pub minor_code: u8,
-    pub sequence: u16,
-    pub bad_alarm: Card32,
-    pub minor_opcode: Card16,
-    pub major_opcode: Card8,
-}
-impl AlarmError {}
-impl AsByteSequence for AlarmError {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self._error_type.as_bytes(&mut bytes[index..]);
-        index += self.error_code.as_bytes(&mut bytes[index..]);
-        index += self.major_code.as_bytes(&mut bytes[index..]);
-        index += self.minor_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.bad_alarm.as_bytes(&mut bytes[index..]);
-        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
-        index += self.major_opcode.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing AlarmError from byte buffer");
-        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (bad_alarm, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            AlarmError {
-                _error_type: _error_type,
-                error_code: error_code,
-                major_code: major_code,
-                minor_code: minor_code,
-                sequence: sequence,
-                bad_alarm: bad_alarm,
-                minor_opcode: minor_opcode,
-                major_opcode: major_opcode,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self._error_type.size()
-            + self.error_code.size()
-            + self.major_code.size()
-            + self.minor_code.size()
-            + self.sequence.size()
-            + self.bad_alarm.size()
-            + self.minor_opcode.size()
-            + self.major_opcode.size()
-    }
-}
-impl crate::auto::Error for AlarmError {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
 pub struct CounterError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -2140,81 +2096,78 @@ impl crate::auto::Error for CounterError {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default)]
-pub struct AlarmNotifyEvent {
-    pub event_type: u8,
-    pub kind: Card8,
+pub struct AlarmError {
+    pub _error_type: u8,
+    pub error_code: u8,
+    pub major_code: u8,
+    pub minor_code: u8,
     pub sequence: u16,
-    pub alarm: Alarm,
-    pub counter_value: Int64,
-    pub alarm_value: Int64,
-    pub timestamp: Timestamp,
-    pub state: Alarmstate,
+    pub bad_alarm: Card32,
+    pub minor_opcode: Card16,
+    pub major_opcode: Card8,
 }
-impl AlarmNotifyEvent {}
-impl AsByteSequence for AlarmNotifyEvent {
+impl AlarmError {}
+impl AsByteSequence for AlarmError {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self._error_type.as_bytes(&mut bytes[index..]);
+        index += self.error_code.as_bytes(&mut bytes[index..]);
+        index += self.major_code.as_bytes(&mut bytes[index..]);
+        index += self.minor_code.as_bytes(&mut bytes[index..]);
         index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.alarm.as_bytes(&mut bytes[index..]);
-        index += self.counter_value.as_bytes(&mut bytes[index..]);
-        index += self.alarm_value.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.state.as_bytes(&mut bytes[index..]);
-        index += 3;
+        index += self.bad_alarm.as_bytes(&mut bytes[index..]);
+        index += self.minor_opcode.as_bytes(&mut bytes[index..]);
+        index += self.major_opcode.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        log::trace!("Deserializing AlarmError from byte buffer");
+        let (_error_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        let (error_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (minor_code, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
+        let (bad_alarm, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        let (minor_opcode, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        let (major_opcode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 3;
         Some((
-            AlarmNotifyEvent {
-                event_type: event_type,
-                kind: kind,
+            AlarmError {
+                _error_type: _error_type,
+                error_code: error_code,
+                major_code: major_code,
+                minor_code: minor_code,
                 sequence: sequence,
-                alarm: alarm,
-                counter_value: counter_value,
-                alarm_value: alarm_value,
-                timestamp: timestamp,
-                state: state,
+                bad_alarm: bad_alarm,
+                minor_opcode: minor_opcode,
+                major_opcode: major_opcode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.event_type.size()
-            + self.kind.size()
+        self._error_type.size()
+            + self.error_code.size()
+            + self.major_code.size()
+            + self.minor_code.size()
             + self.sequence.size()
-            + self.alarm.size()
-            + self.counter_value.size()
-            + self.alarm_value.size()
-            + self.timestamp.size()
-            + self.state.size()
-            + 3
+            + self.bad_alarm.size()
+            + self.minor_opcode.size()
+            + self.major_opcode.size()
     }
 }
-impl crate::auto::Event for AlarmNotifyEvent {
+impl crate::auto::Error for AlarmError {
     const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
@@ -2300,4 +2253,82 @@ impl AsByteSequence for CounterNotifyEvent {
 }
 impl crate::auto::Event for CounterNotifyEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct AlarmNotifyEvent {
+    pub event_type: u8,
+    pub kind: Card8,
+    pub sequence: u16,
+    pub alarm: Alarm,
+    pub counter_value: Int64,
+    pub alarm_value: Int64,
+    pub timestamp: Timestamp,
+    pub state: Alarmstate,
+}
+impl AlarmNotifyEvent {}
+impl AsByteSequence for AlarmNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.kind.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.alarm.as_bytes(&mut bytes[index..]);
+        index += self.counter_value.as_bytes(&mut bytes[index..]);
+        index += self.alarm_value.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.state.as_bytes(&mut bytes[index..]);
+        index += 3;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing AlarmNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (kind, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm, sz): (Alarm, usize) = <Alarm>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (counter_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (alarm_value, sz): (Int64, usize) = <Int64>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (state, sz): (Alarmstate, usize) = <Alarmstate>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 3;
+        Some((
+            AlarmNotifyEvent {
+                event_type: event_type,
+                kind: kind,
+                sequence: sequence,
+                alarm: alarm,
+                counter_value: counter_value,
+                alarm_value: alarm_value,
+                timestamp: timestamp,
+                state: state,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.kind.size()
+            + self.sequence.size()
+            + self.alarm.size()
+            + self.counter_value.size()
+            + self.alarm_value.size()
+            + self.timestamp.size()
+            + self.state.size()
+            + 3
+    }
+}
+impl crate::auto::Event for AlarmNotifyEvent {
+    const OPCODE: u8 = 1;
 }

@@ -154,8 +154,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct AttachRequest {
     pub req_type: u8,
-    pub shmseg: Seg,
     pub length: u16,
+    pub shmseg: Seg,
     pub shmid: Card32,
     pub read_only: bool,
 }
@@ -165,8 +165,9 @@ impl AsByteSequence for AttachRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.shmseg.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.shmseg.as_bytes(&mut bytes[index..]);
         index += self.shmid.as_bytes(&mut bytes[index..]);
         index += self.read_only.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -178,9 +179,10 @@ impl AsByteSequence for AttachRequest {
         log::trace!("Deserializing AttachRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
         index += sz;
         let (shmid, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -190,8 +192,8 @@ impl AsByteSequence for AttachRequest {
         Some((
             AttachRequest {
                 req_type: req_type,
-                shmseg: shmseg,
                 length: length,
+                shmseg: shmseg,
                 shmid: shmid,
                 read_only: read_only,
             },
@@ -201,8 +203,9 @@ impl AsByteSequence for AttachRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.shmseg.size()
+            + 1
             + self.length.size()
+            + self.shmseg.size()
             + self.shmid.size()
             + self.read_only.size()
             + 3
@@ -217,8 +220,8 @@ impl Request for AttachRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DetachRequest {
     pub req_type: u8,
-    pub shmseg: Seg,
     pub length: u16,
+    pub shmseg: Seg,
 }
 impl DetachRequest {}
 impl AsByteSequence for DetachRequest {
@@ -226,8 +229,9 @@ impl AsByteSequence for DetachRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.shmseg.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.shmseg.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -236,22 +240,23 @@ impl AsByteSequence for DetachRequest {
         log::trace!("Deserializing DetachRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DetachRequest {
                 req_type: req_type,
-                shmseg: shmseg,
                 length: length,
+                shmseg: shmseg,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.shmseg.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.shmseg.size()
     }
 }
 impl Request for DetachRequest {
@@ -563,8 +568,8 @@ impl AsByteSequence for GetImageReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreatePixmapRequest {
     pub req_type: u8,
-    pub pid: Pixmap,
     pub length: u16,
+    pub pid: Pixmap,
     pub drawable: Drawable,
     pub width: Card16,
     pub height: Card16,
@@ -578,8 +583,9 @@ impl AsByteSequence for CreatePixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pid.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
         index += self.height.as_bytes(&mut bytes[index..]);
@@ -595,9 +601,10 @@ impl AsByteSequence for CreatePixmapRequest {
         log::trace!("Deserializing CreatePixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pid, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pid, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -615,8 +622,8 @@ impl AsByteSequence for CreatePixmapRequest {
         Some((
             CreatePixmapRequest {
                 req_type: req_type,
-                pid: pid,
                 length: length,
+                pid: pid,
                 drawable: drawable,
                 width: width,
                 height: height,
@@ -630,8 +637,9 @@ impl AsByteSequence for CreatePixmapRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.pid.size()
+            + 1
             + self.length.size()
+            + self.pid.size()
             + self.drawable.size()
             + self.width.size()
             + self.height.size()
@@ -650,8 +658,8 @@ impl Request for CreatePixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct AttachFdRequest {
     pub req_type: u8,
-    pub shmseg: Seg,
     pub length: u16,
+    pub shmseg: Seg,
     pub read_only: bool,
     pub shm_fd: Vec<Fd>,
 }
@@ -661,8 +669,9 @@ impl AsByteSequence for AttachFdRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.shmseg.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.shmseg.as_bytes(&mut bytes[index..]);
         index += self.read_only.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -673,9 +682,10 @@ impl AsByteSequence for AttachFdRequest {
         log::trace!("Deserializing AttachFdRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
         index += sz;
         let (read_only, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -683,8 +693,8 @@ impl AsByteSequence for AttachFdRequest {
         Some((
             AttachFdRequest {
                 req_type: req_type,
-                shmseg: shmseg,
                 length: length,
+                shmseg: shmseg,
                 read_only: read_only,
                 shm_fd: vec![],
             },
@@ -693,7 +703,12 @@ impl AsByteSequence for AttachFdRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.shmseg.size() + self.length.size() + self.read_only.size() + 3
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.shmseg.size()
+            + self.read_only.size()
+            + 3
     }
     #[inline]
     fn file_descriptors(&mut self) -> Option<&mut Vec<Fd>> {
@@ -709,8 +724,8 @@ impl Request for AttachFdRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateSegmentRequest {
     pub req_type: u8,
-    pub shmseg: Seg,
     pub length: u16,
+    pub shmseg: Seg,
     pub size: Card32,
     pub read_only: bool,
 }
@@ -720,8 +735,9 @@ impl AsByteSequence for CreateSegmentRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.shmseg.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.shmseg.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index += self.read_only.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -733,9 +749,10 @@ impl AsByteSequence for CreateSegmentRequest {
         log::trace!("Deserializing CreateSegmentRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (shmseg, sz): (Seg, usize) = <Seg>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -745,8 +762,8 @@ impl AsByteSequence for CreateSegmentRequest {
         Some((
             CreateSegmentRequest {
                 req_type: req_type,
-                shmseg: shmseg,
                 length: length,
+                shmseg: shmseg,
                 size: size,
                 read_only: read_only,
             },
@@ -756,8 +773,9 @@ impl AsByteSequence for CreateSegmentRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.shmseg.size()
+            + 1
             + self.length.size()
+            + self.shmseg.size()
             + self.size.size()
             + self.read_only.size()
             + 3

@@ -1190,8 +1190,8 @@ impl AsByteSequence for QueryAdaptorsReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryEncodingsRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
 }
 impl QueryEncodingsRequest {}
 impl AsByteSequence for QueryEncodingsRequest {
@@ -1199,8 +1199,9 @@ impl AsByteSequence for QueryEncodingsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1209,22 +1210,23 @@ impl AsByteSequence for QueryEncodingsRequest {
         log::trace!("Deserializing QueryEncodingsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryEncodingsRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size()
     }
 }
 impl Request for QueryEncodingsRequest {
@@ -1302,8 +1304,8 @@ impl AsByteSequence for QueryEncodingsReply {
 #[derive(Clone, Debug, Default)]
 pub struct GrabPortRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub time: Timestamp,
 }
 impl GrabPortRequest {}
@@ -1312,8 +1314,9 @@ impl AsByteSequence for GrabPortRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1323,17 +1326,18 @@ impl AsByteSequence for GrabPortRequest {
         log::trace!("Deserializing GrabPortRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GrabPortRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 time: time,
             },
             index,
@@ -1341,7 +1345,7 @@ impl AsByteSequence for GrabPortRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size() + self.time.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size() + self.time.size()
     }
 }
 impl Request for GrabPortRequest {
@@ -1437,8 +1441,8 @@ impl Default for GrabPortStatus {
 #[derive(Clone, Debug, Default)]
 pub struct UngrabPortRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub time: Timestamp,
 }
 impl UngrabPortRequest {}
@@ -1447,8 +1451,9 @@ impl AsByteSequence for UngrabPortRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.time.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1458,17 +1463,18 @@ impl AsByteSequence for UngrabPortRequest {
         log::trace!("Deserializing UngrabPortRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (time, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             UngrabPortRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 time: time,
             },
             index,
@@ -1476,7 +1482,7 @@ impl AsByteSequence for UngrabPortRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size() + self.time.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size() + self.time.size()
     }
 }
 impl Request for UngrabPortRequest {
@@ -1488,8 +1494,8 @@ impl Request for UngrabPortRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PutVideoRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub vid_x: Int16,
@@ -1507,8 +1513,9 @@ impl AsByteSequence for PutVideoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.vid_x.as_bytes(&mut bytes[index..]);
@@ -1527,9 +1534,10 @@ impl AsByteSequence for PutVideoRequest {
         log::trace!("Deserializing PutVideoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1554,8 +1562,8 @@ impl AsByteSequence for PutVideoRequest {
         Some((
             PutVideoRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 vid_x: vid_x,
@@ -1573,8 +1581,9 @@ impl AsByteSequence for PutVideoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.vid_x.size()
@@ -1596,8 +1605,8 @@ impl Request for PutVideoRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PutStillRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub vid_x: Int16,
@@ -1615,8 +1624,9 @@ impl AsByteSequence for PutStillRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.vid_x.as_bytes(&mut bytes[index..]);
@@ -1635,9 +1645,10 @@ impl AsByteSequence for PutStillRequest {
         log::trace!("Deserializing PutStillRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1662,8 +1673,8 @@ impl AsByteSequence for PutStillRequest {
         Some((
             PutStillRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 vid_x: vid_x,
@@ -1681,8 +1692,9 @@ impl AsByteSequence for PutStillRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.vid_x.size()
@@ -1704,8 +1716,8 @@ impl Request for PutStillRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetVideoRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub vid_x: Int16,
@@ -1723,8 +1735,9 @@ impl AsByteSequence for GetVideoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.vid_x.as_bytes(&mut bytes[index..]);
@@ -1743,9 +1756,10 @@ impl AsByteSequence for GetVideoRequest {
         log::trace!("Deserializing GetVideoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1770,8 +1784,8 @@ impl AsByteSequence for GetVideoRequest {
         Some((
             GetVideoRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 vid_x: vid_x,
@@ -1789,8 +1803,9 @@ impl AsByteSequence for GetVideoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.vid_x.size()
@@ -1812,8 +1827,8 @@ impl Request for GetVideoRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetStillRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub vid_x: Int16,
@@ -1831,8 +1846,9 @@ impl AsByteSequence for GetStillRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.vid_x.as_bytes(&mut bytes[index..]);
@@ -1851,9 +1867,10 @@ impl AsByteSequence for GetStillRequest {
         log::trace!("Deserializing GetStillRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1878,8 +1895,8 @@ impl AsByteSequence for GetStillRequest {
         Some((
             GetStillRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 vid_x: vid_x,
@@ -1897,8 +1914,9 @@ impl AsByteSequence for GetStillRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.vid_x.size()
@@ -1920,8 +1938,8 @@ impl Request for GetStillRequest {
 #[derive(Clone, Debug, Default)]
 pub struct StopVideoRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
 }
 impl StopVideoRequest {}
@@ -1930,8 +1948,9 @@ impl AsByteSequence for StopVideoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1941,17 +1960,18 @@ impl AsByteSequence for StopVideoRequest {
         log::trace!("Deserializing StopVideoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             StopVideoRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
             },
             index,
@@ -1959,7 +1979,7 @@ impl AsByteSequence for StopVideoRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size() + self.drawable.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size() + self.drawable.size()
     }
 }
 impl Request for StopVideoRequest {
@@ -2026,8 +2046,8 @@ impl Request for SelectVideoNotifyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SelectPortNotifyRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub onoff: bool,
 }
 impl SelectPortNotifyRequest {}
@@ -2036,8 +2056,9 @@ impl AsByteSequence for SelectPortNotifyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.onoff.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -2048,9 +2069,10 @@ impl AsByteSequence for SelectPortNotifyRequest {
         log::trace!("Deserializing SelectPortNotifyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (onoff, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2058,8 +2080,8 @@ impl AsByteSequence for SelectPortNotifyRequest {
         Some((
             SelectPortNotifyRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 onoff: onoff,
             },
             index,
@@ -2067,7 +2089,7 @@ impl AsByteSequence for SelectPortNotifyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size() + self.onoff.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.port.size() + self.onoff.size() + 3
     }
 }
 impl Request for SelectPortNotifyRequest {
@@ -2079,8 +2101,8 @@ impl Request for SelectPortNotifyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryBestSizeRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub vid_w: Card16,
     pub vid_h: Card16,
     pub drw_w: Card16,
@@ -2093,8 +2115,9 @@ impl AsByteSequence for QueryBestSizeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.vid_w.as_bytes(&mut bytes[index..]);
         index += self.vid_h.as_bytes(&mut bytes[index..]);
         index += self.drw_w.as_bytes(&mut bytes[index..]);
@@ -2109,9 +2132,10 @@ impl AsByteSequence for QueryBestSizeRequest {
         log::trace!("Deserializing QueryBestSizeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (vid_w, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2127,8 +2151,8 @@ impl AsByteSequence for QueryBestSizeRequest {
         Some((
             QueryBestSizeRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 vid_w: vid_w,
                 vid_h: vid_h,
                 drw_w: drw_w,
@@ -2141,8 +2165,9 @@ impl AsByteSequence for QueryBestSizeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.vid_w.size()
             + self.vid_h.size()
             + self.drw_w.size()
@@ -2217,8 +2242,8 @@ impl AsByteSequence for QueryBestSizeReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetPortAttributeRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub attribute: Atom,
     pub value: Int32,
 }
@@ -2228,8 +2253,9 @@ impl AsByteSequence for SetPortAttributeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.attribute.as_bytes(&mut bytes[index..]);
         index += self.value.as_bytes(&mut bytes[index..]);
         index
@@ -2240,9 +2266,10 @@ impl AsByteSequence for SetPortAttributeRequest {
         log::trace!("Deserializing SetPortAttributeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (attribute, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2251,8 +2278,8 @@ impl AsByteSequence for SetPortAttributeRequest {
         Some((
             SetPortAttributeRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 attribute: attribute,
                 value: value,
             },
@@ -2262,8 +2289,9 @@ impl AsByteSequence for SetPortAttributeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.attribute.size()
             + self.value.size()
     }
@@ -2277,8 +2305,8 @@ impl Request for SetPortAttributeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetPortAttributeRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub attribute: Atom,
 }
 impl GetPortAttributeRequest {}
@@ -2287,8 +2315,9 @@ impl AsByteSequence for GetPortAttributeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.attribute.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2298,17 +2327,18 @@ impl AsByteSequence for GetPortAttributeRequest {
         log::trace!("Deserializing GetPortAttributeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (attribute, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPortAttributeRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 attribute: attribute,
             },
             index,
@@ -2316,7 +2346,7 @@ impl AsByteSequence for GetPortAttributeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size() + self.attribute.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size() + self.attribute.size()
     }
 }
 impl Request for GetPortAttributeRequest {
@@ -2375,8 +2405,8 @@ impl AsByteSequence for GetPortAttributeReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryPortAttributesRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
 }
 impl QueryPortAttributesRequest {}
 impl AsByteSequence for QueryPortAttributesRequest {
@@ -2384,8 +2414,9 @@ impl AsByteSequence for QueryPortAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2394,22 +2425,23 @@ impl AsByteSequence for QueryPortAttributesRequest {
         log::trace!("Deserializing QueryPortAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryPortAttributesRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size()
     }
 }
 impl Request for QueryPortAttributesRequest {
@@ -2493,8 +2525,8 @@ impl AsByteSequence for QueryPortAttributesReply {
 #[derive(Clone, Debug, Default)]
 pub struct ListImageFormatsRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
 }
 impl ListImageFormatsRequest {}
 impl AsByteSequence for ListImageFormatsRequest {
@@ -2502,8 +2534,9 @@ impl AsByteSequence for ListImageFormatsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2512,22 +2545,23 @@ impl AsByteSequence for ListImageFormatsRequest {
         log::trace!("Deserializing ListImageFormatsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListImageFormatsRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.port.size()
     }
 }
 impl Request for ListImageFormatsRequest {
@@ -2605,8 +2639,8 @@ impl AsByteSequence for ListImageFormatsReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryImageAttributesRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub id: Card32,
     pub width: Card16,
     pub height: Card16,
@@ -2617,8 +2651,9 @@ impl AsByteSequence for QueryImageAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.id.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
         index += self.height.as_bytes(&mut bytes[index..]);
@@ -2630,9 +2665,10 @@ impl AsByteSequence for QueryImageAttributesRequest {
         log::trace!("Deserializing QueryImageAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2643,8 +2679,8 @@ impl AsByteSequence for QueryImageAttributesRequest {
         Some((
             QueryImageAttributesRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 id: id,
                 width: width,
                 height: height,
@@ -2655,8 +2691,9 @@ impl AsByteSequence for QueryImageAttributesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.id.size()
             + self.width.size()
             + self.height.size()
@@ -2771,8 +2808,8 @@ impl AsByteSequence for QueryImageAttributesReply {
 #[derive(Clone, Debug, Default)]
 pub struct PutImageRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub id: Card32,
@@ -2794,8 +2831,9 @@ impl AsByteSequence for PutImageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.id.as_bytes(&mut bytes[index..]);
@@ -2820,9 +2858,10 @@ impl AsByteSequence for PutImageRequest {
         log::trace!("Deserializing PutImageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2857,8 +2896,8 @@ impl AsByteSequence for PutImageRequest {
         Some((
             PutImageRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 id: id,
@@ -2880,8 +2919,9 @@ impl AsByteSequence for PutImageRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.id.size()
@@ -2911,8 +2951,8 @@ impl Request for PutImageRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ShmPutImageRequest {
     pub req_type: u8,
-    pub port: Port,
     pub length: u16,
+    pub port: Port,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub shmseg: Seg,
@@ -2936,8 +2976,9 @@ impl AsByteSequence for ShmPutImageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.shmseg.as_bytes(&mut bytes[index..]);
@@ -2963,9 +3004,10 @@ impl AsByteSequence for ShmPutImageRequest {
         log::trace!("Deserializing ShmPutImageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3003,8 +3045,8 @@ impl AsByteSequence for ShmPutImageRequest {
         Some((
             ShmPutImageRequest {
                 req_type: req_type,
-                port: port,
                 length: length,
+                port: port,
                 drawable: drawable,
                 gc: gc,
                 shmseg: shmseg,
@@ -3028,8 +3070,9 @@ impl AsByteSequence for ShmPutImageRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.port.size()
+            + 1
             + self.length.size()
+            + self.port.size()
             + self.drawable.size()
             + self.gc.size()
             + self.shmseg.size()

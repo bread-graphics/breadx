@@ -6,6 +6,7 @@ use std::{
     hash::{Hash, Hasher},
     mem,
     ops::Deref,
+    sync::atomic::{AtomicBool, Ordering},
 };
 use tinyvec::{ArrayVec, TinyVec};
 
@@ -15,6 +16,13 @@ pub enum StructVariant {
     Request,
     Error,
     Event(bool),
+}
+
+static IS_EXTENSION: AtomicBool = AtomicBool::new(false);
+
+#[inline]
+pub fn set_is_extension(val: bool) {
+    IS_EXTENSION.store(val, Ordering::Release)
 }
 
 #[inline]
@@ -37,6 +45,8 @@ fn doesnt_need_pad_pop(field: &StructureItem) -> bool {
 /// Configure a set of fields, given its struct variant.
 #[inline]
 pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: StructVariant) {
+    let is_extension = IS_EXTENSION.load(Ordering::Acquire);
+
     // firstly, ensure that all fields are unique
     let mut hashes: Vec<u64> = Vec::with_capacity(fields.len());
     fields.retain(|field| {
@@ -60,6 +70,7 @@ pub fn configure_fields(fields: &mut TinyVec<[StructureItem; 6]>, variant: Struc
     {
         if fields.is_empty()
             || matches!(fields[0], StructureItem::List(_))
+            || (is_extension && matches!(variant, StructVariant::Request))
             || doesnt_need_pad_pop(&fields[0])
         {
             ONE_PAD

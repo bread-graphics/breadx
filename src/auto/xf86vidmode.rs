@@ -514,8 +514,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetModeLineRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetModeLineRequest {}
 impl AsByteSequence for GetModeLineRequest {
@@ -523,8 +523,9 @@ impl AsByteSequence for GetModeLineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -534,23 +535,24 @@ impl AsByteSequence for GetModeLineRequest {
         log::trace!("Deserializing GetModeLineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetModeLineRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetModeLineRequest {
@@ -832,8 +834,8 @@ impl Request for ModModeLineRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SwitchModeRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub zoom: Card16,
 }
 impl SwitchModeRequest {}
@@ -842,8 +844,9 @@ impl AsByteSequence for SwitchModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.zoom.as_bytes(&mut bytes[index..]);
         index
     }
@@ -853,17 +856,18 @@ impl AsByteSequence for SwitchModeRequest {
         log::trace!("Deserializing SwitchModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (zoom, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SwitchModeRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 zoom: zoom,
             },
             index,
@@ -871,7 +875,7 @@ impl AsByteSequence for SwitchModeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.zoom.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.zoom.size()
     }
 }
 impl Request for SwitchModeRequest {
@@ -883,8 +887,8 @@ impl Request for SwitchModeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetMonitorRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetMonitorRequest {}
 impl AsByteSequence for GetMonitorRequest {
@@ -892,8 +896,9 @@ impl AsByteSequence for GetMonitorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -903,23 +908,24 @@ impl AsByteSequence for GetMonitorRequest {
         log::trace!("Deserializing GetMonitorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetMonitorRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetMonitorRequest {
@@ -1069,8 +1075,8 @@ impl AsByteSequence for GetMonitorReply {
 #[derive(Clone, Debug, Default)]
 pub struct LockModeSwitchRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub lock: Card16,
 }
 impl LockModeSwitchRequest {}
@@ -1079,8 +1085,9 @@ impl AsByteSequence for LockModeSwitchRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.lock.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1090,17 +1097,18 @@ impl AsByteSequence for LockModeSwitchRequest {
         log::trace!("Deserializing LockModeSwitchRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (lock, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             LockModeSwitchRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 lock: lock,
             },
             index,
@@ -1108,7 +1116,7 @@ impl AsByteSequence for LockModeSwitchRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.lock.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.lock.size()
     }
 }
 impl Request for LockModeSwitchRequest {
@@ -1120,8 +1128,8 @@ impl Request for LockModeSwitchRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetAllModeLinesRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetAllModeLinesRequest {}
 impl AsByteSequence for GetAllModeLinesRequest {
@@ -1129,8 +1137,9 @@ impl AsByteSequence for GetAllModeLinesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -1140,23 +1149,24 @@ impl AsByteSequence for GetAllModeLinesRequest {
         log::trace!("Deserializing GetAllModeLinesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetAllModeLinesRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetAllModeLinesRequest {
@@ -1918,8 +1928,8 @@ impl Request for SwitchToModeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetViewPortRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetViewPortRequest {}
 impl AsByteSequence for GetViewPortRequest {
@@ -1927,8 +1937,9 @@ impl AsByteSequence for GetViewPortRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -1938,23 +1949,24 @@ impl AsByteSequence for GetViewPortRequest {
         log::trace!("Deserializing GetViewPortRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetViewPortRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetViewPortRequest {
@@ -2026,8 +2038,8 @@ impl AsByteSequence for GetViewPortReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetViewPortRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub x: Card32,
     pub y: Card32,
 }
@@ -2037,8 +2049,9 @@ impl AsByteSequence for SetViewPortRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
@@ -2050,9 +2063,10 @@ impl AsByteSequence for SetViewPortRequest {
         log::trace!("Deserializing SetViewPortRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (x, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -2062,8 +2076,8 @@ impl AsByteSequence for SetViewPortRequest {
         Some((
             SetViewPortRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 x: x,
                 y: y,
             },
@@ -2073,8 +2087,9 @@ impl AsByteSequence for SetViewPortRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + 2
             + self.x.size()
             + self.y.size()
@@ -2089,8 +2104,8 @@ impl Request for SetViewPortRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetDotClocksRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetDotClocksRequest {}
 impl AsByteSequence for GetDotClocksRequest {
@@ -2098,8 +2113,9 @@ impl AsByteSequence for GetDotClocksRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -2109,23 +2125,24 @@ impl AsByteSequence for GetDotClocksRequest {
         log::trace!("Deserializing GetDotClocksRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetDotClocksRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetDotClocksRequest {
@@ -2220,8 +2237,8 @@ pub const CLOCK_FLAG_PROGRAMABLE: ClockFlag = 1;
 #[derive(Clone, Debug, Default)]
 pub struct SetClientVersionRequest {
     pub req_type: u8,
-    pub major: Card16,
     pub length: u16,
+    pub major: Card16,
     pub minor: Card16,
 }
 impl SetClientVersionRequest {}
@@ -2230,8 +2247,9 @@ impl AsByteSequence for SetClientVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major.as_bytes(&mut bytes[index..]);
         index += self.minor.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2241,17 +2259,18 @@ impl AsByteSequence for SetClientVersionRequest {
         log::trace!("Deserializing SetClientVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetClientVersionRequest {
                 req_type: req_type,
-                major: major,
                 length: length,
+                major: major,
                 minor: minor,
             },
             index,
@@ -2259,7 +2278,7 @@ impl AsByteSequence for SetClientVersionRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.major.size() + self.length.size() + self.minor.size()
+        self.req_type.size() + 1 + self.length.size() + self.major.size() + self.minor.size()
     }
 }
 impl Request for SetClientVersionRequest {
@@ -2271,8 +2290,8 @@ impl Request for SetClientVersionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetGammaRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub red: Card32,
     pub green: Card32,
     pub blue: Card32,
@@ -2283,8 +2302,9 @@ impl AsByteSequence for SetGammaRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.red.as_bytes(&mut bytes[index..]);
         index += self.green.as_bytes(&mut bytes[index..]);
@@ -2298,9 +2318,10 @@ impl AsByteSequence for SetGammaRequest {
         log::trace!("Deserializing SetGammaRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         let (red, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
@@ -2313,8 +2334,8 @@ impl AsByteSequence for SetGammaRequest {
         Some((
             SetGammaRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 red: red,
                 green: green,
                 blue: blue,
@@ -2325,8 +2346,9 @@ impl AsByteSequence for SetGammaRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + 2
             + self.red.size()
             + self.green.size()
@@ -2343,8 +2365,8 @@ impl Request for SetGammaRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetGammaRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetGammaRequest {}
 impl AsByteSequence for GetGammaRequest {
@@ -2352,8 +2374,9 @@ impl AsByteSequence for GetGammaRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 26;
         index
     }
@@ -2363,23 +2386,24 @@ impl AsByteSequence for GetGammaRequest {
         log::trace!("Deserializing GetGammaRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 26;
         Some((
             GetGammaRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 26
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 26
     }
 }
 impl Request for GetGammaRequest {
@@ -2457,8 +2481,8 @@ impl AsByteSequence for GetGammaReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetGammaRampRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub size: Card16,
 }
 impl GetGammaRampRequest {}
@@ -2467,8 +2491,9 @@ impl AsByteSequence for GetGammaRampRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2478,17 +2503,18 @@ impl AsByteSequence for GetGammaRampRequest {
         log::trace!("Deserializing GetGammaRampRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetGammaRampRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 size: size,
             },
             index,
@@ -2496,7 +2522,7 @@ impl AsByteSequence for GetGammaRampRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + self.size.size()
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + self.size.size()
     }
 }
 impl Request for GetGammaRampRequest {
@@ -2604,8 +2630,8 @@ impl AsByteSequence for GetGammaRampReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetGammaRampRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
     pub size: Card16,
     pub red: Vec<Card16>,
     pub green: Vec<Card16>,
@@ -2617,8 +2643,9 @@ impl AsByteSequence for SetGammaRampRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.red, &mut bytes[index..]);
         index += block_len;
@@ -2637,9 +2664,10 @@ impl AsByteSequence for SetGammaRampRequest {
         log::trace!("Deserializing SetGammaRampRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2658,8 +2686,8 @@ impl AsByteSequence for SetGammaRampRequest {
         Some((
             SetGammaRampRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
                 size: size,
                 red: red,
                 green: green,
@@ -2671,8 +2699,9 @@ impl AsByteSequence for SetGammaRampRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.screen.size()
+            + 1
             + self.length.size()
+            + self.screen.size()
             + self.size.size()
             + {
                 let block_len: usize = self.red.iter().map(|i| i.size()).sum();
@@ -2700,8 +2729,8 @@ impl Request for SetGammaRampRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetGammaRampSizeRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetGammaRampSizeRequest {}
 impl AsByteSequence for GetGammaRampSizeRequest {
@@ -2709,8 +2738,9 @@ impl AsByteSequence for GetGammaRampSizeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -2720,23 +2750,24 @@ impl AsByteSequence for GetGammaRampSizeRequest {
         log::trace!("Deserializing GetGammaRampSizeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetGammaRampSizeRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetGammaRampSizeRequest {
@@ -2802,8 +2833,8 @@ impl AsByteSequence for GetGammaRampSizeReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPermissionsRequest {
     pub req_type: u8,
-    pub screen: Card16,
     pub length: u16,
+    pub screen: Card16,
 }
 impl GetPermissionsRequest {}
 impl AsByteSequence for GetPermissionsRequest {
@@ -2811,8 +2842,9 @@ impl AsByteSequence for GetPermissionsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.screen.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.screen.as_bytes(&mut bytes[index..]);
         index += 2;
         index
     }
@@ -2822,23 +2854,24 @@ impl AsByteSequence for GetPermissionsRequest {
         log::trace!("Deserializing GetPermissionsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (screen, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
         Some((
             GetPermissionsRequest {
                 req_type: req_type,
-                screen: screen,
                 length: length,
+                screen: screen,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.screen.size() + self.length.size() + 2
+        self.req_type.size() + 1 + self.length.size() + self.screen.size() + 2
     }
 }
 impl Request for GetPermissionsRequest {

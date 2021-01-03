@@ -250,8 +250,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct ListSurfaceTypesRequest {
     pub req_type: u8,
-    pub port_id: Port,
     pub length: u16,
+    pub port_id: Port,
 }
 impl ListSurfaceTypesRequest {}
 impl AsByteSequence for ListSurfaceTypesRequest {
@@ -259,8 +259,9 @@ impl AsByteSequence for ListSurfaceTypesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port_id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -269,22 +270,23 @@ impl AsByteSequence for ListSurfaceTypesRequest {
         log::trace!("Deserializing ListSurfaceTypesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port_id, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port_id, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListSurfaceTypesRequest {
                 req_type: req_type,
-                port_id: port_id,
                 length: length,
+                port_id: port_id,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port_id.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.port_id.size()
     }
 }
 impl Request for ListSurfaceTypesRequest {
@@ -362,8 +364,8 @@ impl AsByteSequence for ListSurfaceTypesReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContextRequest {
     pub req_type: u8,
-    pub context_id: Context,
     pub length: u16,
+    pub context_id: Context,
     pub port_id: Port,
     pub surface_id: Surface,
     pub width: Card16,
@@ -376,8 +378,9 @@ impl AsByteSequence for CreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_id.as_bytes(&mut bytes[index..]);
         index += self.port_id.as_bytes(&mut bytes[index..]);
         index += self.surface_id.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -391,9 +394,10 @@ impl AsByteSequence for CreateContextRequest {
         log::trace!("Deserializing CreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_id, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_id, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
         index += sz;
         let (port_id, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -408,8 +412,8 @@ impl AsByteSequence for CreateContextRequest {
         Some((
             CreateContextRequest {
                 req_type: req_type,
-                context_id: context_id,
                 length: length,
+                context_id: context_id,
                 port_id: port_id,
                 surface_id: surface_id,
                 width: width,
@@ -422,8 +426,9 @@ impl AsByteSequence for CreateContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_id.size()
+            + 1
             + self.length.size()
+            + self.context_id.size()
             + self.port_id.size()
             + self.surface_id.size()
             + self.width.size()
@@ -520,8 +525,8 @@ impl AsByteSequence for CreateContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
-    pub context_id: Context,
     pub length: u16,
+    pub context_id: Context,
 }
 impl DestroyContextRequest {}
 impl AsByteSequence for DestroyContextRequest {
@@ -529,8 +534,9 @@ impl AsByteSequence for DestroyContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -539,22 +545,23 @@ impl AsByteSequence for DestroyContextRequest {
         log::trace!("Deserializing DestroyContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_id, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_id, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyContextRequest {
                 req_type: req_type,
-                context_id: context_id,
                 length: length,
+                context_id: context_id,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_id.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_id.size()
     }
 }
 impl Request for DestroyContextRequest {
@@ -566,8 +573,8 @@ impl Request for DestroyContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateSurfaceRequest {
     pub req_type: u8,
-    pub surface_id: Surface,
     pub length: u16,
+    pub surface_id: Surface,
     pub context_id: Context,
 }
 impl CreateSurfaceRequest {}
@@ -576,8 +583,9 @@ impl AsByteSequence for CreateSurfaceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.surface_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.surface_id.as_bytes(&mut bytes[index..]);
         index += self.context_id.as_bytes(&mut bytes[index..]);
         index
     }
@@ -587,17 +595,18 @@ impl AsByteSequence for CreateSurfaceRequest {
         log::trace!("Deserializing CreateSurfaceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (surface_id, sz): (Surface, usize) = <Surface>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (surface_id, sz): (Surface, usize) = <Surface>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context_id, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateSurfaceRequest {
                 req_type: req_type,
-                surface_id: surface_id,
                 length: length,
+                surface_id: surface_id,
                 context_id: context_id,
             },
             index,
@@ -605,7 +614,11 @@ impl AsByteSequence for CreateSurfaceRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.surface_id.size() + self.length.size() + self.context_id.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.surface_id.size()
+            + self.context_id.size()
     }
 }
 impl Request for CreateSurfaceRequest {
@@ -674,8 +687,8 @@ impl AsByteSequence for CreateSurfaceReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroySurfaceRequest {
     pub req_type: u8,
-    pub surface_id: Surface,
     pub length: u16,
+    pub surface_id: Surface,
 }
 impl DestroySurfaceRequest {}
 impl AsByteSequence for DestroySurfaceRequest {
@@ -683,8 +696,9 @@ impl AsByteSequence for DestroySurfaceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.surface_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.surface_id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -693,22 +707,23 @@ impl AsByteSequence for DestroySurfaceRequest {
         log::trace!("Deserializing DestroySurfaceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (surface_id, sz): (Surface, usize) = <Surface>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (surface_id, sz): (Surface, usize) = <Surface>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroySurfaceRequest {
                 req_type: req_type,
-                surface_id: surface_id,
                 length: length,
+                surface_id: surface_id,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.surface_id.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.surface_id.size()
     }
 }
 impl Request for DestroySurfaceRequest {
@@ -720,8 +735,8 @@ impl Request for DestroySurfaceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateSubpictureRequest {
     pub req_type: u8,
-    pub subpicture_id: Subpicture,
     pub length: u16,
+    pub subpicture_id: Subpicture,
     pub context: Context,
     pub xvimage_id: Card32,
     pub width: Card16,
@@ -733,8 +748,9 @@ impl AsByteSequence for CreateSubpictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.subpicture_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.subpicture_id.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
         index += self.xvimage_id.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -747,9 +763,10 @@ impl AsByteSequence for CreateSubpictureRequest {
         log::trace!("Deserializing CreateSubpictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (subpicture_id, sz): (Subpicture, usize) = <Subpicture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (subpicture_id, sz): (Subpicture, usize) = <Subpicture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, sz): (Context, usize) = <Context>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -762,8 +779,8 @@ impl AsByteSequence for CreateSubpictureRequest {
         Some((
             CreateSubpictureRequest {
                 req_type: req_type,
-                subpicture_id: subpicture_id,
                 length: length,
+                subpicture_id: subpicture_id,
                 context: context,
                 xvimage_id: xvimage_id,
                 width: width,
@@ -775,8 +792,9 @@ impl AsByteSequence for CreateSubpictureRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.subpicture_id.size()
+            + 1
             + self.length.size()
+            + self.subpicture_id.size()
             + self.context.size()
             + self.xvimage_id.size()
             + self.width.size()
@@ -884,8 +902,8 @@ impl AsByteSequence for CreateSubpictureReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroySubpictureRequest {
     pub req_type: u8,
-    pub subpicture_id: Subpicture,
     pub length: u16,
+    pub subpicture_id: Subpicture,
 }
 impl DestroySubpictureRequest {}
 impl AsByteSequence for DestroySubpictureRequest {
@@ -893,8 +911,9 @@ impl AsByteSequence for DestroySubpictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.subpicture_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.subpicture_id.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -903,22 +922,23 @@ impl AsByteSequence for DestroySubpictureRequest {
         log::trace!("Deserializing DestroySubpictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (subpicture_id, sz): (Subpicture, usize) = <Subpicture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (subpicture_id, sz): (Subpicture, usize) = <Subpicture>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroySubpictureRequest {
                 req_type: req_type,
-                subpicture_id: subpicture_id,
                 length: length,
+                subpicture_id: subpicture_id,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.subpicture_id.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.subpicture_id.size()
     }
 }
 impl Request for DestroySubpictureRequest {
@@ -930,8 +950,8 @@ impl Request for DestroySubpictureRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ListSubpictureTypesRequest {
     pub req_type: u8,
-    pub port_id: Port,
     pub length: u16,
+    pub port_id: Port,
     pub surface_id: Surface,
 }
 impl ListSubpictureTypesRequest {}
@@ -940,8 +960,9 @@ impl AsByteSequence for ListSubpictureTypesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.port_id.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.port_id.as_bytes(&mut bytes[index..]);
         index += self.surface_id.as_bytes(&mut bytes[index..]);
         index
     }
@@ -951,17 +972,18 @@ impl AsByteSequence for ListSubpictureTypesRequest {
         log::trace!("Deserializing ListSubpictureTypesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (port_id, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (port_id, sz): (Port, usize) = <Port>::from_bytes(&bytes[index..])?;
         index += sz;
         let (surface_id, sz): (Surface, usize) = <Surface>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListSubpictureTypesRequest {
                 req_type: req_type,
-                port_id: port_id,
                 length: length,
+                port_id: port_id,
                 surface_id: surface_id,
             },
             index,
@@ -969,7 +991,7 @@ impl AsByteSequence for ListSubpictureTypesRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.port_id.size() + self.length.size() + self.surface_id.size()
+        self.req_type.size() + 1 + self.length.size() + self.port_id.size() + self.surface_id.size()
     }
 }
 impl Request for ListSubpictureTypesRequest {

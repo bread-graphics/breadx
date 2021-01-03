@@ -9,8 +9,8 @@ use super::xproto::*;
 #[derive(Clone, Debug, Default)]
 pub struct GetVersionRequest {
     pub req_type: u8,
-    pub major_version: Card8,
     pub length: u16,
+    pub major_version: Card8,
     pub minor_version: Card16,
 }
 impl GetVersionRequest {}
@@ -19,8 +19,9 @@ impl AsByteSequence for GetVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += 1;
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
@@ -31,9 +32,10 @@ impl AsByteSequence for GetVersionRequest {
         log::trace!("Deserializing GetVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
         let (minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
@@ -41,8 +43,8 @@ impl AsByteSequence for GetVersionRequest {
         Some((
             GetVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -51,8 +53,9 @@ impl AsByteSequence for GetVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + 1
             + self.minor_version.size()
     }
@@ -218,8 +221,8 @@ impl AsByteSequence for CompareCursorReply {
 #[derive(Clone, Debug, Default)]
 pub struct FakeInputRequest {
     pub req_type: u8,
-    pub ty: Byte,
     pub length: u16,
+    pub ty: Byte,
     pub detail: Byte,
     pub time: Card32,
     pub root: Window,
@@ -233,8 +236,9 @@ impl AsByteSequence for FakeInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.ty.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.ty.as_bytes(&mut bytes[index..]);
         index += self.detail.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.time.as_bytes(&mut bytes[index..]);
@@ -252,9 +256,10 @@ impl AsByteSequence for FakeInputRequest {
         log::trace!("Deserializing FakeInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (ty, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ty, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
         index += sz;
         let (detail, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -274,8 +279,8 @@ impl AsByteSequence for FakeInputRequest {
         Some((
             FakeInputRequest {
                 req_type: req_type,
-                ty: ty,
                 length: length,
+                ty: ty,
                 detail: detail,
                 time: time,
                 root: root,
@@ -289,8 +294,9 @@ impl AsByteSequence for FakeInputRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.ty.size()
+            + 1
             + self.length.size()
+            + self.ty.size()
             + self.detail.size()
             + 2
             + self.time.size()
@@ -311,8 +317,8 @@ impl Request for FakeInputRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GrabControlRequest {
     pub req_type: u8,
-    pub impervious: bool,
     pub length: u16,
+    pub impervious: bool,
 }
 impl GrabControlRequest {}
 impl AsByteSequence for GrabControlRequest {
@@ -320,8 +326,9 @@ impl AsByteSequence for GrabControlRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.impervious.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.impervious.as_bytes(&mut bytes[index..]);
         index += 3;
         index
     }
@@ -331,23 +338,24 @@ impl AsByteSequence for GrabControlRequest {
         log::trace!("Deserializing GrabControlRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (impervious, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (impervious, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         Some((
             GrabControlRequest {
                 req_type: req_type,
-                impervious: impervious,
                 length: length,
+                impervious: impervious,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.impervious.size() + self.length.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.impervious.size() + 3
     }
 }
 impl Request for GrabControlRequest {

@@ -144,8 +144,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct RectanglesRequest {
     pub req_type: u8,
-    pub operation: So,
     pub length: u16,
+    pub operation: So,
     pub destination_kind: Sk,
     pub ordering: ClipOrdering,
     pub destination_window: Window,
@@ -159,8 +159,9 @@ impl AsByteSequence for RectanglesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.operation.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.operation.as_bytes(&mut bytes[index..]);
         index += self.destination_kind.as_bytes(&mut bytes[index..]);
         index += self.ordering.as_bytes(&mut bytes[index..]);
         index += 1;
@@ -178,9 +179,10 @@ impl AsByteSequence for RectanglesRequest {
         log::trace!("Deserializing RectanglesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -200,8 +202,8 @@ impl AsByteSequence for RectanglesRequest {
         Some((
             RectanglesRequest {
                 req_type: req_type,
-                operation: operation,
                 length: length,
+                operation: operation,
                 destination_kind: destination_kind,
                 ordering: ordering,
                 destination_window: destination_window,
@@ -215,8 +217,9 @@ impl AsByteSequence for RectanglesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.operation.size()
+            + 1
             + self.length.size()
+            + self.operation.size()
             + self.destination_kind.size()
             + self.ordering.size()
             + 1
@@ -276,8 +279,8 @@ impl Default for So {
 #[derive(Clone, Debug, Default)]
 pub struct MaskRequest {
     pub req_type: u8,
-    pub operation: So,
     pub length: u16,
+    pub operation: So,
     pub destination_kind: Sk,
     pub destination_window: Window,
     pub x_offset: Int16,
@@ -290,8 +293,9 @@ impl AsByteSequence for MaskRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.operation.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.operation.as_bytes(&mut bytes[index..]);
         index += self.destination_kind.as_bytes(&mut bytes[index..]);
         index += 2;
         index += self.destination_window.as_bytes(&mut bytes[index..]);
@@ -306,9 +310,10 @@ impl AsByteSequence for MaskRequest {
         log::trace!("Deserializing MaskRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -324,8 +329,8 @@ impl AsByteSequence for MaskRequest {
         Some((
             MaskRequest {
                 req_type: req_type,
-                operation: operation,
                 length: length,
+                operation: operation,
                 destination_kind: destination_kind,
                 destination_window: destination_window,
                 x_offset: x_offset,
@@ -338,8 +343,9 @@ impl AsByteSequence for MaskRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.operation.size()
+            + 1
             + self.length.size()
+            + self.operation.size()
             + self.destination_kind.size()
             + 2
             + self.destination_window.size()
@@ -357,8 +363,8 @@ impl Request for MaskRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CombineRequest {
     pub req_type: u8,
-    pub operation: So,
     pub length: u16,
+    pub operation: So,
     pub destination_kind: Sk,
     pub source_kind: Sk,
     pub destination_window: Window,
@@ -372,8 +378,9 @@ impl AsByteSequence for CombineRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.operation.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.operation.as_bytes(&mut bytes[index..]);
         index += self.destination_kind.as_bytes(&mut bytes[index..]);
         index += self.source_kind.as_bytes(&mut bytes[index..]);
         index += 1;
@@ -389,9 +396,10 @@ impl AsByteSequence for CombineRequest {
         log::trace!("Deserializing CombineRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (operation, sz): (So, usize) = <So>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -409,8 +417,8 @@ impl AsByteSequence for CombineRequest {
         Some((
             CombineRequest {
                 req_type: req_type,
-                operation: operation,
                 length: length,
+                operation: operation,
                 destination_kind: destination_kind,
                 source_kind: source_kind,
                 destination_window: destination_window,
@@ -424,8 +432,9 @@ impl AsByteSequence for CombineRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.operation.size()
+            + 1
             + self.length.size()
+            + self.operation.size()
             + self.destination_kind.size()
             + self.source_kind.size()
             + 1
@@ -444,8 +453,8 @@ impl Request for CombineRequest {
 #[derive(Clone, Debug, Default)]
 pub struct OffsetRequest {
     pub req_type: u8,
-    pub destination_kind: Sk,
     pub length: u16,
+    pub destination_kind: Sk,
     pub destination_window: Window,
     pub x_offset: Int16,
     pub y_offset: Int16,
@@ -456,8 +465,9 @@ impl AsByteSequence for OffsetRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.destination_kind.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.destination_kind.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.destination_window.as_bytes(&mut bytes[index..]);
         index += self.x_offset.as_bytes(&mut bytes[index..]);
@@ -470,9 +480,10 @@ impl AsByteSequence for OffsetRequest {
         log::trace!("Deserializing OffsetRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (destination_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (destination_kind, sz): (Sk, usize) = <Sk>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (destination_window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
@@ -484,8 +495,8 @@ impl AsByteSequence for OffsetRequest {
         Some((
             OffsetRequest {
                 req_type: req_type,
-                destination_kind: destination_kind,
                 length: length,
+                destination_kind: destination_kind,
                 destination_window: destination_window,
                 x_offset: x_offset,
                 y_offset: y_offset,
@@ -496,8 +507,9 @@ impl AsByteSequence for OffsetRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.destination_kind.size()
+            + 1
             + self.length.size()
+            + self.destination_kind.size()
             + 3
             + self.destination_window.size()
             + self.x_offset.size()

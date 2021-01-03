@@ -128,8 +128,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeSaveSetRequest {
     pub req_type: u8,
-    pub mode: SaveSetMode,
     pub length: u16,
+    pub mode: SaveSetMode,
     pub target: SaveSetTarget,
     pub map: SaveSetMapping,
     pub window: Window,
@@ -140,8 +140,9 @@ impl AsByteSequence for ChangeSaveSetRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.map.as_bytes(&mut bytes[index..]);
         index += 1;
@@ -154,9 +155,10 @@ impl AsByteSequence for ChangeSaveSetRequest {
         log::trace!("Deserializing ChangeSaveSetRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mode, sz): (SaveSetMode, usize) = <SaveSetMode>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (SaveSetMode, usize) = <SaveSetMode>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (SaveSetTarget, usize) = <SaveSetTarget>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -168,8 +170,8 @@ impl AsByteSequence for ChangeSaveSetRequest {
         Some((
             ChangeSaveSetRequest {
                 req_type: req_type,
-                mode: mode,
                 length: length,
+                mode: mode,
                 target: target,
                 map: map,
                 window: window,
@@ -180,8 +182,9 @@ impl AsByteSequence for ChangeSaveSetRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.mode.size()
+            + 1
             + self.length.size()
+            + self.mode.size()
             + self.target.size()
             + self.map.size()
             + 1
@@ -815,8 +818,8 @@ impl XidType for Region {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub rectangles: Vec<Rectangle>,
 }
 impl CreateRegionRequest {}
@@ -825,8 +828,9 @@ impl AsByteSequence for CreateRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.rectangles, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -838,9 +842,10 @@ impl AsByteSequence for CreateRegionRequest {
         log::trace!("Deserializing CreateRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (rectangles, block_len): (Vec<Rectangle>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
@@ -849,8 +854,8 @@ impl AsByteSequence for CreateRegionRequest {
         Some((
             CreateRegionRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 rectangles: rectangles,
             },
             index,
@@ -858,7 +863,7 @@ impl AsByteSequence for CreateRegionRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + {
             let block_len: usize = self.rectangles.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
             block_len + pad
@@ -874,8 +879,8 @@ impl Request for CreateRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionFromBitmapRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub bitmap: Pixmap,
 }
 impl CreateRegionFromBitmapRequest {}
@@ -884,8 +889,9 @@ impl AsByteSequence for CreateRegionFromBitmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.bitmap.as_bytes(&mut bytes[index..]);
         index
     }
@@ -895,17 +901,18 @@ impl AsByteSequence for CreateRegionFromBitmapRequest {
         log::trace!("Deserializing CreateRegionFromBitmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (bitmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateRegionFromBitmapRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 bitmap: bitmap,
             },
             index,
@@ -913,7 +920,7 @@ impl AsByteSequence for CreateRegionFromBitmapRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + self.bitmap.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + self.bitmap.size()
     }
 }
 impl Request for CreateRegionFromBitmapRequest {
@@ -925,8 +932,8 @@ impl Request for CreateRegionFromBitmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionFromWindowRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub window: Window,
     pub kind: Sk,
 }
@@ -936,8 +943,9 @@ impl AsByteSequence for CreateRegionFromWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index += self.kind.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -949,9 +957,10 @@ impl AsByteSequence for CreateRegionFromWindowRequest {
         log::trace!("Deserializing CreateRegionFromWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -961,8 +970,8 @@ impl AsByteSequence for CreateRegionFromWindowRequest {
         Some((
             CreateRegionFromWindowRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 window: window,
                 kind: kind,
             },
@@ -972,8 +981,9 @@ impl AsByteSequence for CreateRegionFromWindowRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.region.size()
+            + 1
             + self.length.size()
+            + self.region.size()
             + self.window.size()
             + self.kind.size()
             + 3
@@ -988,8 +998,8 @@ impl Request for CreateRegionFromWindowRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionFromGcRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub gc: Gcontext,
 }
 impl CreateRegionFromGcRequest {}
@@ -998,8 +1008,9 @@ impl AsByteSequence for CreateRegionFromGcRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.gc.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1009,17 +1020,18 @@ impl AsByteSequence for CreateRegionFromGcRequest {
         log::trace!("Deserializing CreateRegionFromGcRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateRegionFromGcRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 gc: gc,
             },
             index,
@@ -1027,7 +1039,7 @@ impl AsByteSequence for CreateRegionFromGcRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + self.gc.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + self.gc.size()
     }
 }
 impl Request for CreateRegionFromGcRequest {
@@ -1039,8 +1051,8 @@ impl Request for CreateRegionFromGcRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionFromPictureRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub picture: Picture,
 }
 impl CreateRegionFromPictureRequest {}
@@ -1049,8 +1061,9 @@ impl AsByteSequence for CreateRegionFromPictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.picture.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1060,17 +1073,18 @@ impl AsByteSequence for CreateRegionFromPictureRequest {
         log::trace!("Deserializing CreateRegionFromPictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateRegionFromPictureRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 picture: picture,
             },
             index,
@@ -1078,7 +1092,7 @@ impl AsByteSequence for CreateRegionFromPictureRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + self.picture.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + self.picture.size()
     }
 }
 impl Request for CreateRegionFromPictureRequest {
@@ -1090,8 +1104,8 @@ impl Request for CreateRegionFromPictureRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyRegionRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
 }
 impl DestroyRegionRequest {}
 impl AsByteSequence for DestroyRegionRequest {
@@ -1099,8 +1113,9 @@ impl AsByteSequence for DestroyRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1109,22 +1124,23 @@ impl AsByteSequence for DestroyRegionRequest {
         log::trace!("Deserializing DestroyRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyRegionRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size()
     }
 }
 impl Request for DestroyRegionRequest {
@@ -1136,8 +1152,8 @@ impl Request for DestroyRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetRegionRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub rectangles: Vec<Rectangle>,
 }
 impl SetRegionRequest {}
@@ -1146,8 +1162,9 @@ impl AsByteSequence for SetRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.rectangles, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -1159,9 +1176,10 @@ impl AsByteSequence for SetRegionRequest {
         log::trace!("Deserializing SetRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (rectangles, block_len): (Vec<Rectangle>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
@@ -1170,8 +1188,8 @@ impl AsByteSequence for SetRegionRequest {
         Some((
             SetRegionRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 rectangles: rectangles,
             },
             index,
@@ -1179,7 +1197,7 @@ impl AsByteSequence for SetRegionRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + {
             let block_len: usize = self.rectangles.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
             block_len + pad
@@ -1195,8 +1213,8 @@ impl Request for SetRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CopyRegionRequest {
     pub req_type: u8,
-    pub source: Region,
     pub length: u16,
+    pub source: Region,
     pub destination: Region,
 }
 impl CopyRegionRequest {}
@@ -1205,8 +1223,9 @@ impl AsByteSequence for CopyRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1216,17 +1235,18 @@ impl AsByteSequence for CopyRegionRequest {
         log::trace!("Deserializing CopyRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CopyRegionRequest {
                 req_type: req_type,
-                source: source,
                 length: length,
+                source: source,
                 destination: destination,
             },
             index,
@@ -1234,7 +1254,7 @@ impl AsByteSequence for CopyRegionRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.source.size() + self.length.size() + self.destination.size()
+        self.req_type.size() + 1 + self.length.size() + self.source.size() + self.destination.size()
     }
 }
 impl Request for CopyRegionRequest {
@@ -1246,8 +1266,8 @@ impl Request for CopyRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UnionRegionRequest {
     pub req_type: u8,
-    pub source1: Region,
     pub length: u16,
+    pub source1: Region,
     pub source2: Region,
     pub destination: Region,
 }
@@ -1257,8 +1277,9 @@ impl AsByteSequence for UnionRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source1.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source1.as_bytes(&mut bytes[index..]);
         index += self.source2.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
@@ -1269,9 +1290,10 @@ impl AsByteSequence for UnionRegionRequest {
         log::trace!("Deserializing UnionRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source2, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1280,8 +1302,8 @@ impl AsByteSequence for UnionRegionRequest {
         Some((
             UnionRegionRequest {
                 req_type: req_type,
-                source1: source1,
                 length: length,
+                source1: source1,
                 source2: source2,
                 destination: destination,
             },
@@ -1291,8 +1313,9 @@ impl AsByteSequence for UnionRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.source1.size()
+            + 1
             + self.length.size()
+            + self.source1.size()
             + self.source2.size()
             + self.destination.size()
     }
@@ -1306,8 +1329,8 @@ impl Request for UnionRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct IntersectRegionRequest {
     pub req_type: u8,
-    pub source1: Region,
     pub length: u16,
+    pub source1: Region,
     pub source2: Region,
     pub destination: Region,
 }
@@ -1317,8 +1340,9 @@ impl AsByteSequence for IntersectRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source1.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source1.as_bytes(&mut bytes[index..]);
         index += self.source2.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
@@ -1329,9 +1353,10 @@ impl AsByteSequence for IntersectRegionRequest {
         log::trace!("Deserializing IntersectRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source2, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1340,8 +1365,8 @@ impl AsByteSequence for IntersectRegionRequest {
         Some((
             IntersectRegionRequest {
                 req_type: req_type,
-                source1: source1,
                 length: length,
+                source1: source1,
                 source2: source2,
                 destination: destination,
             },
@@ -1351,8 +1376,9 @@ impl AsByteSequence for IntersectRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.source1.size()
+            + 1
             + self.length.size()
+            + self.source1.size()
             + self.source2.size()
             + self.destination.size()
     }
@@ -1366,8 +1392,8 @@ impl Request for IntersectRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SubtractRegionRequest {
     pub req_type: u8,
-    pub source1: Region,
     pub length: u16,
+    pub source1: Region,
     pub source2: Region,
     pub destination: Region,
 }
@@ -1377,8 +1403,9 @@ impl AsByteSequence for SubtractRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source1.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source1.as_bytes(&mut bytes[index..]);
         index += self.source2.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
@@ -1389,9 +1416,10 @@ impl AsByteSequence for SubtractRegionRequest {
         log::trace!("Deserializing SubtractRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source1, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source2, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1400,8 +1428,8 @@ impl AsByteSequence for SubtractRegionRequest {
         Some((
             SubtractRegionRequest {
                 req_type: req_type,
-                source1: source1,
                 length: length,
+                source1: source1,
                 source2: source2,
                 destination: destination,
             },
@@ -1411,8 +1439,9 @@ impl AsByteSequence for SubtractRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.source1.size()
+            + 1
             + self.length.size()
+            + self.source1.size()
             + self.source2.size()
             + self.destination.size()
     }
@@ -1426,8 +1455,8 @@ impl Request for SubtractRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct InvertRegionRequest {
     pub req_type: u8,
-    pub source: Region,
     pub length: u16,
+    pub source: Region,
     pub bounds: Rectangle,
     pub destination: Region,
 }
@@ -1437,8 +1466,9 @@ impl AsByteSequence for InvertRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source.as_bytes(&mut bytes[index..]);
         index += self.bounds.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
@@ -1449,9 +1479,10 @@ impl AsByteSequence for InvertRegionRequest {
         log::trace!("Deserializing InvertRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (bounds, sz): (Rectangle, usize) = <Rectangle>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1460,8 +1491,8 @@ impl AsByteSequence for InvertRegionRequest {
         Some((
             InvertRegionRequest {
                 req_type: req_type,
-                source: source,
                 length: length,
+                source: source,
                 bounds: bounds,
                 destination: destination,
             },
@@ -1471,8 +1502,9 @@ impl AsByteSequence for InvertRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.source.size()
+            + 1
             + self.length.size()
+            + self.source.size()
             + self.bounds.size()
             + self.destination.size()
     }
@@ -1486,8 +1518,8 @@ impl Request for InvertRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct TranslateRegionRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub dx: Int16,
     pub dy: Int16,
 }
@@ -1497,8 +1529,9 @@ impl AsByteSequence for TranslateRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.dx.as_bytes(&mut bytes[index..]);
         index += self.dy.as_bytes(&mut bytes[index..]);
         index
@@ -1509,9 +1542,10 @@ impl AsByteSequence for TranslateRegionRequest {
         log::trace!("Deserializing TranslateRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dx, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1520,8 +1554,8 @@ impl AsByteSequence for TranslateRegionRequest {
         Some((
             TranslateRegionRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 dx: dx,
                 dy: dy,
             },
@@ -1531,8 +1565,9 @@ impl AsByteSequence for TranslateRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.region.size()
+            + 1
             + self.length.size()
+            + self.region.size()
             + self.dx.size()
             + self.dy.size()
     }
@@ -1546,8 +1581,8 @@ impl Request for TranslateRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct RegionExtentsRequest {
     pub req_type: u8,
-    pub source: Region,
     pub length: u16,
+    pub source: Region,
     pub destination: Region,
 }
 impl RegionExtentsRequest {}
@@ -1556,8 +1591,9 @@ impl AsByteSequence for RegionExtentsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1567,17 +1603,18 @@ impl AsByteSequence for RegionExtentsRequest {
         log::trace!("Deserializing RegionExtentsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             RegionExtentsRequest {
                 req_type: req_type,
-                source: source,
                 length: length,
+                source: source,
                 destination: destination,
             },
             index,
@@ -1585,7 +1622,7 @@ impl AsByteSequence for RegionExtentsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.source.size() + self.length.size() + self.destination.size()
+        self.req_type.size() + 1 + self.length.size() + self.source.size() + self.destination.size()
     }
 }
 impl Request for RegionExtentsRequest {
@@ -1597,8 +1634,8 @@ impl Request for RegionExtentsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FetchRegionRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
 }
 impl FetchRegionRequest {}
 impl AsByteSequence for FetchRegionRequest {
@@ -1606,8 +1643,9 @@ impl AsByteSequence for FetchRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1616,22 +1654,23 @@ impl AsByteSequence for FetchRegionRequest {
         log::trace!("Deserializing FetchRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FetchRegionRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size()
     }
 }
 impl Request for FetchRegionRequest {
@@ -1711,8 +1750,8 @@ impl AsByteSequence for FetchRegionReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetGcClipRegionRequest {
     pub req_type: u8,
-    pub gc: Gcontext,
     pub length: u16,
+    pub gc: Gcontext,
     pub region: Region,
     pub x_origin: Int16,
     pub y_origin: Int16,
@@ -1723,8 +1762,9 @@ impl AsByteSequence for SetGcClipRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.gc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.gc.as_bytes(&mut bytes[index..]);
         index += self.region.as_bytes(&mut bytes[index..]);
         index += self.x_origin.as_bytes(&mut bytes[index..]);
         index += self.y_origin.as_bytes(&mut bytes[index..]);
@@ -1736,9 +1776,10 @@ impl AsByteSequence for SetGcClipRegionRequest {
         log::trace!("Deserializing SetGcClipRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1749,8 +1790,8 @@ impl AsByteSequence for SetGcClipRegionRequest {
         Some((
             SetGcClipRegionRequest {
                 req_type: req_type,
-                gc: gc,
                 length: length,
+                gc: gc,
                 region: region,
                 x_origin: x_origin,
                 y_origin: y_origin,
@@ -1761,8 +1802,9 @@ impl AsByteSequence for SetGcClipRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.gc.size()
+            + 1
             + self.length.size()
+            + self.gc.size()
             + self.region.size()
             + self.x_origin.size()
             + self.y_origin.size()
@@ -1856,8 +1898,8 @@ impl Request for SetWindowShapeRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetPictureClipRegionRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub region: Region,
     pub x_origin: Int16,
     pub y_origin: Int16,
@@ -1868,8 +1910,9 @@ impl AsByteSequence for SetPictureClipRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.region.as_bytes(&mut bytes[index..]);
         index += self.x_origin.as_bytes(&mut bytes[index..]);
         index += self.y_origin.as_bytes(&mut bytes[index..]);
@@ -1881,9 +1924,10 @@ impl AsByteSequence for SetPictureClipRegionRequest {
         log::trace!("Deserializing SetPictureClipRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1894,8 +1938,8 @@ impl AsByteSequence for SetPictureClipRegionRequest {
         Some((
             SetPictureClipRegionRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 region: region,
                 x_origin: x_origin,
                 y_origin: y_origin,
@@ -1906,8 +1950,9 @@ impl AsByteSequence for SetPictureClipRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.region.size()
             + self.x_origin.size()
             + self.y_origin.size()
@@ -1922,8 +1967,8 @@ impl Request for SetPictureClipRegionRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetCursorNameRequest {
     pub req_type: u8,
-    pub cursor: Cursor,
     pub length: u16,
+    pub cursor: Cursor,
     pub name: String,
 }
 impl SetCursorNameRequest {}
@@ -1932,8 +1977,9 @@ impl AsByteSequence for SetCursorNameRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cursor.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cursor.as_bytes(&mut bytes[index..]);
         index += (self.name.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = string_as_bytes(&self.name, &mut bytes[index..]);
@@ -1947,9 +1993,10 @@ impl AsByteSequence for SetCursorNameRequest {
         log::trace!("Deserializing SetCursorNameRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1960,8 +2007,8 @@ impl AsByteSequence for SetCursorNameRequest {
         Some((
             SetCursorNameRequest {
                 req_type: req_type,
-                cursor: cursor,
                 length: length,
+                cursor: cursor,
                 name: name,
             },
             index,
@@ -1970,8 +2017,9 @@ impl AsByteSequence for SetCursorNameRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.cursor.size()
+            + 1
             + self.length.size()
+            + self.cursor.size()
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
@@ -1990,8 +2038,8 @@ impl Request for SetCursorNameRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetCursorNameRequest {
     pub req_type: u8,
-    pub cursor: Cursor,
     pub length: u16,
+    pub cursor: Cursor,
 }
 impl GetCursorNameRequest {}
 impl AsByteSequence for GetCursorNameRequest {
@@ -1999,8 +2047,9 @@ impl AsByteSequence for GetCursorNameRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cursor.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cursor.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2009,22 +2058,23 @@ impl AsByteSequence for GetCursorNameRequest {
         log::trace!("Deserializing GetCursorNameRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cursor, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetCursorNameRequest {
                 req_type: req_type,
-                cursor: cursor,
                 length: length,
+                cursor: cursor,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cursor.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.cursor.size()
     }
 }
 impl Request for GetCursorNameRequest {
@@ -2279,8 +2329,8 @@ impl AsByteSequence for GetCursorImageAndNameReply {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeCursorRequest {
     pub req_type: u8,
-    pub source: Cursor,
     pub length: u16,
+    pub source: Cursor,
     pub destination: Cursor,
 }
 impl ChangeCursorRequest {}
@@ -2289,8 +2339,9 @@ impl AsByteSequence for ChangeCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2300,17 +2351,18 @@ impl AsByteSequence for ChangeCursorRequest {
         log::trace!("Deserializing ChangeCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ChangeCursorRequest {
                 req_type: req_type,
-                source: source,
                 length: length,
+                source: source,
                 destination: destination,
             },
             index,
@@ -2318,7 +2370,7 @@ impl AsByteSequence for ChangeCursorRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.source.size() + self.length.size() + self.destination.size()
+        self.req_type.size() + 1 + self.length.size() + self.source.size() + self.destination.size()
     }
 }
 impl Request for ChangeCursorRequest {
@@ -2330,8 +2382,8 @@ impl Request for ChangeCursorRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeCursorByNameRequest {
     pub req_type: u8,
-    pub src: Cursor,
     pub length: u16,
+    pub src: Cursor,
     pub name: String,
 }
 impl ChangeCursorByNameRequest {}
@@ -2340,8 +2392,9 @@ impl AsByteSequence for ChangeCursorByNameRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.src.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.src.as_bytes(&mut bytes[index..]);
         index += (self.name.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = string_as_bytes(&self.name, &mut bytes[index..]);
@@ -2355,9 +2408,10 @@ impl AsByteSequence for ChangeCursorByNameRequest {
         log::trace!("Deserializing ChangeCursorByNameRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (src, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (src, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2368,8 +2422,8 @@ impl AsByteSequence for ChangeCursorByNameRequest {
         Some((
             ChangeCursorByNameRequest {
                 req_type: req_type,
-                src: src,
                 length: length,
+                src: src,
                 name: name,
             },
             index,
@@ -2378,8 +2432,9 @@ impl AsByteSequence for ChangeCursorByNameRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.src.size()
+            + 1
             + self.length.size()
+            + self.src.size()
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
@@ -2398,8 +2453,8 @@ impl Request for ChangeCursorByNameRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ExpandRegionRequest {
     pub req_type: u8,
-    pub source: Region,
     pub length: u16,
+    pub source: Region,
     pub destination: Region,
     pub left: Card16,
     pub right: Card16,
@@ -2412,8 +2467,9 @@ impl AsByteSequence for ExpandRegionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.source.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.source.as_bytes(&mut bytes[index..]);
         index += self.destination.as_bytes(&mut bytes[index..]);
         index += self.left.as_bytes(&mut bytes[index..]);
         index += self.right.as_bytes(&mut bytes[index..]);
@@ -2427,9 +2483,10 @@ impl AsByteSequence for ExpandRegionRequest {
         log::trace!("Deserializing ExpandRegionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (source, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (destination, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2444,8 +2501,8 @@ impl AsByteSequence for ExpandRegionRequest {
         Some((
             ExpandRegionRequest {
                 req_type: req_type,
-                source: source,
                 length: length,
+                source: source,
                 destination: destination,
                 left: left,
                 right: right,
@@ -2458,8 +2515,9 @@ impl AsByteSequence for ExpandRegionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.source.size()
+            + 1
             + self.length.size()
+            + self.source.size()
             + self.destination.size()
             + self.left.size()
             + self.right.size()
@@ -2593,8 +2651,8 @@ impl XidType for Barrier {
 #[derive(Clone, Debug, Default)]
 pub struct CreatePointerBarrierRequest {
     pub req_type: u8,
-    pub barrier: Barrier,
     pub length: u16,
+    pub barrier: Barrier,
     pub window: Window,
     pub x1: Card16,
     pub y1: Card16,
@@ -2609,8 +2667,9 @@ impl AsByteSequence for CreatePointerBarrierRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.barrier.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.barrier.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index += self.x1.as_bytes(&mut bytes[index..]);
         index += self.y1.as_bytes(&mut bytes[index..]);
@@ -2630,9 +2689,10 @@ impl AsByteSequence for CreatePointerBarrierRequest {
         log::trace!("Deserializing CreatePointerBarrierRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2657,8 +2717,8 @@ impl AsByteSequence for CreatePointerBarrierRequest {
         Some((
             CreatePointerBarrierRequest {
                 req_type: req_type,
-                barrier: barrier,
                 length: length,
+                barrier: barrier,
                 window: window,
                 x1: x1,
                 y1: y1,
@@ -2673,8 +2733,9 @@ impl AsByteSequence for CreatePointerBarrierRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.barrier.size()
+            + 1
             + self.length.size()
+            + self.barrier.size()
             + self.window.size()
             + self.x1.size()
             + self.y1.size()
@@ -2833,8 +2894,8 @@ impl core::ops::BitXor for BarrierDirections {
 #[derive(Clone, Debug, Default)]
 pub struct DeletePointerBarrierRequest {
     pub req_type: u8,
-    pub barrier: Barrier,
     pub length: u16,
+    pub barrier: Barrier,
 }
 impl DeletePointerBarrierRequest {}
 impl AsByteSequence for DeletePointerBarrierRequest {
@@ -2842,8 +2903,9 @@ impl AsByteSequence for DeletePointerBarrierRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.barrier.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.barrier.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2852,22 +2914,23 @@ impl AsByteSequence for DeletePointerBarrierRequest {
         log::trace!("Deserializing DeletePointerBarrierRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (barrier, sz): (Barrier, usize) = <Barrier>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeletePointerBarrierRequest {
                 req_type: req_type,
-                barrier: barrier,
                 length: length,
+                barrier: barrier,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.barrier.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.barrier.size()
     }
 }
 impl Request for DeletePointerBarrierRequest {
@@ -2875,6 +2938,78 @@ impl Request for DeletePointerBarrierRequest {
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
+}
+#[derive(Clone, Debug, Default)]
+pub struct CursorNotifyEvent {
+    pub event_type: u8,
+    pub subtype: Card8,
+    pub sequence: u16,
+    pub window: Window,
+    pub cursor_serial: Card32,
+    pub timestamp: Timestamp,
+    pub name: Atom,
+}
+impl CursorNotifyEvent {}
+impl AsByteSequence for CursorNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.subtype.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.name.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            CursorNotifyEvent {
+                event_type: event_type,
+                subtype: subtype,
+                sequence: sequence,
+                window: window,
+                cursor_serial: cursor_serial,
+                timestamp: timestamp,
+                name: name,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.subtype.size()
+            + self.sequence.size()
+            + self.window.size()
+            + self.cursor_serial.size()
+            + self.timestamp.size()
+            + self.name.size()
+            + 12
+    }
+}
+impl crate::auto::Event for CursorNotifyEvent {
+    const OPCODE: u8 = 1;
 }
 #[derive(Clone, Debug, Default)]
 pub struct SelectionNotifyEvent {
@@ -2954,76 +3089,4 @@ impl AsByteSequence for SelectionNotifyEvent {
 }
 impl crate::auto::Event for SelectionNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct CursorNotifyEvent {
-    pub event_type: u8,
-    pub subtype: Card8,
-    pub sequence: u16,
-    pub window: Window,
-    pub cursor_serial: Card32,
-    pub timestamp: Timestamp,
-    pub name: Atom,
-}
-impl CursorNotifyEvent {}
-impl AsByteSequence for CursorNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.subtype.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.name.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            CursorNotifyEvent {
-                event_type: event_type,
-                subtype: subtype,
-                sequence: sequence,
-                window: window,
-                cursor_serial: cursor_serial,
-                timestamp: timestamp,
-                name: name,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.subtype.size()
-            + self.sequence.size()
-            + self.window.size()
-            + self.cursor_serial.size()
-            + self.timestamp.size()
-            + self.name.size()
-            + 12
-    }
-}
-impl crate::auto::Event for CursorNotifyEvent {
-    const OPCODE: u8 = 1;
 }

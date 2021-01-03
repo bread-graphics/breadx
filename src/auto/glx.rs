@@ -163,8 +163,8 @@ pub type ContextTag = Card32;
 #[derive(Clone, Debug, Default)]
 pub struct RenderRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub data: Vec<Byte>,
 }
 impl RenderRequest {}
@@ -173,8 +173,9 @@ impl AsByteSequence for RenderRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.data, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -186,9 +187,10 @@ impl AsByteSequence for RenderRequest {
         log::trace!("Deserializing RenderRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (data, block_len): (Vec<Byte>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
@@ -197,8 +199,8 @@ impl AsByteSequence for RenderRequest {
         Some((
             RenderRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 data: data,
             },
             index,
@@ -206,7 +208,7 @@ impl AsByteSequence for RenderRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + {
             let block_len: usize = self.data.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Byte>());
             block_len + pad
@@ -222,8 +224,8 @@ impl Request for RenderRequest {
 #[derive(Clone, Debug, Default)]
 pub struct RenderLargeRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub request_num: Card16,
     pub request_total: Card16,
     pub data: Vec<Byte>,
@@ -234,8 +236,9 @@ impl AsByteSequence for RenderLargeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.request_num.as_bytes(&mut bytes[index..]);
         index += self.request_total.as_bytes(&mut bytes[index..]);
         index += (self.data.len() as Card32).as_bytes(&mut bytes[index..]);
@@ -250,9 +253,10 @@ impl AsByteSequence for RenderLargeRequest {
         log::trace!("Deserializing RenderLargeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (request_num, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -267,8 +271,8 @@ impl AsByteSequence for RenderLargeRequest {
         Some((
             RenderLargeRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 request_num: request_num,
                 request_total: request_total,
                 data: data,
@@ -279,8 +283,9 @@ impl AsByteSequence for RenderLargeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.request_num.size()
             + self.request_total.size()
             + ::core::mem::size_of::<Card32>()
@@ -300,8 +305,8 @@ impl Request for RenderLargeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContextRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
     pub visual: Visualid,
     pub screen: Card32,
     pub share_list: super::glx::Context,
@@ -313,8 +318,9 @@ impl AsByteSequence for CreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.visual.as_bytes(&mut bytes[index..]);
         index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.share_list.as_bytes(&mut bytes[index..]);
@@ -328,10 +334,11 @@ impl AsByteSequence for CreateContextRequest {
         log::trace!("Deserializing CreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (visual, sz): (Visualid, usize) = <Visualid>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -346,8 +353,8 @@ impl AsByteSequence for CreateContextRequest {
         Some((
             CreateContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 visual: visual,
                 screen: screen,
                 share_list: share_list,
@@ -359,8 +366,9 @@ impl AsByteSequence for CreateContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.visual.size()
             + self.screen.size()
             + self.share_list.size()
@@ -377,8 +385,8 @@ impl Request for CreateContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
 }
 impl DestroyContextRequest {}
 impl AsByteSequence for DestroyContextRequest {
@@ -386,8 +394,9 @@ impl AsByteSequence for DestroyContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -396,23 +405,24 @@ impl AsByteSequence for DestroyContextRequest {
         log::trace!("Deserializing DestroyContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for DestroyContextRequest {
@@ -424,8 +434,8 @@ impl Request for DestroyContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct MakeCurrentRequest {
     pub req_type: u8,
-    pub drawable: super::glx::Drawable,
     pub length: u16,
+    pub drawable: super::glx::Drawable,
     pub context: super::glx::Context,
     pub old_context_tag: ContextTag,
 }
@@ -435,8 +445,9 @@ impl AsByteSequence for MakeCurrentRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
         index += self.old_context_tag.as_bytes(&mut bytes[index..]);
         index
@@ -447,10 +458,11 @@ impl AsByteSequence for MakeCurrentRequest {
         log::trace!("Deserializing MakeCurrentRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (drawable, sz): (super::glx::Drawable, usize) =
             <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
@@ -460,8 +472,8 @@ impl AsByteSequence for MakeCurrentRequest {
         Some((
             MakeCurrentRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 context: context,
                 old_context_tag: old_context_tag,
             },
@@ -471,8 +483,9 @@ impl AsByteSequence for MakeCurrentRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.context.size()
             + self.old_context_tag.size()
     }
@@ -540,8 +553,8 @@ impl AsByteSequence for MakeCurrentReply {
 #[derive(Clone, Debug, Default)]
 pub struct IsDirectRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
 }
 impl IsDirectRequest {}
 impl AsByteSequence for IsDirectRequest {
@@ -549,8 +562,9 @@ impl AsByteSequence for IsDirectRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -559,23 +573,24 @@ impl AsByteSequence for IsDirectRequest {
         log::trace!("Deserializing IsDirectRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             IsDirectRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for IsDirectRequest {
@@ -758,8 +773,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct WaitGlRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl WaitGlRequest {}
 impl AsByteSequence for WaitGlRequest {
@@ -767,8 +782,9 @@ impl AsByteSequence for WaitGlRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -777,22 +793,23 @@ impl AsByteSequence for WaitGlRequest {
         log::trace!("Deserializing WaitGlRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             WaitGlRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for WaitGlRequest {
@@ -804,8 +821,8 @@ impl Request for WaitGlRequest {
 #[derive(Clone, Debug, Default)]
 pub struct WaitXRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl WaitXRequest {}
 impl AsByteSequence for WaitXRequest {
@@ -813,8 +830,9 @@ impl AsByteSequence for WaitXRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -823,22 +841,23 @@ impl AsByteSequence for WaitXRequest {
         log::trace!("Deserializing WaitXRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             WaitXRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for WaitXRequest {
@@ -850,8 +869,8 @@ impl Request for WaitXRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CopyContextRequest {
     pub req_type: u8,
-    pub src: super::glx::Context,
     pub length: u16,
+    pub src: super::glx::Context,
     pub dest: super::glx::Context,
     pub mask: Card32,
     pub src_context_tag: ContextTag,
@@ -862,8 +881,9 @@ impl AsByteSequence for CopyContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.src.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dest.as_bytes(&mut bytes[index..]);
         index += self.mask.as_bytes(&mut bytes[index..]);
         index += self.src_context_tag.as_bytes(&mut bytes[index..]);
@@ -875,10 +895,11 @@ impl AsByteSequence for CopyContextRequest {
         log::trace!("Deserializing CopyContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (src, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (dest, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
@@ -890,8 +911,8 @@ impl AsByteSequence for CopyContextRequest {
         Some((
             CopyContextRequest {
                 req_type: req_type,
-                src: src,
                 length: length,
+                src: src,
                 dest: dest,
                 mask: mask,
                 src_context_tag: src_context_tag,
@@ -902,8 +923,9 @@ impl AsByteSequence for CopyContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.src.size()
+            + 1
             + self.length.size()
+            + self.src.size()
             + self.dest.size()
             + self.mask.size()
             + self.src_context_tag.size()
@@ -918,8 +940,8 @@ impl Request for CopyContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SwapBuffersRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub drawable: super::glx::Drawable,
 }
 impl SwapBuffersRequest {}
@@ -928,8 +950,9 @@ impl AsByteSequence for SwapBuffersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
@@ -939,9 +962,10 @@ impl AsByteSequence for SwapBuffersRequest {
         log::trace!("Deserializing SwapBuffersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (super::glx::Drawable, usize) =
             <super::glx::Drawable>::from_bytes(&bytes[index..])?;
@@ -949,8 +973,8 @@ impl AsByteSequence for SwapBuffersRequest {
         Some((
             SwapBuffersRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 drawable: drawable,
             },
             index,
@@ -958,7 +982,11 @@ impl AsByteSequence for SwapBuffersRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.drawable.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.context_tag.size()
+            + self.drawable.size()
     }
 }
 impl Request for SwapBuffersRequest {
@@ -970,8 +998,8 @@ impl Request for SwapBuffersRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UseXFontRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub font: Font,
     pub first: Card32,
     pub count: Card32,
@@ -983,8 +1011,9 @@ impl AsByteSequence for UseXFontRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.font.as_bytes(&mut bytes[index..]);
         index += self.first.as_bytes(&mut bytes[index..]);
         index += self.count.as_bytes(&mut bytes[index..]);
@@ -997,9 +1026,10 @@ impl AsByteSequence for UseXFontRequest {
         log::trace!("Deserializing UseXFontRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (font, sz): (Font, usize) = <Font>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1012,8 +1042,8 @@ impl AsByteSequence for UseXFontRequest {
         Some((
             UseXFontRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 font: font,
                 first: first,
                 count: count,
@@ -1025,8 +1055,9 @@ impl AsByteSequence for UseXFontRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.font.size()
             + self.first.size()
             + self.count.size()
@@ -1235,8 +1266,8 @@ impl AsByteSequence for GetVisualConfigsReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyGlxPixmapRequest {
     pub req_type: u8,
-    pub glx_pixmap: super::glx::Pixmap,
     pub length: u16,
+    pub glx_pixmap: super::glx::Pixmap,
 }
 impl DestroyGlxPixmapRequest {}
 impl AsByteSequence for DestroyGlxPixmapRequest {
@@ -1244,8 +1275,9 @@ impl AsByteSequence for DestroyGlxPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1254,23 +1286,24 @@ impl AsByteSequence for DestroyGlxPixmapRequest {
         log::trace!("Deserializing DestroyGlxPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (glx_pixmap, sz): (super::glx::Pixmap, usize) =
             <super::glx::Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyGlxPixmapRequest {
                 req_type: req_type,
-                glx_pixmap: glx_pixmap,
                 length: length,
+                glx_pixmap: glx_pixmap,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.glx_pixmap.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.glx_pixmap.size()
     }
 }
 impl Request for DestroyGlxPixmapRequest {
@@ -2010,8 +2043,8 @@ impl Request for CreatePixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyPixmapRequest {
     pub req_type: u8,
-    pub glx_pixmap: super::glx::Pixmap,
     pub length: u16,
+    pub glx_pixmap: super::glx::Pixmap,
 }
 impl DestroyPixmapRequest {}
 impl AsByteSequence for DestroyPixmapRequest {
@@ -2019,8 +2052,9 @@ impl AsByteSequence for DestroyPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glx_pixmap.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2029,23 +2063,24 @@ impl AsByteSequence for DestroyPixmapRequest {
         log::trace!("Deserializing DestroyPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (glx_pixmap, sz): (super::glx::Pixmap, usize) =
             <super::glx::Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyPixmapRequest {
                 req_type: req_type,
-                glx_pixmap: glx_pixmap,
                 length: length,
+                glx_pixmap: glx_pixmap,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.glx_pixmap.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.glx_pixmap.size()
     }
 }
 impl Request for DestroyPixmapRequest {
@@ -2057,8 +2092,8 @@ impl Request for DestroyPixmapRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateNewContextRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
     pub fbconfig: Fbconfig,
     pub screen: Card32,
     pub render_type: Card32,
@@ -2071,8 +2106,9 @@ impl AsByteSequence for CreateNewContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.fbconfig.as_bytes(&mut bytes[index..]);
         index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.render_type.as_bytes(&mut bytes[index..]);
@@ -2087,10 +2123,11 @@ impl AsByteSequence for CreateNewContextRequest {
         log::trace!("Deserializing CreateNewContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fbconfig, sz): (Fbconfig, usize) = <Fbconfig>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2107,8 +2144,8 @@ impl AsByteSequence for CreateNewContextRequest {
         Some((
             CreateNewContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 fbconfig: fbconfig,
                 screen: screen,
                 render_type: render_type,
@@ -2121,8 +2158,9 @@ impl AsByteSequence for CreateNewContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.fbconfig.size()
             + self.screen.size()
             + self.render_type.size()
@@ -2140,8 +2178,8 @@ impl Request for CreateNewContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct QueryContextRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
 }
 impl QueryContextRequest {}
 impl AsByteSequence for QueryContextRequest {
@@ -2149,8 +2187,9 @@ impl AsByteSequence for QueryContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2159,23 +2198,24 @@ impl AsByteSequence for QueryContextRequest {
         log::trace!("Deserializing QueryContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for QueryContextRequest {
@@ -2255,8 +2295,8 @@ impl AsByteSequence for QueryContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct MakeContextCurrentRequest {
     pub req_type: u8,
-    pub old_context_tag: ContextTag,
     pub length: u16,
+    pub old_context_tag: ContextTag,
     pub drawable: super::glx::Drawable,
     pub read_drawable: super::glx::Drawable,
     pub context: super::glx::Context,
@@ -2267,8 +2307,9 @@ impl AsByteSequence for MakeContextCurrentRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.old_context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.old_context_tag.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.read_drawable.as_bytes(&mut bytes[index..]);
         index += self.context.as_bytes(&mut bytes[index..]);
@@ -2280,9 +2321,10 @@ impl AsByteSequence for MakeContextCurrentRequest {
         log::trace!("Deserializing MakeContextCurrentRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (old_context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (old_context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (super::glx::Drawable, usize) =
             <super::glx::Drawable>::from_bytes(&bytes[index..])?;
@@ -2296,8 +2338,8 @@ impl AsByteSequence for MakeContextCurrentRequest {
         Some((
             MakeContextCurrentRequest {
                 req_type: req_type,
-                old_context_tag: old_context_tag,
                 length: length,
+                old_context_tag: old_context_tag,
                 drawable: drawable,
                 read_drawable: read_drawable,
                 context: context,
@@ -2308,8 +2350,9 @@ impl AsByteSequence for MakeContextCurrentRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.old_context_tag.size()
+            + 1
             + self.length.size()
+            + self.old_context_tag.size()
             + self.drawable.size()
             + self.read_drawable.size()
             + self.context.size()
@@ -2461,8 +2504,8 @@ impl Request for CreatePbufferRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyPbufferRequest {
     pub req_type: u8,
-    pub pbuffer: Pbuffer,
     pub length: u16,
+    pub pbuffer: Pbuffer,
 }
 impl DestroyPbufferRequest {}
 impl AsByteSequence for DestroyPbufferRequest {
@@ -2470,8 +2513,9 @@ impl AsByteSequence for DestroyPbufferRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pbuffer.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pbuffer.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2480,22 +2524,23 @@ impl AsByteSequence for DestroyPbufferRequest {
         log::trace!("Deserializing DestroyPbufferRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pbuffer, sz): (Pbuffer, usize) = <Pbuffer>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pbuffer, sz): (Pbuffer, usize) = <Pbuffer>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyPbufferRequest {
                 req_type: req_type,
-                pbuffer: pbuffer,
                 length: length,
+                pbuffer: pbuffer,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.pbuffer.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.pbuffer.size()
     }
 }
 impl Request for DestroyPbufferRequest {
@@ -2507,8 +2552,8 @@ impl Request for DestroyPbufferRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetDrawableAttributesRequest {
     pub req_type: u8,
-    pub drawable: super::glx::Drawable,
     pub length: u16,
+    pub drawable: super::glx::Drawable,
 }
 impl GetDrawableAttributesRequest {}
 impl AsByteSequence for GetDrawableAttributesRequest {
@@ -2516,8 +2561,9 @@ impl AsByteSequence for GetDrawableAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2526,23 +2572,24 @@ impl AsByteSequence for GetDrawableAttributesRequest {
         log::trace!("Deserializing GetDrawableAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (drawable, sz): (super::glx::Drawable, usize) =
             <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDrawableAttributesRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.drawable.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.drawable.size()
     }
 }
 impl Request for GetDrawableAttributesRequest {
@@ -2622,8 +2669,8 @@ impl AsByteSequence for GetDrawableAttributesReply {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeDrawableAttributesRequest {
     pub req_type: u8,
-    pub drawable: super::glx::Drawable,
     pub length: u16,
+    pub drawable: super::glx::Drawable,
     pub num_attribs: Card32,
     pub attribs: Vec<Card32>,
 }
@@ -2633,8 +2680,9 @@ impl AsByteSequence for ChangeDrawableAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.num_attribs.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.attribs, &mut bytes[index..]);
         index += block_len;
@@ -2647,10 +2695,11 @@ impl AsByteSequence for ChangeDrawableAttributesRequest {
         log::trace!("Deserializing ChangeDrawableAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (drawable, sz): (super::glx::Drawable, usize) =
             <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2661,8 +2710,8 @@ impl AsByteSequence for ChangeDrawableAttributesRequest {
         Some((
             ChangeDrawableAttributesRequest {
                 req_type: req_type,
-                drawable: drawable,
                 length: length,
+                drawable: drawable,
                 num_attribs: num_attribs,
                 attribs: attribs,
             },
@@ -2672,8 +2721,9 @@ impl AsByteSequence for ChangeDrawableAttributesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.drawable.size()
+            + 1
             + self.length.size()
+            + self.drawable.size()
             + self.num_attribs.size()
             + {
                 let block_len: usize = self.attribs.iter().map(|i| i.size()).sum();
@@ -2782,8 +2832,8 @@ impl Request for CreateWindowRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteWindowRequest {
     pub req_type: u8,
-    pub glxwindow: super::glx::Window,
     pub length: u16,
+    pub glxwindow: super::glx::Window,
 }
 impl DeleteWindowRequest {}
 impl AsByteSequence for DeleteWindowRequest {
@@ -2791,8 +2841,9 @@ impl AsByteSequence for DeleteWindowRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glxwindow.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glxwindow.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2801,23 +2852,24 @@ impl AsByteSequence for DeleteWindowRequest {
         log::trace!("Deserializing DeleteWindowRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (glxwindow, sz): (super::glx::Window, usize) =
             <super::glx::Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeleteWindowRequest {
                 req_type: req_type,
-                glxwindow: glxwindow,
                 length: length,
+                glxwindow: glxwindow,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.glxwindow.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.glxwindow.size()
     }
 }
 impl Request for DeleteWindowRequest {
@@ -2942,8 +2994,8 @@ impl Request for SetClientInfoArbRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContextAttribsArbRequest {
     pub req_type: u8,
-    pub context: super::glx::Context,
     pub length: u16,
+    pub context: super::glx::Context,
     pub fbconfig: Fbconfig,
     pub screen: Card32,
     pub share_list: super::glx::Context,
@@ -2957,8 +3009,9 @@ impl AsByteSequence for CreateContextAttribsArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.fbconfig.as_bytes(&mut bytes[index..]);
         index += self.screen.as_bytes(&mut bytes[index..]);
         index += self.share_list.as_bytes(&mut bytes[index..]);
@@ -2976,10 +3029,11 @@ impl AsByteSequence for CreateContextAttribsArbRequest {
         log::trace!("Deserializing CreateContextAttribsArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::glx::Context, usize) =
             <super::glx::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (fbconfig, sz): (Fbconfig, usize) = <Fbconfig>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3000,8 +3054,8 @@ impl AsByteSequence for CreateContextAttribsArbRequest {
         Some((
             CreateContextAttribsArbRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 fbconfig: fbconfig,
                 screen: screen,
                 share_list: share_list,
@@ -3015,8 +3069,9 @@ impl AsByteSequence for CreateContextAttribsArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.fbconfig.size()
             + self.screen.size()
             + self.share_list.size()
@@ -3152,8 +3207,8 @@ impl Request for SetClientInfo2ArbRequest {
 #[derive(Clone, Debug, Default)]
 pub struct NewListRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub list: Card32,
     pub mode: Card32,
 }
@@ -3163,8 +3218,9 @@ impl AsByteSequence for NewListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.list.as_bytes(&mut bytes[index..]);
         index += self.mode.as_bytes(&mut bytes[index..]);
         index
@@ -3175,9 +3231,10 @@ impl AsByteSequence for NewListRequest {
         log::trace!("Deserializing NewListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (list, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3186,8 +3243,8 @@ impl AsByteSequence for NewListRequest {
         Some((
             NewListRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 list: list,
                 mode: mode,
             },
@@ -3197,8 +3254,9 @@ impl AsByteSequence for NewListRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.list.size()
             + self.mode.size()
     }
@@ -3212,8 +3270,8 @@ impl Request for NewListRequest {
 #[derive(Clone, Debug, Default)]
 pub struct EndListRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl EndListRequest {}
 impl AsByteSequence for EndListRequest {
@@ -3221,8 +3279,9 @@ impl AsByteSequence for EndListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3231,22 +3290,23 @@ impl AsByteSequence for EndListRequest {
         log::trace!("Deserializing EndListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             EndListRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for EndListRequest {
@@ -3258,8 +3318,8 @@ impl Request for EndListRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteListsRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub list: Card32,
     pub range: Int32,
 }
@@ -3269,8 +3329,9 @@ impl AsByteSequence for DeleteListsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.list.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
         index
@@ -3281,9 +3342,10 @@ impl AsByteSequence for DeleteListsRequest {
         log::trace!("Deserializing DeleteListsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (list, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3292,8 +3354,8 @@ impl AsByteSequence for DeleteListsRequest {
         Some((
             DeleteListsRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 list: list,
                 range: range,
             },
@@ -3303,8 +3365,9 @@ impl AsByteSequence for DeleteListsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.list.size()
             + self.range.size()
     }
@@ -3318,8 +3381,8 @@ impl Request for DeleteListsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GenListsRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub range: Int32,
 }
 impl GenListsRequest {}
@@ -3328,8 +3391,9 @@ impl AsByteSequence for GenListsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3339,17 +3403,18 @@ impl AsByteSequence for GenListsRequest {
         log::trace!("Deserializing GenListsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (range, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GenListsRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 range: range,
             },
             index,
@@ -3357,7 +3422,7 @@ impl AsByteSequence for GenListsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.range.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.range.size()
     }
 }
 impl Request for GenListsRequest {
@@ -3416,8 +3481,8 @@ impl AsByteSequence for GenListsReply {
 #[derive(Clone, Debug, Default)]
 pub struct FeedbackBufferRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub size: Int32,
     pub ty: Int32,
 }
@@ -3427,8 +3492,9 @@ impl AsByteSequence for FeedbackBufferRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
         index
@@ -3439,9 +3505,10 @@ impl AsByteSequence for FeedbackBufferRequest {
         log::trace!("Deserializing FeedbackBufferRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3450,8 +3517,8 @@ impl AsByteSequence for FeedbackBufferRequest {
         Some((
             FeedbackBufferRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 size: size,
                 ty: ty,
             },
@@ -3461,8 +3528,9 @@ impl AsByteSequence for FeedbackBufferRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.size.size()
             + self.ty.size()
     }
@@ -3476,8 +3544,8 @@ impl Request for FeedbackBufferRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SelectBufferRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub size: Int32,
 }
 impl SelectBufferRequest {}
@@ -3486,8 +3554,9 @@ impl AsByteSequence for SelectBufferRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3497,17 +3566,18 @@ impl AsByteSequence for SelectBufferRequest {
         log::trace!("Deserializing SelectBufferRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SelectBufferRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 size: size,
             },
             index,
@@ -3515,7 +3585,7 @@ impl AsByteSequence for SelectBufferRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.size.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.size.size()
     }
 }
 impl Request for SelectBufferRequest {
@@ -3527,8 +3597,8 @@ impl Request for SelectBufferRequest {
 #[derive(Clone, Debug, Default)]
 pub struct RenderModeRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub mode: Card32,
 }
 impl RenderModeRequest {}
@@ -3537,8 +3607,9 @@ impl AsByteSequence for RenderModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.mode.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3548,17 +3619,18 @@ impl AsByteSequence for RenderModeRequest {
         log::trace!("Deserializing RenderModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (mode, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             RenderModeRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 mode: mode,
             },
             index,
@@ -3566,7 +3638,7 @@ impl AsByteSequence for RenderModeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.mode.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.mode.size()
     }
 }
 impl Request for RenderModeRequest {
@@ -3656,8 +3728,8 @@ impl AsByteSequence for RenderModeReply {
 #[derive(Clone, Debug, Default)]
 pub struct FinishRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl FinishRequest {}
 impl AsByteSequence for FinishRequest {
@@ -3665,8 +3737,9 @@ impl AsByteSequence for FinishRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3675,22 +3748,23 @@ impl AsByteSequence for FinishRequest {
         log::trace!("Deserializing FinishRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FinishRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for FinishRequest {
@@ -3744,8 +3818,8 @@ impl AsByteSequence for FinishReply {
 #[derive(Clone, Debug, Default)]
 pub struct PixelStorefRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Card32,
     pub datum: Float32,
 }
@@ -3755,8 +3829,9 @@ impl AsByteSequence for PixelStorefRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index += self.datum.as_bytes(&mut bytes[index..]);
         index
@@ -3767,9 +3842,10 @@ impl AsByteSequence for PixelStorefRequest {
         log::trace!("Deserializing PixelStorefRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3778,8 +3854,8 @@ impl AsByteSequence for PixelStorefRequest {
         Some((
             PixelStorefRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
                 datum: datum,
             },
@@ -3789,8 +3865,9 @@ impl AsByteSequence for PixelStorefRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.pname.size()
             + self.datum.size()
     }
@@ -3804,8 +3881,8 @@ impl Request for PixelStorefRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PixelStoreiRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Card32,
     pub datum: Int32,
 }
@@ -3815,8 +3892,9 @@ impl AsByteSequence for PixelStoreiRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index += self.datum.as_bytes(&mut bytes[index..]);
         index
@@ -3827,9 +3905,10 @@ impl AsByteSequence for PixelStoreiRequest {
         log::trace!("Deserializing PixelStoreiRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3838,8 +3917,8 @@ impl AsByteSequence for PixelStoreiRequest {
         Some((
             PixelStoreiRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
                 datum: datum,
             },
@@ -3849,8 +3928,9 @@ impl AsByteSequence for PixelStoreiRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.pname.size()
             + self.datum.size()
     }
@@ -3864,8 +3944,8 @@ impl Request for PixelStoreiRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ReadPixelsRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub x: Int32,
     pub y: Int32,
     pub width: Int32,
@@ -3881,8 +3961,9 @@ impl AsByteSequence for ReadPixelsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -3899,9 +3980,10 @@ impl AsByteSequence for ReadPixelsRequest {
         log::trace!("Deserializing ReadPixelsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (x, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3922,8 +4004,8 @@ impl AsByteSequence for ReadPixelsRequest {
         Some((
             ReadPixelsRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 x: x,
                 y: y,
                 width: width,
@@ -3939,8 +4021,9 @@ impl AsByteSequence for ReadPixelsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.x.size()
             + self.y.size()
             + self.width.size()
@@ -4017,8 +4100,8 @@ impl AsByteSequence for ReadPixelsReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetBooleanvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Int32,
 }
 impl GetBooleanvRequest {}
@@ -4027,8 +4110,9 @@ impl AsByteSequence for GetBooleanvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4038,17 +4122,18 @@ impl AsByteSequence for GetBooleanvRequest {
         log::trace!("Deserializing GetBooleanvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetBooleanvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
             },
             index,
@@ -4056,7 +4141,7 @@ impl AsByteSequence for GetBooleanvRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.pname.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.pname.size()
     }
 }
 impl Request for GetBooleanvRequest {
@@ -4143,8 +4228,8 @@ impl AsByteSequence for GetBooleanvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetClipPlaneRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub plane: Int32,
 }
 impl GetClipPlaneRequest {}
@@ -4153,8 +4238,9 @@ impl AsByteSequence for GetClipPlaneRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.plane.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4164,17 +4250,18 @@ impl AsByteSequence for GetClipPlaneRequest {
         log::trace!("Deserializing GetClipPlaneRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (plane, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetClipPlaneRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 plane: plane,
             },
             index,
@@ -4182,7 +4269,7 @@ impl AsByteSequence for GetClipPlaneRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.plane.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.plane.size()
     }
 }
 impl Request for GetClipPlaneRequest {
@@ -4251,8 +4338,8 @@ impl AsByteSequence for GetClipPlaneReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetDoublevRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Card32,
 }
 impl GetDoublevRequest {}
@@ -4261,8 +4348,9 @@ impl AsByteSequence for GetDoublevRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4272,17 +4360,18 @@ impl AsByteSequence for GetDoublevRequest {
         log::trace!("Deserializing GetDoublevRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDoublevRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
             },
             index,
@@ -4290,7 +4379,7 @@ impl AsByteSequence for GetDoublevRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.pname.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.pname.size()
     }
 }
 impl Request for GetDoublevRequest {
@@ -4377,8 +4466,8 @@ impl AsByteSequence for GetDoublevReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetErrorRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl GetErrorRequest {}
 impl AsByteSequence for GetErrorRequest {
@@ -4386,8 +4475,9 @@ impl AsByteSequence for GetErrorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -4396,22 +4486,23 @@ impl AsByteSequence for GetErrorRequest {
         log::trace!("Deserializing GetErrorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetErrorRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for GetErrorRequest {
@@ -4470,8 +4561,8 @@ impl AsByteSequence for GetErrorReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetFloatvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Card32,
 }
 impl GetFloatvRequest {}
@@ -4480,8 +4571,9 @@ impl AsByteSequence for GetFloatvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4491,17 +4583,18 @@ impl AsByteSequence for GetFloatvRequest {
         log::trace!("Deserializing GetFloatvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetFloatvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
             },
             index,
@@ -4509,7 +4602,7 @@ impl AsByteSequence for GetFloatvRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.pname.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.pname.size()
     }
 }
 impl Request for GetFloatvRequest {
@@ -4596,8 +4689,8 @@ impl AsByteSequence for GetFloatvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetIntegervRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub pname: Card32,
 }
 impl GetIntegervRequest {}
@@ -4606,8 +4699,9 @@ impl AsByteSequence for GetIntegervRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4617,17 +4711,18 @@ impl AsByteSequence for GetIntegervRequest {
         log::trace!("Deserializing GetIntegervRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pname, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetIntegervRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 pname: pname,
             },
             index,
@@ -4635,7 +4730,7 @@ impl AsByteSequence for GetIntegervRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.pname.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.pname.size()
     }
 }
 impl Request for GetIntegervRequest {
@@ -4722,8 +4817,8 @@ impl AsByteSequence for GetIntegervReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetLightfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub light: Card32,
     pub pname: Card32,
 }
@@ -4733,8 +4828,9 @@ impl AsByteSequence for GetLightfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.light.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -4745,9 +4841,10 @@ impl AsByteSequence for GetLightfvRequest {
         log::trace!("Deserializing GetLightfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (light, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4756,8 +4853,8 @@ impl AsByteSequence for GetLightfvRequest {
         Some((
             GetLightfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 light: light,
                 pname: pname,
             },
@@ -4767,8 +4864,9 @@ impl AsByteSequence for GetLightfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.light.size()
             + self.pname.size()
     }
@@ -4857,8 +4955,8 @@ impl AsByteSequence for GetLightfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetLightivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub light: Card32,
     pub pname: Card32,
 }
@@ -4868,8 +4966,9 @@ impl AsByteSequence for GetLightivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.light.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -4880,9 +4979,10 @@ impl AsByteSequence for GetLightivRequest {
         log::trace!("Deserializing GetLightivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (light, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4891,8 +4991,8 @@ impl AsByteSequence for GetLightivRequest {
         Some((
             GetLightivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 light: light,
                 pname: pname,
             },
@@ -4902,8 +5002,9 @@ impl AsByteSequence for GetLightivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.light.size()
             + self.pname.size()
     }
@@ -4992,8 +5093,8 @@ impl AsByteSequence for GetLightivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMapdvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub query: Card32,
 }
@@ -5003,8 +5104,9 @@ impl AsByteSequence for GetMapdvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.query.as_bytes(&mut bytes[index..]);
         index
@@ -5015,9 +5117,10 @@ impl AsByteSequence for GetMapdvRequest {
         log::trace!("Deserializing GetMapdvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5026,8 +5129,8 @@ impl AsByteSequence for GetMapdvRequest {
         Some((
             GetMapdvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 query: query,
             },
@@ -5037,8 +5140,9 @@ impl AsByteSequence for GetMapdvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.query.size()
     }
@@ -5127,8 +5231,8 @@ impl AsByteSequence for GetMapdvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMapfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub query: Card32,
 }
@@ -5138,8 +5242,9 @@ impl AsByteSequence for GetMapfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.query.as_bytes(&mut bytes[index..]);
         index
@@ -5150,9 +5255,10 @@ impl AsByteSequence for GetMapfvRequest {
         log::trace!("Deserializing GetMapfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5161,8 +5267,8 @@ impl AsByteSequence for GetMapfvRequest {
         Some((
             GetMapfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 query: query,
             },
@@ -5172,8 +5278,9 @@ impl AsByteSequence for GetMapfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.query.size()
     }
@@ -5262,8 +5369,8 @@ impl AsByteSequence for GetMapfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMapivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub query: Card32,
 }
@@ -5273,8 +5380,9 @@ impl AsByteSequence for GetMapivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.query.as_bytes(&mut bytes[index..]);
         index
@@ -5285,9 +5393,10 @@ impl AsByteSequence for GetMapivRequest {
         log::trace!("Deserializing GetMapivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5296,8 +5405,8 @@ impl AsByteSequence for GetMapivRequest {
         Some((
             GetMapivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 query: query,
             },
@@ -5307,8 +5416,9 @@ impl AsByteSequence for GetMapivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.query.size()
     }
@@ -5397,8 +5507,8 @@ impl AsByteSequence for GetMapivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMaterialfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub face: Card32,
     pub pname: Card32,
 }
@@ -5408,8 +5518,9 @@ impl AsByteSequence for GetMaterialfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.face.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -5420,9 +5531,10 @@ impl AsByteSequence for GetMaterialfvRequest {
         log::trace!("Deserializing GetMaterialfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (face, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5431,8 +5543,8 @@ impl AsByteSequence for GetMaterialfvRequest {
         Some((
             GetMaterialfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 face: face,
                 pname: pname,
             },
@@ -5442,8 +5554,9 @@ impl AsByteSequence for GetMaterialfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.face.size()
             + self.pname.size()
     }
@@ -5532,8 +5645,8 @@ impl AsByteSequence for GetMaterialfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMaterialivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub face: Card32,
     pub pname: Card32,
 }
@@ -5543,8 +5656,9 @@ impl AsByteSequence for GetMaterialivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.face.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -5555,9 +5669,10 @@ impl AsByteSequence for GetMaterialivRequest {
         log::trace!("Deserializing GetMaterialivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (face, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5566,8 +5681,8 @@ impl AsByteSequence for GetMaterialivRequest {
         Some((
             GetMaterialivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 face: face,
                 pname: pname,
             },
@@ -5577,8 +5692,9 @@ impl AsByteSequence for GetMaterialivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.face.size()
             + self.pname.size()
     }
@@ -5667,8 +5783,8 @@ impl AsByteSequence for GetMaterialivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPixelMapfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub map: Card32,
 }
 impl GetPixelMapfvRequest {}
@@ -5677,8 +5793,9 @@ impl AsByteSequence for GetPixelMapfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.map.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5688,17 +5805,18 @@ impl AsByteSequence for GetPixelMapfvRequest {
         log::trace!("Deserializing GetPixelMapfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (map, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPixelMapfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 map: map,
             },
             index,
@@ -5706,7 +5824,7 @@ impl AsByteSequence for GetPixelMapfvRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.map.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.map.size()
     }
 }
 impl Request for GetPixelMapfvRequest {
@@ -5793,8 +5911,8 @@ impl AsByteSequence for GetPixelMapfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPixelMapuivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub map: Card32,
 }
 impl GetPixelMapuivRequest {}
@@ -5803,8 +5921,9 @@ impl AsByteSequence for GetPixelMapuivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.map.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5814,17 +5933,18 @@ impl AsByteSequence for GetPixelMapuivRequest {
         log::trace!("Deserializing GetPixelMapuivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (map, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPixelMapuivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 map: map,
             },
             index,
@@ -5832,7 +5952,7 @@ impl AsByteSequence for GetPixelMapuivRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.map.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.map.size()
     }
 }
 impl Request for GetPixelMapuivRequest {
@@ -5919,8 +6039,8 @@ impl AsByteSequence for GetPixelMapuivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPixelMapusvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub map: Card32,
 }
 impl GetPixelMapusvRequest {}
@@ -5929,8 +6049,9 @@ impl AsByteSequence for GetPixelMapusvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.map.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5940,17 +6061,18 @@ impl AsByteSequence for GetPixelMapusvRequest {
         log::trace!("Deserializing GetPixelMapusvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (map, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPixelMapusvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 map: map,
             },
             index,
@@ -5958,7 +6080,7 @@ impl AsByteSequence for GetPixelMapusvRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.map.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.map.size()
     }
 }
 impl Request for GetPixelMapusvRequest {
@@ -6045,8 +6167,8 @@ impl AsByteSequence for GetPixelMapusvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPolygonStippleRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub lsb_first: bool,
 }
 impl GetPolygonStippleRequest {}
@@ -6055,8 +6177,9 @@ impl AsByteSequence for GetPolygonStippleRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.lsb_first.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6066,17 +6189,18 @@ impl AsByteSequence for GetPolygonStippleRequest {
         log::trace!("Deserializing GetPolygonStippleRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (lsb_first, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPolygonStippleRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 lsb_first: lsb_first,
             },
             index,
@@ -6084,7 +6208,11 @@ impl AsByteSequence for GetPolygonStippleRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.lsb_first.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.context_tag.size()
+            + self.lsb_first.size()
     }
 }
 impl Request for GetPolygonStippleRequest {
@@ -6153,8 +6281,8 @@ impl AsByteSequence for GetPolygonStippleReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetStringRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub name: Card32,
 }
 impl GetStringRequest {}
@@ -6163,8 +6291,9 @@ impl AsByteSequence for GetStringRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.name.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6174,17 +6303,18 @@ impl AsByteSequence for GetStringRequest {
         log::trace!("Deserializing GetStringRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (name, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetStringRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 name: name,
             },
             index,
@@ -6192,7 +6322,7 @@ impl AsByteSequence for GetStringRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.name.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.name.size()
     }
 }
 impl Request for GetStringRequest {
@@ -6273,8 +6403,8 @@ impl AsByteSequence for GetStringReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexEnvfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -6284,8 +6414,9 @@ impl AsByteSequence for GetTexEnvfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -6296,9 +6427,10 @@ impl AsByteSequence for GetTexEnvfvRequest {
         log::trace!("Deserializing GetTexEnvfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6307,8 +6439,8 @@ impl AsByteSequence for GetTexEnvfvRequest {
         Some((
             GetTexEnvfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -6318,8 +6450,9 @@ impl AsByteSequence for GetTexEnvfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -6408,8 +6541,8 @@ impl AsByteSequence for GetTexEnvfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexEnvivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -6419,8 +6552,9 @@ impl AsByteSequence for GetTexEnvivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -6431,9 +6565,10 @@ impl AsByteSequence for GetTexEnvivRequest {
         log::trace!("Deserializing GetTexEnvivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6442,8 +6577,8 @@ impl AsByteSequence for GetTexEnvivRequest {
         Some((
             GetTexEnvivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -6453,8 +6588,9 @@ impl AsByteSequence for GetTexEnvivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -6543,8 +6679,8 @@ impl AsByteSequence for GetTexEnvivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexGendvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub coord: Card32,
     pub pname: Card32,
 }
@@ -6554,8 +6690,9 @@ impl AsByteSequence for GetTexGendvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.coord.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -6566,9 +6703,10 @@ impl AsByteSequence for GetTexGendvRequest {
         log::trace!("Deserializing GetTexGendvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (coord, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6577,8 +6715,8 @@ impl AsByteSequence for GetTexGendvRequest {
         Some((
             GetTexGendvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 coord: coord,
                 pname: pname,
             },
@@ -6588,8 +6726,9 @@ impl AsByteSequence for GetTexGendvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.coord.size()
             + self.pname.size()
     }
@@ -6678,8 +6817,8 @@ impl AsByteSequence for GetTexGendvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexGenfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub coord: Card32,
     pub pname: Card32,
 }
@@ -6689,8 +6828,9 @@ impl AsByteSequence for GetTexGenfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.coord.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -6701,9 +6841,10 @@ impl AsByteSequence for GetTexGenfvRequest {
         log::trace!("Deserializing GetTexGenfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (coord, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6712,8 +6853,8 @@ impl AsByteSequence for GetTexGenfvRequest {
         Some((
             GetTexGenfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 coord: coord,
                 pname: pname,
             },
@@ -6723,8 +6864,9 @@ impl AsByteSequence for GetTexGenfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.coord.size()
             + self.pname.size()
     }
@@ -6813,8 +6955,8 @@ impl AsByteSequence for GetTexGenfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexGenivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub coord: Card32,
     pub pname: Card32,
 }
@@ -6824,8 +6966,9 @@ impl AsByteSequence for GetTexGenivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.coord.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -6836,9 +6979,10 @@ impl AsByteSequence for GetTexGenivRequest {
         log::trace!("Deserializing GetTexGenivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (coord, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6847,8 +6991,8 @@ impl AsByteSequence for GetTexGenivRequest {
         Some((
             GetTexGenivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 coord: coord,
                 pname: pname,
             },
@@ -6858,8 +7002,9 @@ impl AsByteSequence for GetTexGenivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.coord.size()
             + self.pname.size()
     }
@@ -6948,8 +7093,8 @@ impl AsByteSequence for GetTexGenivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexImageRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub level: Int32,
     pub format: Card32,
@@ -6962,8 +7107,9 @@ impl AsByteSequence for GetTexImageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.level.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
@@ -6977,9 +7123,10 @@ impl AsByteSequence for GetTexImageRequest {
         log::trace!("Deserializing GetTexImageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -6994,8 +7141,8 @@ impl AsByteSequence for GetTexImageRequest {
         Some((
             GetTexImageRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 level: level,
                 format: format,
@@ -7008,8 +7155,9 @@ impl AsByteSequence for GetTexImageRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.level.size()
             + self.format.size()
@@ -7109,8 +7257,8 @@ impl AsByteSequence for GetTexImageReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -7120,8 +7268,9 @@ impl AsByteSequence for GetTexParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -7132,9 +7281,10 @@ impl AsByteSequence for GetTexParameterfvRequest {
         log::trace!("Deserializing GetTexParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7143,8 +7293,8 @@ impl AsByteSequence for GetTexParameterfvRequest {
         Some((
             GetTexParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -7154,8 +7304,9 @@ impl AsByteSequence for GetTexParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -7244,8 +7395,8 @@ impl AsByteSequence for GetTexParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -7255,8 +7406,9 @@ impl AsByteSequence for GetTexParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -7267,9 +7419,10 @@ impl AsByteSequence for GetTexParameterivRequest {
         log::trace!("Deserializing GetTexParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7278,8 +7431,8 @@ impl AsByteSequence for GetTexParameterivRequest {
         Some((
             GetTexParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -7289,8 +7442,9 @@ impl AsByteSequence for GetTexParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -7379,8 +7533,8 @@ impl AsByteSequence for GetTexParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexLevelParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub level: Int32,
     pub pname: Card32,
@@ -7391,8 +7545,9 @@ impl AsByteSequence for GetTexLevelParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.level.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
@@ -7404,9 +7559,10 @@ impl AsByteSequence for GetTexLevelParameterfvRequest {
         log::trace!("Deserializing GetTexLevelParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7417,8 +7573,8 @@ impl AsByteSequence for GetTexLevelParameterfvRequest {
         Some((
             GetTexLevelParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 level: level,
                 pname: pname,
@@ -7429,8 +7585,9 @@ impl AsByteSequence for GetTexLevelParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.level.size()
             + self.pname.size()
@@ -7520,8 +7677,8 @@ impl AsByteSequence for GetTexLevelParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetTexLevelParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub level: Int32,
     pub pname: Card32,
@@ -7532,8 +7689,9 @@ impl AsByteSequence for GetTexLevelParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.level.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
@@ -7545,9 +7703,10 @@ impl AsByteSequence for GetTexLevelParameterivRequest {
         log::trace!("Deserializing GetTexLevelParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7558,8 +7717,8 @@ impl AsByteSequence for GetTexLevelParameterivRequest {
         Some((
             GetTexLevelParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 level: level,
                 pname: pname,
@@ -7570,8 +7729,9 @@ impl AsByteSequence for GetTexLevelParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.level.size()
             + self.pname.size()
@@ -7661,8 +7821,8 @@ impl AsByteSequence for GetTexLevelParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct IsEnabledRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub capability: Card32,
 }
 impl IsEnabledRequest {}
@@ -7671,8 +7831,9 @@ impl AsByteSequence for IsEnabledRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.capability.as_bytes(&mut bytes[index..]);
         index
     }
@@ -7682,17 +7843,18 @@ impl AsByteSequence for IsEnabledRequest {
         log::trace!("Deserializing IsEnabledRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (capability, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             IsEnabledRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 capability: capability,
             },
             index,
@@ -7700,7 +7862,11 @@ impl AsByteSequence for IsEnabledRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.capability.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.context_tag.size()
+            + self.capability.size()
     }
 }
 impl Request for IsEnabledRequest {
@@ -7759,8 +7925,8 @@ impl AsByteSequence for IsEnabledReply {
 #[derive(Clone, Debug, Default)]
 pub struct IsListRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub list: Card32,
 }
 impl IsListRequest {}
@@ -7769,8 +7935,9 @@ impl AsByteSequence for IsListRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.list.as_bytes(&mut bytes[index..]);
         index
     }
@@ -7780,17 +7947,18 @@ impl AsByteSequence for IsListRequest {
         log::trace!("Deserializing IsListRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (list, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             IsListRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 list: list,
             },
             index,
@@ -7798,7 +7966,7 @@ impl AsByteSequence for IsListRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.list.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.list.size()
     }
 }
 impl Request for IsListRequest {
@@ -7857,8 +8025,8 @@ impl AsByteSequence for IsListReply {
 #[derive(Clone, Debug, Default)]
 pub struct FlushRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
 }
 impl FlushRequest {}
 impl AsByteSequence for FlushRequest {
@@ -7866,8 +8034,9 @@ impl AsByteSequence for FlushRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -7876,22 +8045,23 @@ impl AsByteSequence for FlushRequest {
         log::trace!("Deserializing FlushRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FlushRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size()
     }
 }
 impl Request for FlushRequest {
@@ -7903,8 +8073,8 @@ impl Request for FlushRequest {
 #[derive(Clone, Debug, Default)]
 pub struct AreTexturesResidentRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub textures: Vec<Card32>,
 }
 impl AreTexturesResidentRequest {}
@@ -7913,8 +8083,9 @@ impl AsByteSequence for AreTexturesResidentRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += (self.textures.len() as Int32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.textures, &mut bytes[index..]);
         index += block_len;
@@ -7927,9 +8098,10 @@ impl AsByteSequence for AreTexturesResidentRequest {
         log::trace!("Deserializing AreTexturesResidentRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -7940,8 +8112,8 @@ impl AsByteSequence for AreTexturesResidentRequest {
         Some((
             AreTexturesResidentRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 textures: textures,
             },
             index,
@@ -7950,8 +8122,9 @@ impl AsByteSequence for AreTexturesResidentRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + ::core::mem::size_of::<Int32>()
             + {
                 let block_len: usize = self.textures.iter().map(|i| i.size()).sum();
@@ -8037,8 +8210,8 @@ impl AsByteSequence for AreTexturesResidentReply {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteTexturesRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub textures: Vec<Card32>,
 }
 impl DeleteTexturesRequest {}
@@ -8047,8 +8220,9 @@ impl AsByteSequence for DeleteTexturesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += (self.textures.len() as Int32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.textures, &mut bytes[index..]);
         index += block_len;
@@ -8061,9 +8235,10 @@ impl AsByteSequence for DeleteTexturesRequest {
         log::trace!("Deserializing DeleteTexturesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8074,8 +8249,8 @@ impl AsByteSequence for DeleteTexturesRequest {
         Some((
             DeleteTexturesRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 textures: textures,
             },
             index,
@@ -8084,8 +8259,9 @@ impl AsByteSequence for DeleteTexturesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + ::core::mem::size_of::<Int32>()
             + {
                 let block_len: usize = self.textures.iter().map(|i| i.size()).sum();
@@ -8103,8 +8279,8 @@ impl Request for DeleteTexturesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GenTexturesRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub n: Int32,
 }
 impl GenTexturesRequest {}
@@ -8113,8 +8289,9 @@ impl AsByteSequence for GenTexturesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.n.as_bytes(&mut bytes[index..]);
         index
     }
@@ -8124,17 +8301,18 @@ impl AsByteSequence for GenTexturesRequest {
         log::trace!("Deserializing GenTexturesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (n, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GenTexturesRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 n: n,
             },
             index,
@@ -8142,7 +8320,7 @@ impl AsByteSequence for GenTexturesRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.n.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.n.size()
     }
 }
 impl Request for GenTexturesRequest {
@@ -8211,8 +8389,8 @@ impl AsByteSequence for GenTexturesReply {
 #[derive(Clone, Debug, Default)]
 pub struct IsTextureRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub texture: Card32,
 }
 impl IsTextureRequest {}
@@ -8221,8 +8399,9 @@ impl AsByteSequence for IsTextureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.texture.as_bytes(&mut bytes[index..]);
         index
     }
@@ -8232,17 +8411,18 @@ impl AsByteSequence for IsTextureRequest {
         log::trace!("Deserializing IsTextureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (texture, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             IsTextureRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 texture: texture,
             },
             index,
@@ -8250,7 +8430,11 @@ impl AsByteSequence for IsTextureRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.texture.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.context_tag.size()
+            + self.texture.size()
     }
 }
 impl Request for IsTextureRequest {
@@ -8309,8 +8493,8 @@ impl AsByteSequence for IsTextureReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetColorTableRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub format: Card32,
     pub ty: Card32,
@@ -8322,8 +8506,9 @@ impl AsByteSequence for GetColorTableRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
@@ -8336,9 +8521,10 @@ impl AsByteSequence for GetColorTableRequest {
         log::trace!("Deserializing GetColorTableRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8351,8 +8537,8 @@ impl AsByteSequence for GetColorTableRequest {
         Some((
             GetColorTableRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 format: format,
                 ty: ty,
@@ -8364,8 +8550,9 @@ impl AsByteSequence for GetColorTableRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.format.size()
             + self.ty.size()
@@ -8452,8 +8639,8 @@ impl AsByteSequence for GetColorTableReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetColorTableParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -8463,8 +8650,9 @@ impl AsByteSequence for GetColorTableParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -8475,9 +8663,10 @@ impl AsByteSequence for GetColorTableParameterfvRequest {
         log::trace!("Deserializing GetColorTableParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8486,8 +8675,8 @@ impl AsByteSequence for GetColorTableParameterfvRequest {
         Some((
             GetColorTableParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -8497,8 +8686,9 @@ impl AsByteSequence for GetColorTableParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -8587,8 +8777,8 @@ impl AsByteSequence for GetColorTableParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetColorTableParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -8598,8 +8788,9 @@ impl AsByteSequence for GetColorTableParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -8610,9 +8801,10 @@ impl AsByteSequence for GetColorTableParameterivRequest {
         log::trace!("Deserializing GetColorTableParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8621,8 +8813,8 @@ impl AsByteSequence for GetColorTableParameterivRequest {
         Some((
             GetColorTableParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -8632,8 +8824,9 @@ impl AsByteSequence for GetColorTableParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -8722,8 +8915,8 @@ impl AsByteSequence for GetColorTableParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetConvolutionFilterRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub format: Card32,
     pub ty: Card32,
@@ -8735,8 +8928,9 @@ impl AsByteSequence for GetConvolutionFilterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
@@ -8749,9 +8943,10 @@ impl AsByteSequence for GetConvolutionFilterRequest {
         log::trace!("Deserializing GetConvolutionFilterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8764,8 +8959,8 @@ impl AsByteSequence for GetConvolutionFilterRequest {
         Some((
             GetConvolutionFilterRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 format: format,
                 ty: ty,
@@ -8777,8 +8972,9 @@ impl AsByteSequence for GetConvolutionFilterRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.format.size()
             + self.ty.size()
@@ -8868,8 +9064,8 @@ impl AsByteSequence for GetConvolutionFilterReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetConvolutionParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -8879,8 +9075,9 @@ impl AsByteSequence for GetConvolutionParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -8891,9 +9088,10 @@ impl AsByteSequence for GetConvolutionParameterfvRequest {
         log::trace!("Deserializing GetConvolutionParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -8902,8 +9100,8 @@ impl AsByteSequence for GetConvolutionParameterfvRequest {
         Some((
             GetConvolutionParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -8913,8 +9111,9 @@ impl AsByteSequence for GetConvolutionParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -9003,8 +9202,8 @@ impl AsByteSequence for GetConvolutionParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetConvolutionParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -9014,8 +9213,9 @@ impl AsByteSequence for GetConvolutionParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -9026,9 +9226,10 @@ impl AsByteSequence for GetConvolutionParameterivRequest {
         log::trace!("Deserializing GetConvolutionParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9037,8 +9238,8 @@ impl AsByteSequence for GetConvolutionParameterivRequest {
         Some((
             GetConvolutionParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -9048,8 +9249,9 @@ impl AsByteSequence for GetConvolutionParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -9138,8 +9340,8 @@ impl AsByteSequence for GetConvolutionParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetSeparableFilterRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub format: Card32,
     pub ty: Card32,
@@ -9151,8 +9353,9 @@ impl AsByteSequence for GetSeparableFilterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
@@ -9165,9 +9368,10 @@ impl AsByteSequence for GetSeparableFilterRequest {
         log::trace!("Deserializing GetSeparableFilterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9180,8 +9384,8 @@ impl AsByteSequence for GetSeparableFilterRequest {
         Some((
             GetSeparableFilterRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 format: format,
                 ty: ty,
@@ -9193,8 +9397,9 @@ impl AsByteSequence for GetSeparableFilterRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.format.size()
             + self.ty.size()
@@ -9284,8 +9489,8 @@ impl AsByteSequence for GetSeparableFilterReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetHistogramRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub format: Card32,
     pub ty: Card32,
@@ -9298,8 +9503,9 @@ impl AsByteSequence for GetHistogramRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
@@ -9313,9 +9519,10 @@ impl AsByteSequence for GetHistogramRequest {
         log::trace!("Deserializing GetHistogramRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9330,8 +9537,8 @@ impl AsByteSequence for GetHistogramRequest {
         Some((
             GetHistogramRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 format: format,
                 ty: ty,
@@ -9344,8 +9551,9 @@ impl AsByteSequence for GetHistogramRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.format.size()
             + self.ty.size()
@@ -9433,8 +9641,8 @@ impl AsByteSequence for GetHistogramReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetHistogramParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -9444,8 +9652,9 @@ impl AsByteSequence for GetHistogramParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -9456,9 +9665,10 @@ impl AsByteSequence for GetHistogramParameterfvRequest {
         log::trace!("Deserializing GetHistogramParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9467,8 +9677,8 @@ impl AsByteSequence for GetHistogramParameterfvRequest {
         Some((
             GetHistogramParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -9478,8 +9688,9 @@ impl AsByteSequence for GetHistogramParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -9568,8 +9779,8 @@ impl AsByteSequence for GetHistogramParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetHistogramParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -9579,8 +9790,9 @@ impl AsByteSequence for GetHistogramParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -9591,9 +9803,10 @@ impl AsByteSequence for GetHistogramParameterivRequest {
         log::trace!("Deserializing GetHistogramParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9602,8 +9815,8 @@ impl AsByteSequence for GetHistogramParameterivRequest {
         Some((
             GetHistogramParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -9613,8 +9826,9 @@ impl AsByteSequence for GetHistogramParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -9703,8 +9917,8 @@ impl AsByteSequence for GetHistogramParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMinmaxRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub format: Card32,
     pub ty: Card32,
@@ -9717,8 +9931,9 @@ impl AsByteSequence for GetMinmaxRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
@@ -9732,9 +9947,10 @@ impl AsByteSequence for GetMinmaxRequest {
         log::trace!("Deserializing GetMinmaxRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9749,8 +9965,8 @@ impl AsByteSequence for GetMinmaxRequest {
         Some((
             GetMinmaxRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 format: format,
                 ty: ty,
@@ -9763,8 +9979,9 @@ impl AsByteSequence for GetMinmaxRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.format.size()
             + self.ty.size()
@@ -9838,8 +10055,8 @@ impl AsByteSequence for GetMinmaxReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMinmaxParameterfvRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -9849,8 +10066,9 @@ impl AsByteSequence for GetMinmaxParameterfvRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -9861,9 +10079,10 @@ impl AsByteSequence for GetMinmaxParameterfvRequest {
         log::trace!("Deserializing GetMinmaxParameterfvRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -9872,8 +10091,8 @@ impl AsByteSequence for GetMinmaxParameterfvRequest {
         Some((
             GetMinmaxParameterfvRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -9883,8 +10102,9 @@ impl AsByteSequence for GetMinmaxParameterfvRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -9973,8 +10193,8 @@ impl AsByteSequence for GetMinmaxParameterfvReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetMinmaxParameterivRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -9984,8 +10204,9 @@ impl AsByteSequence for GetMinmaxParameterivRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -9996,9 +10217,10 @@ impl AsByteSequence for GetMinmaxParameterivRequest {
         log::trace!("Deserializing GetMinmaxParameterivRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10007,8 +10229,8 @@ impl AsByteSequence for GetMinmaxParameterivRequest {
         Some((
             GetMinmaxParameterivRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -10018,8 +10240,9 @@ impl AsByteSequence for GetMinmaxParameterivRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -10108,8 +10331,8 @@ impl AsByteSequence for GetMinmaxParameterivReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetCompressedTexImageArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub level: Int32,
 }
@@ -10119,8 +10342,9 @@ impl AsByteSequence for GetCompressedTexImageArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.level.as_bytes(&mut bytes[index..]);
         index
@@ -10131,9 +10355,10 @@ impl AsByteSequence for GetCompressedTexImageArbRequest {
         log::trace!("Deserializing GetCompressedTexImageArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10142,8 +10367,8 @@ impl AsByteSequence for GetCompressedTexImageArbRequest {
         Some((
             GetCompressedTexImageArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 level: level,
             },
@@ -10153,8 +10378,9 @@ impl AsByteSequence for GetCompressedTexImageArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.level.size()
     }
@@ -10239,8 +10465,8 @@ impl AsByteSequence for GetCompressedTexImageArbReply {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteQueriesArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub ids: Vec<Card32>,
 }
 impl DeleteQueriesArbRequest {}
@@ -10249,8 +10475,9 @@ impl AsByteSequence for DeleteQueriesArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += (self.ids.len() as Int32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.ids, &mut bytes[index..]);
         index += block_len;
@@ -10263,9 +10490,10 @@ impl AsByteSequence for DeleteQueriesArbRequest {
         log::trace!("Deserializing DeleteQueriesArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10276,8 +10504,8 @@ impl AsByteSequence for DeleteQueriesArbRequest {
         Some((
             DeleteQueriesArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 ids: ids,
             },
             index,
@@ -10286,8 +10514,9 @@ impl AsByteSequence for DeleteQueriesArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + ::core::mem::size_of::<Int32>()
             + {
                 let block_len: usize = self.ids.iter().map(|i| i.size()).sum();
@@ -10305,8 +10534,8 @@ impl Request for DeleteQueriesArbRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GenQueriesArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub n: Int32,
 }
 impl GenQueriesArbRequest {}
@@ -10315,8 +10544,9 @@ impl AsByteSequence for GenQueriesArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.n.as_bytes(&mut bytes[index..]);
         index
     }
@@ -10326,17 +10556,18 @@ impl AsByteSequence for GenQueriesArbRequest {
         log::trace!("Deserializing GenQueriesArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (n, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GenQueriesArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 n: n,
             },
             index,
@@ -10344,7 +10575,7 @@ impl AsByteSequence for GenQueriesArbRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.n.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.n.size()
     }
 }
 impl Request for GenQueriesArbRequest {
@@ -10413,8 +10644,8 @@ impl AsByteSequence for GenQueriesArbReply {
 #[derive(Clone, Debug, Default)]
 pub struct IsQueryArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub id: Card32,
 }
 impl IsQueryArbRequest {}
@@ -10423,8 +10654,9 @@ impl AsByteSequence for IsQueryArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.id.as_bytes(&mut bytes[index..]);
         index
     }
@@ -10434,17 +10666,18 @@ impl AsByteSequence for IsQueryArbRequest {
         log::trace!("Deserializing IsQueryArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             IsQueryArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 id: id,
             },
             index,
@@ -10452,7 +10685,7 @@ impl AsByteSequence for IsQueryArbRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context_tag.size() + self.length.size() + self.id.size()
+        self.req_type.size() + 1 + self.length.size() + self.context_tag.size() + self.id.size()
     }
 }
 impl Request for IsQueryArbRequest {
@@ -10511,8 +10744,8 @@ impl AsByteSequence for IsQueryArbReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetQueryivArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub target: Card32,
     pub pname: Card32,
 }
@@ -10522,8 +10755,9 @@ impl AsByteSequence for GetQueryivArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.target.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -10534,9 +10768,10 @@ impl AsByteSequence for GetQueryivArbRequest {
         log::trace!("Deserializing GetQueryivArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (target, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10545,8 +10780,8 @@ impl AsByteSequence for GetQueryivArbRequest {
         Some((
             GetQueryivArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 target: target,
                 pname: pname,
             },
@@ -10556,8 +10791,9 @@ impl AsByteSequence for GetQueryivArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.target.size()
             + self.pname.size()
     }
@@ -10646,8 +10882,8 @@ impl AsByteSequence for GetQueryivArbReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetQueryObjectivArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub id: Card32,
     pub pname: Card32,
 }
@@ -10657,8 +10893,9 @@ impl AsByteSequence for GetQueryObjectivArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.id.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -10669,9 +10906,10 @@ impl AsByteSequence for GetQueryObjectivArbRequest {
         log::trace!("Deserializing GetQueryObjectivArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10680,8 +10918,8 @@ impl AsByteSequence for GetQueryObjectivArbRequest {
         Some((
             GetQueryObjectivArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 id: id,
                 pname: pname,
             },
@@ -10691,8 +10929,9 @@ impl AsByteSequence for GetQueryObjectivArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.id.size()
             + self.pname.size()
     }
@@ -10781,8 +11020,8 @@ impl AsByteSequence for GetQueryObjectivArbReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetQueryObjectuivArbRequest {
     pub req_type: u8,
-    pub context_tag: ContextTag,
     pub length: u16,
+    pub context_tag: ContextTag,
     pub id: Card32,
     pub pname: Card32,
 }
@@ -10792,8 +11031,9 @@ impl AsByteSequence for GetQueryObjectuivArbRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context_tag.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context_tag.as_bytes(&mut bytes[index..]);
         index += self.id.as_bytes(&mut bytes[index..]);
         index += self.pname.as_bytes(&mut bytes[index..]);
         index
@@ -10804,9 +11044,10 @@ impl AsByteSequence for GetQueryObjectuivArbRequest {
         log::trace!("Deserializing GetQueryObjectuivArbRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
         let (id, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -10815,8 +11056,8 @@ impl AsByteSequence for GetQueryObjectuivArbRequest {
         Some((
             GetQueryObjectuivArbRequest {
                 req_type: req_type,
-                context_tag: context_tag,
                 length: length,
+                context_tag: context_tag,
                 id: id,
                 pname: pname,
             },
@@ -10826,8 +11067,9 @@ impl AsByteSequence for GetQueryObjectuivArbRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context_tag.size()
+            + 1
             + self.length.size()
+            + self.context_tag.size()
             + self.id.size()
             + self.pname.size()
     }
@@ -10915,12 +11157,11 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rm {
-    GlRender = 7168,
-    GlFeedback = 7169,
-    GlSelect = 7170,
+pub enum Pbcet {
+    Damaged = 32791,
+    Saved = 32792,
 }
-impl AsByteSequence for Rm {
+impl AsByteSequence for Pbcet {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -10929,9 +11170,8 @@ impl AsByteSequence for Rm {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            7168 => Some((Self::GlRender, sz)),
-            7169 => Some((Self::GlFeedback, sz)),
-            7170 => Some((Self::GlSelect, sz)),
+            32791 => Some((Self::Damaged, sz)),
+            32792 => Some((Self::Saved, sz)),
             _ => None,
         }
     }
@@ -10940,10 +11180,10 @@ impl AsByteSequence for Rm {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Rm {
+impl Default for Pbcet {
     #[inline]
-    fn default() -> Rm {
-        Rm::GlRender
+    fn default() -> Pbcet {
+        Pbcet::Damaged
     }
 }
 #[repr(i32)]
@@ -10979,11 +11219,12 @@ impl Default for Pbcdt {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Pbcet {
-    Damaged = 32791,
-    Saved = 32792,
+pub enum Rm {
+    GlRender = 7168,
+    GlFeedback = 7169,
+    GlSelect = 7170,
 }
-impl AsByteSequence for Pbcet {
+impl AsByteSequence for Rm {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         (*self as i32).as_bytes(bytes)
@@ -10992,8 +11233,9 @@ impl AsByteSequence for Pbcet {
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
         match underlying {
-            32791 => Some((Self::Damaged, sz)),
-            32792 => Some((Self::Saved, sz)),
+            7168 => Some((Self::GlRender, sz)),
+            7169 => Some((Self::GlFeedback, sz)),
+            7170 => Some((Self::GlSelect, sz)),
             _ => None,
         }
     }
@@ -11002,10 +11244,10 @@ impl AsByteSequence for Pbcet {
         ::core::mem::size_of::<i32>()
     }
 }
-impl Default for Pbcet {
+impl Default for Rm {
     #[inline]
-    fn default() -> Pbcet {
-        Pbcet::Damaged
+    fn default() -> Rm {
+        Rm::GlRender
     }
 }
 #[repr(transparent)]
@@ -11436,6 +11678,94 @@ impl core::ops::BitXor for Gc {
     }
 }
 #[derive(Clone, Debug, Default)]
+pub struct BufferSwapCompleteEvent {
+    pub event_type: u8,
+    pub sequence: u16,
+    pub event_type_: Card16,
+    pub drawable: super::glx::Drawable,
+    pub ust_hi: Card32,
+    pub ust_lo: Card32,
+    pub msc_hi: Card32,
+    pub msc_lo: Card32,
+    pub sbc: Card32,
+}
+impl BufferSwapCompleteEvent {}
+impl AsByteSequence for BufferSwapCompleteEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += 1;
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.event_type_.as_bytes(&mut bytes[index..]);
+        index += 2;
+        index += self.drawable.as_bytes(&mut bytes[index..]);
+        index += self.ust_hi.as_bytes(&mut bytes[index..]);
+        index += self.ust_lo.as_bytes(&mut bytes[index..]);
+        index += self.msc_hi.as_bytes(&mut bytes[index..]);
+        index += self.msc_lo.as_bytes(&mut bytes[index..]);
+        index += self.sbc.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 1;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 2;
+        let (drawable, sz): (super::glx::Drawable, usize) =
+            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            BufferSwapCompleteEvent {
+                event_type: event_type,
+                sequence: sequence,
+                event_type_: event_type_,
+                drawable: drawable,
+                ust_hi: ust_hi,
+                ust_lo: ust_lo,
+                msc_hi: msc_hi,
+                msc_lo: msc_lo,
+                sbc: sbc,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + 1
+            + self.sequence.size()
+            + self.event_type_.size()
+            + 2
+            + self.drawable.size()
+            + self.ust_hi.size()
+            + self.ust_lo.size()
+            + self.msc_hi.size()
+            + self.msc_lo.size()
+            + self.sbc.size()
+    }
+}
+impl crate::auto::Event for BufferSwapCompleteEvent {
+    const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
 pub struct PbufferClobberEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -11540,92 +11870,4 @@ impl AsByteSequence for PbufferClobberEvent {
 }
 impl crate::auto::Event for PbufferClobberEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct BufferSwapCompleteEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event_type_: Card16,
-    pub drawable: super::glx::Drawable,
-    pub ust_hi: Card32,
-    pub ust_lo: Card32,
-    pub msc_hi: Card32,
-    pub msc_lo: Card32,
-    pub sbc: Card32,
-}
-impl BufferSwapCompleteEvent {}
-impl AsByteSequence for BufferSwapCompleteEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 1;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event_type_.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.drawable.as_bytes(&mut bytes[index..]);
-        index += self.ust_hi.as_bytes(&mut bytes[index..]);
-        index += self.ust_lo.as_bytes(&mut bytes[index..]);
-        index += self.msc_hi.as_bytes(&mut bytes[index..]);
-        index += self.msc_lo.as_bytes(&mut bytes[index..]);
-        index += self.sbc.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing BufferSwapCompleteEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 1;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event_type_, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (drawable, sz): (super::glx::Drawable, usize) =
-            <super::glx::Drawable>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (ust_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_hi, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (msc_lo, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sbc, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            BufferSwapCompleteEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event_type_: event_type_,
-                drawable: drawable,
-                ust_hi: ust_hi,
-                ust_lo: ust_lo,
-                msc_hi: msc_hi,
-                msc_lo: msc_lo,
-                sbc: sbc,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 1
-            + self.sequence.size()
-            + self.event_type_.size()
-            + 2
-            + self.drawable.size()
-            + self.ust_hi.size()
-            + self.ust_lo.size()
-            + self.msc_hi.size()
-            + self.msc_lo.size()
-            + self.sbc.size()
-    }
-}
-impl crate::auto::Event for BufferSwapCompleteEvent {
-    const OPCODE: u8 = 1;
 }

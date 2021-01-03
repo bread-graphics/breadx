@@ -148,8 +148,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRequest {
     pub req_type: u8,
-    pub damage: Damage,
     pub length: u16,
+    pub damage: Damage,
     pub drawable: Drawable,
     pub level: ReportLevel,
 }
@@ -159,8 +159,9 @@ impl AsByteSequence for CreateRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.damage.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.damage.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.level.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -172,9 +173,10 @@ impl AsByteSequence for CreateRequest {
         log::trace!("Deserializing CreateRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -184,8 +186,8 @@ impl AsByteSequence for CreateRequest {
         Some((
             CreateRequest {
                 req_type: req_type,
-                damage: damage,
                 length: length,
+                damage: damage,
                 drawable: drawable,
                 level: level,
             },
@@ -195,8 +197,9 @@ impl AsByteSequence for CreateRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.damage.size()
+            + 1
             + self.length.size()
+            + self.damage.size()
             + self.drawable.size()
             + self.level.size()
             + 3
@@ -246,8 +249,8 @@ impl Default for ReportLevel {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyRequest {
     pub req_type: u8,
-    pub damage: Damage,
     pub length: u16,
+    pub damage: Damage,
 }
 impl DestroyRequest {}
 impl AsByteSequence for DestroyRequest {
@@ -255,8 +258,9 @@ impl AsByteSequence for DestroyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.damage.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.damage.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -265,22 +269,23 @@ impl AsByteSequence for DestroyRequest {
         log::trace!("Deserializing DestroyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyRequest {
                 req_type: req_type,
-                damage: damage,
                 length: length,
+                damage: damage,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.damage.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.damage.size()
     }
 }
 impl Request for DestroyRequest {
@@ -292,8 +297,8 @@ impl Request for DestroyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SubtractRequest {
     pub req_type: u8,
-    pub damage: Damage,
     pub length: u16,
+    pub damage: Damage,
     pub repair: Region,
     pub parts: Region,
 }
@@ -303,8 +308,9 @@ impl AsByteSequence for SubtractRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.damage.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.damage.as_bytes(&mut bytes[index..]);
         index += self.repair.as_bytes(&mut bytes[index..]);
         index += self.parts.as_bytes(&mut bytes[index..]);
         index
@@ -315,9 +321,10 @@ impl AsByteSequence for SubtractRequest {
         log::trace!("Deserializing SubtractRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (damage, sz): (Damage, usize) = <Damage>::from_bytes(&bytes[index..])?;
         index += sz;
         let (repair, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -326,8 +333,8 @@ impl AsByteSequence for SubtractRequest {
         Some((
             SubtractRequest {
                 req_type: req_type,
-                damage: damage,
                 length: length,
+                damage: damage,
                 repair: repair,
                 parts: parts,
             },
@@ -337,8 +344,9 @@ impl AsByteSequence for SubtractRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.damage.size()
+            + 1
             + self.length.size()
+            + self.damage.size()
             + self.repair.size()
             + self.parts.size()
     }
