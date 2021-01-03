@@ -7,7 +7,7 @@ use super::prelude::*;
 
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Seg {
     pub xid: XID,
 }

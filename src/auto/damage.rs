@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::xfixes::*;
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Damage {
     pub xid: XID,
 }

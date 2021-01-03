@@ -185,8 +185,8 @@ pub trait Request: AsByteSequence {
 pub use xid::{XidType, XID};
 
 pub use auto::xproto::{
-    Arc, ColormapAlloc, EventMask, ImageFormat, Pixmap, Rectangle, Segment, Visualid, Visualtype,
-    Window, WindowClass,
+    Arc, ColormapAlloc, Drawable, EventMask, ImageFormat, Pixmap, Rectangle, Segment, VisualClass,
+    Visualid, Visualtype, Window, WindowClass,
 };
 
 #[path = "../tutorials/mod.rs"]

@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::xproto::*;
 pub type Glyph = Card32;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Glyphset {
     pub xid: XID,
 }
@@ -29,7 +29,7 @@ impl XidType for Glyphset {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Picture {
     pub xid: XID,
 }
@@ -50,7 +50,7 @@ impl XidType for Picture {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pictformat {
     pub xid: XID,
 }
@@ -4236,45 +4236,6 @@ impl Request for CreateConicalGradientRequest {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SubPixel {
-    Unknown = 0,
-    HorizontalRgb = 1,
-    HorizontalBgr = 2,
-    VerticalRgb = 3,
-    VerticalBgr = 4,
-    None = 5,
-}
-impl AsByteSequence for SubPixel {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Unknown, sz)),
-            1 => Some((Self::HorizontalRgb, sz)),
-            2 => Some((Self::HorizontalBgr, sz)),
-            3 => Some((Self::VerticalRgb, sz)),
-            4 => Some((Self::VerticalBgr, sz)),
-            5 => Some((Self::None, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for SubPixel {
-    #[inline]
-    fn default() -> SubPixel {
-        SubPixel::Unknown
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Repeat {
     None = 0,
     Normal = 1,
@@ -4337,6 +4298,45 @@ impl Default for PolyMode {
     #[inline]
     fn default() -> PolyMode {
         PolyMode::Precise
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SubPixel {
+    Unknown = 0,
+    HorizontalRgb = 1,
+    HorizontalBgr = 2,
+    VerticalRgb = 3,
+    VerticalBgr = 4,
+    None = 5,
+}
+impl AsByteSequence for SubPixel {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Unknown, sz)),
+            1 => Some((Self::HorizontalRgb, sz)),
+            2 => Some((Self::HorizontalBgr, sz)),
+            3 => Some((Self::VerticalRgb, sz)),
+            4 => Some((Self::VerticalBgr, sz)),
+            5 => Some((Self::None, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for SubPixel {
+    #[inline]
+    fn default() -> SubPixel {
+        SubPixel::Unknown
     }
 }
 #[repr(i32)]

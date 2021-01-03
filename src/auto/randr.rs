@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::render::*;
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Mode {
     pub xid: XID,
 }
@@ -29,7 +29,7 @@ impl XidType for Mode {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Crtc {
     pub xid: XID,
 }
@@ -50,7 +50,7 @@ impl XidType for Crtc {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Output {
     pub xid: XID,
 }
@@ -71,7 +71,7 @@ impl XidType for Output {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Provider {
     pub xid: XID,
 }
@@ -92,7 +92,7 @@ impl XidType for Provider {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Lease {
     pub xid: XID,
 }

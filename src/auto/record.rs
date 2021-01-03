@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Context {
     pub xid: XID,
 }
@@ -991,6 +991,39 @@ impl Request for FreeContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Cs {
+    CurrentClients = 1,
+    FutureClients = 2,
+    AllClients = 3,
+}
+impl AsByteSequence for Cs {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::CurrentClients, sz)),
+            2 => Some((Self::FutureClients, sz)),
+            3 => Some((Self::AllClients, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Cs {
+    #[inline]
+    fn default() -> Cs {
+        Cs::CurrentClients
+    }
+}
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HType {
@@ -1106,39 +1139,6 @@ impl core::ops::BitXor for HType {
         HType {
             inner: self.inner ^ rhs.inner,
         }
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Cs {
-    CurrentClients = 1,
-    FutureClients = 2,
-    AllClients = 3,
-}
-impl AsByteSequence for Cs {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::CurrentClients, sz)),
-            2 => Some((Self::FutureClients, sz)),
-            3 => Some((Self::AllClients, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Cs {
-    #[inline]
-    fn default() -> Cs {
-        Cs::CurrentClients
     }
 }
 #[derive(Clone, Debug, Default)]

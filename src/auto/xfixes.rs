@@ -792,7 +792,7 @@ impl AsByteSequence for GetCursorImageReply {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Region {
     pub xid: XID,
 }
@@ -2570,7 +2570,7 @@ impl Request for ShowCursorRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Barrier {
     pub xid: XID,
 }
@@ -2877,78 +2877,6 @@ impl Request for DeletePointerBarrierRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default)]
-pub struct CursorNotifyEvent {
-    pub event_type: u8,
-    pub subtype: Card8,
-    pub sequence: u16,
-    pub window: Window,
-    pub cursor_serial: Card32,
-    pub timestamp: Timestamp,
-    pub name: Atom,
-}
-impl CursorNotifyEvent {}
-impl AsByteSequence for CursorNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.subtype.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
-        index += self.timestamp.as_bytes(&mut bytes[index..]);
-        index += self.name.as_bytes(&mut bytes[index..]);
-        index += 12;
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 12;
-        Some((
-            CursorNotifyEvent {
-                event_type: event_type,
-                subtype: subtype,
-                sequence: sequence,
-                window: window,
-                cursor_serial: cursor_serial,
-                timestamp: timestamp,
-                name: name,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + self.subtype.size()
-            + self.sequence.size()
-            + self.window.size()
-            + self.cursor_serial.size()
-            + self.timestamp.size()
-            + self.name.size()
-            + 12
-    }
-}
-impl crate::auto::Event for CursorNotifyEvent {
-    const OPCODE: u8 = 1;
-}
-#[derive(Clone, Debug, Default)]
 pub struct SelectionNotifyEvent {
     pub event_type: u8,
     pub subtype: SelectionEvent,
@@ -3026,4 +2954,76 @@ impl AsByteSequence for SelectionNotifyEvent {
 }
 impl crate::auto::Event for SelectionNotifyEvent {
     const OPCODE: u8 = 0;
+}
+#[derive(Clone, Debug, Default)]
+pub struct CursorNotifyEvent {
+    pub event_type: u8,
+    pub subtype: Card8,
+    pub sequence: u16,
+    pub window: Window,
+    pub cursor_serial: Card32,
+    pub timestamp: Timestamp,
+    pub name: Atom,
+}
+impl CursorNotifyEvent {}
+impl AsByteSequence for CursorNotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.subtype.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.window.as_bytes(&mut bytes[index..]);
+        index += self.cursor_serial.as_bytes(&mut bytes[index..]);
+        index += self.timestamp.as_bytes(&mut bytes[index..]);
+        index += self.name.as_bytes(&mut bytes[index..]);
+        index += 12;
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing CursorNotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (subtype, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (name, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
+        index += sz;
+        index += 12;
+        Some((
+            CursorNotifyEvent {
+                event_type: event_type,
+                subtype: subtype,
+                sequence: sequence,
+                window: window,
+                cursor_serial: cursor_serial,
+                timestamp: timestamp,
+                name: name,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size()
+            + self.subtype.size()
+            + self.sequence.size()
+            + self.window.size()
+            + self.cursor_serial.size()
+            + self.timestamp.size()
+            + self.name.size()
+            + 12
+    }
+}
+impl crate::auto::Event for CursorNotifyEvent {
+    const OPCODE: u8 = 1;
 }

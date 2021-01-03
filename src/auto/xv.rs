@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::shm::*;
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Port {
     pub xid: XID,
 }
@@ -29,7 +29,7 @@ impl XidType for Port {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Encoding {
     pub xid: XID,
 }

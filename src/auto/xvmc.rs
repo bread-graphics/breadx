@@ -7,7 +7,7 @@ use super::prelude::*;
 
 use super::xv::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Context {
     pub xid: XID,
 }
@@ -28,7 +28,7 @@ impl XidType for Context {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Surface {
     pub xid: XID,
 }
@@ -49,7 +49,7 @@ impl XidType for Surface {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Subpicture {
     pub xid: XID,
 }

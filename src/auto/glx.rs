@@ -7,7 +7,7 @@ use super::prelude::*;
 
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pixmap {
     pub xid: XID,
 }
@@ -28,7 +28,7 @@ impl XidType for Pixmap {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Context {
     pub xid: XID,
 }
@@ -49,7 +49,7 @@ impl XidType for Context {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pbuffer {
     pub xid: XID,
 }
@@ -70,7 +70,7 @@ impl XidType for Pbuffer {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Window {
     pub xid: XID,
 }
@@ -91,7 +91,7 @@ impl XidType for Window {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Fbconfig {
     pub xid: XID,
 }
@@ -112,7 +112,7 @@ impl XidType for Fbconfig {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Drawable {
     pub xid: XID,
 }
@@ -10915,6 +10915,39 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Rm {
+    GlRender = 7168,
+    GlFeedback = 7169,
+    GlSelect = 7170,
+}
+impl AsByteSequence for Rm {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            7168 => Some((Self::GlRender, sz)),
+            7169 => Some((Self::GlFeedback, sz)),
+            7170 => Some((Self::GlSelect, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Rm {
+    #[inline]
+    fn default() -> Rm {
+        Rm::GlRender
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Pbcdt {
     Window = 32793,
     Pbuffer = 32794,
@@ -11400,39 +11433,6 @@ impl core::ops::BitXor for Gc {
         Gc {
             inner: self.inner ^ rhs.inner,
         }
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rm {
-    GlRender = 7168,
-    GlFeedback = 7169,
-    GlSelect = 7170,
-}
-impl AsByteSequence for Rm {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            7168 => Some((Self::GlRender, sz)),
-            7169 => Some((Self::GlFeedback, sz)),
-            7170 => Some((Self::GlSelect, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Rm {
-    #[inline]
-    fn default() -> Rm {
-        Rm::GlRender
     }
 }
 #[derive(Clone, Debug, Default)]
