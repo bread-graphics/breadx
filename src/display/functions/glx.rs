@@ -5,7 +5,8 @@
 use crate::{
     auto::{
         glx::{
-            Drawable, GetDrawableAttributesRequest, GetFbConfigsReply, GetFbConfigsRequest,
+            Context, CreateContextAttribsArbRequest, Drawable, Fbconfig,
+            GetDrawableAttributesRequest, GetFbConfigsReply, GetFbConfigsRequest,
             GetVisualConfigsReply, GetVisualConfigsRequest,
         },
         xproto,
@@ -13,6 +14,7 @@ use crate::{
     display::{Connection, Display, RequestCookie},
 };
 use alloc::vec::Vec;
+use core::convert::TryInto;
 
 impl From<xproto::Drawable> for Drawable {
     #[inline]
@@ -205,5 +207,67 @@ impl<Conn: Connection> Display<Conn> {
     ) -> crate::Result<Vec<u32>> {
         let tok = self.get_drawable_properties_async(drawable).await?;
         Ok(self.resolve_request_async(tok).await?.attribs)
+    }
+
+    #[inline]
+    fn create_context_attribs_arb_request(
+        context: Context,
+        fbconfig: Fbconfig,
+        screen: usize,
+        share_list: Context,
+        is_direct: bool,
+        attribs: Vec<u32>,
+    ) -> CreateContextAttribsArbRequest {
+        CreateContextAttribsArbRequest {
+            context,
+            fbconfig,
+            screen: screen.try_into().expect("usize dont fit"),
+            share_list,
+            is_direct,
+            num_attribs: attribs.len().try_into().expect("usize dont fit 2"),
+            attribs,
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    pub fn create_context_attribs_arb(
+        &mut self,
+        fbconfig: Fbconfig,
+        screen: usize,
+        share_list: Context,
+        is_direct: bool,
+        attribs: Vec<u32>,
+    ) -> crate::Result<Context> {
+        let xid = Context::const_from_xid(self.generate_xid()?);
+        let r = Self::create_context_attribs_arb_request(
+            xid, fbconfig, screen, share_list, is_direct, attribs,
+        );
+        log::debug!("Sending CreateContextAttribsArbRequest to server.");
+        let tok = self.send_request(r)?;
+        log::debug!("Sent CreateContextAttribsArbRequest to server.");
+        self.resolve_request(tok)?;
+        Ok(xid)
+    }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn create_context_attribs_arb_async(
+        &mut self,
+        fbconfig: Fbconfig,
+        screen: usize,
+        share_list: Context,
+        is_direct: bool,
+        attribs: Vec<u32>,
+    ) -> crate::Result<Context> {
+        let xid = Context::const_from_xid(self.generate_xid()?);
+        let r = Self::create_context_attribs_arb_request(
+            xid, fbconfig, screen, share_list, is_direct, attribs,
+        );
+        log::debug!("Sending CreateContextAttribsArbRequest to server.");
+        let tok = self.send_request_async(r).await?;
+        log::debug!("Sent CreateContextAttribsArbRequest to server.");
+        self.resolve_request_async(tok).await?;
+        Ok(xid)
     }
 }
