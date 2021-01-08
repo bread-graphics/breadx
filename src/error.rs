@@ -82,7 +82,7 @@ impl fmt::Display for BreadError {
                 "Unable to read object of type from bytes: {}",
                 name.unwrap_or("Unknown")
             ),
-Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
+            Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
             Self::ExtensionNotPresent(ext) => write!(f, "Extension was not found on X server: {}", ext),
             Self::XProtocol {
                 error_code,
@@ -95,7 +95,7 @@ Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequ
                 error_code, major_code, minor_code, sequence
             ),
             Self::ClosedConnection => f.write_str("The X connection closed without our end of the connection closing. Did you forget to listen for WM_DELTE_WINDOW?"),
-Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
+            Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
             #[cfg(feature = "std")]
             Self::Io(i) => write!(f, "{}", i),
         }
@@ -104,7 +104,7 @@ Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
-pub struct ErrorCode(u8);
+pub struct ErrorCode(pub u8);
 
 impl fmt::Display for ErrorCode {
     #[inline]

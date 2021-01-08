@@ -7,7 +7,7 @@ use crate::{
         glx::{
             Context, CreateContextAttribsArbRequest, Drawable, Fbconfig,
             GetDrawableAttributesRequest, GetFbConfigsReply, GetFbConfigsRequest,
-            GetVisualConfigsReply, GetVisualConfigsRequest,
+            GetVisualConfigsReply, GetVisualConfigsRequest, QueryVersionRequest,
         },
         xproto,
     },
@@ -53,6 +53,68 @@ impl From<GetFbConfigsReply> for Configs {
 }
 
 impl<Conn: Connection> Display<Conn> {
+    /// Query GLX version.
+    #[inline]
+    pub fn query_glx_version(
+        &mut self,
+        required_major: u32,
+        required_minor: u32,
+    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
+        let qglx = QueryVersionRequest {
+            major_version: required_major,
+            minor_version: required_minor,
+            ..Default::default()
+        };
+        log::debug!("Sending QueryVersionRequest to server.");
+        let tok = self.send_request(qglx)?;
+        log::debug!("Sent QueryVersionRequest to server.");
+        Ok(tok)
+    }
+
+    /// Query GLX version, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_glx_version_async(
+        &mut self,
+        required_major: u32,
+        required_minor: u32,
+    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
+        let qglx = QueryVersionRequest {
+            major_version: required_major,
+            minor_version: required_minor,
+            ..Default::default()
+        };
+        log::debug!("Sending QueryVersionRequest to server.");
+        let tok = self.send_request_async(qglx).await?;
+        log::debug!("Sent QueryVersionRequest to server.");
+        Ok(tok)
+    }
+
+    /// Immediately query GLX version.
+    #[inline]
+    pub fn query_glx_version_immediate(
+        &mut self,
+        required_major: u32,
+        required_minor: u32,
+    ) -> crate::Result<(u32, u32)> {
+        let tok = self.query_glx_version(required_major, required_minor)?;
+        let repl = self.resolve_request(tok)?;
+        Ok((repl.major_version, repl.minor_version))
+    }
+
+    /// Immediately query GLX version, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_glx_version_immediate_async(
+        &mut self,
+        required_major: u32,
+        required_minor: u32,
+    ) -> crate::Result<(u32, u32)> {
+        let tok = self.query_glx_version_async(required_major, required_minor).await?;
+        let repl = self.resolve_request_async(tok).await?;
+        Ok((repl.major_version, repl.minor_version))
+    }
+
     /// Get the visual configurations associated with the given screen.
     #[inline]
     pub fn get_visual_configs(
@@ -218,13 +280,14 @@ impl<Conn: Connection> Display<Conn> {
         is_direct: bool,
         attribs: Vec<u32>,
     ) -> CreateContextAttribsArbRequest {
+        let attribs_len: u32 = attribs.len().try_into().expect("usize dont fit 2");
         CreateContextAttribsArbRequest {
             context,
             fbconfig,
             screen: screen.try_into().expect("usize dont fit"),
             share_list,
             is_direct,
-            num_attribs: attribs.len().try_into().expect("usize dont fit 2"),
+            num_attribs: attribs_len / 2u32,
             attribs,
             ..Default::default()
         }

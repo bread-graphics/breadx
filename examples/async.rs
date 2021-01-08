@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+// This example requires the "async" feature to be activated.
+
 // Note: I use smol here, as it is a). my personal favorite async runtime in the Rust ecosystem at the
 //       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
 //       use tokio, async-std, or an executor-less system here as well without much headache.

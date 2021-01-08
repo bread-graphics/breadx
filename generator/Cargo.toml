@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 ahash = "0.5.8"
-env_logger = "0.8.2"
+env_logger = { version = "0.8.2", default-features = false, features = ["atty", "termcolor"] }
 getrandom = "0.2.0"
 heck = "0.3.1"
 log = "0.4.0"

@@ -32,6 +32,9 @@ pub use connection::*;
 #[cfg(feature = "std")]
 pub mod name;
 
+mod like;
+pub use like::*;
+
 mod functions;
 mod input;
 mod output;
@@ -96,20 +99,6 @@ pub struct Display<Conn> {
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
-}
-
-impl<Conn> AsRef<Display<Conn>> for Display<Conn> {
-    #[inline]
-    fn as_ref(&self) -> &Self {
-        self
-    }
-}
-
-impl<Conn> AsMut<Display<Conn>> for Display<Conn> {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Self {
-        self
-    }
 }
 
 /// Unique identifier for a context.
