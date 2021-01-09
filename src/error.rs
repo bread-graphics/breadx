@@ -35,6 +35,8 @@ pub enum BreadError {
         major_code: u8,
         sequence: u16,
     },
+    /// The X connection is tainted by an incomplete future.
+    Tainted,
     /// The X connection closed without telling us.
     ClosedConnection,
     /// Failed to load a library; exists for the benefit of breadglx
@@ -84,6 +86,7 @@ impl fmt::Display for BreadError {
                 "Unable to read object of type from bytes: {}",
                 name.unwrap_or("Unknown")
             ),
+            Self::Tainted => f.write_str("Connection is tainted by an incomplete send"),
             Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
             Self::ExtensionNotPresent(ext) => write!(f, "Extension was not found on X server: {}", ext),
             Self::XProtocol {

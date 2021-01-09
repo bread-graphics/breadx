@@ -161,7 +161,7 @@ impl<Conn: Connection> super::Display<Conn> {
             None => &mut _dummy,
         };
 
-        self.connection.send_packet(&bytes, fds)?;
+        self.connection()?.send_packet(&bytes, fds)?;
         Ok(RequestCookie::from_sequence(sequence))
     }
 
@@ -183,7 +183,32 @@ impl<Conn: Connection> super::Display<Conn> {
             None => &mut _dummy,
         };
 
-        self.connection.send_packet_async(&bytes, fds).await?;
+        /*
+
+        This is a very ugly solution to issue #20
+
+        Consider, for a moment, if the future responsible for sending a large amount of memory to the
+        X server is dropped before it completes. This means the X server now has a portion of the bytes
+        it needs but expects more. This means that any future requests sent to the X server are now
+        "tainted" the fact that it's expecting an entirely different set of data from what our client
+        thinks it's expecting.
+
+        We'll take a page out of XCB's book here, which is "if the connection goes kaput, set an error
+        state in the connection that prevents bytes from being read or written across it." In Rust,
+        we accomplish this by setting up our connection in the Display as an Option<Connection> which,
+        in an untainted Display, should always be Some(..). In this function (and in the equivalent
+        wait_async function that handles reading), we run take() on this Option to get the connection.
+        Once send_packet_async is done, even if it finished with an error, we return the Connection
+        to its place in the display. If it isn't there, we can assume it's tainted and we can throw
+        an error.
+
+        */
+
+        let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
+        let res = connection.send_packet_async(&bytes, fds).await;
+        self.connection = Some(connection);
+        res?;
+
         Ok(RequestCookie::from_sequence(sequence))
     }
 }

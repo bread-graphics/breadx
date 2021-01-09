@@ -69,7 +69,8 @@ pub(crate) const EXT_KEY_SIZE: usize = 24;
 /// ```
 pub struct Display<Conn> {
     // the connection to the server
-    pub(crate) connection: Conn,
+    // if this is None, the connection is tainted
+    pub(crate) connection: Option<Conn>,
 
     // the setup received from the server
     pub(crate) setup: Setup,
@@ -88,7 +89,7 @@ pub struct Display<Conn> {
 
     // special events queue
     #[allow(clippy::type_complexity)]
-    pub(crate) special_event_queues: HashMap<XID, VecDeque<(Box<[u8]>, Box<[Fd]>)>>,
+    pub(crate) special_event_queues: HashMap<XID, VecDeque<Event>>,
 
     // output variables
     request_number: u64,
@@ -189,6 +190,14 @@ const fn endian_byte() -> u8 {
     {
         const LE_SIGNIFIER: u8 = b'l';
         LE_SIGNIFIER
+    }
+}
+
+impl<Conn> Display<Conn> {
+    /// Gets the connection associated with this display, and producing an error if the connection
+    /// is tainted.
+    pub(crate) fn connection(&mut self) -> crate::Result<&mut Conn> {
+        self.connection.as_mut().ok_or(crate::BreadError::Tainted)
     }
 }
 
@@ -296,17 +305,47 @@ impl<Conn: Connection> Display<Conn> {
     #[inline]
     pub fn wait_for_special_event(&mut self, eid: XID) -> crate::Result<Event> {
         loop {
-let queue = match self.special_event_queues.get_mut(eid) {
-  Some(queue) => queue,
-  None => return Err();
-};
+            let queue = match self.special_event_queues.get_mut(&eid) {
+                Some(queue) => queue,
+                None => {
+                    return Err(crate::BreadError::StaticMsg(
+                        "Tried to poll a special event that didn't exist",
+                    ))
+                }
+            };
+
+            match queue.pop_front() {
+                Some(event) => break Ok(event),
+                None => self.wait()?,
+            }
+        }
+    }
+
+    /// Wait for a special event, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn wait_for_special_event_async(&mut self, eid: XID) -> crate::Result<Event> {
+        loop {
+            let queue = match self.special_event_queues.get_mut(&eid) {
+                Some(queue) => queue,
+                None => {
+                    return Err(crate::BreadError::StaticMsg(
+                        "Tried to poll a special event that didn't exist",
+                    ))
+                }
+            };
+
+            match queue.pop_front() {
+                Some(event) => break Ok(event),
+                None => self.wait_async().await?,
+            }
         }
     }
 
     #[inline]
     fn from_connection_internal(connection: Conn) -> Self {
         Self {
-            connection,
+            connection: Some(connection),
             setup: Default::default(),
             xid: Default::default(),
             default_screen: 0,
@@ -376,11 +415,11 @@ let queue = match self.special_event_queues.get_mut(eid) {
         bytes.truncate(len);
 
         log::trace!("Sending setup request to server.");
-        self.connection.send_packet(&bytes[0..len], &mut _fds)?;
+        self.connection()?.send_packet(&bytes[0..len], &mut _fds)?;
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
 
         log::trace!("Reading setup response from server.");
-        self.connection.read_packet(&mut bytes, &mut _fds)?;
+        self.connection()?.read_packet(&mut bytes, &mut _fds)?;
 
         match bytes[0] {
             0 => return Err(crate::BreadError::FailedToConnect),
@@ -394,7 +433,7 @@ let queue = match self.special_event_queues.get_mut(eid) {
         bytes.extend(iter::once(0).cycle().take(length));
 
         log::trace!("Reading remainder of setup.");
-        self.connection.read_packet(&mut bytes[8..], &mut _fds)?;
+        self.connection()?.read_packet(&mut bytes[8..], &mut _fds)?;
 
         let (setup, _) =
             Setup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
@@ -425,11 +464,11 @@ let queue = match self.special_event_queues.get_mut(eid) {
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
         bytes.truncate(len);
-        self.connection
+        self.connection()?
             .send_packet_async(&bytes[0..len], &mut _fds)
             .await?;
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
-        self.connection
+        self.connection()?
             .read_packet_async(&mut bytes, &mut _fds)
             .await?;
 
@@ -443,7 +482,7 @@ let queue = match self.special_event_queues.get_mut(eid) {
         let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
         let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
         bytes.extend(iter::once(0).cycle().take(length));
-        self.connection
+        self.connection()?
             .read_packet_async(&mut bytes[8..], &mut _fds)
             .await?;
 

@@ -16,8 +16,6 @@ use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use std::net::TcpStream;
 
 #[cfg(all(feature = "async", unix))]
-use alloc::sync::Arc;
-#[cfg(all(feature = "async", unix))]
 use async_net::unix::UnixStream as AsyncUnixStream;
 
 #[cfg(all(feature = "std", not(unix)))]
@@ -114,8 +112,8 @@ impl Connection for TcpStream {
     #[inline]
     fn send_packet_async<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b [u8],
-        fds: &'c mut Vec<Fd>,
+        _bytes: &'b [u8],
+        _fds: &'c mut Vec<Fd>,
     ) -> GenericFuture<'future>
     where
         'a: 'future,
@@ -266,8 +264,8 @@ impl Connection for UnixStream {
     #[inline]
     fn send_packet_async<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b [u8],
-        fds: &'c mut Vec<Fd>,
+        _bytes: &'b [u8],
+        _fds: &'c mut Vec<Fd>,
     ) -> GenericFuture<'future>
     where
         'a: 'future,

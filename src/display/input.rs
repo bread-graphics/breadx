@@ -34,12 +34,7 @@ impl<Conn: Connection> super::Display<Conn> {
                 TinyVec::Inline(_) => unreachable!(),
             };
 
-            match self.filter_into_special_event(bytes, fds) {
-                Ok(_) => (),
-                Err((event, fds)) => {
-                    self.pending_replies.insert(sequence, (event, fds));
-                }
-            }
+            self.pending_replies.insert(sequence, (bytes, fds));
         } else if bytes[0] == TYPE_ERROR {
             // if it's all zeroes, the X connection has closed and the programmer
             // forgot to check for the close message
@@ -55,7 +50,9 @@ impl<Conn: Connection> super::Display<Conn> {
             log::debug!("Received bytes of type EVENT");
             // this is an event
             let event = Event::from_bytes(bytes)?;
-            self.event_queue.push_back(event);
+            if let Err(event) = self.filter_into_special_event(event) {
+                self.event_queue.push_back(event);
+            }
         }
 
         Ok(())
@@ -94,7 +91,6 @@ impl<Conn: Connection> super::Display<Conn> {
     }
 
     // add an entry to the pending elements linked list
-    #[allow(clippy::unused_self)]
     #[inline]
     pub(crate) fn expect_reply(&mut self, req: u64, flags: PendingRequestFlags) {
         let pereq = PendingRequest {
@@ -113,17 +109,17 @@ impl<Conn: Connection> super::Display<Conn> {
         // replies, errors, and events are all in units of 32 bytes
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let mut fds: Vec<Fd> = vec![];
-        self.connection.read_packet(&mut bytes, &mut fds)?;
+        self.connection()?.read_packet(&mut bytes, &mut fds)?;
 
         self.fix_glx_workaround(&mut bytes)?;
 
         // in certain cases, we may have to read more bytes
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             if ab != 0 {
-                bytes.extend(iter::once(0).cycle().take(ab * 4));
+                bytes.extend(iter::repeat(0).take(ab * 4));
 
                 log::debug!("Waiting for {} additional bytes", ab * 4);
-                self.connection.read_packet(&mut bytes[32..], &mut fds)?;
+                self.connection()?.read_packet(&mut bytes[32..], &mut fds)?;
                 log::debug!("Ending wait with {} additional bytes", ab * 4);
             }
         }
@@ -138,54 +134,58 @@ impl<Conn: Connection> super::Display<Conn> {
         // see above function for more information
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let mut fds: Vec<Fd> = vec![];
-        self.connection
-            .read_packet_async(&mut bytes, &mut fds)
-            .await?;
+
+        // See output.rs for why we do this.
+        let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
+        let res = connection.read_packet_async(&mut bytes, &mut fds).await;
+        self.connection = Some(connection);
+        res?;
 
         self.fix_glx_workaround(&mut bytes)?;
 
         if let Some(ab) = additional_bytes(&bytes[..8]) {
-            bytes.extend(iter::once(0).cycle().take(ab * 4));
-            self.connection
+            bytes.extend(iter::repeat(0).take(ab * 4));
+            let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
+            let res = connection
                 .read_packet_async(&mut bytes[32..], &mut fds)
-                .await?;
+                .await;
+            self.connection = Some(connection);
+            res?;
         }
 
         self.process_bytes(bytes, fds.into_boxed_slice())
     }
 
     #[inline]
-    fn filter_into_special_event(
-        &mut self,
-        event: Box<[u8]>,
-        fds: Box<[Fd]>,
-    ) -> Result<XID, (Box<[u8]>, Box<[Fd]>)> {
+    fn filter_into_special_event(&mut self, event: Event) -> Result<XID, Event> {
+        // if the event's already differentiated, it's not a special event
+        let evbytes = match event.as_byte_slice() {
+            Some(evbytes) => evbytes,
+            None => return Err(event),
+        };
+
         // the first byte will always indicate an XGE event
-        if event[0] & 0x7F != GENERIC_EVENT as _ {
-            return Err((event, fds));
+        if evbytes[0] & 0x7F != GENERIC_EVENT as _ {
+            return Err(event);
         }
 
         let mut eid_bytes: [u8; 4] = [0; 4];
-        eid_bytes.copy_from_slice(&event[12..16]);
+        eid_bytes.copy_from_slice(&evbytes[12..16]);
         let my_eid = u32::from_ne_bytes(eid_bytes);
 
         let mut event = Some(event);
-        let mut fds = Some(fds);
 
         self.special_event_queues
             .iter_mut()
             .find_map(|(eid, queue)| {
                 if *eid == my_eid {
-                    queue.push_back((
-                        event.take().expect("Duplicate EID detected!"),
-                        fds.take().unwrap(),
-                    ));
+                    queue.push_back(event.take().expect("Infallible!"));
                     Some(*eid)
                 } else {
                     None
                 }
             })
-            .ok_or((event.unwrap(), fds.unwrap()))
+            .ok_or(event.unwrap())
     }
 }
 

@@ -73,6 +73,14 @@ impl Event {
     }
 
     #[inline]
+    pub(crate) fn as_byte_slice(&self) -> Option<&[u8]> {
+        match self {
+            Self::NoneOfTheAbove { bytes, .. } => Some(&*bytes),
+            _ => None,
+        }
+    }
+
+    #[inline]
     pub(crate) fn as_bytes(&self, bytes: &mut [u8]) {
         match self {
             Self::ConfigureNotify(cne) => cne.as_bytes(bytes),
