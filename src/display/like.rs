@@ -2,6 +2,7 @@
 
 use super::{Connection, Display};
 
+#[allow(clippy::doc_markdown)]
 /// Represents an object that contains a Display and can successfully be aliased to a display.
 ///
 /// In certain cases, it becomes necessary for an extension to attach its own data to the display connection.

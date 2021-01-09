@@ -181,7 +181,7 @@ impl<Conn: Connection> super::Display<Conn> {
                     None
                 }
             })
-            .ok_or(event.unwrap())
+            .ok_or_else(|| event.unwrap())
     }
 }
 
