@@ -5,7 +5,6 @@
 // Note: I use smol here, as it is a). my personal favorite async runtime in the Rust ecosystem at the
 //       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
 //       use tokio, async-std, or an executor-less system here as well without much headache.
-use async_io::Timer;
 use breadx::{
     auto::xproto::ExposeEvent, rgb, DisplayConnection, Event, EventMask, GcParameters, Rectangle,
 };
@@ -13,7 +12,7 @@ use easy_parallel::Parallel;
 use futures_lite::{future, FutureExt, StreamExt};
 use smol::{
     channel::{unbounded, Receiver, Sender},
-    Executor,
+    Executor, Timer,
 };
 use std::{mem, time::Duration};
 

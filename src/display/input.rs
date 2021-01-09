@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{Connection, PendingRequest, PendingRequestFlags, RequestWorkaround};
-use crate::{event::Event, util::cycled_zeroes, Fd};
+use crate::{event::Event, util::cycled_zeroes, Fd, XID};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
@@ -34,7 +34,12 @@ impl<Conn: Connection> super::Display<Conn> {
                 TinyVec::Inline(_) => unreachable!(),
             };
 
-            self.pending_replies.insert(sequence, (bytes, fds));
+            match self.filter_into_special_event(bytes, fds) {
+                Ok(_) => (),
+                Err((event, fds)) => {
+                    self.pending_replies.insert(sequence, (event, fds));
+                }
+            }
         } else if bytes[0] == TYPE_ERROR {
             // if it's all zeroes, the X connection has closed and the programmer
             // forgot to check for the close message
@@ -147,6 +152,40 @@ impl<Conn: Connection> super::Display<Conn> {
         }
 
         self.process_bytes(bytes, fds.into_boxed_slice())
+    }
+
+    #[inline]
+    fn filter_into_special_event(
+        &mut self,
+        event: Box<[u8]>,
+        fds: Box<[Fd]>,
+    ) -> Result<XID, (Box<[u8]>, Box<[Fd]>)> {
+        // the first byte will always indicate an XGE event
+        if event[0] & 0x7F != GENERIC_EVENT as _ {
+            return Err((event, fds));
+        }
+
+        let mut eid_bytes: [u8; 4] = [0; 4];
+        eid_bytes.copy_from_slice(&event[12..16]);
+        let my_eid = u32::from_ne_bytes(eid_bytes);
+
+        let mut event = Some(event);
+        let mut fds = Some(fds);
+
+        self.special_event_queues
+            .iter_mut()
+            .find_map(|(eid, queue)| {
+                if *eid == my_eid {
+                    queue.push_back((
+                        event.take().expect("Duplicate EID detected!"),
+                        fds.take().unwrap(),
+                    ));
+                    Some(*eid)
+                } else {
+                    None
+                }
+            })
+            .ok_or((event.unwrap(), fds.unwrap()))
     }
 }
 

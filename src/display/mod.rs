@@ -86,6 +86,10 @@ pub struct Display<Conn> {
     #[allow(clippy::type_complexity)]
     pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
+    // special events queue
+    #[allow(clippy::type_complexity)]
+    pub(crate) special_event_queues: HashMap<XID, VecDeque<(Box<[u8]>, Box<[Fd]>)>>,
+
     // output variables
     request_number: u64,
 
@@ -226,7 +230,8 @@ impl<Conn: Connection> Display<Conn> {
         R::Reply: Default,
     {
         if mem::size_of::<R::Reply>() == 0 {
-            log::debug!("Immediately resolving for reply of size 0");
+            // spin one cycle of the wait process to resolve errors
+            //            self.wait()?;
             return Ok(Default::default());
         }
 
@@ -263,6 +268,8 @@ impl<Conn: Connection> Display<Conn> {
         R::Reply: Default,
     {
         if mem::size_of::<R::Reply>() == 0 {
+            // spin one cycle of the wait process to resolve errors
+            //            self.wait_async().await?;
             return Ok(Default::default());
         }
 
@@ -276,6 +283,26 @@ impl<Conn: Connection> Display<Conn> {
         }
     }
 
+    /// Register a queue for special events in the display.
+    #[inline]
+    pub fn register_special_event(&mut self) -> crate::Result<XID> {
+        let eid = self.generate_xid()?;
+        self.special_event_queues
+            .insert(eid, VecDeque::with_capacity(8));
+        Ok(eid)
+    }
+
+    /// Wait for a special event.
+    #[inline]
+    pub fn wait_for_special_event(&mut self, eid: XID) -> crate::Result<Event> {
+        loop {
+let queue = match self.special_event_queues.get_mut(eid) {
+  Some(queue) => queue,
+  None => return Err();
+};
+        }
+    }
+
     #[inline]
     fn from_connection_internal(connection: Conn) -> Self {
         Self {
@@ -284,6 +311,9 @@ impl<Conn: Connection> Display<Conn> {
             xid: Default::default(),
             default_screen: 0,
             event_queue: VecDeque::with_capacity(8),
+            // setting this to 1 because breadglx with DRI3 will always append one entry to this map,
+            // and expanding this map is considered to be a cold operation
+            special_event_queues: HashMap::with_capacity(1),
             pending_requests: HashMap::with_capacity(4),
             pending_replies: HashMap::with_capacity(4),
             request_number: 1,

@@ -1,7 +1,5 @@
 // MIT/Apache2 License
 
-#[cfg(feature = "async")]
-mod refhack;
 #[cfg(all(feature = "std", unix))]
 mod unix;
 
@@ -9,13 +7,11 @@ use crate::Fd;
 use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
-use async_io::{block_on, Async};
+use async_io::block_on;
 #[cfg(feature = "async")]
 use async_net::TcpStream as AsyncTcpStream;
 #[cfg(all(feature = "async", not(unix)))]
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
-#[cfg(feature = "async")]
-use refhack::RefHack;
 #[cfg(feature = "std")]
 use std::net::TcpStream;
 
@@ -70,6 +66,9 @@ pub trait Connection: Send + Sync {
         'a: 'future,
         'b: 'future,
         'c: 'future;
+    /// Is this object async capable?
+    #[cfg(feature = "async")]
+    fn is_async(&self) -> bool;
 }
 
 #[cfg(not(unix))]
@@ -123,60 +122,27 @@ impl Connection for TcpStream {
         'b: 'future,
         'c: 'future,
     {
-        #[inline]
-        async fn inner(this: &mut TcpStream, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
-            log::warn!("Called send_packet_async for blocking TcpStream");
-
-            #[cfg(not(unix))]
-            {
-                standard_fd_warning(fds);
-                Async::new(RefHack(this))?.write_all(bytes).await?;
-            }
-            #[cfg(unix)]
-            {
-                let a = Arc::new(Async::new(RefHack(this))?);
-                unix::send_packet_unix_async(a, bytes, fds).await?;
-            }
-
-            this.set_nonblocking(false)?;
-            Ok(())
-        }
-
-        Box::pin(inner(self, bytes, fds))
+        Box::pin(async { Err(crate::BreadError::WouldBlock) })
     }
 
     #[cfg(feature = "async")]
     #[inline]
     fn read_packet_async<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b mut [u8],
-        fds: &'c mut Vec<Fd>,
+        _bytes: &'b mut [u8],
+        _fds: &'c mut Vec<Fd>,
     ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
         'c: 'future,
     {
-        #[inline]
-        async fn inner(this: &mut TcpStream, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
-            log::warn!("Called read_packet_async for blocking TcpStream");
+        Box::pin(async { Err(crate::BreadError::WouldBlock) })
+    }
 
-            #[cfg(not(unix))]
-            {
-                let _ = fds;
-                Async::new(RefHack(this))?.read_exact(bytes).await?;
-            }
-            #[cfg(unix)]
-            {
-                let a = Arc::new(Async::new(RefHack(this))?);
-                unix::read_packet_unix_async(a, bytes, fds).await?;
-            }
-
-            this.set_nonblocking(false)?;
-            Ok(())
-        }
-
-        Box::pin(inner(self, bytes, fds))
+    #[cfg(feature = "async")]
+    fn is_async(&self) -> bool {
+        false
     }
 }
 
@@ -259,6 +225,11 @@ impl Connection for AsyncTcpStream {
 
         Box::pin(inner(self, bytes, fds))
     }
+
+    #[inline]
+    fn is_async(&self) -> bool {
+        true
+    }
 }
 
 #[cfg(all(feature = "std", unix))]
@@ -303,63 +274,28 @@ impl Connection for UnixStream {
         'b: 'future,
         'c: 'future,
     {
-        #[inline]
-        async fn inner(this: &mut UnixStream, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
-            log::warn!("Called send_packet_async for blocking UnixStream");
-
-            let a = Arc::new(Async::new(RefHack(this))?);
-            #[cfg(not(unix))]
-            {
-                standard_fd_warning(fds);
-                a.write_all(bytes).await?;
-            }
-            #[cfg(unix)]
-            {
-                unix::send_packet_unix_async(a, bytes, fds).await?;
-            }
-            this.set_nonblocking(false)?;
-            Ok(())
-        }
-
-        Box::pin(inner(self, bytes, fds))
+        Box::pin(async { Err(crate::BreadError::WouldBlock) })
     }
 
     #[cfg(feature = "async")]
     #[inline]
     fn read_packet_async<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b mut [u8],
-        fds: &'c mut Vec<Fd>,
+        _bytes: &'b mut [u8],
+        _fds: &'c mut Vec<Fd>,
     ) -> GenericFuture<'future>
     where
         'a: 'future,
         'b: 'future,
         'c: 'future,
     {
-        #[inline]
-        async fn inner(
-            this: &mut UnixStream,
-            bytes: &mut [u8],
-            fds: &mut Vec<Fd>,
-        ) -> crate::Result {
-            log::warn!("Called read_packet_async for blocking UnixStream");
+        Box::pin(async { Err(crate::BreadError::WouldBlock) })
+    }
 
-            let a = Arc::new(Async::new(RefHack(this))?);
-            #[cfg(not(unix))]
-            {
-                let _ = fds;
-                a.read_exact(bytes).await?;
-            }
-            #[cfg(unix)]
-            {
-                unix::read_packet_unix_async(a, bytes, fds).await?;
-            }
-
-            this.set_nonblocking(false)?;
-            Ok(())
-        }
-
-        Box::pin(inner(self, bytes, fds))
+    #[cfg(feature = "async")]
+    #[inline]
+    fn is_async(&self) -> bool {
+        false
     }
 }
 
@@ -441,5 +377,10 @@ impl Connection for AsyncUnixStream {
         }
 
         Box::pin(inner(self, bytes, fds))
+    }
+
+    #[inline]
+    fn is_async(&self) -> bool {
+        true
     }
 }

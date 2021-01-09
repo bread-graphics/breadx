@@ -110,7 +110,9 @@ impl<Conn: Connection> Display<Conn> {
         required_major: u32,
         required_minor: u32,
     ) -> crate::Result<(u32, u32)> {
-        let tok = self.query_glx_version_async(required_major, required_minor).await?;
+        let tok = self
+            .query_glx_version_async(required_major, required_minor)
+            .await?;
         let repl = self.resolve_request_async(tok).await?;
         Ok((repl.major_version, repl.minor_version))
     }
