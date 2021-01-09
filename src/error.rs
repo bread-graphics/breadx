@@ -35,9 +35,13 @@ pub enum BreadError {
         major_code: u8,
         sequence: u16,
     },
+    /// The X connection is tainted by an incomplete future.
+    Tainted,
     /// The X connection closed without telling us.
     ClosedConnection,
-    /// Attempted to call an async function on a blocking object.
+    /// Failed to load a library; exists for the benefit of breadglx
+    LoadLibraryFailed(&'static str),
+    /// Operation would block an async operation.
     WouldBlock,
 }
 
@@ -77,13 +81,13 @@ impl fmt::Display for BreadError {
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
             Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
             Self::FailedToAuthorize => f.write_str("Authorization was rejected by the X11 server"),
-            Self::WouldBlock => f.write_str("Attempted to call async I/O on a blocking connection"),
             Self::BadObjectRead(name) => write!(
                 f,
                 "Unable to read object of type from bytes: {}",
                 name.unwrap_or("Unknown")
             ),
-Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
+            Self::Tainted => f.write_str("Connection is tainted by an incomplete send"),
+            Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
             Self::ExtensionNotPresent(ext) => write!(f, "Extension was not found on X server: {}", ext),
             Self::XProtocol {
                 error_code,
@@ -96,6 +100,8 @@ Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequ
                 error_code, major_code, minor_code, sequence
             ),
             Self::ClosedConnection => f.write_str("The X connection closed without our end of the connection closing. Did you forget to listen for WM_DELTE_WINDOW?"),
+            Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
+            Self::WouldBlock => f.write_str("Operation would block an async function"),
             #[cfg(feature = "std")]
             Self::Io(i) => write!(f, "{}", i),
         }
@@ -104,7 +110,7 @@ Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequ
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
-pub struct ErrorCode(u8);
+pub struct ErrorCode(pub u8);
 
 impl fmt::Display for ErrorCode {
     #[inline]

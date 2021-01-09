@@ -20,26 +20,28 @@ use alloc::sync::Arc;
 use async_io::Async;
 
 #[inline]
-fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()> {
+fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::Result<()>) {
     #[inline]
     fn sendmsg_loop(
         conn: RawFd,
         mut data: &[u8],
         mut cmsgs: &[ControlMessage<'_>],
-    ) -> io::Result<()> {
+    ) -> (usize, io::Result<()>) {
         let mut datavec = [IoVec::from_slice(data)];
+        let mut offset = 0;
         loop {
             match sendmsg(conn, &datavec, cmsgs, MsgFlags::empty(), None) {
-                Ok(0) => return Ok(()),
+                Ok(0) => return (offset, Ok(())),
                 Ok(m) => {
                     log::debug!("sendmsg: yet to send {} bytes", data.len() - m);
+                    offset += m;
                     data = &data[m..];
                     datavec = [IoVec::from_slice(data)];
                     // ensure we never send the file descriptors more than once
                     cmsgs = &[];
                 }
                 Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
-                Err(e) => return Err(convert_nix_error(e)),
+                Err(e) => return (offset, Err(convert_nix_error(e))),
             }
         }
     }
@@ -51,7 +53,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> io::Result<()
         sendmsg_loop(conn, data, &cmsgs)
     };
 
-    if res.is_ok() {
+    if res.1.is_ok() {
         fds.clear();
     }
 
@@ -67,7 +69,7 @@ pub fn send_packet_unix<Conn: AsRawFd + Write>(
 ) -> crate::Result {
     let connfd = conn.as_raw_fd();
 
-    send_msg_packet(connfd, data, fds)?;
+    send_msg_packet(connfd, data, fds).1?;
     Ok(())
 }
 
@@ -76,13 +78,17 @@ pub fn send_packet_unix<Conn: AsRawFd + Write>(
 #[inline]
 pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
     conn: Arc<Async<Conn>>,
-    data: &[u8],
+    mut data: &[u8],
     fds: &mut Vec<Fd>,
 ) -> crate::Result {
     // TODO: make sure this isn't unsound. the way we use it, it shouldn't be
     conn.write_with(|conn| {
         let connfd = conn.as_raw_fd();
-        send_msg_packet(connfd, data, fds)
+        let (offset, res) = send_msg_packet(connfd, data, fds);
+        // the data stream might be interrupted; since this is called in a loop,
+        // we need to keep track of what we've written
+        data = &data[offset..];
+        res
     })
     .await?;
 

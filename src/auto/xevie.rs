@@ -8,8 +8,8 @@ use super::prelude::*;
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major_version: Card16,
     pub length: u16,
+    pub client_major_version: Card16,
     pub client_minor_version: Card16,
 }
 impl QueryVersionRequest {}
@@ -18,8 +18,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -29,17 +30,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major_version: client_major_version,
                 length: length,
+                client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
             },
             index,
@@ -48,8 +50,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major_version.size()
+            + 1
             + self.length.size()
+            + self.client_major_version.size()
             + self.client_minor_version.size()
     }
 }
@@ -328,8 +331,8 @@ impl AsByteSequence for Event {
 #[derive(Clone, Debug, Default)]
 pub struct SendRequest {
     pub req_type: u8,
-    pub event: Event,
     pub length: u16,
+    pub event: Event,
     pub data_type: Card32,
 }
 impl SendRequest {}
@@ -338,8 +341,9 @@ impl AsByteSequence for SendRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.event.as_bytes(&mut bytes[index..]);
         index += self.data_type.as_bytes(&mut bytes[index..]);
         index += 64;
         index
@@ -350,9 +354,10 @@ impl AsByteSequence for SendRequest {
         log::trace!("Deserializing SendRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
         index += sz;
         let (data_type, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -360,8 +365,8 @@ impl AsByteSequence for SendRequest {
         Some((
             SendRequest {
                 req_type: req_type,
-                event: event,
                 length: length,
+                event: event,
                 data_type: data_type,
             },
             index,
@@ -369,7 +374,12 @@ impl AsByteSequence for SendRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.event.size() + self.length.size() + self.data_type.size() + 64
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.event.size()
+            + self.data_type.size()
+            + 64
     }
 }
 impl Request for SendRequest {

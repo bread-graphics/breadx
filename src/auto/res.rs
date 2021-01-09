@@ -389,8 +389,8 @@ impl AsByteSequence for ResourceSizeValue {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major: Card8,
     pub length: u16,
+    pub client_major: Card8,
     pub client_minor: Card8,
 }
 impl QueryVersionRequest {}
@@ -399,8 +399,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major.as_bytes(&mut bytes[index..]);
         index += self.client_minor.as_bytes(&mut bytes[index..]);
         index
     }
@@ -410,17 +411,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major: client_major,
                 length: length,
+                client_major: client_major,
                 client_minor: client_minor,
             },
             index,
@@ -429,8 +431,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major.size()
+            + 1
             + self.length.size()
+            + self.client_major.size()
             + self.client_minor.size()
     }
 }

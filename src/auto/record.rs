@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Context {
     pub xid: XID,
 }
@@ -260,8 +260,8 @@ impl AsByteSequence for ClientInfo {
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub major_version: Card16,
     pub length: u16,
+    pub major_version: Card16,
     pub minor_version: Card16,
 }
 impl QueryVersionRequest {}
@@ -270,8 +270,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.major_version.as_bytes(&mut bytes[index..]);
         index += self.minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -281,17 +282,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                major_version: major_version,
                 length: length,
+                major_version: major_version,
                 minor_version: minor_version,
             },
             index,
@@ -300,8 +302,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.major_version.size()
+            + 1
             + self.length.size()
+            + self.major_version.size()
             + self.minor_version.size()
     }
 }
@@ -371,8 +374,8 @@ impl AsByteSequence for QueryVersionReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContextRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
     pub element_header: ElementHeader,
     pub client_specs: Vec<ClientSpec>,
     pub ranges: Vec<Range>,
@@ -383,8 +386,9 @@ impl AsByteSequence for CreateContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.element_header.as_bytes(&mut bytes[index..]);
         index += 3;
         index += (self.client_specs.len() as Card32).as_bytes(&mut bytes[index..]);
@@ -403,10 +407,11 @@ impl AsByteSequence for CreateContextRequest {
         log::trace!("Deserializing CreateContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (element_header, sz): (ElementHeader, usize) =
             <ElementHeader>::from_bytes(&bytes[index..])?;
@@ -427,8 +432,8 @@ impl AsByteSequence for CreateContextRequest {
         Some((
             CreateContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 element_header: element_header,
                 client_specs: client_specs,
                 ranges: ranges,
@@ -439,8 +444,9 @@ impl AsByteSequence for CreateContextRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.element_header.size()
             + 3
             + ::core::mem::size_of::<Card32>()
@@ -466,8 +472,8 @@ impl Request for CreateContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct RegisterClientsRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
     pub element_header: ElementHeader,
     pub client_specs: Vec<ClientSpec>,
     pub ranges: Vec<Range>,
@@ -478,8 +484,9 @@ impl AsByteSequence for RegisterClientsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.element_header.as_bytes(&mut bytes[index..]);
         index += 3;
         index += (self.client_specs.len() as Card32).as_bytes(&mut bytes[index..]);
@@ -498,10 +505,11 @@ impl AsByteSequence for RegisterClientsRequest {
         log::trace!("Deserializing RegisterClientsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (element_header, sz): (ElementHeader, usize) =
             <ElementHeader>::from_bytes(&bytes[index..])?;
@@ -522,8 +530,8 @@ impl AsByteSequence for RegisterClientsRequest {
         Some((
             RegisterClientsRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 element_header: element_header,
                 client_specs: client_specs,
                 ranges: ranges,
@@ -534,8 +542,9 @@ impl AsByteSequence for RegisterClientsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.element_header.size()
             + 3
             + ::core::mem::size_of::<Card32>()
@@ -561,8 +570,8 @@ impl Request for RegisterClientsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct UnregisterClientsRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
     pub client_specs: Vec<ClientSpec>,
 }
 impl UnregisterClientsRequest {}
@@ -571,8 +580,9 @@ impl AsByteSequence for UnregisterClientsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += (self.client_specs.len() as Card32).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.client_specs, &mut bytes[index..]);
         index += block_len;
@@ -585,10 +595,11 @@ impl AsByteSequence for UnregisterClientsRequest {
         log::trace!("Deserializing UnregisterClientsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -599,8 +610,8 @@ impl AsByteSequence for UnregisterClientsRequest {
         Some((
             UnregisterClientsRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 client_specs: client_specs,
             },
             index,
@@ -609,8 +620,9 @@ impl AsByteSequence for UnregisterClientsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + ::core::mem::size_of::<Card32>()
             + {
                 let block_len: usize = self.client_specs.iter().map(|i| i.size()).sum();
@@ -628,8 +640,8 @@ impl Request for UnregisterClientsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetContextRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
 }
 impl GetContextRequest {}
 impl AsByteSequence for GetContextRequest {
@@ -637,8 +649,9 @@ impl AsByteSequence for GetContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -647,23 +660,24 @@ impl AsByteSequence for GetContextRequest {
         log::trace!("Deserializing GetContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for GetContextRequest {
@@ -754,8 +768,8 @@ impl AsByteSequence for GetContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct EnableContextRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
 }
 impl EnableContextRequest {}
 impl AsByteSequence for EnableContextRequest {
@@ -763,8 +777,9 @@ impl AsByteSequence for EnableContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -773,23 +788,24 @@ impl AsByteSequence for EnableContextRequest {
         log::trace!("Deserializing EnableContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             EnableContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for EnableContextRequest {
@@ -900,8 +916,8 @@ impl AsByteSequence for EnableContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct DisableContextRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
 }
 impl DisableContextRequest {}
 impl AsByteSequence for DisableContextRequest {
@@ -909,8 +925,9 @@ impl AsByteSequence for DisableContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -919,23 +936,24 @@ impl AsByteSequence for DisableContextRequest {
         log::trace!("Deserializing DisableContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DisableContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for DisableContextRequest {
@@ -947,8 +965,8 @@ impl Request for DisableContextRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FreeContextRequest {
     pub req_type: u8,
-    pub context: super::record::Context,
     pub length: u16,
+    pub context: super::record::Context,
 }
 impl FreeContextRequest {}
 impl AsByteSequence for FreeContextRequest {
@@ -956,8 +974,9 @@ impl AsByteSequence for FreeContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -966,23 +985,24 @@ impl AsByteSequence for FreeContextRequest {
         log::trace!("Deserializing FreeContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
+        index += 1;
+        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
         let (context, sz): (super::record::Context, usize) =
             <super::record::Context>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FreeContextRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for FreeContextRequest {
@@ -990,6 +1010,39 @@ impl Request for FreeContextRequest {
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Cs {
+    CurrentClients = 1,
+    FutureClients = 2,
+    AllClients = 3,
+}
+impl AsByteSequence for Cs {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::CurrentClients, sz)),
+            2 => Some((Self::FutureClients, sz)),
+            3 => Some((Self::AllClients, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Cs {
+    #[inline]
+    fn default() -> Cs {
+        Cs::CurrentClients
+    }
 }
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -1106,39 +1159,6 @@ impl core::ops::BitXor for HType {
         HType {
             inner: self.inner ^ rhs.inner,
         }
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Cs {
-    CurrentClients = 1,
-    FutureClients = 2,
-    AllClients = 3,
-}
-impl AsByteSequence for Cs {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::CurrentClients, sz)),
-            2 => Some((Self::FutureClients, sz)),
-            3 => Some((Self::AllClients, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Cs {
-    #[inline]
-    fn default() -> Cs {
-        Cs::CurrentClients
     }
 }
 #[derive(Clone, Debug, Default)]

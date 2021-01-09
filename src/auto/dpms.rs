@@ -8,8 +8,8 @@ use super::prelude::*;
 #[derive(Clone, Debug, Default)]
 pub struct GetVersionRequest {
     pub req_type: u8,
-    pub client_major_version: Card16,
     pub length: u16,
+    pub client_major_version: Card16,
     pub client_minor_version: Card16,
 }
 impl GetVersionRequest {}
@@ -18,8 +18,9 @@ impl AsByteSequence for GetVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major_version.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major_version.as_bytes(&mut bytes[index..]);
         index += self.client_minor_version.as_bytes(&mut bytes[index..]);
         index
     }
@@ -29,17 +30,18 @@ impl AsByteSequence for GetVersionRequest {
         log::trace!("Deserializing GetVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor_version, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetVersionRequest {
                 req_type: req_type,
-                client_major_version: client_major_version,
                 length: length,
+                client_major_version: client_major_version,
                 client_minor_version: client_minor_version,
             },
             index,
@@ -48,8 +50,9 @@ impl AsByteSequence for GetVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major_version.size()
+            + 1
             + self.length.size()
+            + self.client_major_version.size()
             + self.client_minor_version.size()
     }
 }
@@ -325,8 +328,8 @@ impl AsByteSequence for GetTimeoutsReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetTimeoutsRequest {
     pub req_type: u8,
-    pub standby_timeout: Card16,
     pub length: u16,
+    pub standby_timeout: Card16,
     pub suspend_timeout: Card16,
     pub off_timeout: Card16,
 }
@@ -336,8 +339,9 @@ impl AsByteSequence for SetTimeoutsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.standby_timeout.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.standby_timeout.as_bytes(&mut bytes[index..]);
         index += self.suspend_timeout.as_bytes(&mut bytes[index..]);
         index += self.off_timeout.as_bytes(&mut bytes[index..]);
         index
@@ -348,9 +352,10 @@ impl AsByteSequence for SetTimeoutsRequest {
         log::trace!("Deserializing SetTimeoutsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (standby_timeout, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (standby_timeout, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         let (suspend_timeout, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -359,8 +364,8 @@ impl AsByteSequence for SetTimeoutsRequest {
         Some((
             SetTimeoutsRequest {
                 req_type: req_type,
-                standby_timeout: standby_timeout,
                 length: length,
+                standby_timeout: standby_timeout,
                 suspend_timeout: suspend_timeout,
                 off_timeout: off_timeout,
             },
@@ -370,8 +375,9 @@ impl AsByteSequence for SetTimeoutsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.standby_timeout.size()
+            + 1
             + self.length.size()
+            + self.standby_timeout.size()
             + self.suspend_timeout.size()
             + self.off_timeout.size()
     }
@@ -471,8 +477,8 @@ impl Request for DisableRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ForceLevelRequest {
     pub req_type: u8,
-    pub power_level: DpmsMode,
     pub length: u16,
+    pub power_level: DpmsMode,
 }
 impl ForceLevelRequest {}
 impl AsByteSequence for ForceLevelRequest {
@@ -480,8 +486,9 @@ impl AsByteSequence for ForceLevelRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.power_level.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.power_level.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -490,22 +497,23 @@ impl AsByteSequence for ForceLevelRequest {
         log::trace!("Deserializing ForceLevelRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (power_level, sz): (DpmsMode, usize) = <DpmsMode>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (power_level, sz): (DpmsMode, usize) = <DpmsMode>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ForceLevelRequest {
                 req_type: req_type,
-                power_level: power_level,
                 length: length,
+                power_level: power_level,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.power_level.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.power_level.size()
     }
 }
 impl Request for ForceLevelRequest {

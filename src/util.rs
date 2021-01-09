@@ -22,7 +22,7 @@ pub(crate) fn convert_nix_error(e: NixError) -> IoError {
 
 #[inline]
 pub(crate) fn cycled_zeroes<A: Array<Item = u8>>(len: usize) -> TinyVec<A> {
-    iter::once(0).cycle().take(len).collect()
+    iter::repeat(0).take(len).collect()
 }
 
 /// Byte reversal table, copied from Xlib.

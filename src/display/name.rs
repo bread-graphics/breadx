@@ -99,6 +99,20 @@ impl Connection for NameConnection {
     {
         self.generic().read_packet_async(bytes, fds)
     }
+
+    #[cfg(feature = "async")]
+    #[inline]
+    fn is_async(&self) -> bool {
+        match self {
+            Self::Tcp(_) => false,
+            #[cfg(unix)]
+            Self::Socket(_) => false,
+            #[cfg(feature = "async")]
+            Self::AsyncTcp(_) => true,
+            #[cfg(all(unix, feature = "async"))]
+            Self::AsyncSocket(_) => true,
+        }
+    }
 }
 
 /// Port for X11 server.

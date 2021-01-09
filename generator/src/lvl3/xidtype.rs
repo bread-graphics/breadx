@@ -23,6 +23,7 @@ impl From<XidType> for RStruct {
                 "Eq",
                 "PartialOrd",
                 "Ord",
+                "Hash",
             ],
             fds: vec![],
             is_transparent: true,

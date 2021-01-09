@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::xproto::*;
 pub type Glyph = Card32;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Glyphset {
     pub xid: XID,
 }
@@ -29,7 +29,7 @@ impl XidType for Glyphset {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Picture {
     pub xid: XID,
 }
@@ -50,7 +50,7 @@ impl XidType for Picture {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pictformat {
     pub xid: XID,
 }
@@ -941,8 +941,8 @@ impl AsByteSequence for QueryPictFormatsReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryPictIndexValuesRequest {
     pub req_type: u8,
-    pub format: Pictformat,
     pub length: u16,
+    pub format: Pictformat,
 }
 impl QueryPictIndexValuesRequest {}
 impl AsByteSequence for QueryPictIndexValuesRequest {
@@ -950,8 +950,9 @@ impl AsByteSequence for QueryPictIndexValuesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.format.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.format.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -960,22 +961,23 @@ impl AsByteSequence for QueryPictIndexValuesRequest {
         log::trace!("Deserializing QueryPictIndexValuesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (format, sz): (Pictformat, usize) = <Pictformat>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (format, sz): (Pictformat, usize) = <Pictformat>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryPictIndexValuesRequest {
                 req_type: req_type,
-                format: format,
                 length: length,
+                format: format,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.format.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.format.size()
     }
 }
 impl Request for QueryPictIndexValuesRequest {
@@ -1053,8 +1055,8 @@ impl AsByteSequence for QueryPictIndexValuesReply {
 #[derive(Clone, Debug, Default)]
 pub struct CreatePictureRequest {
     pub req_type: u8,
-    pub pid: Picture,
     pub length: u16,
+    pub pid: Picture,
     pub drawable: Drawable,
     pub format: Pictformat,
     pub value_mask: Cp,
@@ -1078,8 +1080,9 @@ impl AsByteSequence for CreatePictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pid.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index += self.value_mask.as_bytes(&mut bytes[index..]);
@@ -1131,9 +1134,10 @@ impl AsByteSequence for CreatePictureRequest {
         log::trace!("Deserializing CreatePictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pid, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pid, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1237,8 +1241,8 @@ impl AsByteSequence for CreatePictureRequest {
         Some((
             CreatePictureRequest {
                 req_type: req_type,
-                pid: pid,
                 length: length,
+                pid: pid,
                 drawable: drawable,
                 format: format,
                 value_mask: value_mask,
@@ -1262,8 +1266,9 @@ impl AsByteSequence for CreatePictureRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.pid.size()
+            + 1
             + self.length.size()
+            + self.pid.size()
             + self.drawable.size()
             + self.format.size()
             + self.value_mask.size()
@@ -1592,8 +1597,8 @@ impl core::ops::BitXor for Cp {
 #[derive(Clone, Debug, Default)]
 pub struct ChangePictureRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub value_mask: Cp,
     pub repeat: Repeat,
     pub alphamap: Picture,
@@ -1615,8 +1620,9 @@ impl AsByteSequence for ChangePictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.value_mask.as_bytes(&mut bytes[index..]);
         let cond0 = (self.value_mask);
         if cond0.repeat() {
@@ -1666,9 +1672,10 @@ impl AsByteSequence for ChangePictureRequest {
         log::trace!("Deserializing ChangePictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (value_mask, sz): (Cp, usize) = <Cp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1768,8 +1775,8 @@ impl AsByteSequence for ChangePictureRequest {
         Some((
             ChangePictureRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 value_mask: value_mask,
                 repeat: repeat,
                 alphamap: alphamap,
@@ -1791,8 +1798,9 @@ impl AsByteSequence for ChangePictureRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.value_mask.size()
             + self.repeat.size()
             + self.alphamap.size()
@@ -1818,8 +1826,8 @@ impl Request for ChangePictureRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetPictureClipRectanglesRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub clip_x_origin: Int16,
     pub clip_y_origin: Int16,
     pub rectangles: Vec<Rectangle>,
@@ -1830,8 +1838,9 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.clip_x_origin.as_bytes(&mut bytes[index..]);
         index += self.clip_y_origin.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.rectangles, &mut bytes[index..]);
@@ -1845,9 +1854,10 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
         log::trace!("Deserializing SetPictureClipRectanglesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (clip_x_origin, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1860,8 +1870,8 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
         Some((
             SetPictureClipRectanglesRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 clip_x_origin: clip_x_origin,
                 clip_y_origin: clip_y_origin,
                 rectangles: rectangles,
@@ -1872,8 +1882,9 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.clip_x_origin.size()
             + self.clip_y_origin.size()
             + {
@@ -1892,8 +1903,8 @@ impl Request for SetPictureClipRectanglesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FreePictureRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
 }
 impl FreePictureRequest {}
 impl AsByteSequence for FreePictureRequest {
@@ -1901,8 +1912,9 @@ impl AsByteSequence for FreePictureRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1911,22 +1923,23 @@ impl AsByteSequence for FreePictureRequest {
         log::trace!("Deserializing FreePictureRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FreePictureRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.picture.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.picture.size()
     }
 }
 impl Request for FreePictureRequest {
@@ -1938,8 +1951,8 @@ impl Request for FreePictureRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CompositeRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub mask: Picture,
     pub dst: Picture,
@@ -1958,8 +1971,9 @@ impl AsByteSequence for CompositeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.mask.as_bytes(&mut bytes[index..]);
@@ -1980,9 +1994,10 @@ impl AsByteSequence for CompositeRequest {
         log::trace!("Deserializing CompositeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2010,8 +2025,8 @@ impl AsByteSequence for CompositeRequest {
         Some((
             CompositeRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 mask: mask,
                 dst: dst,
@@ -2030,8 +2045,9 @@ impl AsByteSequence for CompositeRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.mask.size()
@@ -2189,8 +2205,8 @@ pub const PICTURE_NONE: Picture = <Picture>::const_from_xid(0);
 #[derive(Clone, Debug, Default)]
 pub struct TrapezoidsRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2204,8 +2220,9 @@ impl AsByteSequence for TrapezoidsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -2223,9 +2240,10 @@ impl AsByteSequence for TrapezoidsRequest {
         log::trace!("Deserializing TrapezoidsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2245,8 +2263,8 @@ impl AsByteSequence for TrapezoidsRequest {
         Some((
             TrapezoidsRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -2260,8 +2278,9 @@ impl AsByteSequence for TrapezoidsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -2284,8 +2303,8 @@ impl Request for TrapezoidsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct TrianglesRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2299,8 +2318,9 @@ impl AsByteSequence for TrianglesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -2318,9 +2338,10 @@ impl AsByteSequence for TrianglesRequest {
         log::trace!("Deserializing TrianglesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2340,8 +2361,8 @@ impl AsByteSequence for TrianglesRequest {
         Some((
             TrianglesRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -2355,8 +2376,9 @@ impl AsByteSequence for TrianglesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -2379,8 +2401,8 @@ impl Request for TrianglesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct TriStripRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2394,8 +2416,9 @@ impl AsByteSequence for TriStripRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -2413,9 +2436,10 @@ impl AsByteSequence for TriStripRequest {
         log::trace!("Deserializing TriStripRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2435,8 +2459,8 @@ impl AsByteSequence for TriStripRequest {
         Some((
             TriStripRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -2450,8 +2474,9 @@ impl AsByteSequence for TriStripRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -2474,8 +2499,8 @@ impl Request for TriStripRequest {
 #[derive(Clone, Debug, Default)]
 pub struct TriFanRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2489,8 +2514,9 @@ impl AsByteSequence for TriFanRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -2508,9 +2534,10 @@ impl AsByteSequence for TriFanRequest {
         log::trace!("Deserializing TriFanRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2530,8 +2557,8 @@ impl AsByteSequence for TriFanRequest {
         Some((
             TriFanRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -2545,8 +2572,9 @@ impl AsByteSequence for TriFanRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -2569,8 +2597,8 @@ impl Request for TriFanRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateGlyphSetRequest {
     pub req_type: u8,
-    pub gsid: Glyphset,
     pub length: u16,
+    pub gsid: Glyphset,
     pub format: Pictformat,
 }
 impl CreateGlyphSetRequest {}
@@ -2579,8 +2607,9 @@ impl AsByteSequence for CreateGlyphSetRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.gsid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.gsid.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2590,17 +2619,18 @@ impl AsByteSequence for CreateGlyphSetRequest {
         log::trace!("Deserializing CreateGlyphSetRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (gsid, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (gsid, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         let (format, sz): (Pictformat, usize) = <Pictformat>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateGlyphSetRequest {
                 req_type: req_type,
-                gsid: gsid,
                 length: length,
+                gsid: gsid,
                 format: format,
             },
             index,
@@ -2608,7 +2638,7 @@ impl AsByteSequence for CreateGlyphSetRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.gsid.size() + self.length.size() + self.format.size()
+        self.req_type.size() + 1 + self.length.size() + self.gsid.size() + self.format.size()
     }
 }
 impl Request for CreateGlyphSetRequest {
@@ -2620,8 +2650,8 @@ impl Request for CreateGlyphSetRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ReferenceGlyphSetRequest {
     pub req_type: u8,
-    pub gsid: Glyphset,
     pub length: u16,
+    pub gsid: Glyphset,
     pub existing: Glyphset,
 }
 impl ReferenceGlyphSetRequest {}
@@ -2630,8 +2660,9 @@ impl AsByteSequence for ReferenceGlyphSetRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.gsid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.gsid.as_bytes(&mut bytes[index..]);
         index += self.existing.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2641,17 +2672,18 @@ impl AsByteSequence for ReferenceGlyphSetRequest {
         log::trace!("Deserializing ReferenceGlyphSetRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (gsid, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (gsid, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         let (existing, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ReferenceGlyphSetRequest {
                 req_type: req_type,
-                gsid: gsid,
                 length: length,
+                gsid: gsid,
                 existing: existing,
             },
             index,
@@ -2659,7 +2691,7 @@ impl AsByteSequence for ReferenceGlyphSetRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.gsid.size() + self.length.size() + self.existing.size()
+        self.req_type.size() + 1 + self.length.size() + self.gsid.size() + self.existing.size()
     }
 }
 impl Request for ReferenceGlyphSetRequest {
@@ -2671,8 +2703,8 @@ impl Request for ReferenceGlyphSetRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FreeGlyphSetRequest {
     pub req_type: u8,
-    pub glyphset: Glyphset,
     pub length: u16,
+    pub glyphset: Glyphset,
 }
 impl FreeGlyphSetRequest {}
 impl AsByteSequence for FreeGlyphSetRequest {
@@ -2680,8 +2712,9 @@ impl AsByteSequence for FreeGlyphSetRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glyphset.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glyphset.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2690,22 +2723,23 @@ impl AsByteSequence for FreeGlyphSetRequest {
         log::trace!("Deserializing FreeGlyphSetRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FreeGlyphSetRequest {
                 req_type: req_type,
-                glyphset: glyphset,
                 length: length,
+                glyphset: glyphset,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.glyphset.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.glyphset.size()
     }
 }
 impl Request for FreeGlyphSetRequest {
@@ -2717,8 +2751,8 @@ impl Request for FreeGlyphSetRequest {
 #[derive(Clone, Debug, Default)]
 pub struct AddGlyphsRequest {
     pub req_type: u8,
-    pub glyphset: Glyphset,
     pub length: u16,
+    pub glyphset: Glyphset,
     pub glyphs_len: Card32,
     pub glyphids: Vec<Card32>,
     pub glyphs: Vec<Glyphinfo>,
@@ -2730,8 +2764,9 @@ impl AsByteSequence for AddGlyphsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glyphset.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glyphset.as_bytes(&mut bytes[index..]);
         index += self.glyphs_len.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.glyphids, &mut bytes[index..]);
         index += block_len;
@@ -2750,9 +2785,10 @@ impl AsByteSequence for AddGlyphsRequest {
         log::trace!("Deserializing AddGlyphsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         let (glyphs_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2771,8 +2807,8 @@ impl AsByteSequence for AddGlyphsRequest {
         Some((
             AddGlyphsRequest {
                 req_type: req_type,
-                glyphset: glyphset,
                 length: length,
+                glyphset: glyphset,
                 glyphs_len: glyphs_len,
                 glyphids: glyphids,
                 glyphs: glyphs,
@@ -2784,8 +2820,9 @@ impl AsByteSequence for AddGlyphsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.glyphset.size()
+            + 1
             + self.length.size()
+            + self.glyphset.size()
             + self.glyphs_len.size()
             + {
                 let block_len: usize = self.glyphids.iter().map(|i| i.size()).sum();
@@ -2813,8 +2850,8 @@ impl Request for AddGlyphsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct FreeGlyphsRequest {
     pub req_type: u8,
-    pub glyphset: Glyphset,
     pub length: u16,
+    pub glyphset: Glyphset,
     pub glyphs: Vec<Glyph>,
 }
 impl FreeGlyphsRequest {}
@@ -2823,8 +2860,9 @@ impl AsByteSequence for FreeGlyphsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.glyphset.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.glyphset.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.glyphs, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Glyph>());
@@ -2836,9 +2874,10 @@ impl AsByteSequence for FreeGlyphsRequest {
         log::trace!("Deserializing FreeGlyphsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
         let (glyphs, block_len): (Vec<Glyph>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
@@ -2847,8 +2886,8 @@ impl AsByteSequence for FreeGlyphsRequest {
         Some((
             FreeGlyphsRequest {
                 req_type: req_type,
-                glyphset: glyphset,
                 length: length,
+                glyphset: glyphset,
                 glyphs: glyphs,
             },
             index,
@@ -2856,7 +2895,7 @@ impl AsByteSequence for FreeGlyphsRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.glyphset.size() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.glyphset.size() + {
             let block_len: usize = self.glyphs.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Glyph>());
             block_len + pad
@@ -2872,8 +2911,8 @@ impl Request for FreeGlyphsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CompositeGlyphs8Request {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2888,8 +2927,9 @@ impl AsByteSequence for CompositeGlyphs8Request {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -2908,9 +2948,10 @@ impl AsByteSequence for CompositeGlyphs8Request {
         log::trace!("Deserializing CompositeGlyphs8Request from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -2932,8 +2973,8 @@ impl AsByteSequence for CompositeGlyphs8Request {
         Some((
             CompositeGlyphs8Request {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -2948,8 +2989,9 @@ impl AsByteSequence for CompositeGlyphs8Request {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -2973,8 +3015,8 @@ impl Request for CompositeGlyphs8Request {
 #[derive(Clone, Debug, Default)]
 pub struct CompositeGlyphs16Request {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -2989,8 +3031,9 @@ impl AsByteSequence for CompositeGlyphs16Request {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -3009,9 +3052,10 @@ impl AsByteSequence for CompositeGlyphs16Request {
         log::trace!("Deserializing CompositeGlyphs16Request from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -3033,8 +3077,8 @@ impl AsByteSequence for CompositeGlyphs16Request {
         Some((
             CompositeGlyphs16Request {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -3049,8 +3093,9 @@ impl AsByteSequence for CompositeGlyphs16Request {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -3074,8 +3119,8 @@ impl Request for CompositeGlyphs16Request {
 #[derive(Clone, Debug, Default)]
 pub struct CompositeGlyphs32Request {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub src: Picture,
     pub dst: Picture,
     pub mask_format: Pictformat,
@@ -3090,8 +3135,9 @@ impl AsByteSequence for CompositeGlyphs32Request {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.src.as_bytes(&mut bytes[index..]);
         index += self.dst.as_bytes(&mut bytes[index..]);
@@ -3110,9 +3156,10 @@ impl AsByteSequence for CompositeGlyphs32Request {
         log::trace!("Deserializing CompositeGlyphs32Request from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (src, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -3134,8 +3181,8 @@ impl AsByteSequence for CompositeGlyphs32Request {
         Some((
             CompositeGlyphs32Request {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 src: src,
                 dst: dst,
                 mask_format: mask_format,
@@ -3150,8 +3197,9 @@ impl AsByteSequence for CompositeGlyphs32Request {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.src.size()
             + self.dst.size()
@@ -3175,8 +3223,8 @@ impl Request for CompositeGlyphs32Request {
 #[derive(Clone, Debug, Default)]
 pub struct FillRectanglesRequest {
     pub req_type: u8,
-    pub op: PictOp,
     pub length: u16,
+    pub op: PictOp,
     pub dst: Picture,
     pub color: Color,
     pub rects: Vec<Rectangle>,
@@ -3187,8 +3235,9 @@ impl AsByteSequence for FillRectanglesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.op.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.op.as_bytes(&mut bytes[index..]);
         index += 3;
         index += self.dst.as_bytes(&mut bytes[index..]);
         index += self.color.as_bytes(&mut bytes[index..]);
@@ -3203,9 +3252,10 @@ impl AsByteSequence for FillRectanglesRequest {
         log::trace!("Deserializing FillRectanglesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (op, sz): (PictOp, usize) = <PictOp>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         let (dst, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
@@ -3219,8 +3269,8 @@ impl AsByteSequence for FillRectanglesRequest {
         Some((
             FillRectanglesRequest {
                 req_type: req_type,
-                op: op,
                 length: length,
+                op: op,
                 dst: dst,
                 color: color,
                 rects: rects,
@@ -3231,8 +3281,9 @@ impl AsByteSequence for FillRectanglesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.op.size()
+            + 1
             + self.length.size()
+            + self.op.size()
             + 3
             + self.dst.size()
             + self.color.size()
@@ -3252,8 +3303,8 @@ impl Request for FillRectanglesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateCursorRequest {
     pub req_type: u8,
-    pub cid: Cursor,
     pub length: u16,
+    pub cid: Cursor,
     pub source: Picture,
     pub x: Card16,
     pub y: Card16,
@@ -3264,8 +3315,9 @@ impl AsByteSequence for CreateCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cid.as_bytes(&mut bytes[index..]);
         index += self.source.as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
         index += self.y.as_bytes(&mut bytes[index..]);
@@ -3277,9 +3329,10 @@ impl AsByteSequence for CreateCursorRequest {
         log::trace!("Deserializing CreateCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cid, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cid, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3290,8 +3343,8 @@ impl AsByteSequence for CreateCursorRequest {
         Some((
             CreateCursorRequest {
                 req_type: req_type,
-                cid: cid,
                 length: length,
+                cid: cid,
                 source: source,
                 x: x,
                 y: y,
@@ -3302,8 +3355,9 @@ impl AsByteSequence for CreateCursorRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.cid.size()
+            + 1
             + self.length.size()
+            + self.cid.size()
             + self.source.size()
             + self.x.size()
             + self.y.size()
@@ -3396,8 +3450,8 @@ impl AsByteSequence for Transform {
 #[derive(Clone, Debug, Default)]
 pub struct SetPictureTransformRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub transform: Transform,
 }
 impl SetPictureTransformRequest {}
@@ -3406,8 +3460,9 @@ impl AsByteSequence for SetPictureTransformRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.transform.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3417,17 +3472,18 @@ impl AsByteSequence for SetPictureTransformRequest {
         log::trace!("Deserializing SetPictureTransformRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (transform, sz): (Transform, usize) = <Transform>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetPictureTransformRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 transform: transform,
             },
             index,
@@ -3435,7 +3491,7 @@ impl AsByteSequence for SetPictureTransformRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.picture.size() + self.length.size() + self.transform.size()
+        self.req_type.size() + 1 + self.length.size() + self.picture.size() + self.transform.size()
     }
 }
 impl Request for SetPictureTransformRequest {
@@ -3579,8 +3635,8 @@ impl AsByteSequence for QueryFiltersReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetPictureFilterRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub filter: String,
     pub values: Vec<Fixed>,
 }
@@ -3590,8 +3646,9 @@ impl AsByteSequence for SetPictureFilterRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += (self.filter.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = string_as_bytes(&self.filter, &mut bytes[index..]);
@@ -3608,9 +3665,10 @@ impl AsByteSequence for SetPictureFilterRequest {
         log::trace!("Deserializing SetPictureFilterRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3626,8 +3684,8 @@ impl AsByteSequence for SetPictureFilterRequest {
         Some((
             SetPictureFilterRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 filter: filter,
                 values: values,
             },
@@ -3637,8 +3695,9 @@ impl AsByteSequence for SetPictureFilterRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
@@ -3697,8 +3756,8 @@ impl AsByteSequence for Animcursorelt {
 #[derive(Clone, Debug, Default)]
 pub struct CreateAnimCursorRequest {
     pub req_type: u8,
-    pub cid: Cursor,
     pub length: u16,
+    pub cid: Cursor,
     pub cursors: Vec<Animcursorelt>,
 }
 impl CreateAnimCursorRequest {}
@@ -3707,8 +3766,9 @@ impl AsByteSequence for CreateAnimCursorRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cid.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.cursors, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Animcursorelt>());
@@ -3720,9 +3780,10 @@ impl AsByteSequence for CreateAnimCursorRequest {
         log::trace!("Deserializing CreateAnimCursorRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cid, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cid, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
         let (cursors, block_len): (Vec<Animcursorelt>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
@@ -3731,8 +3792,8 @@ impl AsByteSequence for CreateAnimCursorRequest {
         Some((
             CreateAnimCursorRequest {
                 req_type: req_type,
-                cid: cid,
                 length: length,
+                cid: cid,
                 cursors: cursors,
             },
             index,
@@ -3740,7 +3801,7 @@ impl AsByteSequence for CreateAnimCursorRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cid.size() + self.length.size() + {
+        self.req_type.size() + 1 + self.length.size() + self.cid.size() + {
             let block_len: usize = self.cursors.iter().map(|i| i.size()).sum();
             let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Animcursorelt>());
             block_len + pad
@@ -3818,8 +3879,8 @@ impl AsByteSequence for Trap {
 #[derive(Clone, Debug, Default)]
 pub struct AddTrapsRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub x_off: Int16,
     pub y_off: Int16,
     pub traps: Vec<Trap>,
@@ -3830,8 +3891,9 @@ impl AsByteSequence for AddTrapsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.x_off.as_bytes(&mut bytes[index..]);
         index += self.y_off.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.traps, &mut bytes[index..]);
@@ -3845,9 +3907,10 @@ impl AsByteSequence for AddTrapsRequest {
         log::trace!("Deserializing AddTrapsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (x_off, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3860,8 +3923,8 @@ impl AsByteSequence for AddTrapsRequest {
         Some((
             AddTrapsRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 x_off: x_off,
                 y_off: y_off,
                 traps: traps,
@@ -3872,8 +3935,9 @@ impl AsByteSequence for AddTrapsRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.x_off.size()
             + self.y_off.size()
             + {
@@ -3892,8 +3956,8 @@ impl Request for AddTrapsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateSolidFillRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub color: Color,
 }
 impl CreateSolidFillRequest {}
@@ -3902,8 +3966,9 @@ impl AsByteSequence for CreateSolidFillRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.color.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3913,17 +3978,18 @@ impl AsByteSequence for CreateSolidFillRequest {
         log::trace!("Deserializing CreateSolidFillRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (color, sz): (Color, usize) = <Color>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateSolidFillRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 color: color,
             },
             index,
@@ -3931,7 +3997,7 @@ impl AsByteSequence for CreateSolidFillRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.picture.size() + self.length.size() + self.color.size()
+        self.req_type.size() + 1 + self.length.size() + self.picture.size() + self.color.size()
     }
 }
 impl Request for CreateSolidFillRequest {
@@ -3943,8 +4009,8 @@ impl Request for CreateSolidFillRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateLinearGradientRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub p1: Pointfix,
     pub p2: Pointfix,
     pub num_stops: Card32,
@@ -3957,8 +4023,9 @@ impl AsByteSequence for CreateLinearGradientRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.p1.as_bytes(&mut bytes[index..]);
         index += self.p2.as_bytes(&mut bytes[index..]);
         index += self.num_stops.as_bytes(&mut bytes[index..]);
@@ -3976,9 +4043,10 @@ impl AsByteSequence for CreateLinearGradientRequest {
         log::trace!("Deserializing CreateLinearGradientRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (p1, sz): (Pointfix, usize) = <Pointfix>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3997,8 +4065,8 @@ impl AsByteSequence for CreateLinearGradientRequest {
         Some((
             CreateLinearGradientRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 p1: p1,
                 p2: p2,
                 num_stops: num_stops,
@@ -4011,8 +4079,9 @@ impl AsByteSequence for CreateLinearGradientRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.p1.size()
             + self.p2.size()
             + self.num_stops.size()
@@ -4037,8 +4106,8 @@ impl Request for CreateLinearGradientRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRadialGradientRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub inner: Pointfix,
     pub outer: Pointfix,
     pub inner_radius: Fixed,
@@ -4053,8 +4122,9 @@ impl AsByteSequence for CreateRadialGradientRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.inner.as_bytes(&mut bytes[index..]);
         index += self.outer.as_bytes(&mut bytes[index..]);
         index += self.inner_radius.as_bytes(&mut bytes[index..]);
@@ -4074,9 +4144,10 @@ impl AsByteSequence for CreateRadialGradientRequest {
         log::trace!("Deserializing CreateRadialGradientRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (inner, sz): (Pointfix, usize) = <Pointfix>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4099,8 +4170,8 @@ impl AsByteSequence for CreateRadialGradientRequest {
         Some((
             CreateRadialGradientRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 inner: inner,
                 outer: outer,
                 inner_radius: inner_radius,
@@ -4115,8 +4186,9 @@ impl AsByteSequence for CreateRadialGradientRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.inner.size()
             + self.outer.size()
             + self.inner_radius.size()
@@ -4143,8 +4215,8 @@ impl Request for CreateRadialGradientRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateConicalGradientRequest {
     pub req_type: u8,
-    pub picture: Picture,
     pub length: u16,
+    pub picture: Picture,
     pub center: Pointfix,
     pub angle: Fixed,
     pub num_stops: Card32,
@@ -4157,8 +4229,9 @@ impl AsByteSequence for CreateConicalGradientRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.picture.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.picture.as_bytes(&mut bytes[index..]);
         index += self.center.as_bytes(&mut bytes[index..]);
         index += self.angle.as_bytes(&mut bytes[index..]);
         index += self.num_stops.as_bytes(&mut bytes[index..]);
@@ -4176,9 +4249,10 @@ impl AsByteSequence for CreateConicalGradientRequest {
         log::trace!("Deserializing CreateConicalGradientRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (picture, sz): (Picture, usize) = <Picture>::from_bytes(&bytes[index..])?;
         index += sz;
         let (center, sz): (Pointfix, usize) = <Pointfix>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4197,8 +4271,8 @@ impl AsByteSequence for CreateConicalGradientRequest {
         Some((
             CreateConicalGradientRequest {
                 req_type: req_type,
-                picture: picture,
                 length: length,
+                picture: picture,
                 center: center,
                 angle: angle,
                 num_stops: num_stops,
@@ -4211,8 +4285,9 @@ impl AsByteSequence for CreateConicalGradientRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.picture.size()
+            + 1
             + self.length.size()
+            + self.picture.size()
             + self.center.size()
             + self.angle.size()
             + self.num_stops.size()
@@ -4233,6 +4308,37 @@ impl Request for CreateConicalGradientRequest {
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyMode {
+    Precise = 0,
+    Imprecise = 1,
+}
+impl AsByteSequence for PolyMode {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Precise, sz)),
+            1 => Some((Self::Imprecise, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyMode {
+    #[inline]
+    fn default() -> PolyMode {
+        PolyMode::Precise
+    }
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -4306,37 +4412,6 @@ impl Default for Repeat {
     #[inline]
     fn default() -> Repeat {
         Repeat::None
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyMode {
-    Precise = 0,
-    Imprecise = 1,
-}
-impl AsByteSequence for PolyMode {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Precise, sz)),
-            1 => Some((Self::Imprecise, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyMode {
-    #[inline]
-    fn default() -> PolyMode {
-        PolyMode::Precise
     }
 }
 #[repr(i32)]

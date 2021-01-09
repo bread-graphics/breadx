@@ -9,8 +9,8 @@ use super::xproto::*;
 #[derive(Clone, Debug, Default)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
-    pub client_major: Card8,
     pub length: u16,
+    pub client_major: Card8,
     pub client_minor: Card8,
 }
 impl QueryVersionRequest {}
@@ -19,8 +19,9 @@ impl AsByteSequence for QueryVersionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.client_major.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.client_major.as_bytes(&mut bytes[index..]);
         index += self.client_minor.as_bytes(&mut bytes[index..]);
         index
     }
@@ -30,17 +31,18 @@ impl AsByteSequence for QueryVersionRequest {
         log::trace!("Deserializing QueryVersionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (client_major, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (client_minor, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryVersionRequest {
                 req_type: req_type,
-                client_major: client_major,
                 length: length,
+                client_major: client_major,
                 client_minor: client_minor,
             },
             index,
@@ -49,8 +51,9 @@ impl AsByteSequence for QueryVersionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.client_major.size()
+            + 1
             + self.length.size()
+            + self.client_major.size()
             + self.client_minor.size()
     }
 }
@@ -1843,8 +1846,8 @@ impl AsByteSequence for GetSelectionUseContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetSelectionContextRequest {
     pub req_type: u8,
-    pub selection: Atom,
     pub length: u16,
+    pub selection: Atom,
 }
 impl GetSelectionContextRequest {}
 impl AsByteSequence for GetSelectionContextRequest {
@@ -1852,8 +1855,9 @@ impl AsByteSequence for GetSelectionContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.selection.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.selection.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1862,22 +1866,23 @@ impl AsByteSequence for GetSelectionContextRequest {
         log::trace!("Deserializing GetSelectionContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetSelectionContextRequest {
                 req_type: req_type,
-                selection: selection,
                 length: length,
+                selection: selection,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.selection.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.selection.size()
     }
 }
 impl Request for GetSelectionContextRequest {
@@ -1955,8 +1960,8 @@ impl AsByteSequence for GetSelectionContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetSelectionDataContextRequest {
     pub req_type: u8,
-    pub selection: Atom,
     pub length: u16,
+    pub selection: Atom,
 }
 impl GetSelectionDataContextRequest {}
 impl AsByteSequence for GetSelectionDataContextRequest {
@@ -1964,8 +1969,9 @@ impl AsByteSequence for GetSelectionDataContextRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.selection.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.selection.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1974,22 +1980,23 @@ impl AsByteSequence for GetSelectionDataContextRequest {
         log::trace!("Deserializing GetSelectionDataContextRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (selection, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetSelectionDataContextRequest {
                 req_type: req_type,
-                selection: selection,
                 length: length,
+                selection: selection,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.selection.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.selection.size()
     }
 }
 impl Request for GetSelectionDataContextRequest {

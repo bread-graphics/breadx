@@ -229,8 +229,8 @@ impl AsByteSequence for OpenReply {
 #[derive(Clone, Debug, Default)]
 pub struct PixmapFromBufferRequest {
     pub req_type: u8,
-    pub pixmap: Pixmap,
     pub length: u16,
+    pub pixmap: Pixmap,
     pub drawable: Drawable,
     pub size: Card32,
     pub width: Card16,
@@ -246,8 +246,9 @@ impl AsByteSequence for PixmapFromBufferRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
         index += self.drawable.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index += self.width.as_bytes(&mut bytes[index..]);
@@ -263,9 +264,10 @@ impl AsByteSequence for PixmapFromBufferRequest {
         log::trace!("Deserializing PixmapFromBufferRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         let (drawable, sz): (Drawable, usize) = <Drawable>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -284,8 +286,8 @@ impl AsByteSequence for PixmapFromBufferRequest {
         Some((
             PixmapFromBufferRequest {
                 req_type: req_type,
-                pixmap: pixmap,
                 length: length,
+                pixmap: pixmap,
                 drawable: drawable,
                 size: size,
                 width: width,
@@ -301,8 +303,9 @@ impl AsByteSequence for PixmapFromBufferRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.pixmap.size()
+            + 1
             + self.length.size()
+            + self.pixmap.size()
             + self.drawable.size()
             + self.size.size()
             + self.width.size()
@@ -325,8 +328,8 @@ impl Request for PixmapFromBufferRequest {
 #[derive(Clone, Debug, Default)]
 pub struct BufferFromPixmapRequest {
     pub req_type: u8,
-    pub pixmap: Pixmap,
     pub length: u16,
+    pub pixmap: Pixmap,
 }
 impl BufferFromPixmapRequest {}
 impl AsByteSequence for BufferFromPixmapRequest {
@@ -334,8 +337,9 @@ impl AsByteSequence for BufferFromPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -344,22 +348,23 @@ impl AsByteSequence for BufferFromPixmapRequest {
         log::trace!("Deserializing BufferFromPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             BufferFromPixmapRequest {
                 req_type: req_type,
-                pixmap: pixmap,
                 length: length,
+                pixmap: pixmap,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.pixmap.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.pixmap.size()
     }
 }
 impl Request for BufferFromPixmapRequest {
@@ -792,8 +797,8 @@ impl AsByteSequence for GetSupportedModifiersReply {
 #[derive(Clone, Debug, Default)]
 pub struct PixmapFromBuffersRequest {
     pub req_type: u8,
-    pub pixmap: Pixmap,
     pub length: u16,
+    pub pixmap: Pixmap,
     pub window: Window,
     pub width: Card16,
     pub height: Card16,
@@ -816,8 +821,9 @@ impl AsByteSequence for PixmapFromBuffersRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index += (self.buffers.len() as Card8).as_bytes(&mut bytes[index..]);
         index += 3;
@@ -846,9 +852,10 @@ impl AsByteSequence for PixmapFromBuffersRequest {
         log::trace!("Deserializing PixmapFromBuffersRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -889,8 +896,8 @@ impl AsByteSequence for PixmapFromBuffersRequest {
         Some((
             PixmapFromBuffersRequest {
                 req_type: req_type,
-                pixmap: pixmap,
                 length: length,
+                pixmap: pixmap,
                 window: window,
                 width: width,
                 height: height,
@@ -913,8 +920,9 @@ impl AsByteSequence for PixmapFromBuffersRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.pixmap.size()
+            + 1
             + self.length.size()
+            + self.pixmap.size()
             + self.window.size()
             + ::core::mem::size_of::<Card8>()
             + 3
@@ -948,8 +956,8 @@ impl Request for PixmapFromBuffersRequest {
 #[derive(Clone, Debug, Default)]
 pub struct BuffersFromPixmapRequest {
     pub req_type: u8,
-    pub pixmap: Pixmap,
     pub length: u16,
+    pub pixmap: Pixmap,
 }
 impl BuffersFromPixmapRequest {}
 impl AsByteSequence for BuffersFromPixmapRequest {
@@ -957,8 +965,9 @@ impl AsByteSequence for BuffersFromPixmapRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.pixmap.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -967,22 +976,23 @@ impl AsByteSequence for BuffersFromPixmapRequest {
         log::trace!("Deserializing BuffersFromPixmapRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             BuffersFromPixmapRequest {
                 req_type: req_type,
-                pixmap: pixmap,
                 length: length,
+                pixmap: pixmap,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.pixmap.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.pixmap.size()
     }
 }
 impl Request for BuffersFromPixmapRequest {

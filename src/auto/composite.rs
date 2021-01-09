@@ -378,8 +378,8 @@ impl Request for UnredirectSubwindowsRequest {
 #[derive(Clone, Debug, Default)]
 pub struct CreateRegionFromBorderClipRequest {
     pub req_type: u8,
-    pub region: Region,
     pub length: u16,
+    pub region: Region,
     pub window: Window,
 }
 impl CreateRegionFromBorderClipRequest {}
@@ -388,8 +388,9 @@ impl AsByteSequence for CreateRegionFromBorderClipRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.region.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.region.as_bytes(&mut bytes[index..]);
         index += self.window.as_bytes(&mut bytes[index..]);
         index
     }
@@ -399,17 +400,18 @@ impl AsByteSequence for CreateRegionFromBorderClipRequest {
         log::trace!("Deserializing CreateRegionFromBorderClipRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             CreateRegionFromBorderClipRequest {
                 req_type: req_type,
-                region: region,
                 length: length,
+                region: region,
                 window: window,
             },
             index,
@@ -417,7 +419,7 @@ impl AsByteSequence for CreateRegionFromBorderClipRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.region.size() + self.length.size() + self.window.size()
+        self.req_type.size() + 1 + self.length.size() + self.region.size() + self.window.size()
     }
 }
 impl Request for CreateRegionFromBorderClipRequest {

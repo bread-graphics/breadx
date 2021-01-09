@@ -66,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Stage 2: Normalize from Level 1 representation to Level 2 representation. This expands some of the copying,
     //          converts enums to what they're represented as in Rust, and preforms some other optimizations.
-    let (lvl2_items, xidtypes) = lvl2::convert_series(lvl1_items);
+    let (lvl2_items, xidtypes) = lvl2::convert_series(lvl1_items, ext_name.is_some());
 
     // Stage 3: Normalize to a basic Rust representation.
     let lvl3_items: Vec<lvl3::Item> = lvl2_items

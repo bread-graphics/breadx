@@ -68,7 +68,7 @@ impl AsByteSequence for Printer {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Pcontext {
     pub xid: XID,
 }
@@ -744,8 +744,8 @@ impl AsByteSequence for PrintGetScreenOfContextReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintStartJobRequest {
     pub req_type: u8,
-    pub output_mode: Card8,
     pub length: u16,
+    pub output_mode: Card8,
 }
 impl PrintStartJobRequest {}
 impl AsByteSequence for PrintStartJobRequest {
@@ -753,8 +753,9 @@ impl AsByteSequence for PrintStartJobRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output_mode.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output_mode.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -763,22 +764,23 @@ impl AsByteSequence for PrintStartJobRequest {
         log::trace!("Deserializing PrintStartJobRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output_mode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output_mode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintStartJobRequest {
                 req_type: req_type,
-                output_mode: output_mode,
                 length: length,
+                output_mode: output_mode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output_mode.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.output_mode.size()
     }
 }
 impl Request for PrintStartJobRequest {
@@ -790,8 +792,8 @@ impl Request for PrintStartJobRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintEndJobRequest {
     pub req_type: u8,
-    pub cancel: bool,
     pub length: u16,
+    pub cancel: bool,
 }
 impl PrintEndJobRequest {}
 impl AsByteSequence for PrintEndJobRequest {
@@ -799,8 +801,9 @@ impl AsByteSequence for PrintEndJobRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cancel.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cancel.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -809,22 +812,23 @@ impl AsByteSequence for PrintEndJobRequest {
         log::trace!("Deserializing PrintEndJobRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintEndJobRequest {
                 req_type: req_type,
-                cancel: cancel,
                 length: length,
+                cancel: cancel,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cancel.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.cancel.size()
     }
 }
 impl Request for PrintEndJobRequest {
@@ -836,8 +840,8 @@ impl Request for PrintEndJobRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintStartDocRequest {
     pub req_type: u8,
-    pub driver_mode: Card8,
     pub length: u16,
+    pub driver_mode: Card8,
 }
 impl PrintStartDocRequest {}
 impl AsByteSequence for PrintStartDocRequest {
@@ -845,8 +849,9 @@ impl AsByteSequence for PrintStartDocRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.driver_mode.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.driver_mode.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -855,22 +860,23 @@ impl AsByteSequence for PrintStartDocRequest {
         log::trace!("Deserializing PrintStartDocRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (driver_mode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (driver_mode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintStartDocRequest {
                 req_type: req_type,
-                driver_mode: driver_mode,
                 length: length,
+                driver_mode: driver_mode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.driver_mode.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.driver_mode.size()
     }
 }
 impl Request for PrintStartDocRequest {
@@ -882,8 +888,8 @@ impl Request for PrintStartDocRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintEndDocRequest {
     pub req_type: u8,
-    pub cancel: bool,
     pub length: u16,
+    pub cancel: bool,
 }
 impl PrintEndDocRequest {}
 impl AsByteSequence for PrintEndDocRequest {
@@ -891,8 +897,9 @@ impl AsByteSequence for PrintEndDocRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cancel.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cancel.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -901,22 +908,23 @@ impl AsByteSequence for PrintEndDocRequest {
         log::trace!("Deserializing PrintEndDocRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintEndDocRequest {
                 req_type: req_type,
-                cancel: cancel,
                 length: length,
+                cancel: cancel,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cancel.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.cancel.size()
     }
 }
 impl Request for PrintEndDocRequest {
@@ -1033,8 +1041,8 @@ impl Request for PrintPutDocumentDataRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetDocumentDataRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub max_bytes: Card32,
 }
 impl PrintGetDocumentDataRequest {}
@@ -1043,8 +1051,9 @@ impl AsByteSequence for PrintGetDocumentDataRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.max_bytes.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1054,17 +1063,18 @@ impl AsByteSequence for PrintGetDocumentDataRequest {
         log::trace!("Deserializing PrintGetDocumentDataRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (max_bytes, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintGetDocumentDataRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 max_bytes: max_bytes,
             },
             index,
@@ -1072,7 +1082,7 @@ impl AsByteSequence for PrintGetDocumentDataRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size() + self.max_bytes.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size() + self.max_bytes.size()
     }
 }
 impl Request for PrintGetDocumentDataRequest {
@@ -1210,8 +1220,8 @@ impl Request for PrintStartPageRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintEndPageRequest {
     pub req_type: u8,
-    pub cancel: bool,
     pub length: u16,
+    pub cancel: bool,
 }
 impl PrintEndPageRequest {}
 impl AsByteSequence for PrintEndPageRequest {
@@ -1219,8 +1229,9 @@ impl AsByteSequence for PrintEndPageRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.cancel.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.cancel.as_bytes(&mut bytes[index..]);
         index += 3;
         index
     }
@@ -1230,23 +1241,24 @@ impl AsByteSequence for PrintEndPageRequest {
         log::trace!("Deserializing PrintEndPageRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (cancel, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
         Some((
             PrintEndPageRequest {
                 req_type: req_type,
-                cancel: cancel,
                 length: length,
+                cancel: cancel,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.cancel.size() + self.length.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.cancel.size() + 3
     }
 }
 impl Request for PrintEndPageRequest {
@@ -1258,8 +1270,8 @@ impl Request for PrintEndPageRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintSelectInputRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub event_mask: Card32,
 }
 impl PrintSelectInputRequest {}
@@ -1268,8 +1280,9 @@ impl AsByteSequence for PrintSelectInputRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.event_mask.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1279,17 +1292,18 @@ impl AsByteSequence for PrintSelectInputRequest {
         log::trace!("Deserializing PrintSelectInputRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (event_mask, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintSelectInputRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 event_mask: event_mask,
             },
             index,
@@ -1297,7 +1311,7 @@ impl AsByteSequence for PrintSelectInputRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size() + self.event_mask.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size() + self.event_mask.size()
     }
 }
 impl Request for PrintSelectInputRequest {
@@ -1309,8 +1323,8 @@ impl Request for PrintSelectInputRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintInputSelectedRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
 }
 impl PrintInputSelectedRequest {}
 impl AsByteSequence for PrintInputSelectedRequest {
@@ -1318,8 +1332,9 @@ impl AsByteSequence for PrintInputSelectedRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1328,22 +1343,23 @@ impl AsByteSequence for PrintInputSelectedRequest {
         log::trace!("Deserializing PrintInputSelectedRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintInputSelectedRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for PrintInputSelectedRequest {
@@ -1412,8 +1428,8 @@ impl AsByteSequence for PrintInputSelectedReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetAttributesRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub pool: Card8,
 }
 impl PrintGetAttributesRequest {}
@@ -1422,8 +1438,9 @@ impl AsByteSequence for PrintGetAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.pool.as_bytes(&mut bytes[index..]);
         index += 3;
         index
@@ -1434,9 +1451,10 @@ impl AsByteSequence for PrintGetAttributesRequest {
         log::trace!("Deserializing PrintGetAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (pool, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1444,8 +1462,8 @@ impl AsByteSequence for PrintGetAttributesRequest {
         Some((
             PrintGetAttributesRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 pool: pool,
             },
             index,
@@ -1453,7 +1471,7 @@ impl AsByteSequence for PrintGetAttributesRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size() + self.pool.size() + 3
+        self.req_type.size() + 1 + self.length.size() + self.context.size() + self.pool.size() + 3
     }
 }
 impl Request for PrintGetAttributesRequest {
@@ -1531,8 +1549,8 @@ impl AsByteSequence for PrintGetAttributesReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetOneAttributesRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub pool: Card8,
     pub name: Vec<String8>,
 }
@@ -1542,8 +1560,9 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += (self.name.len() as Card32).as_bytes(&mut bytes[index..]);
         index += self.pool.as_bytes(&mut bytes[index..]);
         index += 3;
@@ -1558,9 +1577,10 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         log::trace!("Deserializing PrintGetOneAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1574,8 +1594,8 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         Some((
             PrintGetOneAttributesRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 pool: pool,
                 name: name,
             },
@@ -1585,8 +1605,9 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + ::core::mem::size_of::<Card32>()
             + self.pool.size()
             + 3
@@ -1672,8 +1693,8 @@ impl AsByteSequence for PrintGetOneAttributesReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintSetAttributesRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub string_len: Card32,
     pub pool: Card8,
     pub rule: Card8,
@@ -1685,8 +1706,9 @@ impl AsByteSequence for PrintSetAttributesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.string_len.as_bytes(&mut bytes[index..]);
         index += self.pool.as_bytes(&mut bytes[index..]);
         index += self.rule.as_bytes(&mut bytes[index..]);
@@ -1702,9 +1724,10 @@ impl AsByteSequence for PrintSetAttributesRequest {
         log::trace!("Deserializing PrintSetAttributesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (string_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1720,8 +1743,8 @@ impl AsByteSequence for PrintSetAttributesRequest {
         Some((
             PrintSetAttributesRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 string_len: string_len,
                 pool: pool,
                 rule: rule,
@@ -1733,8 +1756,9 @@ impl AsByteSequence for PrintSetAttributesRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.string_len.size()
             + self.pool.size()
             + self.rule.size()
@@ -1755,8 +1779,8 @@ impl Request for PrintSetAttributesRequest {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetPageDimensionsRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
 }
 impl PrintGetPageDimensionsRequest {}
 impl AsByteSequence for PrintGetPageDimensionsRequest {
@@ -1764,8 +1788,9 @@ impl AsByteSequence for PrintGetPageDimensionsRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -1774,22 +1799,23 @@ impl AsByteSequence for PrintGetPageDimensionsRequest {
         log::trace!("Deserializing PrintGetPageDimensionsRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintGetPageDimensionsRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for PrintGetPageDimensionsRequest {
@@ -1991,8 +2017,8 @@ impl AsByteSequence for PrintQueryScreensReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintSetImageResolutionRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
     pub image_resolution: Card16,
 }
 impl PrintSetImageResolutionRequest {}
@@ -2001,8 +2027,9 @@ impl AsByteSequence for PrintSetImageResolutionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index += self.image_resolution.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2012,17 +2039,18 @@ impl AsByteSequence for PrintSetImageResolutionRequest {
         log::trace!("Deserializing PrintSetImageResolutionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         let (image_resolution, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintSetImageResolutionRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
                 image_resolution: image_resolution,
             },
             index,
@@ -2031,8 +2059,9 @@ impl AsByteSequence for PrintSetImageResolutionRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.context.size()
+            + 1
             + self.length.size()
+            + self.context.size()
             + self.image_resolution.size()
     }
 }
@@ -2099,8 +2128,8 @@ impl AsByteSequence for PrintSetImageResolutionReply {
 #[derive(Clone, Debug, Default)]
 pub struct PrintGetImageResolutionRequest {
     pub req_type: u8,
-    pub context: Pcontext,
     pub length: u16,
+    pub context: Pcontext,
 }
 impl PrintGetImageResolutionRequest {}
 impl AsByteSequence for PrintGetImageResolutionRequest {
@@ -2108,8 +2137,9 @@ impl AsByteSequence for PrintGetImageResolutionRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.context.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.context.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2118,22 +2148,23 @@ impl AsByteSequence for PrintGetImageResolutionRequest {
         log::trace!("Deserializing PrintGetImageResolutionRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (context, sz): (Pcontext, usize) = <Pcontext>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             PrintGetImageResolutionRequest {
                 req_type: req_type,
-                context: context,
                 length: length,
+                context: context,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.context.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.context.size()
     }
 }
 impl Request for PrintGetImageResolutionRequest {
@@ -2191,6 +2222,117 @@ impl AsByteSequence for PrintGetImageResolutionReply {
             + self.sequence.size()
             + self.length.size()
             + self.image_resolution.size()
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GetDoc {
+    Finished = 0,
+    SecondConsumer = 1,
+}
+impl AsByteSequence for GetDoc {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Finished, sz)),
+            1 => Some((Self::SecondConsumer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for GetDoc {
+    #[inline]
+    fn default() -> GetDoc {
+        GetDoc::Finished
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Attr {
+    JobAttr = 1,
+    DocAttr = 2,
+    PageAttr = 3,
+    PrinterAttr = 4,
+    ServerAttr = 5,
+    MediumAttr = 6,
+    SpoolerAttr = 7,
+}
+impl AsByteSequence for Attr {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::JobAttr, sz)),
+            2 => Some((Self::DocAttr, sz)),
+            3 => Some((Self::PageAttr, sz)),
+            4 => Some((Self::PrinterAttr, sz)),
+            5 => Some((Self::ServerAttr, sz)),
+            6 => Some((Self::MediumAttr, sz)),
+            7 => Some((Self::SpoolerAttr, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Attr {
+    #[inline]
+    fn default() -> Attr {
+        Attr::JobAttr
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Detail {
+    StartJobNotify = 1,
+    EndJobNotify = 2,
+    StartDocNotify = 3,
+    EndDocNotify = 4,
+    StartPageNotify = 5,
+    EndPageNotify = 6,
+}
+impl AsByteSequence for Detail {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::StartJobNotify, sz)),
+            2 => Some((Self::EndJobNotify, sz)),
+            3 => Some((Self::StartDocNotify, sz)),
+            4 => Some((Self::EndDocNotify, sz)),
+            5 => Some((Self::StartPageNotify, sz)),
+            6 => Some((Self::EndPageNotify, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Detail {
+    #[inline]
+    fn default() -> Detail {
+        Detail::StartJobNotify
     }
 }
 #[repr(transparent)]
@@ -2291,117 +2433,6 @@ impl core::ops::BitXor for EvMask {
         EvMask {
             inner: self.inner ^ rhs.inner,
         }
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Detail {
-    StartJobNotify = 1,
-    EndJobNotify = 2,
-    StartDocNotify = 3,
-    EndDocNotify = 4,
-    StartPageNotify = 5,
-    EndPageNotify = 6,
-}
-impl AsByteSequence for Detail {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::StartJobNotify, sz)),
-            2 => Some((Self::EndJobNotify, sz)),
-            3 => Some((Self::StartDocNotify, sz)),
-            4 => Some((Self::EndDocNotify, sz)),
-            5 => Some((Self::StartPageNotify, sz)),
-            6 => Some((Self::EndPageNotify, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Detail {
-    #[inline]
-    fn default() -> Detail {
-        Detail::StartJobNotify
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Attr {
-    JobAttr = 1,
-    DocAttr = 2,
-    PageAttr = 3,
-    PrinterAttr = 4,
-    ServerAttr = 5,
-    MediumAttr = 6,
-    SpoolerAttr = 7,
-}
-impl AsByteSequence for Attr {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::JobAttr, sz)),
-            2 => Some((Self::DocAttr, sz)),
-            3 => Some((Self::PageAttr, sz)),
-            4 => Some((Self::PrinterAttr, sz)),
-            5 => Some((Self::ServerAttr, sz)),
-            6 => Some((Self::MediumAttr, sz)),
-            7 => Some((Self::SpoolerAttr, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Attr {
-    #[inline]
-    fn default() -> Attr {
-        Attr::JobAttr
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum GetDoc {
-    Finished = 0,
-    SecondConsumer = 1,
-}
-impl AsByteSequence for GetDoc {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Finished, sz)),
-            1 => Some((Self::SecondConsumer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for GetDoc {
-    #[inline]
-    fn default() -> GetDoc {
-        GetDoc::Finished
     }
 }
 #[derive(Clone, Debug, Default)]

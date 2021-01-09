@@ -1,9 +1,9 @@
 // MIT/Apache2 License
 
 use super::{
-    configure_fields, create_generator, safe_name, EnumRepr, EnumReprGenerator, Expression, Field,
-    Item as Lvl2Item, Item, List, MaybeString, Struct, StructSpecial, StructVariant, StructureItem,
-    Type, XidType,
+    configure_fields, create_generator, safe_name, set_is_extension, EnumRepr, EnumReprGenerator,
+    Expression, Field, Item as Lvl2Item, Item, List, MaybeString, Struct, StructSpecial,
+    StructVariant, StructureItem, Type, XidType,
 };
 use crate::lvl1::{
     Item as Lvl1Item, NonenumTypenames, StructureItem as Lvl1StructureItem, XStruct,
@@ -463,7 +463,12 @@ pub fn uniquify_fields(fields: &mut [StructureItem]) {
 
 /// Convert a series of Level 2 items to Level 1 items.
 #[inline]
-pub fn convert_series(mut series: Vec<Lvl1Item>) -> (Vec<Lvl2Item>, Vec<Box<str>>) {
+pub fn convert_series(
+    mut series: Vec<Lvl1Item>,
+    is_extension: bool,
+) -> (Vec<Lvl2Item>, Vec<Box<str>>) {
+    set_is_extension(is_extension);
+
     // first, glob all of the enums
     let mut state = Lvl2State::new();
     state.register_typenames(&series);

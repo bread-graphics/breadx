@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::render::*;
 use super::xproto::*;
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Mode {
     pub xid: XID,
 }
@@ -29,7 +29,7 @@ impl XidType for Mode {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Crtc {
     pub xid: XID,
 }
@@ -50,7 +50,7 @@ impl XidType for Crtc {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Output {
     pub xid: XID,
 }
@@ -71,7 +71,7 @@ impl XidType for Output {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Provider {
     pub xid: XID,
 }
@@ -92,7 +92,7 @@ impl XidType for Provider {
     }
 }
 #[repr(transparent)]
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Lease {
     pub xid: XID,
 }
@@ -1921,8 +1921,8 @@ impl AsByteSequence for GetScreenResourcesReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetOutputInfoRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub config_timestamp: Timestamp,
 }
 impl GetOutputInfoRequest {}
@@ -1931,8 +1931,9 @@ impl AsByteSequence for GetOutputInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index
     }
@@ -1942,17 +1943,18 @@ impl AsByteSequence for GetOutputInfoRequest {
         log::trace!("Deserializing GetOutputInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (config_timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetOutputInfoRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 config_timestamp: config_timestamp,
             },
             index,
@@ -1961,8 +1963,9 @@ impl AsByteSequence for GetOutputInfoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.output.size()
+            + 1
             + self.length.size()
+            + self.output.size()
             + self.config_timestamp.size()
     }
 }
@@ -2170,8 +2173,8 @@ impl Default for Connection {
 #[derive(Clone, Debug, Default)]
 pub struct ListOutputPropertiesRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
 }
 impl ListOutputPropertiesRequest {}
 impl AsByteSequence for ListOutputPropertiesRequest {
@@ -2179,8 +2182,9 @@ impl AsByteSequence for ListOutputPropertiesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2189,22 +2193,23 @@ impl AsByteSequence for ListOutputPropertiesRequest {
         log::trace!("Deserializing ListOutputPropertiesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListOutputPropertiesRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.output.size()
     }
 }
 impl Request for ListOutputPropertiesRequest {
@@ -2282,8 +2287,8 @@ impl AsByteSequence for ListOutputPropertiesReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryOutputPropertyRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub property: Atom,
 }
 impl QueryOutputPropertyRequest {}
@@ -2292,8 +2297,9 @@ impl AsByteSequence for QueryOutputPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2303,17 +2309,18 @@ impl AsByteSequence for QueryOutputPropertyRequest {
         log::trace!("Deserializing QueryOutputPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryOutputPropertyRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 property: property,
             },
             index,
@@ -2321,7 +2328,7 @@ impl AsByteSequence for QueryOutputPropertyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.output.size() + self.property.size()
     }
 }
 impl Request for QueryOutputPropertyRequest {
@@ -2413,8 +2420,8 @@ impl AsByteSequence for QueryOutputPropertyReply {
 #[derive(Clone, Debug, Default)]
 pub struct ConfigureOutputPropertyRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub property: Atom,
     pub pending: bool,
     pub range: bool,
@@ -2426,8 +2433,9 @@ impl AsByteSequence for ConfigureOutputPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.pending.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
@@ -2443,9 +2451,10 @@ impl AsByteSequence for ConfigureOutputPropertyRequest {
         log::trace!("Deserializing ConfigureOutputPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2461,8 +2470,8 @@ impl AsByteSequence for ConfigureOutputPropertyRequest {
         Some((
             ConfigureOutputPropertyRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 property: property,
                 pending: pending,
                 range: range,
@@ -2474,8 +2483,9 @@ impl AsByteSequence for ConfigureOutputPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.output.size()
+            + 1
             + self.length.size()
+            + self.output.size()
             + self.property.size()
             + self.pending.size()
             + self.range.size()
@@ -2496,8 +2506,8 @@ impl Request for ConfigureOutputPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeOutputPropertyRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub property: Atom,
     pub ty: Atom,
     pub format: Card8,
@@ -2511,8 +2521,9 @@ impl AsByteSequence for ChangeOutputPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
@@ -2530,9 +2541,10 @@ impl AsByteSequence for ChangeOutputPropertyRequest {
         log::trace!("Deserializing ChangeOutputPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2554,8 +2566,8 @@ impl AsByteSequence for ChangeOutputPropertyRequest {
         Some((
             ChangeOutputPropertyRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 property: property,
                 ty: ty,
                 format: format,
@@ -2569,8 +2581,9 @@ impl AsByteSequence for ChangeOutputPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.output.size()
+            + 1
             + self.length.size()
+            + self.output.size()
             + self.property.size()
             + self.ty.size()
             + self.format.size()
@@ -2593,8 +2606,8 @@ impl Request for ChangeOutputPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteOutputPropertyRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub property: Atom,
 }
 impl DeleteOutputPropertyRequest {}
@@ -2603,8 +2616,9 @@ impl AsByteSequence for DeleteOutputPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -2614,17 +2628,18 @@ impl AsByteSequence for DeleteOutputPropertyRequest {
         log::trace!("Deserializing DeleteOutputPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeleteOutputPropertyRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 property: property,
             },
             index,
@@ -2632,7 +2647,7 @@ impl AsByteSequence for DeleteOutputPropertyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.output.size() + self.property.size()
     }
 }
 impl Request for DeleteOutputPropertyRequest {
@@ -2644,8 +2659,8 @@ impl Request for DeleteOutputPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetOutputPropertyRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub property: Atom,
     pub ty: Atom,
     pub long_offset: Card32,
@@ -2659,8 +2674,9 @@ impl AsByteSequence for GetOutputPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
         index += self.long_offset.as_bytes(&mut bytes[index..]);
@@ -2676,9 +2692,10 @@ impl AsByteSequence for GetOutputPropertyRequest {
         log::trace!("Deserializing GetOutputPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -2696,8 +2713,8 @@ impl AsByteSequence for GetOutputPropertyRequest {
         Some((
             GetOutputPropertyRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 property: property,
                 ty: ty,
                 long_offset: long_offset,
@@ -2711,8 +2728,9 @@ impl AsByteSequence for GetOutputPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.output.size()
+            + 1
             + self.length.size()
+            + self.output.size()
             + self.property.size()
             + self.ty.size()
             + self.long_offset.size()
@@ -2941,8 +2959,8 @@ impl AsByteSequence for CreateModeReply {
 #[derive(Clone, Debug, Default)]
 pub struct DestroyModeRequest {
     pub req_type: u8,
-    pub mode: Mode,
     pub length: u16,
+    pub mode: Mode,
 }
 impl DestroyModeRequest {}
 impl AsByteSequence for DestroyModeRequest {
@@ -2950,8 +2968,9 @@ impl AsByteSequence for DestroyModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.mode.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.mode.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -2960,22 +2979,23 @@ impl AsByteSequence for DestroyModeRequest {
         log::trace!("Deserializing DestroyModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mode, sz): (Mode, usize) = <Mode>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (mode, sz): (Mode, usize) = <Mode>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DestroyModeRequest {
                 req_type: req_type,
-                mode: mode,
                 length: length,
+                mode: mode,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.mode.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.mode.size()
     }
 }
 impl Request for DestroyModeRequest {
@@ -2987,8 +3007,8 @@ impl Request for DestroyModeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct AddOutputModeRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub mode: Mode,
 }
 impl AddOutputModeRequest {}
@@ -2997,8 +3017,9 @@ impl AsByteSequence for AddOutputModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.mode.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3008,17 +3029,18 @@ impl AsByteSequence for AddOutputModeRequest {
         log::trace!("Deserializing AddOutputModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (mode, sz): (Mode, usize) = <Mode>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             AddOutputModeRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 mode: mode,
             },
             index,
@@ -3026,7 +3048,7 @@ impl AsByteSequence for AddOutputModeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output.size() + self.length.size() + self.mode.size()
+        self.req_type.size() + 1 + self.length.size() + self.output.size() + self.mode.size()
     }
 }
 impl Request for AddOutputModeRequest {
@@ -3038,8 +3060,8 @@ impl Request for AddOutputModeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteOutputModeRequest {
     pub req_type: u8,
-    pub output: Output,
     pub length: u16,
+    pub output: Output,
     pub mode: Mode,
 }
 impl DeleteOutputModeRequest {}
@@ -3048,8 +3070,9 @@ impl AsByteSequence for DeleteOutputModeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.output.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.output.as_bytes(&mut bytes[index..]);
         index += self.mode.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3059,17 +3082,18 @@ impl AsByteSequence for DeleteOutputModeRequest {
         log::trace!("Deserializing DeleteOutputModeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (output, sz): (Output, usize) = <Output>::from_bytes(&bytes[index..])?;
         index += sz;
         let (mode, sz): (Mode, usize) = <Mode>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeleteOutputModeRequest {
                 req_type: req_type,
-                output: output,
                 length: length,
+                output: output,
                 mode: mode,
             },
             index,
@@ -3077,7 +3101,7 @@ impl AsByteSequence for DeleteOutputModeRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.output.size() + self.length.size() + self.mode.size()
+        self.req_type.size() + 1 + self.length.size() + self.output.size() + self.mode.size()
     }
 }
 impl Request for DeleteOutputModeRequest {
@@ -3089,8 +3113,8 @@ impl Request for DeleteOutputModeRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetCrtcInfoRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
     pub config_timestamp: Timestamp,
 }
 impl GetCrtcInfoRequest {}
@@ -3099,8 +3123,9 @@ impl AsByteSequence for GetCrtcInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index
     }
@@ -3110,17 +3135,18 @@ impl AsByteSequence for GetCrtcInfoRequest {
         log::trace!("Deserializing GetCrtcInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         let (config_timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetCrtcInfoRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
                 config_timestamp: config_timestamp,
             },
             index,
@@ -3128,7 +3154,11 @@ impl AsByteSequence for GetCrtcInfoRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.crtc.size() + self.length.size() + self.config_timestamp.size()
+        self.req_type.size()
+            + 1
+            + self.length.size()
+            + self.crtc.size()
+            + self.config_timestamp.size()
     }
 }
 impl Request for GetCrtcInfoRequest {
@@ -3272,8 +3302,8 @@ impl AsByteSequence for GetCrtcInfoReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetCrtcConfigRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
     pub timestamp: Timestamp,
     pub config_timestamp: Timestamp,
     pub x: Int16,
@@ -3288,8 +3318,9 @@ impl AsByteSequence for SetCrtcConfigRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index += self.timestamp.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index += self.x.as_bytes(&mut bytes[index..]);
@@ -3308,9 +3339,10 @@ impl AsByteSequence for SetCrtcConfigRequest {
         log::trace!("Deserializing SetCrtcConfigRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3332,8 +3364,8 @@ impl AsByteSequence for SetCrtcConfigRequest {
         Some((
             SetCrtcConfigRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
                 timestamp: timestamp,
                 config_timestamp: config_timestamp,
                 x: x,
@@ -3348,8 +3380,9 @@ impl AsByteSequence for SetCrtcConfigRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.crtc.size()
+            + 1
             + self.length.size()
+            + self.crtc.size()
             + self.timestamp.size()
             + self.config_timestamp.size()
             + self.x.size()
@@ -3430,8 +3463,8 @@ impl AsByteSequence for SetCrtcConfigReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetCrtcGammaSizeRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
 }
 impl GetCrtcGammaSizeRequest {}
 impl AsByteSequence for GetCrtcGammaSizeRequest {
@@ -3439,8 +3472,9 @@ impl AsByteSequence for GetCrtcGammaSizeRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3449,22 +3483,23 @@ impl AsByteSequence for GetCrtcGammaSizeRequest {
         log::trace!("Deserializing GetCrtcGammaSizeRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetCrtcGammaSizeRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.crtc.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.crtc.size()
     }
 }
 impl Request for GetCrtcGammaSizeRequest {
@@ -3530,8 +3565,8 @@ impl AsByteSequence for GetCrtcGammaSizeReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetCrtcGammaRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
 }
 impl GetCrtcGammaRequest {}
 impl AsByteSequence for GetCrtcGammaRequest {
@@ -3539,8 +3574,9 @@ impl AsByteSequence for GetCrtcGammaRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -3549,22 +3585,23 @@ impl AsByteSequence for GetCrtcGammaRequest {
         log::trace!("Deserializing GetCrtcGammaRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetCrtcGammaRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.crtc.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.crtc.size()
     }
 }
 impl Request for GetCrtcGammaRequest {
@@ -3672,8 +3709,8 @@ impl AsByteSequence for GetCrtcGammaReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetCrtcGammaRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
     pub size: Card16,
     pub red: Vec<Card16>,
     pub green: Vec<Card16>,
@@ -3685,8 +3722,9 @@ impl AsByteSequence for SetCrtcGammaRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index += self.size.as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize = vector_as_bytes(&self.red, &mut bytes[index..]);
@@ -3706,9 +3744,10 @@ impl AsByteSequence for SetCrtcGammaRequest {
         log::trace!("Deserializing SetCrtcGammaRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -3728,8 +3767,8 @@ impl AsByteSequence for SetCrtcGammaRequest {
         Some((
             SetCrtcGammaRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
                 size: size,
                 red: red,
                 green: green,
@@ -3741,8 +3780,9 @@ impl AsByteSequence for SetCrtcGammaRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.crtc.size()
+            + 1
             + self.length.size()
+            + self.crtc.size()
             + self.size.size()
             + 2
             + {
@@ -3951,8 +3991,8 @@ impl AsByteSequence for GetScreenResourcesCurrentReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetCrtcTransformRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
     pub transform: Transform,
     pub filter_name: String,
     pub filter_params: Vec<Fixed>,
@@ -3963,8 +4003,9 @@ impl AsByteSequence for SetCrtcTransformRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index += self.transform.as_bytes(&mut bytes[index..]);
         index += (self.filter_name.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
@@ -3982,9 +4023,10 @@ impl AsByteSequence for SetCrtcTransformRequest {
         log::trace!("Deserializing SetCrtcTransformRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         let (transform, sz): (Transform, usize) = <Transform>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4002,8 +4044,8 @@ impl AsByteSequence for SetCrtcTransformRequest {
         Some((
             SetCrtcTransformRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
                 transform: transform,
                 filter_name: filter_name,
                 filter_params: filter_params,
@@ -4014,8 +4056,9 @@ impl AsByteSequence for SetCrtcTransformRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.crtc.size()
+            + 1
             + self.length.size()
+            + self.crtc.size()
             + self.transform.size()
             + ::core::mem::size_of::<Card16>()
             + 2
@@ -4040,8 +4083,8 @@ impl Request for SetCrtcTransformRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetCrtcTransformRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
 }
 impl GetCrtcTransformRequest {}
 impl AsByteSequence for GetCrtcTransformRequest {
@@ -4049,8 +4092,9 @@ impl AsByteSequence for GetCrtcTransformRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -4059,22 +4103,23 @@ impl AsByteSequence for GetCrtcTransformRequest {
         log::trace!("Deserializing GetCrtcTransformRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetCrtcTransformRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.crtc.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.crtc.size()
     }
 }
 impl Request for GetCrtcTransformRequest {
@@ -4227,8 +4272,8 @@ impl AsByteSequence for GetCrtcTransformReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetPanningRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
 }
 impl GetPanningRequest {}
 impl AsByteSequence for GetPanningRequest {
@@ -4236,8 +4281,9 @@ impl AsByteSequence for GetPanningRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -4246,22 +4292,23 @@ impl AsByteSequence for GetPanningRequest {
         log::trace!("Deserializing GetPanningRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetPanningRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.crtc.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.crtc.size()
     }
 }
 impl Request for GetPanningRequest {
@@ -4399,8 +4446,8 @@ impl AsByteSequence for GetPanningReply {
 #[derive(Clone, Debug, Default)]
 pub struct SetPanningRequest {
     pub req_type: u8,
-    pub crtc: Crtc,
     pub length: u16,
+    pub crtc: Crtc,
     pub timestamp: Timestamp,
     pub left: Card16,
     pub top: Card16,
@@ -4421,8 +4468,9 @@ impl AsByteSequence for SetPanningRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.crtc.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.crtc.as_bytes(&mut bytes[index..]);
         index += self.timestamp.as_bytes(&mut bytes[index..]);
         index += self.left.as_bytes(&mut bytes[index..]);
         index += self.top.as_bytes(&mut bytes[index..]);
@@ -4444,9 +4492,10 @@ impl AsByteSequence for SetPanningRequest {
         log::trace!("Deserializing SetPanningRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (crtc, sz): (Crtc, usize) = <Crtc>::from_bytes(&bytes[index..])?;
         index += sz;
         let (timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -4477,8 +4526,8 @@ impl AsByteSequence for SetPanningRequest {
         Some((
             SetPanningRequest {
                 req_type: req_type,
-                crtc: crtc,
                 length: length,
+                crtc: crtc,
                 timestamp: timestamp,
                 left: left,
                 top: top,
@@ -4499,8 +4548,9 @@ impl AsByteSequence for SetPanningRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.crtc.size()
+            + 1
             + self.length.size()
+            + self.crtc.size()
             + self.timestamp.size()
             + self.left.size()
             + self.top.size()
@@ -4847,8 +4897,8 @@ impl AsByteSequence for GetProvidersReply {
 #[derive(Clone, Debug, Default)]
 pub struct GetProviderInfoRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub config_timestamp: Timestamp,
 }
 impl GetProviderInfoRequest {}
@@ -4857,8 +4907,9 @@ impl AsByteSequence for GetProviderInfoRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index
     }
@@ -4868,17 +4919,18 @@ impl AsByteSequence for GetProviderInfoRequest {
         log::trace!("Deserializing GetProviderInfoRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (config_timestamp, sz): (Timestamp, usize) = <Timestamp>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetProviderInfoRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 config_timestamp: config_timestamp,
             },
             index,
@@ -4887,8 +4939,9 @@ impl AsByteSequence for GetProviderInfoRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.config_timestamp.size()
     }
 }
@@ -5196,8 +5249,8 @@ impl core::ops::BitXor for ProviderCapability {
 #[derive(Clone, Debug, Default)]
 pub struct SetProviderOffloadSinkRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub sink_provider: Provider,
     pub config_timestamp: Timestamp,
 }
@@ -5207,8 +5260,9 @@ impl AsByteSequence for SetProviderOffloadSinkRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.sink_provider.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index
@@ -5219,9 +5273,10 @@ impl AsByteSequence for SetProviderOffloadSinkRequest {
         log::trace!("Deserializing SetProviderOffloadSinkRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (sink_provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5230,8 +5285,8 @@ impl AsByteSequence for SetProviderOffloadSinkRequest {
         Some((
             SetProviderOffloadSinkRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 sink_provider: sink_provider,
                 config_timestamp: config_timestamp,
             },
@@ -5241,8 +5296,9 @@ impl AsByteSequence for SetProviderOffloadSinkRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.sink_provider.size()
             + self.config_timestamp.size()
     }
@@ -5256,8 +5312,8 @@ impl Request for SetProviderOffloadSinkRequest {
 #[derive(Clone, Debug, Default)]
 pub struct SetProviderOutputSourceRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub source_provider: Provider,
     pub config_timestamp: Timestamp,
 }
@@ -5267,8 +5323,9 @@ impl AsByteSequence for SetProviderOutputSourceRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.source_provider.as_bytes(&mut bytes[index..]);
         index += self.config_timestamp.as_bytes(&mut bytes[index..]);
         index
@@ -5279,9 +5336,10 @@ impl AsByteSequence for SetProviderOutputSourceRequest {
         log::trace!("Deserializing SetProviderOutputSourceRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (source_provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5290,8 +5348,8 @@ impl AsByteSequence for SetProviderOutputSourceRequest {
         Some((
             SetProviderOutputSourceRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 source_provider: source_provider,
                 config_timestamp: config_timestamp,
             },
@@ -5301,8 +5359,9 @@ impl AsByteSequence for SetProviderOutputSourceRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.source_provider.size()
             + self.config_timestamp.size()
     }
@@ -5316,8 +5375,8 @@ impl Request for SetProviderOutputSourceRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ListProviderPropertiesRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
 }
 impl ListProviderPropertiesRequest {}
 impl AsByteSequence for ListProviderPropertiesRequest {
@@ -5325,8 +5384,9 @@ impl AsByteSequence for ListProviderPropertiesRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index
     }
     #[inline]
@@ -5335,22 +5395,23 @@ impl AsByteSequence for ListProviderPropertiesRequest {
         log::trace!("Deserializing ListProviderPropertiesRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ListProviderPropertiesRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
             },
             index,
         ))
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.provider.size() + self.length.size()
+        self.req_type.size() + 1 + self.length.size() + self.provider.size()
     }
 }
 impl Request for ListProviderPropertiesRequest {
@@ -5428,8 +5489,8 @@ impl AsByteSequence for ListProviderPropertiesReply {
 #[derive(Clone, Debug, Default)]
 pub struct QueryProviderPropertyRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub property: Atom,
 }
 impl QueryProviderPropertyRequest {}
@@ -5438,8 +5499,9 @@ impl AsByteSequence for QueryProviderPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5449,17 +5511,18 @@ impl AsByteSequence for QueryProviderPropertyRequest {
         log::trace!("Deserializing QueryProviderPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             QueryProviderPropertyRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 property: property,
             },
             index,
@@ -5467,7 +5530,7 @@ impl AsByteSequence for QueryProviderPropertyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.provider.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.provider.size() + self.property.size()
     }
 }
 impl Request for QueryProviderPropertyRequest {
@@ -5559,8 +5622,8 @@ impl AsByteSequence for QueryProviderPropertyReply {
 #[derive(Clone, Debug, Default)]
 pub struct ConfigureProviderPropertyRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub property: Atom,
     pub pending: bool,
     pub range: bool,
@@ -5572,8 +5635,9 @@ impl AsByteSequence for ConfigureProviderPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.pending.as_bytes(&mut bytes[index..]);
         index += self.range.as_bytes(&mut bytes[index..]);
@@ -5589,9 +5653,10 @@ impl AsByteSequence for ConfigureProviderPropertyRequest {
         log::trace!("Deserializing ConfigureProviderPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5607,8 +5672,8 @@ impl AsByteSequence for ConfigureProviderPropertyRequest {
         Some((
             ConfigureProviderPropertyRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 property: property,
                 pending: pending,
                 range: range,
@@ -5620,8 +5685,9 @@ impl AsByteSequence for ConfigureProviderPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.property.size()
             + self.pending.size()
             + self.range.size()
@@ -5642,8 +5708,8 @@ impl Request for ConfigureProviderPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct ChangeProviderPropertyRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub property: Atom,
     pub ty: Atom,
     pub format: Card8,
@@ -5657,8 +5723,9 @@ impl AsByteSequence for ChangeProviderPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
         index += self.format.as_bytes(&mut bytes[index..]);
@@ -5676,9 +5743,10 @@ impl AsByteSequence for ChangeProviderPropertyRequest {
         log::trace!("Deserializing ChangeProviderPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5700,8 +5768,8 @@ impl AsByteSequence for ChangeProviderPropertyRequest {
         Some((
             ChangeProviderPropertyRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 property: property,
                 ty: ty,
                 format: format,
@@ -5715,8 +5783,9 @@ impl AsByteSequence for ChangeProviderPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.property.size()
             + self.ty.size()
             + self.format.size()
@@ -5739,8 +5808,8 @@ impl Request for ChangeProviderPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct DeleteProviderPropertyRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub property: Atom,
 }
 impl DeleteProviderPropertyRequest {}
@@ -5749,8 +5818,9 @@ impl AsByteSequence for DeleteProviderPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index
     }
@@ -5760,17 +5830,18 @@ impl AsByteSequence for DeleteProviderPropertyRequest {
         log::trace!("Deserializing DeleteProviderPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             DeleteProviderPropertyRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 property: property,
             },
             index,
@@ -5778,7 +5849,7 @@ impl AsByteSequence for DeleteProviderPropertyRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.provider.size() + self.length.size() + self.property.size()
+        self.req_type.size() + 1 + self.length.size() + self.provider.size() + self.property.size()
     }
 }
 impl Request for DeleteProviderPropertyRequest {
@@ -5790,8 +5861,8 @@ impl Request for DeleteProviderPropertyRequest {
 #[derive(Clone, Debug, Default)]
 pub struct GetProviderPropertyRequest {
     pub req_type: u8,
-    pub provider: Provider,
     pub length: u16,
+    pub provider: Provider,
     pub property: Atom,
     pub ty: Atom,
     pub long_offset: Card32,
@@ -5805,8 +5876,9 @@ impl AsByteSequence for GetProviderPropertyRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.provider.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.provider.as_bytes(&mut bytes[index..]);
         index += self.property.as_bytes(&mut bytes[index..]);
         index += self.ty.as_bytes(&mut bytes[index..]);
         index += self.long_offset.as_bytes(&mut bytes[index..]);
@@ -5822,9 +5894,10 @@ impl AsByteSequence for GetProviderPropertyRequest {
         log::trace!("Deserializing GetProviderPropertyRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (provider, sz): (Provider, usize) = <Provider>::from_bytes(&bytes[index..])?;
         index += sz;
         let (property, sz): (Atom, usize) = <Atom>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -5842,8 +5915,8 @@ impl AsByteSequence for GetProviderPropertyRequest {
         Some((
             GetProviderPropertyRequest {
                 req_type: req_type,
-                provider: provider,
                 length: length,
+                provider: provider,
                 property: property,
                 ty: ty,
                 long_offset: long_offset,
@@ -5857,8 +5930,9 @@ impl AsByteSequence for GetProviderPropertyRequest {
     #[inline]
     fn size(&self) -> usize {
         self.req_type.size()
-            + self.provider.size()
+            + 1
             + self.length.size()
+            + self.provider.size()
             + self.property.size()
             + self.ty.size()
             + self.long_offset.size()
@@ -6794,8 +6868,8 @@ impl AsByteSequence for CreateLeaseReply {
 #[derive(Clone, Debug, Default)]
 pub struct FreeLeaseRequest {
     pub req_type: u8,
-    pub lid: Lease,
     pub length: u16,
+    pub lid: Lease,
     pub terminate: Byte,
 }
 impl FreeLeaseRequest {}
@@ -6804,8 +6878,9 @@ impl AsByteSequence for FreeLeaseRequest {
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
         index += self.req_type.as_bytes(&mut bytes[index..]);
-        index += self.lid.as_bytes(&mut bytes[index..]);
+        index += 1;
         index += self.length.as_bytes(&mut bytes[index..]);
+        index += self.lid.as_bytes(&mut bytes[index..]);
         index += self.terminate.as_bytes(&mut bytes[index..]);
         index
     }
@@ -6815,17 +6890,18 @@ impl AsByteSequence for FreeLeaseRequest {
         log::trace!("Deserializing FreeLeaseRequest from byte buffer");
         let (req_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (lid, sz): (Lease, usize) = <Lease>::from_bytes(&bytes[index..])?;
-        index += sz;
+        index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (lid, sz): (Lease, usize) = <Lease>::from_bytes(&bytes[index..])?;
         index += sz;
         let (terminate, sz): (Byte, usize) = <Byte>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             FreeLeaseRequest {
                 req_type: req_type,
-                lid: lid,
                 length: length,
+                lid: lid,
                 terminate: terminate,
             },
             index,
@@ -6833,7 +6909,7 @@ impl AsByteSequence for FreeLeaseRequest {
     }
     #[inline]
     fn size(&self) -> usize {
-        self.req_type.size() + self.lid.size() + self.length.size() + self.terminate.size()
+        self.req_type.size() + 1 + self.length.size() + self.lid.size() + self.terminate.size()
     }
 }
 impl Request for FreeLeaseRequest {
@@ -7031,6 +7107,54 @@ impl core::ops::BitXor for Transform {
     }
 }
 #[derive(Clone, Debug, Default)]
+pub struct NotifyEvent {
+    pub event_type: u8,
+    pub sub_code: Notify,
+    pub sequence: u16,
+    pub u: NotifyData,
+}
+impl NotifyEvent {}
+impl AsByteSequence for NotifyEvent {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        let mut index: usize = 0;
+        index += self.event_type.as_bytes(&mut bytes[index..]);
+        index += self.sub_code.as_bytes(&mut bytes[index..]);
+        index += self.sequence.as_bytes(&mut bytes[index..]);
+        index += self.u.as_bytes(&mut bytes[index..]);
+        index
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let mut index: usize = 0;
+        log::trace!("Deserializing NotifyEvent from byte buffer");
+        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
+        index += sz;
+        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
+        index += sz;
+        Some((
+            NotifyEvent {
+                event_type: event_type,
+                sub_code: sub_code,
+                sequence: sequence,
+                u: u,
+            },
+            index,
+        ))
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
+    }
+}
+impl crate::auto::Event for NotifyEvent {
+    const OPCODE: u8 = 1;
+}
+#[derive(Clone, Debug, Default)]
 pub struct ScreenChangeNotifyEvent {
     pub event_type: u8,
     pub rotation: Rotation,
@@ -7134,52 +7258,4 @@ impl AsByteSequence for ScreenChangeNotifyEvent {
 }
 impl crate::auto::Event for ScreenChangeNotifyEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default)]
-pub struct NotifyEvent {
-    pub event_type: u8,
-    pub sub_code: Notify,
-    pub sequence: u16,
-    pub u: NotifyData,
-}
-impl NotifyEvent {}
-impl AsByteSequence for NotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += self.sub_code.as_bytes(&mut bytes[index..]);
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.u.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing NotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sub_code, sz): (Notify, usize) = <Notify>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (u, sz): (NotifyData, usize) = <NotifyData>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            NotifyEvent {
-                event_type: event_type,
-                sub_code: sub_code,
-                sequence: sequence,
-                u: u,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size() + self.sub_code.size() + self.sequence.size() + self.u.size()
-    }
-}
-impl crate::auto::Event for NotifyEvent {
-    const OPCODE: u8 = 1;
 }
