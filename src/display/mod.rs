@@ -69,7 +69,6 @@ pub(crate) const EXT_KEY_SIZE: usize = 24;
 /// ```
 pub struct Display<Conn> {
     // the connection to the server
-    // if this is None, the connection is tainted
     pub(crate) connection: Option<Conn>,
 
     // the setup received from the server

@@ -136,21 +136,17 @@ impl<Conn: Connection> super::Display<Conn> {
         let mut fds: Vec<Fd> = vec![];
 
         // See output.rs for why we do this.
-        let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
-        let res = connection.read_packet_async(&mut bytes, &mut fds).await;
-        self.connection = Some(connection);
-        res?;
+        self.connection()?
+            .read_packet_async(&mut bytes, &mut fds)
+            .await?;
 
         self.fix_glx_workaround(&mut bytes)?;
 
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             bytes.extend(iter::repeat(0).take(ab * 4));
-            let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
-            let res = connection
+            self.connection()?
                 .read_packet_async(&mut bytes[32..], &mut fds)
-                .await;
-            self.connection = Some(connection);
-            res?;
+                .await?;
         }
 
         self.process_bytes(bytes, fds.into_boxed_slice())
