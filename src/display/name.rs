@@ -5,7 +5,7 @@
 
 #![cfg(feature = "std")]
 
-use super::Connection;
+use super::{GenericConnFuture, AsyncConnection, Connection};
 use crate::Fd;
 use alloc::{borrow::Cow, string::String, vec::Vec};
 use core::mem;
@@ -17,6 +17,8 @@ use alloc::format;
 
 #[cfg(feature = "async")]
 use super::GenericFuture;
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
 #[cfg(test)]
 use std::borrow::ToOwned;
@@ -36,83 +38,56 @@ pub enum NameConnection {
     #[cfg(unix)]
     #[doc(hidden)]
     Socket(unet::UnixStream),
-    #[cfg(feature = "async")]
-    #[doc(hidden)]
-    AsyncTcp(async_net::TcpStream),
-    #[cfg(all(feature = "async", unix))]
-    #[doc(hidden)]
-    AsyncSocket(async_unet::UnixStream),
-}
-
-impl NameConnection {
-    #[inline]
-    fn generic(&mut self) -> &mut (dyn Connection + Send + Sync) {
-        match self {
-            Self::Tcp(t) => t as _,
-            #[cfg(unix)]
-            Self::Socket(s) => s as _,
-            #[cfg(feature = "async")]
-            Self::AsyncTcp(a) => a as _,
-            #[cfg(all(feature = "async", unix))]
-            Self::AsyncSocket(a) => a as _,
-        }
-    }
 }
 
 impl Connection for NameConnection {
     #[inline]
     fn send_packet(&mut self, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
-        self.generic().send_packet(bytes, fds)
+match self {
+  Self::Tcp(t) => t.send_packet(bytes, fds),
+  #[cfg(unix)]
+  Self::Socket(s) => s.send_packet(bytes, fds),
+}
     }
 
     #[inline]
     fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
-        self.generic().read_packet(bytes, fds)
+match self {
+  Self::Tcp(t) => t.read_packet(bytes, fds),
+  #[cfg(unix)]
+  Self::Socket(s) => s.read_packet(bytes, fds),
+}
     }
+}
 
-    #[cfg(feature = "async")]
-    #[inline]
-    fn send_packet_async<'future, 'a, 'b, 'c>(
-        &'a mut self,
-        bytes: &'b [u8],
-        fds: &'c mut Vec<Fd>,
-    ) -> GenericFuture<'future>
-    where
-        'a: 'future,
-        'b: 'future,
-        'c: 'future,
-    {
-        self.generic().send_packet_async(bytes, fds)
-    }
+#[cfg(feature = "async")]
+pub enum AsyncNameConnection {
+  #[doc(hidden)]
+  Tcp(async_net::TcpStream),
+  #[cfg(unix)]
+  #[doc(hidden)]
+  Socket(async_unet::UnixStream),
+}
 
-    #[cfg(feature = "async")]
-    #[inline]
-    fn read_packet_async<'future, 'a, 'b, 'c>(
-        &'a mut self,
-        bytes: &'b mut [u8],
-        fds: &'c mut Vec<Fd>,
-    ) -> GenericFuture<'future>
-    where
-        'a: 'future,
-        'b: 'future,
-        'c: 'future,
-    {
-        self.generic().read_packet_async(bytes, fds)
-    }
+#[cfg(feature = "async")]
+impl AsyncConnection for AsyncNameConnection {
+  #[inline]
+  fn send_packet<'future, 'a, 'b, 'c>(&'a mut self, bytes: &'b [u8], fds: &'c mut Vec<Fd>) -> GenericConnFuture<'future> where 'a: 'future, 'b: 'future, 'c: 'future {
+    Box::pin(match self {
+Self::Tcp(t) => t.send_packet(bytes, fds),
+#[cfg(unix)]
+Self::Socket(s) => s.send_packet(bytes, fds)
+    })
+  }
 
-    #[cfg(feature = "async")]
-    #[inline]
-    fn is_async(&self) -> bool {
-        match self {
-            Self::Tcp(_) => false,
-            #[cfg(unix)]
-            Self::Socket(_) => false,
-            #[cfg(feature = "async")]
-            Self::AsyncTcp(_) => true,
-            #[cfg(all(unix, feature = "async"))]
-            Self::AsyncSocket(_) => true,
-        }
-    }
+  #[inline]
+  fn read_packet<'future, 'a, 'b, 'c>(&'a mut self, bytes: &'b [u8], fds: &'c mut Vec<Fd>) -> GenericConnFuture<'future> where 'a: 'future, 'b: 'future, 'c: 'future {
+    Box::pin(match self {
+Self::Tcp(t) => t.read_packet(bytes, fds),
+#[cfg(unix)]
+Self::Socket(s) => s.read_packet(bytes, fds),
+    })
+  }
 }
 
 /// Port for X11 server.
@@ -365,17 +340,17 @@ impl<'a> XConnection<'a> {
     /// Open the connection via TCP, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    async fn open_tcp_async(self) -> crate::Result<NameConnection> {
+    async fn open_tcp_async(self) -> crate::Result<AsyncNameConnection> {
         let (host, port) = self.host_and_port();
         let connection = async_net::TcpStream::connect((&*host, port)).await?;
-        Ok(NameConnection::AsyncTcp(connection))
+        Ok(AsyncNameConnection::Tcp(connection))
     }
 
     /// Open a socket file on Unix, async redox.
     #[cfg(all(feature = "async", unix))]
-    async fn open_unix_async(self) -> crate::Result<NameConnection> {
+    async fn open_unix_async(self) -> crate::Result<AsyncNameConnection> {
         let fname = self.socket_filename()?;
-        Ok(NameConnection::AsyncSocket(
+        Ok(AsyncNameConnection::Socket(
             async_unet::UnixStream::connect(&*fname).await?,
         ))
     }
@@ -383,7 +358,7 @@ impl<'a> XConnection<'a> {
     /// Open an asynchronous connection.
     #[allow(unused_mut)]
     #[cfg(feature = "async")]
-    pub async fn open_async(mut self) -> crate::Result<NameConnection> {
+    pub async fn open_async(mut self) -> crate::Result<AsyncNameConnection> {
         // if the protocol or hostname isn't "unix", just run the tcp code
         if self.protocol != Some(Protocol::Unix)
             || (self.host.is_none() || self.host.as_deref().unwrap() != "unix")
@@ -418,7 +393,9 @@ impl NameConnection {
         let connection = XConnection::parse(name)?;
         connection.open()
     }
+}
 
+impl AsyncNameConnection {
     /// Open a new asynchronous connection.
     #[inline]
     #[cfg(feature = "async")]

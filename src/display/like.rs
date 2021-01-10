@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{Connection, Display};
+use super::Display;
 
 #[allow(clippy::doc_markdown)]
 /// Represents an object that contains a Display and can successfully be aliased to a display.
@@ -71,14 +71,14 @@ use super::{Connection, Display};
 /// };
 /// ```
 pub trait DisplayLike {
-    type Conn: Connection;
+    type Connection;
 
-    fn display(&self) -> &Display<Self::Conn>;
-    fn display_mut(&mut self) -> &mut Display<Self::Conn>;
+    fn display(&self) -> &Display<Self::Connection>;
+    fn display_mut(&mut self) -> &mut Display<Self::Connection>;
 }
 
-impl<C: Connection> DisplayLike for Display<C> {
-    type Conn = C;
+impl<Conn> DisplayLike for Display<Conn> {
+    type Connection = Conn;
 
     #[inline]
     fn display(&self) -> &Self {
