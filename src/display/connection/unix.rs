@@ -53,7 +53,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
         sendmsg_loop(conn, data, &cmsgs)
     };
 
-    if res.1.is_ok() {
+    if res.0 > 0 {
         fds.clear();
     }
 
