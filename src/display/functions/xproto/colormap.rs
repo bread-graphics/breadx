@@ -4,8 +4,11 @@
 
 use crate::{
     auto::xproto::{AllocColorReply, AllocColorRequest, Colormap},
-    Connection, Display, RequestCookie,
+    send_request, Connection, Display, RequestCookie,
 };
+
+#[cfg(feature = "async")]
+use crate::display::AsyncConnection;
 
 /// Convenience function for producing an RGB pixel value for supported monitors.
 #[inline]
@@ -87,28 +90,20 @@ impl Colormap {
         g: u16,
         b: u16,
     ) -> crate::Result<RequestCookie<AllocColorRequest>> {
-        let acr = self.alloc_color_request(r, g, b);
-        log::debug!("Sending AllocColorRequest to server.");
-        let tok = dpy.send_request(acr)?;
-        log::debug!("Sent AllocColorRequest to server.");
-        Ok(tok)
+        send_request!(dpy, self.alloc_color_request(r, g, b))
     }
 
     /// Allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_async<Conn: Connection>(
+    pub async fn alloc_color_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         r: u16,
         g: u16,
         b: u16,
     ) -> crate::Result<RequestCookie<AllocColorRequest>> {
-        let acr = self.alloc_color_request(r, g, b);
-        log::debug!("Sending AllocColorRequest to server.");
-        let tok = dpy.send_request_async(acr).await?;
-        log::debug!("Sent AllocColorRequest to server.");
-        Ok(tok)
+        send_request!(dpy, self.alloc_color_request(r, g, b), async).await
     }
 
     /// Immediately allocate a new color in the colormap.
@@ -132,7 +127,7 @@ impl Colormap {
     /// Immediately allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_immediate_async<Conn: Connection>(
+    pub async fn alloc_color_immediate_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         r: u16,

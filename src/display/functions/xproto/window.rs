@@ -2,7 +2,7 @@
 
 #![allow(clippy::similar_names)]
 
-use super::{Geometry as DrawableGeometry};
+use super::Geometry as DrawableGeometry;
 pub use crate::{
     auto::{
         xproto::{

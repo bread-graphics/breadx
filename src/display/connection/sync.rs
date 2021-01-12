@@ -1,8 +1,11 @@
 // MIT/Apache2 License
 
-use super::{standard_fd_warning, unix};
+use super::unix;
 use crate::Fd;
 use alloc::vec::Vec;
+
+#[cfg(not(unix))]
+use super::standard_fd_warning;
 
 #[cfg(feature = "std")]
 use std::net::TcpStream;

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{standard_fd_warning, unix};
+use super::unix;
 use crate::Fd;
 use alloc::{boxed::Box, vec::Vec};
 use core::{future::Future, pin::Pin};
@@ -9,6 +9,9 @@ use core::{future::Future, pin::Pin};
 use async_net::unix::UnixStream;
 #[cfg(feature = "std")]
 use async_net::TcpStream;
+
+#[cfg(not(unix))]
+use super::standard_fd_warning;
 
 /// Generic future for connections;
 pub type GenericConnFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>>;

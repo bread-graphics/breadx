@@ -15,7 +15,7 @@ use crate::{
         Window, WindowClass,
     },
     display::{Connection, Display, RequestCookie},
-    send_request, sr_request, Event, Extension, XidType,
+    send_request, sr_request, Event, Extension,
 };
 use alloc::string::String;
 use cty::c_char;
@@ -23,10 +23,18 @@ use cty::c_char;
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
 
+mod colormap;
+mod cursor;
 mod drawable;
+mod gcontext;
+mod pixmap;
 mod window;
 
+pub use colormap::*;
+pub use cursor::*;
 pub use drawable::*;
+pub use gcontext::*;
+pub use pixmap::*;
 pub use window::*;
 
 crate::create_paramaterizer! {

@@ -129,16 +129,12 @@ extern crate core;
 mod auth_info;
 pub mod auto;
 pub mod client_message_data;
-pub mod colormap;
-mod cursor;
 pub mod display;
 pub mod error;
 pub mod event;
 pub mod extension;
-pub mod gcontext;
 pub mod image;
 pub(crate) mod paramatizer;
-pub mod pixmap;
 pub(crate) mod util;
 mod xid;
 
@@ -152,13 +148,10 @@ pub mod notify_data;
 
 pub use crate::image::Image;
 pub use auth_info::*;
-pub use colormap::*;
 pub use display::*;
 pub use error::*;
 pub use event::Event;
 pub use extension::*;
-pub use gcontext::*;
-pub use pixmap::*;
 pub use xid::*;
 
 pub type Fd = cty::c_int;
