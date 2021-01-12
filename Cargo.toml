@@ -15,6 +15,7 @@ blocking = { version = "1.0.2", optional = true }
 bytemuck = "1.4.1"
 cfg-if = "1"
 cty = "0.2.1"
+defile = "0.1.2"
 futures-lite = { version = "1.11.2", optional = true }
 hashbrown = "0.9.1"
 image = { version = "0.23.12", default-features = false, optional = true }

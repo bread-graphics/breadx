@@ -132,7 +132,6 @@ pub mod client_message_data;
 pub mod colormap;
 mod cursor;
 pub mod display;
-pub mod drawable;
 pub mod error;
 pub mod event;
 pub mod extension;
@@ -141,7 +140,6 @@ pub mod image;
 pub(crate) mod paramatizer;
 pub mod pixmap;
 pub(crate) mod util;
-pub mod window;
 mod xid;
 
 #[cfg(feature = "xkb")]
@@ -161,14 +159,13 @@ pub use event::Event;
 pub use extension::*;
 pub use gcontext::*;
 pub use pixmap::*;
-pub use window::*;
 pub use xid::*;
 
 pub type Fd = cty::c_int;
 
 /// A request that can be sent as an instruction to the X server.
-pub trait Request: AsByteSequence {
-    type Reply: AsByteSequence;
+pub trait Request: auto::AsByteSequence {
+    type Reply: auto::AsByteSequence;
     // Excerpt from the X Window System Protocol:
     //
     // Every request contains an 8-bit major opcode
@@ -185,8 +182,8 @@ pub trait Request: AsByteSequence {
 pub use xid::{XidType, XID};
 
 pub use auto::xproto::{
-    Arc, ColormapAlloc, Drawable, EventMask, ImageFormat, Pixmap, Rectangle, Segment, VisualClass,
-    Visualid, Visualtype, Window, WindowClass,
+    Arc, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle, Segment,
+    VisualClass, Visualid, Visualtype, Window, WindowClass,
 };
 
 #[path = "../tutorials/mod.rs"]

@@ -52,7 +52,7 @@ macro_rules! unix_aware_async_connection_impl {
                 'b: 'future,
                 'c: 'future,
             {
-                cfg_if! {
+                cfg_if::cfg_if! {
                     if #[cfg(unix)] {
                         Box::pin(
                             unix::send_packet_unix_async(self.clone().into(), bytes, fds)
@@ -78,7 +78,7 @@ macro_rules! unix_aware_async_connection_impl {
                 'b: 'future,
                 'c: 'future,
             {
-                cfg_if! {
+                cfg_if::cfg_if! {
                     if #[cfg(unix)] {
                         Box::pin(
                            unix::read_packet_unix_async(self.clone().into(), bytes, fds)

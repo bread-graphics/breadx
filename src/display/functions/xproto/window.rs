@@ -2,6 +2,7 @@
 
 #![allow(clippy::similar_names)]
 
+use super::{Geometry as DrawableGeometry};
 pub use crate::{
     auto::{
         xproto::{
@@ -16,11 +17,14 @@ pub use crate::{
         AsByteSequence,
     },
     display::{Connection, Display, RequestCookie, WindowParameters},
-    drawable::{self, Geometry as DrawableGeomtry},
+    send_request, sr_request,
     xid::XidType,
 };
 use alloc::{string::ToString, vec::Vec};
 use core::{iter, mem};
+
+#[cfg(feature = "async")]
+use crate::display::AsyncConnection;
 
 // macro for retrieving an atom that might be cached in the display
 macro_rules! retrieve_atom {
@@ -69,7 +73,7 @@ crate::create_paramaterizer! {
         width        (set_width,        width)        : u32,
         height       (set_height,       height)       : u32,
         border_width (set_border_width, border_width) : u32,
-        sibling      (set_sibling,      sibling)       : Window,
+        sibling      (set_sibling,      sibling)      : Window,
         stack_mode   (set_stack_mode,   stack_mode)   : StackMode
     }
 }
@@ -117,27 +121,28 @@ impl Window {
     /// Map this window to the screen.
     #[inline]
     pub fn map<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let mw = MapWindowRequest {
-            window: self,
-            ..Default::default()
-        };
-
-        log::debug!("Sending MapWindowRequest to server");
-        let tok = dpy.send_request(mw)?;
-        log::debug!("Sent MapWindowRequest to server");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            MapWindowRequest {
+                window: self,
+                ..Default::default()
+            }
+        )
     }
 
     /// Map this window to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn map_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let mw = MapWindowRequest {
-            window: self,
-            ..Default::default()
-        };
-        let tok = dpy.send_request_async(mw).await?;
-        dpy.resolve_request_async(tok).await
+    pub async fn map_async<Conn: AsyncConnection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        sr_request!(
+            dpy,
+            MapWindowRequest {
+                window: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 
     /// Request struct to change the property of a window.
@@ -184,22 +189,16 @@ impl Window {
         mode: PropMode,
         data: &[T],
     ) -> crate::Result<()> {
-        log::debug!("Sending ChangePropertyRequest to server");
-        let tok = dpy.send_request(self.change_property_request(
-            property,
-            property_type,
-            format,
-            mode,
-            data,
-        ))?;
-        log::debug!("Sent ChangePropertyRequest to server");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            self.change_property_request(property, property_type, format, mode, data,)
+        )
     }
 
     /// Change a property of the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_property_async<Conn: Connection, T: AsByteSequence>(
+    pub async fn change_property_async<Conn: AsyncConnection, T: AsByteSequence>(
         self,
         dpy: &mut Display<Conn>,
         property: Atom,
@@ -208,18 +207,12 @@ impl Window {
         mode: PropMode,
         data: &[T],
     ) -> crate::Result<()> {
-        log::debug!("Sending ChangePropertyRequest to server");
-        let tok = dpy
-            .send_request_async(self.change_property_request(
-                property,
-                property_type,
-                format,
-                mode,
-                data,
-            ))
-            .await?;
-        log::debug!("Sent ChangePropertyRequest to server");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.change_property_request(property, property_type, format, mode, data,),
+            async
+        )
+        .await
     }
 
     /// Delete a property of this window.
@@ -229,34 +222,34 @@ impl Window {
         dpy: &mut Display<Conn>,
         property: Atom,
     ) -> crate::Result {
-        let dpr = DeletePropertyRequest {
-            window: self,
-            property,
-            ..Default::default()
-        };
-        log::debug!("Sending DeletePropertyRequest to server.");
-        let tok = dpy.send_request(dpr)?;
-        log::debug!("Sent DeletePropertyRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            DeletePropertyRequest {
+                window: self,
+                property,
+                ..Default::default()
+            }
+        )
     }
 
     /// Delete a property of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn delete_property_async<Conn: Connection>(
+    pub async fn delete_property_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         property: Atom,
     ) -> crate::Result {
-        let dpr = DeletePropertyRequest {
-            window: self,
-            property,
-            ..Default::default()
-        };
-        log::debug!("Sending DeletePropertyRequest to server.");
-        let tok = dpy.send_request_async(dpr).await?;
-        log::debug!("Sent DeletePropertyRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            DeletePropertyRequest {
+                window: self,
+                property,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 
     /// Set the protocols for the WM in regards to this window.
@@ -281,7 +274,7 @@ impl Window {
     /// Set the WM protocols for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_wm_protocols_async<Conn: Connection>(
+    pub async fn set_wm_protocols_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         protocols: &[Atom],
@@ -319,7 +312,7 @@ impl Window {
     /// Set the title for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_title_async<Conn: Connection>(
+    pub async fn set_title_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         title: &str,
@@ -350,25 +343,17 @@ impl Window {
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
-        let gwar = self.get_window_attributes_request();
-        log::debug!("Sending GetWindowAttributesRequest to server.");
-        let tok = dpy.send_request(gwar)?;
-        log::debug!("Sent GetWindowAttributesRequest to server.");
-        Ok(tok)
+        send_request!(dpy, self.get_window_attributes_request())
     }
 
     /// Get the current set of window attributes for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn window_attributes_async<Conn: Connection>(
+    pub async fn window_attributes_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
-        let gwar = self.get_window_attributes_request();
-        log::debug!("Sending GetWindowAttributesRequest to server.");
-        let tok = dpy.send_request_async(gwar).await?;
-        log::debug!("Sent GetWindowAttributesRequest to server.");
-        Ok(tok)
+        send_request!(dpy, self.get_window_attributes_request(), async).await
     }
 
     /// Immediately get the current set of window attributes for this window.
@@ -386,7 +371,7 @@ impl Window {
     /// Immediately get the current set of window attributes for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn window_attributes_immediate_async<Conn: Connection>(
+    pub async fn window_attributes_immediate_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<WindowAttributes> {
@@ -402,17 +387,17 @@ impl Window {
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        drawable::get_geometry(dpy, self)
+        dpy.get_drawable_geometry(self)
     }
 
     /// Get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn geometry_async<Conn: Connection>(
+    pub async fn geometry_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        drawable::get_geometry_async(dpy, self).await
+        dpy.get_drawbale_geometry_async(self).await
     }
 
     /// Immediately get the geometry of this window.
@@ -420,18 +405,18 @@ impl Window {
     pub fn geometry_immediate<Conn: Connection>(
         self,
         dpy: &mut Display<Conn>,
-    ) -> crate::Result<DrawableGeomtry> {
-        drawable::get_geometry_immediate(dpy, self)
+    ) -> crate::Result<DrawableGeometry> {
+        dpy.get_drawable_geometry_immediate(self)
     }
 
     /// Immediately get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn geometry_immediate_async<Conn: Connection>(
+    pub async fn geometry_immediate_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
-    ) -> crate::Result<DrawableGeomtry> {
-        drawable::get_geometry_immediate_async(dpy, self).await
+    ) -> crate::Result<DrawableGeometry> {
+        dpy.get_drawable_geometry_immediate_async(self).await
     }
 
     /// Request to change this window's parameters.
@@ -454,26 +439,18 @@ impl Window {
         dpy: &mut Display<Conn>,
         props: WindowParameters,
     ) -> crate::Result {
-        let cwar = self.change_window_attrs_request(props);
-        log::debug!("Sending ChangeWindowAttributesRequest to server.");
-        let tok = dpy.send_request(cwar)?;
-        log::debug!("Sent ChangeWindowAttributesRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.change_window_attrs_request(props))
     }
 
     /// Change the properties of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_attributes_async<Conn: Connection>(
+    pub async fn change_attributes_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         props: WindowParameters,
     ) -> crate::Result {
-        let cwar = self.change_window_attrs_request(props);
-        log::debug!("Sending ChangeWindowAttributesRequest to server.");
-        let tok = dpy.send_request_async(cwar).await?;
-        log::debug!("Sent ChangeWindowAttributesRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.change_window_attrs_request(props), async).await
     }
 
     /// Set this window's background color.
@@ -493,7 +470,7 @@ impl Window {
     /// Set this window's background color, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_background_color_async<Conn: Connection>(
+    pub async fn set_background_color_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         clr: u32,
@@ -522,26 +499,18 @@ impl Window {
         dpy: &mut Display<Conn>,
         props: ConfigureWindowParameters,
     ) -> crate::Result {
-        let cwr = self.configure_window_request(props);
-        log::debug!("Sending ConfigureWindowRequest to server.");
-        let tok = dpy.send_request(cwr)?;
-        log::debug!("Sent ConfigureWindowRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.configure_window_request(props))
     }
 
     /// Configure the window's physical properties, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn configure_async<Conn: Connection>(
+    pub async fn configure_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         props: ConfigureWindowParameters,
     ) -> crate::Result {
-        let cwr = self.configure_window_request(props);
-        log::debug!("Sending ConfigureWindowRequest to server.");
-        let tok = dpy.send_request_async(cwr).await?;
-        log::debug!("Sent ConfigureWindowRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.configure_window_request(props), async).await
     }
 
     /// Set the border of this window.
@@ -561,7 +530,7 @@ impl Window {
     /// Set the border of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_border_width_async<Conn: Connection>(
+    pub async fn set_border_width_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         width: u32,
@@ -590,7 +559,7 @@ impl Window {
     /// Change the colormap associated with this window.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_colormap_async<Conn: Connection>(
+    pub async fn set_colormap_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         colormap: Colormap,
@@ -615,25 +584,17 @@ impl Window {
         dpy: &mut Display<Conn>,
         mode: SetMode,
     ) -> crate::Result {
-        let cssr = self.change_save_set_request(mode);
-        log::debug!("Sending ChangeSaveSetRequest to server.");
-        let tok = dpy.send_request(cssr)?;
-        log::debug!("Sent ChangeSaveSetRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.change_save_set_request(mode))
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_save_set_async<Conn: Connection>(
+    pub async fn change_save_set_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         mode: SetMode,
     ) -> crate::Result {
-        let cssr = self.change_save_set_request(mode);
-        log::debug!("Sending ChangeSaveSetRequest to server.");
-        let tok = dpy.send_request_async(cssr).await?;
-        log::debug!("Sent ChangeSaveSetRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.change_save_set_request(mode), async).await
     }
 
     /// Resize the window.
@@ -655,7 +616,7 @@ impl Window {
     /// Resize the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn resize_async<Conn: Connection>(
+    pub async fn resize_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         width: u32,
@@ -690,7 +651,7 @@ impl Window {
     /// Move and resize the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn move_resize_async<Conn: Connection>(
+    pub async fn move_resize_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         x: i32,
@@ -723,25 +684,17 @@ impl Window {
         dpy: &mut Display<Conn>,
         direction: Circulate,
     ) -> crate::Result {
-        let cwr = self.circulate_window_request(direction);
-        log::debug!("Sending CirculateWindowRequest to server.");
-        let tok = dpy.send_request(cwr)?;
-        log::debug!("Sent CirculateWindowRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.circulate_window_request(direction))
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn circulate_async<Conn: Connection>(
+    pub async fn circulate_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         direction: Circulate,
     ) -> crate::Result {
-        let cwr = self.circulate_window_request(direction);
-        log::debug!("Sending CirculateWindowRequest to server.");
-        let tok = dpy.send_request_async(cwr).await?;
-        log::debug!("Sent CirculateWindowRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.circulate_window_request(direction), async).await
     }
 
     /// Clear Window Request
@@ -776,17 +729,13 @@ impl Window {
         height: u16,
         exposures: bool,
     ) -> crate::Result {
-        let car = self.clear_area_request(x, y, width, height, exposures);
-        log::debug!("Sending ClearAreaRequest to server.");
-        let tok = dpy.send_request(car)?;
-        log::debug!("Sent ClearAreaRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.clear_area_request(x, y, width, height, exposures))
     }
 
     /// Clear an area of the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn clear_area_async<Conn: Connection>(
+    pub async fn clear_area_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         x: i16,
@@ -795,11 +744,12 @@ impl Window {
         height: u16,
         exposures: bool,
     ) -> crate::Result {
-        let car = self.clear_area_request(x, y, width, height, exposures);
-        log::debug!("Sending ClearAreaRequest to server.");
-        let tok = dpy.send_request_async(car).await?;
-        log::debug!("Sent ClearAreaRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.clear_area_request(x, y, width, height, exposures),
+            async
+        )
+        .await
     }
 
     /// Clear the entire window.
@@ -811,7 +761,10 @@ impl Window {
     /// Clear the entire window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn clear_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn clear_async<Conn: AsyncConnection>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         self.clear_area_async(dpy, 0, 0, 0, 0, false).await
     }
 
@@ -842,16 +795,15 @@ impl Window {
         property: Atom,
         time: Timestamp,
     ) -> crate::Result {
-        let csr = self.convert_selection_request(selection, target, property, time);
-        log::debug!("Sending ConvertSelectionRequest to server.");
-        let tok = dpy.send_request(csr)?;
-        log::debug!("Sent ConvertSelectionRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            self.convert_selection_request(selection, target, property, time)
+        )
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn convert_selection_async<Conn: Connection>(
+    pub async fn convert_selection_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         selection: Atom,
@@ -859,11 +811,12 @@ impl Window {
         property: Atom,
         time: Timestamp,
     ) -> crate::Result {
-        let csr = self.convert_selection_request(selection, target, property, time);
-        log::debug!("Sending ConvertSelectionRequest to server.");
-        let tok = dpy.send_request_async(csr).await?;
-        log::debug!("Sent ConvertSelectionRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.convert_selection_request(selection, target, property, time),
+            async
+        )
+        .await
     }
 
     /// Set the cursor used by this window.
@@ -883,7 +836,7 @@ impl Window {
     /// Set the cursor used by this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_cursor_async<Conn: Connection>(
+    pub async fn set_cursor_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         cursor: Cursor,
@@ -898,58 +851,58 @@ impl Window {
     /// Destroy this window's subwindows.
     #[inline]
     pub fn destroy_subwindows<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let dsr = DestroySubwindowsRequest {
-            window: self,
-            ..Default::default()
-        };
-        log::debug!("Sending DestroySubwindowsRequest to server.");
-        let tok = dpy.send_request(dsr)?;
-        log::debug!("Sent DestroySubwindowsRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            DestroySubwindowsRequest {
+                window: self,
+                ..Default::default()
+            }
+        )
     }
 
     /// Destroy this window's subwindows, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn destroy_subwindows_async<Conn: Connection>(
+    pub async fn destroy_subwindows_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result {
-        let dsr = DestroySubwindowsRequest {
-            window: self,
-            ..Default::default()
-        };
-        log::debug!("Sending DestroySubwindowsRequest to server.");
-        let tok = dpy.send_request_async(dsr).await?;
-        log::debug!("Sent DestroySubwindowsRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            DestroySubwindowsRequest {
+                window: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 
     /// Free this window.
     #[inline]
     pub fn free<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let dwr = DestroyWindowRequest {
-            window: self,
-            ..Default::default()
-        };
-        log::debug!("Sending DestroyWindowRequest to server.");
-        let tok = dpy.send_request(dwr)?;
-        log::debug!("Sent DestroyWindowRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            DestroyWindowRequest {
+                window: self,
+                ..Default::default()
+            }
+        )
     }
 
     /// Free this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let dwr = DestroyWindowRequest {
-            window: self,
-            ..Default::default()
-        };
-        log::debug!("Sending DestroyWindowRequest to server.");
-        let tok = dpy.send_request_async(dwr).await?;
-        log::debug!("Sent DestroyWindowRequest to server.");
-        dpy.resolve_request_async(tok).await
+    pub async fn free_async<Conn: AsyncConnection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        sr_request!(
+            dpy,
+            DestroyWindowRequest {
+                window: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 
     /// Set the event mask.
@@ -971,7 +924,7 @@ impl Window {
     /// Set the event mask, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_event_mask_async<Conn: Connection>(
+    pub async fn set_event_mask_async<Conn: AsyncConnection>(
         self,
         dpy: &mut Display<Conn>,
         em: EventMask,

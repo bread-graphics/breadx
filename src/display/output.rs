@@ -6,6 +6,9 @@ use alloc::{string::ToString, vec, vec::Vec};
 use core::{iter, mem};
 use tinyvec::TinyVec;
 
+#[cfg(feature = "async")]
+use super::AsyncConnection;
+
 #[inline]
 fn string_as_array_bytes(s: &str) -> [u8; EXT_KEY_SIZE] {
     let mut bytes: [u8; EXT_KEY_SIZE] = [0; EXT_KEY_SIZE];
@@ -17,42 +20,7 @@ fn string_as_array_bytes(s: &str) -> [u8; EXT_KEY_SIZE] {
     bytes
 }
 
-impl<Conn: Connection> super::Display<Conn> {
-    #[allow(clippy::single_match_else)]
-    #[inline]
-    fn get_ext_opcode(&mut self, extname: &'static str) -> crate::Result<u8> {
-        let sarr = string_as_array_bytes(extname);
-        match self.extensions.get(&sarr) {
-            Some(code) => Ok(*code),
-            None => {
-                let code = self
-                    .query_extension_immediate(extname.to_string())
-                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
-                    .major_opcode;
-                self.extensions.insert(sarr, code);
-                Ok(code)
-            }
-        }
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    async fn get_ext_opcode_async(&mut self, extname: &'static str) -> crate::Result<u8> {
-        let sarr = string_as_array_bytes(extname);
-        match self.extensions.get(&sarr) {
-            Some(code) => Ok(*code),
-            None => {
-                let code = self
-                    .query_extension_immediate_async(extname.to_string())
-                    .await
-                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
-                    .major_opcode;
-                self.extensions.insert(sarr, code);
-                Ok(code)
-            }
-        }
-    }
-
+impl<Conn> super::Display<Conn> {
     #[inline]
     fn encode_request<R: Request>(
         &mut self,
@@ -143,7 +111,9 @@ impl<Conn: Connection> super::Display<Conn> {
 
         (sequence, bytes)
     }
+}
 
+impl<Conn: Connection> super::Display<Conn> {
     #[inline]
     pub fn send_request_internal<R: Request>(
         &mut self,
@@ -165,7 +135,26 @@ impl<Conn: Connection> super::Display<Conn> {
         Ok(RequestCookie::from_sequence(sequence))
     }
 
-    #[cfg(feature = "async")]
+    #[allow(clippy::single_match_else)]
+    #[inline]
+    fn get_ext_opcode(&mut self, extname: &'static str) -> crate::Result<u8> {
+        let sarr = string_as_array_bytes(extname);
+        match self.extensions.get(&sarr) {
+            Some(code) => Ok(*code),
+            None => {
+                let code = self
+                    .query_extension_immediate(extname.to_string())
+                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
+                    .major_opcode;
+                self.extensions.insert(sarr, code);
+                Ok(code)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "async")]
+impl<Conn: AsyncConnection> super::Display<Conn> {
     #[inline]
     pub async fn send_request_internal_async<R: Request>(
         &mut self,
@@ -210,5 +199,22 @@ impl<Conn: Connection> super::Display<Conn> {
         res?;
 
         Ok(RequestCookie::from_sequence(sequence))
+    }
+
+    #[inline]
+    async fn get_ext_opcode_async(&mut self, extname: &'static str) -> crate::Result<u8> {
+        let sarr = string_as_array_bytes(extname);
+        match self.extensions.get(&sarr) {
+            Some(code) => Ok(*code),
+            None => {
+                let code = self
+                    .query_extension_immediate_async(extname.to_string())
+                    .await
+                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
+                    .major_opcode;
+                self.extensions.insert(sarr, code);
+                Ok(code)
+            }
+        }
     }
 }

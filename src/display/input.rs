@@ -6,12 +6,15 @@ use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
+#[cfg(feature = "async")]
+use super::AsyncConnection;
+
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
 const GENERIC_EVENT: u8 = 32;
 const GE_MASK: u8 = 0x7f;
 
-impl<Conn: Connection> super::Display<Conn> {
+impl<Conn> super::Display<Conn> {
     // process a set of 32 bytes into the system
     #[inline]
     fn process_bytes(&mut self, mut bytes: TinyVec<[u8; 32]>, fds: Box<[Fd]>) -> crate::Result {
@@ -102,56 +105,6 @@ impl<Conn: Connection> super::Display<Conn> {
         }
     }
 
-    // wait for bytes to appear
-    #[inline]
-    pub(crate) fn wait(&mut self) -> crate::Result {
-        log::debug!("Running wait cycle");
-        // replies, errors, and events are all in units of 32 bytes
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
-        let mut fds: Vec<Fd> = vec![];
-        self.connection()?.read_packet(&mut bytes, &mut fds)?;
-
-        self.fix_glx_workaround(&mut bytes)?;
-
-        // in certain cases, we may have to read more bytes
-        if let Some(ab) = additional_bytes(&bytes[..8]) {
-            if ab != 0 {
-                bytes.extend(iter::repeat(0).take(ab * 4));
-
-                log::debug!("Waiting for {} additional bytes", ab * 4);
-                self.connection()?.read_packet(&mut bytes[32..], &mut fds)?;
-                log::debug!("Ending wait with {} additional bytes", ab * 4);
-            }
-        }
-
-        self.process_bytes(bytes, fds.into_boxed_slice())
-    }
-
-    // wait for bytes to appear, async redox
-    #[cfg(feature = "async")]
-    #[inline]
-    pub(crate) async fn wait_async(&mut self) -> crate::Result {
-        // see above function for more information
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
-        let mut fds: Vec<Fd> = vec![];
-
-        // See output.rs for why we do this.
-        self.connection()?
-            .read_packet_async(&mut bytes, &mut fds)
-            .await?;
-
-        self.fix_glx_workaround(&mut bytes)?;
-
-        if let Some(ab) = additional_bytes(&bytes[..8]) {
-            bytes.extend(iter::repeat(0).take(ab * 4));
-            self.connection()?
-                .read_packet_async(&mut bytes[32..], &mut fds)
-                .await?;
-        }
-
-        self.process_bytes(bytes, fds.into_boxed_slice())
-    }
-
     #[inline]
     fn filter_into_special_event(&mut self, event: Event) -> Result<XID, Event> {
         // if the event's already differentiated, it's not a special event
@@ -182,6 +135,60 @@ impl<Conn: Connection> super::Display<Conn> {
                 }
             })
             .ok_or_else(|| event.unwrap())
+    }
+}
+
+impl<Conn: Connection> super::Display<Conn> {
+    // wait for bytes to appear
+    #[inline]
+    pub(crate) fn wait(&mut self) -> crate::Result {
+        log::debug!("Running wait cycle");
+        // replies, errors, and events are all in units of 32 bytes
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
+        let mut fds: Vec<Fd> = vec![];
+        self.connection()?.read_packet(&mut bytes, &mut fds)?;
+
+        self.fix_glx_workaround(&mut bytes)?;
+
+        // in certain cases, we may have to read more bytes
+        if let Some(ab) = additional_bytes(&bytes[..8]) {
+            if ab != 0 {
+                bytes.extend(iter::repeat(0).take(ab * 4));
+
+                log::debug!("Waiting for {} additional bytes", ab * 4);
+                self.connection()?.read_packet(&mut bytes[32..], &mut fds)?;
+                log::debug!("Ending wait with {} additional bytes", ab * 4);
+            }
+        }
+
+        self.process_bytes(bytes, fds.into_boxed_slice())
+    }
+}
+
+#[cfg(feature = "async")]
+impl<Conn: AsyncConnection> super::Display<Conn> {
+    // wait for bytes to appear, async redox
+    #[inline]
+    pub(crate) async fn wait_async(&mut self) -> crate::Result {
+        // see above function for more information
+        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
+        let mut fds: Vec<Fd> = vec![];
+
+        // See output.rs for why we do this.
+        self.connection()?
+            .read_packet_async(&mut bytes, &mut fds)
+            .await?;
+
+        self.fix_glx_workaround(&mut bytes)?;
+
+        if let Some(ab) = additional_bytes(&bytes[..8]) {
+            bytes.extend(iter::repeat(0).take(ab * 4));
+            self.connection()?
+                .read_packet_async(&mut bytes[32..], &mut fds)
+                .await?;
+        }
+
+        self.process_bytes(bytes, fds.into_boxed_slice())
     }
 }
 

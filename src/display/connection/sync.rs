@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
 use std::net::TcpStream;
-#[cfg(not(feature = "std"))]
+#[cfg(all(feature = "std", unix))]
 use std::os::unix::net::UnixStream;
 
 /// Synchronous breadx connection.
@@ -20,11 +20,12 @@ pub trait Connection {
 // Implement Connection on TcpStream and UnixStream
 
 macro_rules! unix_aware_connection_impl {
-    ($name: ident) => {
+    (#[$attr: meta] $name: ident) => {
+        #[$attr]
         impl Connection for $name {
             #[inline]
             fn send_packet(&mut self, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
-                cfg_if! {
+                cfg_if::cfg_if! {
                     if #[cfg(unix)] {
                         // take the unix sendmsg way that lets us send file descriptors
                         unix::send_packet_unix(self, bytes, fds)
@@ -39,7 +40,7 @@ macro_rules! unix_aware_connection_impl {
 
             #[inline]
             fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
-                cfg_if! {
+                cfg_if::cfg_if! {
                     if #[cfg(unix)] {
                         unix::read_packet_unix(self, bytes, fds)
                     } else {
@@ -54,8 +55,5 @@ macro_rules! unix_aware_connection_impl {
     };
 }
 
-#[cfg(feature = "std")]
-unix_aware_connection_impl! { TcpStream }
-
-#[cfg(all(feature = "std", unix))]
-unix_aware_connection_impl! { UnixStream }
+unix_aware_connection_impl! { #[cfg(feature = "std")] TcpStream }
+unix_aware_connection_impl! { #[cfg(all(feature = "std", unix))] UnixStream }

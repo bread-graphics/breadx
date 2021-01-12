@@ -2,6 +2,7 @@
 
 #![cfg(feature = "glx")]
 
+use super::req_function;
 use crate::{
     auto::{
         glx::{
@@ -52,6 +53,7 @@ impl From<GetFbConfigsReply> for Configs {
     }
 }
 
+/*
 impl<Conn: Connection> Display<Conn> {
     /// Query GLX version.
     #[inline]
@@ -336,3 +338,4 @@ impl<Conn: Connection> Display<Conn> {
         Ok(xid)
     }
 }
+*/

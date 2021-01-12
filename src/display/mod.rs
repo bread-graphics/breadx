@@ -240,7 +240,6 @@ impl<Conn> Display<Conn> {
         }
     }
 
-
     /// Generate the setup from the authentication info.
     #[inline]
     fn create_setup(auth: AuthInfo) -> SetupRequest {
@@ -490,7 +489,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
     /// Send a request object to the X11 server, async redox. See the `send_request` function for more
     /// information.
     #[inline]
-    pub fn send_request<'future, R: Request + Send + 'future>(
+    pub fn send_request_async<'future, R: Request + Send + 'future>(
         &'future mut self,
         req: R,
     ) -> Pin<Box<dyn Future<Output = crate::Result<RequestCookie<R>>> + Send + 'future>> {
@@ -500,7 +499,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
     /// Wait for a request from the X11 server, async redox. See the `resolve_request` function for more
     /// information.
     #[inline]
-    pub async fn resolve_request<R: Request>(
+    pub async fn resolve_request_async<R: Request>(
         &mut self,
         token: RequestCookie<R>,
     ) -> crate::Result<R::Reply>
@@ -518,14 +517,14 @@ impl<Conn: AsyncConnection> Display<Conn> {
                 Some((reply, fds)) => {
                     break Self::decode_reply::<R>(reply, fds);
                 }
-                None => self.wait().await?,
+                None => self.wait_async().await?,
             }
         }
     }
 
     /// Wait for a special event, async redox.
     #[inline]
-    pub async fn wait_for_special_event(&mut self, eid: XID) -> crate::Result<Event> {
+    pub async fn wait_for_special_event_async(&mut self, eid: XID) -> crate::Result<Event> {
         loop {
             let queue = match self.special_event_queues.get_mut(&eid) {
                 Some(queue) => queue,
@@ -538,7 +537,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
 
             match queue.pop_front() {
                 Some(event) => break Ok(event),
-                None => self.wait().await?,
+                None => self.wait_async().await?,
             }
         }
     }
@@ -546,12 +545,12 @@ impl<Conn: AsyncConnection> Display<Conn> {
     /// Creates a new `Display` from a connection and authentication info, async redox. See the `from_connection`
     /// function for more information.
     #[inline]
-    pub async fn from_connection(
+    pub async fn from_connection_async(
         connection: Conn,
         auth: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut d = Self::from_connection_internal(connection);
-        d.init(auth).await?;
+        d.init_async(auth).await?;
         Ok(d)
     }
 
@@ -559,11 +558,11 @@ impl<Conn: AsyncConnection> Display<Conn> {
     /// more information.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn wait_for_event(&mut self) -> crate::Result<Event> {
+    pub async fn wait_for_event_async(&mut self) -> crate::Result<Event> {
         loop {
             match self.event_queue.pop_front() {
                 Some(event) => break Ok(event),
-                None => self.wait().await?,
+                None => self.wait_async().await?,
             }
         }
     }
@@ -573,7 +572,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
     /// TODO; lots of copy-pasted code, redo this at some point
     #[cfg(feature = "async")]
     #[inline]
-    async fn init(&mut self, auth: Option<AuthInfo>) -> crate::Result {
+    async fn init_async(&mut self, auth: Option<AuthInfo>) -> crate::Result {
         let setup = Self::create_setup(match auth {
             Some(auth) => auth,
             None => AuthInfo::get_async().await,
