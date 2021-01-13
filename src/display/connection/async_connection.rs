@@ -15,7 +15,7 @@ use async_net::TcpStream;
 use super::standard_fd_warning;
 
 #[cfg(all(not(unix), feature = "std"))]
-use std::io::{Read, Write};
+use futures_lite::io::{AsyncReadExt, AsyncWriteExt};
 
 /// Generic future for connections;
 pub type GenericConnFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>>;
@@ -67,7 +67,7 @@ macro_rules! unix_aware_async_connection_impl {
                     } else {
                         standard_fd_warning(fds);
                         Box::pin(async move {
-                            self.write_all(bytes)?;
+                            self.write_all(bytes).await?;
                             Ok(())
                         })
                     }
@@ -93,7 +93,7 @@ macro_rules! unix_aware_async_connection_impl {
                     } else {
                         let _ = fds;
                         Box::pin(async move {
-                            self.read_exact(bytes)?;
+                            self.read_exact(bytes).await?;
                             Ok(())
                         })
                     }
