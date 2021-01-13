@@ -1,13 +1,16 @@
 // MIT/Apache2 License
 
-use super::{
+use crate::{
     auto::xproto::{
         Arc, ChangeGcRequest, CoordMode, Drawable, FillPolyRequest, FreeGcRequest, Gcontext, Point,
         PolyArcRequest, PolyFillArcRequest, PolyFillRectangleRequest, PolyRectangleRequest,
         PolySegmentRequest, PolyShape, Rectangle, Segment,
     },
-    Connection, Display, GcParameters,
+    sr_request, Connection, Display, GcParameters,
 };
+
+#[cfg(feature = "async")]
+use crate::display::AsyncConnection;
 
 impl Gcontext {
     #[inline]
@@ -29,26 +32,18 @@ impl Gcontext {
         dpy: &mut Display<Conn>,
         params: GcParameters,
     ) -> crate::Result<()> {
-        log::debug!("Sending ChangeGcRequest to server");
-        let req = self.change_request(params);
-        let tok = dpy.send_request(req)?;
-        log::debug!("Send ChangeGcRequest to server");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.change_request(params))
     }
 
     /// Change the properties of this GC, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_async<Conn: Connection>(
+    pub async fn change_async<Conn: AsyncConnection + Send + Send>(
         self,
         dpy: &mut Display<Conn>,
         params: GcParameters,
     ) -> crate::Result<()> {
-        log::debug!("Sending ChangeGcRequest to server");
-        let req = self.change_request(params);
-        let tok = dpy.send_request_async(req).await?;
-        log::debug!("Send ChangeGcRequest to server");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.change_request(params), async).await
     }
 
     /// Request to draw a line.
@@ -74,17 +69,13 @@ impl Gcontext {
             return Ok(());
         }
 
-        let psr = self.poly_segment_request(target.into(), line);
-        log::debug!("Sending PolySegmentRequest to server");
-        let tok = dpy.send_request(psr)?;
-        log::debug!("Sent PolySegmentRequest to server");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.poly_segment_request(target.into(), line))
     }
 
     /// Draw a set of lines, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_lines_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_lines_async<Conn: AsyncConnection + Send + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -94,11 +85,7 @@ impl Gcontext {
             return Ok(());
         }
 
-        let psr = self.poly_segment_request(target.into(), line);
-        log::debug!("Sending PolySegmentRequest to server");
-        let tok = dpy.send_request_async(psr).await?;
-        log::debug!("Sent PolySegmentRequest to server");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.poly_segment_request(target.into(), line), async).await
     }
 
     /// Draw a singular line.
@@ -115,7 +102,7 @@ impl Gcontext {
     /// Draw a singular line, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_line_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_line_async<Conn: AsyncConnection + Send + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -151,17 +138,16 @@ impl Gcontext {
             return Ok(());
         }
 
-        let prr = self.poly_rectangle_request(target.into(), rectangles);
-        log::debug!("Sending PolyRectangleRequest to the server.");
-        let tok = dpy.send_request(prr)?;
-        log::debug!("Sent PolyRectangleRequest to the server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.poly_rectangle_request(target.into(), rectangles))
     }
 
     /// Draw one or more rectangles to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_rectangles_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_rectangles_async<
+        Conn: AsyncConnection + Send + Send,
+        Target: Into<Drawable>,
+    >(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -171,11 +157,12 @@ impl Gcontext {
             return Ok(());
         }
 
-        let prr = self.poly_rectangle_request(target.into(), rectangles);
-        log::debug!("Sending PolyRectangleRequest to the server.");
-        let tok = dpy.send_request_async(prr).await?;
-        log::debug!("Sent PolyRectangleRequest to the server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.poly_rectangle_request(target.into(), rectangles),
+            async
+        )
+        .await
     }
 
     /// Draw a rectangle to the screen.
@@ -192,7 +179,7 @@ impl Gcontext {
     /// Draw a rectangle to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_rectangle_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_rectangle_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -224,17 +211,13 @@ impl Gcontext {
             return Ok(());
         }
 
-        let par = self.poly_arc_request(target.into(), arcs);
-        log::debug!("Sending PolyArcRequest to the server.");
-        let tok = dpy.send_request(par)?;
-        log::debug!("Send PolyArcRequest to the server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.poly_arc_request(target.into(), arcs))
     }
 
     /// Draw one or more arcs to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_arcs_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_arcs_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -244,11 +227,7 @@ impl Gcontext {
             return Ok(());
         }
 
-        let par = self.poly_arc_request(target.into(), arcs);
-        log::debug!("Sending PolyArcRequest to the server.");
-        let tok = dpy.send_request_async(par).await?;
-        log::debug!("Send PolyArcRequest to the server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.poly_arc_request(target.into(), arcs), async).await
     }
 
     /// Draw an arc to the screen.
@@ -265,7 +244,7 @@ impl Gcontext {
     /// Draw an arc to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_arc_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn draw_arc_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -307,17 +286,16 @@ impl Gcontext {
             return Ok(());
         }
 
-        let fpr = self.fill_poly_request(target.into(), shape, coordinate_mode, points);
-        log::debug!("Sending FillPolyRequest to server.");
-        let tok = dpy.send_request(fpr)?;
-        log::debug!("Sent FillPolyRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            self.fill_poly_request(target.into(), shape, coordinate_mode, points)
+        )
     }
 
     /// Fill a polygon specified by the given points, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_polygon_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn fill_polygon_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -329,11 +307,12 @@ impl Gcontext {
             return Ok(());
         }
 
-        let fpr = self.fill_poly_request(target.into(), shape, coordinate_mode, points);
-        log::debug!("Sending FillPolyRequest to server.");
-        let tok = dpy.send_request_async(fpr).await?;
-        log::debug!("Sent FillPolyRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.fill_poly_request(target.into(), shape, coordinate_mode, points),
+            async
+        )
+        .await
     }
 
     /// Request to fill rectangles.
@@ -363,17 +342,16 @@ impl Gcontext {
             return Ok(());
         }
 
-        let pfrr = self.poly_fill_rectangle_request(target.into(), rectangles);
-        log::debug!("Sending PolyFillRectangleRequest to server.");
-        let tok = dpy.send_request(pfrr)?;
-        log::debug!("Sent PolyFillRectangleRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            self.poly_fill_rectangle_request(target.into(), rectangles)
+        )
     }
 
     /// Fill a set of one or more rectangles, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangles_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn fill_rectangles_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -383,11 +361,12 @@ impl Gcontext {
             return Ok(());
         }
 
-        let pfrr = self.poly_fill_rectangle_request(target.into(), rectangles);
-        log::debug!("Sending PolyFillRectangleRequest to server.");
-        let tok = dpy.send_request_async(pfrr).await?;
-        log::debug!("Sent PolyFillRectangleRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(
+            dpy,
+            self.poly_fill_rectangle_request(target.into(), rectangles),
+            async
+        )
+        .await
     }
 
     /// Fill a single rectangle.
@@ -404,7 +383,7 @@ impl Gcontext {
     /// Fill a single rectangle, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangle_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn fill_rectangle_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -436,17 +415,13 @@ impl Gcontext {
             return Ok(());
         }
 
-        let pfar = self.poly_fill_arc_request(target.into(), arcs);
-        log::debug!("Sending PolyFillArcRequest to server.");
-        let tok = dpy.send_request(pfar)?;
-        log::debug!("Sent PolyFillArcRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(dpy, self.poly_fill_arc_request(target.into(), arcs))
     }
 
     /// Fill a set of one or more arcs, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_arcs_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn fill_arcs_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -456,11 +431,7 @@ impl Gcontext {
             return Ok(());
         }
 
-        let pfar = self.poly_fill_arc_request(target.into(), arcs);
-        log::debug!("Sending PolyFillArcRequest to server.");
-        let tok = dpy.send_request_async(pfar).await?;
-        log::debug!("Sent PolyFillArcRequest to server.");
-        dpy.resolve_request_async(tok).await
+        sr_request!(dpy, self.poly_fill_arc_request(target.into(), arcs), async).await
     }
 
     /// Fill an arc.
@@ -477,7 +448,7 @@ impl Gcontext {
     /// Fill an arc, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_arc_async<Conn: Connection, Target: Into<Drawable>>(
+    pub async fn fill_arc_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -490,27 +461,30 @@ impl Gcontext {
     /// to fail.
     #[inline]
     pub fn free<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let req = FreeGcRequest {
-            gc: self,
-            ..Default::default()
-        };
-        log::debug!("Sending FreeGcRequest to server.");
-        let tok = dpy.send_request(req)?;
-        log::debug!("Sent FreeGcRequest to server.");
-        dpy.resolve_request(tok)
+        sr_request!(
+            dpy,
+            FreeGcRequest {
+                gc: self,
+                ..Default::default()
+            }
+        )
     }
 
     /// Free the memory this GC allocates, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        let req = FreeGcRequest {
-            gc: self,
-            ..Default::default()
-        };
-        log::debug!("Sending FreeGcRequest to server.");
-        let tok = dpy.send_request_async(req).await?;
-        log::debug!("Sent FreeGcRequest to server.");
-        dpy.resolve_request_async(tok).await
+    pub async fn free_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
+        sr_request!(
+            dpy,
+            FreeGcRequest {
+                gc: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 }

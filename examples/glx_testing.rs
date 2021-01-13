@@ -42,6 +42,4 @@ fn main() -> breadx::Result {
         let ev = conn.wait_for_event()?;
         println!("{:?}", ev);
     }
-
-    Ok(())
 }
