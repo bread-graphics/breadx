@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+#[cfg(all(feature = "std", unix))]
 use super::unix;
 use crate::Fd;
 use alloc::{boxed::Box, vec::Vec};
