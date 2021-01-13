@@ -7,6 +7,8 @@ use alloc::vec::Vec;
 
 #[cfg(not(unix))]
 use super::standard_fd_warning;
+#[cfg(all(not(unix), feature = "std"))]
+use std::io::{Read, Write};
 
 #[cfg(feature = "std")]
 use std::net::TcpStream;

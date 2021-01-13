@@ -14,6 +14,9 @@ use async_net::TcpStream;
 #[cfg(not(unix))]
 use super::standard_fd_warning;
 
+#[cfg(all(not(unix), feature = "std"))]
+use std::io::{Read, Write};
+
 /// Generic future for connections;
 pub type GenericConnFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>>;
 
