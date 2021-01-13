@@ -6,7 +6,11 @@ use crate::{
     auto::present::QueryVersionRequest,
     display::{Connection, Display, RequestCookie},
     extension::ExtensionVersion,
+    send_request,
 };
+
+#[cfg(feature = "async")]
+use crate::display::AsyncConnection;
 
 impl<Conn: Connection> Display<Conn> {
     #[inline]
@@ -15,27 +19,14 @@ impl<Conn: Connection> Display<Conn> {
         major: u32,
         minor: u32,
     ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        let qer = QueryVersionRequest {
-            major_version: major,
-            minor_version: minor,
-            ..Default::default()
-        };
-        self.send_request(qer)
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn query_present_version_async(
-        &mut self,
-        major: u32,
-        minor: u32,
-    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        let qer = QueryVersionRequest {
-            major_version: major,
-            minor_version: minor,
-            ..Default::default()
-        };
-        self.send_request_async(qer).await
+        send_request!(
+            self,
+            QueryVersionRequest {
+                major_version: major,
+                minor_version: minor,
+                ..Default::default()
+            }
+        )
     }
 
     #[inline]
@@ -51,8 +42,28 @@ impl<Conn: Connection> Display<Conn> {
             minor: reply.minor_version,
         })
     }
+}
 
-    #[cfg(feature = "async")]
+#[cfg(feature = "async")]
+impl<Conn: AsyncConnection + Send> Display<Conn> {
+    #[inline]
+    pub async fn query_present_version_async(
+        &mut self,
+        major: u32,
+        minor: u32,
+    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
+        send_request!(
+            self,
+            QueryVersionRequest {
+                major_version: major,
+                minor_version: minor,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
     #[inline]
     pub async fn query_present_version_immediate_async(
         &mut self,

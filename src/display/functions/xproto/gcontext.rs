@@ -38,7 +38,7 @@ impl Gcontext {
     /// Change the properties of this GC, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_async<Conn: AsyncConnection>(
+    pub async fn change_async<Conn: AsyncConnection + Send + Send>(
         self,
         dpy: &mut Display<Conn>,
         params: GcParameters,
@@ -75,7 +75,7 @@ impl Gcontext {
     /// Draw a set of lines, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_lines_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_lines_async<Conn: AsyncConnection + Send + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -102,7 +102,7 @@ impl Gcontext {
     /// Draw a singular line, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_line_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_line_async<Conn: AsyncConnection + Send + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -144,7 +144,10 @@ impl Gcontext {
     /// Draw one or more rectangles to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_rectangles_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_rectangles_async<
+        Conn: AsyncConnection + Send + Send,
+        Target: Into<Drawable>,
+    >(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -176,7 +179,7 @@ impl Gcontext {
     /// Draw a rectangle to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_rectangle_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_rectangle_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -214,7 +217,7 @@ impl Gcontext {
     /// Draw one or more arcs to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_arcs_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_arcs_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -241,7 +244,7 @@ impl Gcontext {
     /// Draw an arc to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn draw_arc_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn draw_arc_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -292,7 +295,7 @@ impl Gcontext {
     /// Fill a polygon specified by the given points, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_polygon_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn fill_polygon_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -348,7 +351,7 @@ impl Gcontext {
     /// Fill a set of one or more rectangles, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangles_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn fill_rectangles_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -380,7 +383,7 @@ impl Gcontext {
     /// Fill a single rectangle, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangle_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn fill_rectangle_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -418,7 +421,7 @@ impl Gcontext {
     /// Fill a set of one or more arcs, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_arcs_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn fill_arcs_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -445,7 +448,7 @@ impl Gcontext {
     /// Fill an arc, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_arc_async<Conn: AsyncConnection, Target: Into<Drawable>>(
+    pub async fn fill_arc_async<Conn: AsyncConnection + Send, Target: Into<Drawable>>(
         self,
         dpy: &mut Display<Conn>,
         target: Target,
@@ -470,7 +473,10 @@ impl Gcontext {
     /// Free the memory this GC allocates, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn free_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         sr_request!(
             dpy,
             FreeGcRequest {

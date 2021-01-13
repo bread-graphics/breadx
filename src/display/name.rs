@@ -17,8 +17,6 @@ use alloc::format;
 
 #[cfg(feature = "async")]
 use super::{AsyncConnection, GenericConnFuture};
-#[cfg(feature = "async")]
-use alloc::boxed::Box;
 
 #[cfg(test)]
 use std::borrow::ToOwned;
@@ -92,7 +90,7 @@ impl AsyncConnection for AsyncNameConnection {
     #[inline]
     fn read_packet<'future, 'a, 'b, 'c>(
         &'a mut self,
-        bytes: &'b [u8],
+        bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> GenericConnFuture<'future>
     where
@@ -420,7 +418,7 @@ impl AsyncNameConnection {
     #[cfg(feature = "async")]
     pub(crate) async fn connect_internal_async(
         name: Option<Cow<'_, str>>,
-    ) -> crate::Result<NameConnection> {
+    ) -> crate::Result<AsyncNameConnection> {
         let connection = XConnection::parse(name)?;
         connection.open_async().await
     }

@@ -241,7 +241,7 @@ impl<Conn> Display<Conn> {
     ) -> CreateGcRequest {
         let mut gcr = CreateGcRequest {
             cid,
-            drawable: drawable.into(),
+            drawable,
             ..Default::default()
         };
 
@@ -626,14 +626,22 @@ impl<Conn: Connection> Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> Display<Conn> {
+impl<Conn: AsyncConnection + Send> Display<Conn> {
     /// Query for extension information, async redox.
     #[inline]
     pub async fn query_extension_async(
         &mut self,
         name: String,
     ) -> crate::Result<RequestCookie<QueryExtensionRequest>> {
-        send_request!(self, QueryExtensionRequest { name }, async).await
+        send_request!(
+            self,
+            QueryExtensionRequest {
+                name,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 
     /// Query for extension information, but resolve immediately, async redox . The `Error::ExtensionNotPresent`
@@ -643,7 +651,15 @@ impl<Conn: AsyncConnection> Display<Conn> {
         &mut self,
         name: String,
     ) -> crate::Result<Extension> {
-        let qer = sr_request!(self, QueryExtensionRequest { name: name.clone() }, async).await?;
+        let qer = sr_request!(
+            self,
+            QueryExtensionRequest {
+                name: name.clone(),
+                ..Default::default()
+            },
+            async
+        )
+        .await?;
         Extension::from_reply(qer, name.into())
     }
 

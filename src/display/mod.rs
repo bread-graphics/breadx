@@ -485,7 +485,7 @@ impl<Conn: Connection> Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> Display<Conn> {
+impl<Conn: AsyncConnection + Send> Display<Conn> {
     /// Send a request object to the X11 server, async redox. See the `send_request` function for more
     /// information.
     #[inline]
@@ -647,7 +647,7 @@ impl AsyncDisplayConnection {
         name: Option<Cow<'_, str>>,
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
-        let connection = name::AsyncNameConnection::connect_internal(name).await?;
-        Self::from_connection(connection, auth_info).await
+        let connection = name::AsyncNameConnection::connect_internal_async(name).await?;
+        Self::from_connection_async(connection, auth_info).await
     }
 }

@@ -6,7 +6,7 @@
 //       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
 //       use tokio, async-std, or an executor-less system here as well without much headache.
 use breadx::{
-    auto::xproto::ExposeEvent, rgb, DisplayConnection, Event, EventMask, GcParameters, Rectangle,
+    auto::xproto::ExposeEvent, rgb, AsyncDisplayConnection, Event, EventMask, GcParameters, Rectangle,
 };
 use easy_parallel::Parallel;
 use futures_lite::{future, FutureExt, StreamExt};
@@ -56,7 +56,7 @@ async fn x_process(receiver: Receiver<[u8; 3]>) -> breadx::Result<()> {
 
     // create the connection through an async process
     // note that most of this is basically the same as examples/basic.rs, but with the "async" suffix
-    let mut conn = DisplayConnection::create_async(None, None).await?;
+    let mut conn = AsyncDisplayConnection::create_async(None, None).await?;
     let win = conn
         .create_simple_window_async(
             conn.default_screen().root,

@@ -154,7 +154,7 @@ impl<Conn: Connection> super::Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> super::Display<Conn> {
+impl<Conn: AsyncConnection + Send> super::Display<Conn> {
     #[inline]
     pub async fn send_request_internal_async<R: Request>(
         &mut self,
@@ -194,7 +194,7 @@ impl<Conn: AsyncConnection> super::Display<Conn> {
         */
 
         let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
-        let res = connection.send_packet_async(&bytes, fds).await;
+        let res = connection.send_packet(&bytes, fds).await;
         self.connection = Some(connection);
         res?;
 

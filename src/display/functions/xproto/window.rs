@@ -133,7 +133,10 @@ impl Window {
     /// Map this window to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn map_async<Conn: AsyncConnection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn map_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         sr_request!(
             dpy,
             MapWindowRequest {
@@ -198,7 +201,7 @@ impl Window {
     /// Change a property of the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_property_async<Conn: AsyncConnection, T: AsByteSequence>(
+    pub async fn change_property_async<Conn: AsyncConnection + Send, T: AsByteSequence>(
         self,
         dpy: &mut Display<Conn>,
         property: Atom,
@@ -235,7 +238,7 @@ impl Window {
     /// Delete a property of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn delete_property_async<Conn: AsyncConnection>(
+    pub async fn delete_property_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         property: Atom,
@@ -274,7 +277,7 @@ impl Window {
     /// Set the WM protocols for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_wm_protocols_async<Conn: AsyncConnection>(
+    pub async fn set_wm_protocols_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         protocols: &[Atom],
@@ -312,7 +315,7 @@ impl Window {
     /// Set the title for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_title_async<Conn: AsyncConnection>(
+    pub async fn set_title_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         title: &str,
@@ -349,7 +352,7 @@ impl Window {
     /// Get the current set of window attributes for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn window_attributes_async<Conn: AsyncConnection>(
+    pub async fn window_attributes_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
@@ -371,7 +374,7 @@ impl Window {
     /// Immediately get the current set of window attributes for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn window_attributes_immediate_async<Conn: AsyncConnection>(
+    pub async fn window_attributes_immediate_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<WindowAttributes> {
@@ -393,11 +396,11 @@ impl Window {
     /// Get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn geometry_async<Conn: AsyncConnection>(
+    pub async fn geometry_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        dpy.get_drawbale_geometry_async(self).await
+        dpy.get_drawable_geometry_async(self).await
     }
 
     /// Immediately get the geometry of this window.
@@ -412,7 +415,7 @@ impl Window {
     /// Immediately get the geometry of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn geometry_immediate_async<Conn: AsyncConnection>(
+    pub async fn geometry_immediate_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result<DrawableGeometry> {
@@ -445,7 +448,7 @@ impl Window {
     /// Change the properties of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_attributes_async<Conn: AsyncConnection>(
+    pub async fn change_attributes_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         props: WindowParameters,
@@ -470,7 +473,7 @@ impl Window {
     /// Set this window's background color, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_background_color_async<Conn: AsyncConnection>(
+    pub async fn set_background_color_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         clr: u32,
@@ -505,7 +508,7 @@ impl Window {
     /// Configure the window's physical properties, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn configure_async<Conn: AsyncConnection>(
+    pub async fn configure_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         props: ConfigureWindowParameters,
@@ -530,7 +533,7 @@ impl Window {
     /// Set the border of this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_border_width_async<Conn: AsyncConnection>(
+    pub async fn set_border_width_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         width: u32,
@@ -559,7 +562,7 @@ impl Window {
     /// Change the colormap associated with this window.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_colormap_async<Conn: AsyncConnection>(
+    pub async fn set_colormap_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         colormap: Colormap,
@@ -589,7 +592,7 @@ impl Window {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_save_set_async<Conn: AsyncConnection>(
+    pub async fn change_save_set_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         mode: SetMode,
@@ -616,7 +619,7 @@ impl Window {
     /// Resize the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn resize_async<Conn: AsyncConnection>(
+    pub async fn resize_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         width: u32,
@@ -651,7 +654,7 @@ impl Window {
     /// Move and resize the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn move_resize_async<Conn: AsyncConnection>(
+    pub async fn move_resize_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         x: i32,
@@ -689,7 +692,7 @@ impl Window {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn circulate_async<Conn: AsyncConnection>(
+    pub async fn circulate_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         direction: Circulate,
@@ -735,7 +738,7 @@ impl Window {
     /// Clear an area of the window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn clear_area_async<Conn: AsyncConnection>(
+    pub async fn clear_area_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         x: i16,
@@ -761,7 +764,7 @@ impl Window {
     /// Clear the entire window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn clear_async<Conn: AsyncConnection>(
+    pub async fn clear_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result {
@@ -803,7 +806,7 @@ impl Window {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn convert_selection_async<Conn: AsyncConnection>(
+    pub async fn convert_selection_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         selection: Atom,
@@ -836,7 +839,7 @@ impl Window {
     /// Set the cursor used by this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_cursor_async<Conn: AsyncConnection>(
+    pub async fn set_cursor_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         cursor: Cursor,
@@ -863,7 +866,7 @@ impl Window {
     /// Destroy this window's subwindows, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn destroy_subwindows_async<Conn: AsyncConnection>(
+    pub async fn destroy_subwindows_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
     ) -> crate::Result {
@@ -893,7 +896,10 @@ impl Window {
     /// Free this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: AsyncConnection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn free_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         sr_request!(
             dpy,
             DestroyWindowRequest {
@@ -924,7 +930,7 @@ impl Window {
     /// Set the event mask, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn set_event_mask_async<Conn: AsyncConnection>(
+    pub async fn set_event_mask_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         em: EventMask,

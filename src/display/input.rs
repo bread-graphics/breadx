@@ -166,7 +166,7 @@ impl<Conn: Connection> super::Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> super::Display<Conn> {
+impl<Conn: AsyncConnection + Send> super::Display<Conn> {
     // wait for bytes to appear, async redox
     #[inline]
     pub(crate) async fn wait_async(&mut self) -> crate::Result {
@@ -175,16 +175,14 @@ impl<Conn: AsyncConnection> super::Display<Conn> {
         let mut fds: Vec<Fd> = vec![];
 
         // See output.rs for why we do this.
-        self.connection()?
-            .read_packet_async(&mut bytes, &mut fds)
-            .await?;
+        self.connection()?.read_packet(&mut bytes, &mut fds).await?;
 
         self.fix_glx_workaround(&mut bytes)?;
 
         if let Some(ab) = additional_bytes(&bytes[..8]) {
             bytes.extend(iter::repeat(0).take(ab * 4));
             self.connection()?
-                .read_packet_async(&mut bytes[32..], &mut fds)
+                .read_packet(&mut bytes[32..], &mut fds)
                 .await?;
         }
 

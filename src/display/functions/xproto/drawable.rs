@@ -16,8 +16,6 @@ use core::{convert::TryInto, ops::Deref};
 
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
-#[cfg(feature = "async")]
-use futures_lite::stream;
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -291,7 +289,7 @@ impl<Conn: Connection> Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> Display<Conn> {
+impl<Conn: AsyncConnection + Send> Display<Conn> {
     /// Get the geometry of a drawable object, async redox.
     #[inline]
     pub async fn get_drawable_geometry_async<Target: Into<Drawable>>(
@@ -386,7 +384,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
         height: u16,
         depth: u8,
     ) -> crate::Result<Pixmap> {
-        let pixmap = Pixmap::const_from_xid(dpy.generate_xid()?);
+        let pixmap = Pixmap::const_from_xid(self.generate_xid()?);
         sr_request!(
             self,
             create_pixmap_request(target.into(), pixmap, width, height, depth),
@@ -423,15 +421,17 @@ impl<Conn: AsyncConnection> Display<Conn> {
             height,
         );
 
-        let toks = stream::iter(reqs)
-            .then(|req| async move { send_request!(self, req, async).await })
-            .try_collect()
-            .await?;
+        // TODO: use streams to do this once async closures are stable
+        let mut toks = Vec::with_capacity(reqs.len());
+        for req in reqs {
+            toks.push(send_request!(self, req, async).await?);
+        }
 
-        stream::iter(toks)
-            .then(|tok| async move { self.resolve_request_async(tok).await })
-            .try_for_each()
-            .await
+        for tok in toks {
+            self.resolve_request_async(tok).await?;
+        }
+
+        Ok(())
     }
 
     /// Create a pixmap from an image, async redox.
@@ -465,7 +465,7 @@ impl<Conn: AsyncConnection> Display<Conn> {
 
         self.put_image_async(target, gc, image, 0, 0, 0, 0, image.width, image.height)
             .await?;
-        gc.free_async(dpy).await?;
+        gc.free_async(self).await?;
         Ok(pixmap)
     }
 }

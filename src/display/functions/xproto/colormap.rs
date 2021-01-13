@@ -96,7 +96,7 @@ impl Colormap {
     /// Allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_async<Conn: AsyncConnection>(
+    pub async fn alloc_color_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         r: u16,
@@ -127,7 +127,7 @@ impl Colormap {
     /// Immediately allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_immediate_async<Conn: AsyncConnection>(
+    pub async fn alloc_color_immediate_async<Conn: AsyncConnection + Send>(
         self,
         dpy: &mut Display<Conn>,
         r: u16,

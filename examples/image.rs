@@ -3,7 +3,7 @@
 // source of eisenhower image:
 // https://commons.wikimedia.org/wiki/File:Dwight_D._Eisenhower,_official_photo_portrait,_May_29,_1959.jpg
 
-use breadx::{drawable, rgb, BreadError, DisplayConnection, Event, EventMask, Image, ImageFormat};
+use breadx::{rgb, BreadError, DisplayConnection, Event, EventMask, Image, ImageFormat};
 use image::{io::Reader, GenericImageView};
 use std::{io::Cursor, iter};
 
@@ -78,9 +78,8 @@ fn main() -> Result<(), BreadError> {
     });
 
     // Create a pixmap based on the window.
-    let pixmap = drawable::create_pixmap(&mut conn, window, width as _, height as _, depth)?;
-    drawable::put_image(
-        &mut conn,
+    let pixmap = conn.create_pixmap(window, width as _, height as _, depth)?;
+    conn.put_image(
         pixmap,
         gc,
         &image,
@@ -108,8 +107,7 @@ fn main() -> Result<(), BreadError> {
             }
             Event::Expose(_) => {
                 // Copy the Eisenhower image from the pixmap to this window.
-                drawable::copy_area(
-                    &mut conn,
+                conn.copy_area(
                     pixmap,
                     window,
                     gc,

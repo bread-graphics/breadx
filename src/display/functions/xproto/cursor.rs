@@ -23,7 +23,10 @@ impl Cursor {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: AsyncConnection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn free_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         sr_request!(
             dpy,
             FreeCursorRequest {
