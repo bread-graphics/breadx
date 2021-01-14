@@ -82,6 +82,7 @@ pub(crate) fn vector_from_bytes<T: AsByteSequence>(
     bytes: &[u8],
     len: usize,
 ) -> Option<(Vec<T>, usize)> {
+    #[cfg(debug_assertions)]
     log::trace!("Deserializing vector of byte length {} from bytes", len);
 
     // allocate the vector
@@ -238,6 +239,7 @@ macro_rules! impl_fundamental_num {
 
             #[inline]
             fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+                #[cfg(debug_assertions)]
                 log::trace!("Deserializing {} from bytes", stringify!($t));
 
                 cfg_if::cfg_if! {

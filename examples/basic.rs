@@ -94,6 +94,9 @@ fn main() {
                 let geometry = window.geometry_immediate(&mut conn).unwrap();
                 println!("Window is [{} x {}]", geometry.width, geometry.height);
 
+                // turn off checked mode to speed up painting
+                conn.set_checked(false);
+
                 let mut gc_params: GcParameters = Default::default();
                 gc_params.foreground = Some(red_clr);
                 gc.change(&mut conn, gc_params.clone()).unwrap();
@@ -168,6 +171,8 @@ fn main() {
                     },
                 )
                 .unwrap();
+
+                conn.set_checked(true);
             }
             _ => (),
         }

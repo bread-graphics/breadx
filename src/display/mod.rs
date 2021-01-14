@@ -98,6 +98,9 @@ pub struct Display<Conn> {
     // store the interned atoms
     pub(crate) wm_protocols_atom: Option<NonZeroU32>,
 
+    // tell whether or not we care about the output of zero-sized replies
+    pub(crate) checked: bool,
+
     // context db
     //    context: HashMap<(XID, ContextID), NonNull<c_void>>,
 
@@ -244,6 +247,7 @@ impl<Conn> Display<Conn> {
             pending_errors: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
+            checked: true,
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
         }
@@ -352,6 +356,20 @@ impl<Conn> Display<Conn> {
     pub fn check_if_event<F: FnMut(&Event) -> bool>(&self, predicate: F) -> bool {
         self.event_queue.iter().any(predicate)
     }
+
+    /// Set whether or not to synchronize the display after every void request to check for errors.
+    /// Turning this off improves speed, but makes it difficult to match errors to certain calls.
+    /// This is on by default.
+    #[inline]
+    pub fn set_checked(&mut self, checked: bool) {
+        self.checked = checked;
+
+        // if we're turning off checked mode, we no longer care about any of the "checked"
+        // objects in pending_requests
+        if !checked {
+            self.pending_requests.retain(|_, val| !val.flags.checked);
+        }
+    }
 }
 
 impl<Conn: Connection> Display<Conn> {
@@ -360,7 +378,8 @@ impl<Conn: Connection> Display<Conn> {
     /// we're sure we've received the discarded `GetInputFocusReply`, we know we've successfully
     /// emptied the `pending_requests` array.
     #[inline]
-    fn synchronize(&mut self) -> crate::Result {
+    pub fn synchronize(&mut self) -> crate::Result {
+        log::debug!("Synchronizing display");
         let sequence = self
             .send_request_internal(GetInputFocusRequest::default(), true)?
             .sequence();
@@ -398,16 +417,18 @@ impl<Conn: Connection> Display<Conn> {
         R::Reply: Default,
     {
         if mem::size_of::<R::Reply>() == 0 {
-            // check the request for errors by synchronizing the connection
-            // TODO: might end up being slow if we do this for every void-cookie request, maybe set up
-            //       an option of some kind?
-            self.synchronize()?;
-            let seq = token.sequence();
-            self.pending_requests.remove(&seq);
-            match self.pending_errors.remove(&seq) {
-                Some(err) => return Err(err),
-                None => return Ok(Default::default()),
-            };
+            // check the request for errors by synchronizing the connection, assuming we care about
+            // that
+            if self.checked {
+                self.synchronize()?;
+                let seq = token.sequence();
+                self.pending_requests.remove(&seq);
+                if let Some(err) = self.pending_errors.remove(&seq) {
+                    return Err(err);
+                }
+            }
+
+            return Ok(Default::default());
         }
 
         loop {
@@ -522,7 +543,7 @@ impl<Conn: Connection> Display<Conn> {
 impl<Conn: AsyncConnection + Send> Display<Conn> {
     /// Forces the server to synchronize itself, async redox.
     #[inline]
-    fn synchronize_async<'future>(
+    pub fn synchronize_async<'future>(
         &'future mut self,
     ) -> Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>> {
         Box::pin(async move {
@@ -531,9 +552,7 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
                 .send_request_internal_async(GetInputFocusRequest::default(), true)
                 .await?
                 .sequence();
-            // essentially a do/while loop
             while self.pending_requests.contains_key(&sequence) {
-                log::error!("{:?}", &self.pending_requests);
                 self.wait_async().await?;
             }
 
@@ -563,15 +582,15 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
     {
         if mem::size_of::<R::Reply>() == 0 {
             // check the request for errors by synchronizing the connection
-            // TODO: might end up being slow if we do this for every void-cookie request, maybe set up
-            //       an option of some kind?
-            self.synchronize_async().await?;
-            let seq = token.sequence();
-            self.pending_requests.remove(&seq);
-            match self.pending_errors.remove(&seq) {
-                Some(err) => return Err(err),
-                None => return Ok(Default::default()),
-            };
+            if self.checked {
+                self.synchronize_async().await?;
+                let seq = token.sequence();
+                self.pending_requests.remove(&seq);
+                if let Some(err) = self.pending_errors.remove(&seq) {
+                    return Err(err);
+                };
+            }
+            return Ok(Default::default());
         }
 
         loop {

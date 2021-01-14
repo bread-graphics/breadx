@@ -3,7 +3,7 @@
 use super::{Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE};
 use crate::{util::cycled_zeroes, Fd, Request};
 use alloc::{string::ToString, vec, vec::Vec};
-use core::iter;
+use core::{iter, mem};
 use tinyvec::TinyVec;
 
 #[cfg(feature = "async")]
@@ -76,6 +76,7 @@ impl<Conn> super::Display<Conn> {
         let mut flags = PendingRequestFlags {
             expects_fds: R::REPLY_EXPECTS_FDS,
             discard_reply,
+            checked: mem::size_of::<R::Reply>() == 0 && self.checked,
             ..Default::default()
         };
 
@@ -102,7 +103,9 @@ impl<Conn> super::Display<Conn> {
             _ => (),
         }
 
-        self.expect_reply(sequence, flags);
+        if mem::size_of::<R::Reply>() != 0 || self.checked {
+            self.expect_reply(sequence, flags);
+        }
 
         (sequence, bytes)
     }

@@ -190,6 +190,8 @@ impl<Conn: AsyncConnection + Send> super::Display<Conn> {
     // wait for bytes to appear, async redox
     #[inline]
     pub(crate) async fn wait_async(&mut self) -> crate::Result {
+        #[cfg(debug_assertions)]
+        log::debug!("Beginning wait cycle.");
         // see above function for more information
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
         let mut fds: Vec<Fd> = vec![];
