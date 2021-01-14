@@ -7,9 +7,13 @@
 use crate::{
     auth_info::AuthInfo,
     auto::{
-        xproto::{Colormap, Screen, Setup, SetupRequest, Visualid, Visualtype, Window},
+        xproto::{
+            Colormap, GetInputFocusRequest, Screen, Setup, SetupRequest, Visualid, Visualtype,
+            Window,
+        },
         AsByteSequence,
     },
+    error::BreadError,
     event::Event,
     util::cycled_zeroes,
     xid::XidGenerator,
@@ -80,21 +84,22 @@ pub struct Display<Conn> {
     // the screen to be used by default
     default_screen: usize,
 
-    // input variables
     pub(crate) event_queue: VecDeque<Event>,
     pub(crate) pending_requests: HashMap<u16, PendingRequest>,
+    pub(crate) pending_errors: HashMap<u16, BreadError>,
     #[allow(clippy::type_complexity)]
     pub(crate) pending_replies: HashMap<u16, (Box<[u8]>, Box<[Fd]>)>,
 
     // special events queue
-    #[allow(clippy::type_complexity)]
     pub(crate) special_event_queues: HashMap<XID, VecDeque<Event>>,
 
-    // output variables
     request_number: u64,
 
     // store the interned atoms
     pub(crate) wm_protocols_atom: Option<NonZeroU32>,
+
+    // tell whether or not we care about the output of zero-sized replies
+    pub(crate) checked: bool,
 
     // context db
     //    context: HashMap<(XID, ContextID), NonNull<c_void>>,
@@ -126,6 +131,12 @@ impl<R: Request> RequestCookie<R> {
             sequence: sequence as u16, // truncate to lower bits
             _phantom: PhantomData,
         }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn sequence(self) -> u16 {
+        self.sequence
     }
 }
 
@@ -233,8 +244,10 @@ impl<Conn> Display<Conn> {
             special_event_queues: HashMap::with_capacity(1),
             pending_requests: HashMap::with_capacity(4),
             pending_replies: HashMap::with_capacity(4),
+            pending_errors: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
+            checked: true,
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
         }
@@ -343,9 +356,42 @@ impl<Conn> Display<Conn> {
     pub fn check_if_event<F: FnMut(&Event) -> bool>(&self, predicate: F) -> bool {
         self.event_queue.iter().any(predicate)
     }
+
+    /// Set whether or not to synchronize the display after every void request to check for errors.
+    /// Turning this off improves speed, but makes it difficult to match errors to certain calls.
+    /// This is on by default.
+    #[inline]
+    pub fn set_checked(&mut self, checked: bool) {
+        self.checked = checked;
+
+        // if we're turning off checked mode, we no longer care about any of the "checked"
+        // objects in pending_requests
+        if !checked {
+            self.pending_requests.retain(|_, val| !val.flags.checked);
+        }
+    }
 }
 
 impl<Conn: Connection> Display<Conn> {
+    /// Forces the server to synchronize itself and send all packets.
+    /// This is done by sending a `GetInputFocusRequest` to the server and discarding the reply. Once
+    /// we're sure we've received the discarded `GetInputFocusReply`, we know we've successfully
+    /// emptied the `pending_requests` array.
+    #[inline]
+    pub fn synchronize(&mut self) -> crate::Result {
+        log::debug!("Synchronizing display");
+        let sequence = self
+            .send_request_internal(GetInputFocusRequest::default(), true)?
+            .sequence();
+        // essentially a do/while loop
+        while {
+            self.wait()?;
+            self.pending_requests.contains_key(&sequence)
+        } {}
+
+        Ok(())
+    }
+
     /// Send a request object to the X11 server.
     ///
     /// Given a request object, this function sends it across the connection to the X11 server and returns
@@ -354,7 +400,7 @@ impl<Conn: Connection> Display<Conn> {
     /// the best option.
     #[inline]
     pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
-        self.send_request_internal(req)
+        self.send_request_internal(req, false)
     }
 
     /// Wait for a request from the X11 server.
@@ -371,8 +417,17 @@ impl<Conn: Connection> Display<Conn> {
         R::Reply: Default,
     {
         if mem::size_of::<R::Reply>() == 0 {
-            // spin one cycle of the wait process to resolve errors
-            //            self.wait()?;
+            // check the request for errors by synchronizing the connection, assuming we care about
+            // that
+            if self.checked {
+                self.synchronize()?;
+                let seq = token.sequence();
+                self.pending_requests.remove(&seq);
+                if let Some(err) = self.pending_errors.remove(&seq) {
+                    return Err(err);
+                }
+            }
+
             return Ok(Default::default());
         }
 
@@ -486,6 +541,25 @@ impl<Conn: Connection> Display<Conn> {
 
 #[cfg(feature = "async")]
 impl<Conn: AsyncConnection + Send> Display<Conn> {
+    /// Forces the server to synchronize itself, async redox.
+    #[inline]
+    pub fn synchronize_async<'future>(
+        &'future mut self,
+    ) -> Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>> {
+        Box::pin(async move {
+            log::debug!("Synchronizing display");
+            let sequence = self
+                .send_request_internal_async(GetInputFocusRequest::default(), true)
+                .await?
+                .sequence();
+            while self.pending_requests.contains_key(&sequence) {
+                self.wait_async().await?;
+            }
+
+            Ok(())
+        })
+    }
+
     /// Send a request object to the X11 server, async redox. See the `send_request` function for more
     /// information.
     #[inline]
@@ -493,7 +567,7 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         &'future mut self,
         req: R,
     ) -> Pin<Box<dyn Future<Output = crate::Result<RequestCookie<R>>> + Send + 'future>> {
-        Box::pin(self.send_request_internal_async(req))
+        Box::pin(self.send_request_internal_async(req, false))
     }
 
     /// Wait for a request from the X11 server, async redox. See the `resolve_request` function for more
@@ -507,8 +581,15 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         R::Reply: Default,
     {
         if mem::size_of::<R::Reply>() == 0 {
-            // spin one cycle of the wait process to resolve errors
-            //            self.wait_async().await?;
+            // check the request for errors by synchronizing the connection
+            if self.checked {
+                self.synchronize_async().await?;
+                let seq = token.sequence();
+                self.pending_requests.remove(&seq);
+                if let Some(err) = self.pending_errors.remove(&seq) {
+                    return Err(err);
+                };
+            }
             return Ok(Default::default());
         }
 

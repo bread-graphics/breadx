@@ -14,7 +14,7 @@ use smol::{
     channel::{unbounded, Receiver, Sender},
     Executor, Timer,
 };
-use std::{mem, time::Duration};
+use std::{env, mem, time::Duration};
 
 // coroutine base: wait 3 seconds, generate three random numbers, and send them down the channel
 #[inline]
@@ -181,6 +181,9 @@ async fn entry(ex: &Executor<'_>) -> breadx::Result<()> {
 }
 
 fn main() -> breadx::Result<()> {
+    env::set_var("RUST_LOG", "breadx=trace");
+    env_logger::init();
+
     // spawn the executor
     let (signal, shutdown) = unbounded::<()>();
     let ex = Executor::new();

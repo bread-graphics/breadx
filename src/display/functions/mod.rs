@@ -46,7 +46,7 @@ macro_rules! send_request {
             let tok = ($dpy).send_request_async(req).await?;
 
             #[cfg(debug_assertions)]
-            log::debug!("Sent {} to server.", stringify!($reqname));
+            log::debug!("Sent request to server.");
 
             Ok::<_, crate::BreadError>(tok)
         }

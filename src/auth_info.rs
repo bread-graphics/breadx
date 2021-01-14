@@ -142,7 +142,11 @@ impl AuthInfo {
     #[inline]
     pub(crate) fn get() -> Self {
         if let Some(mut v) = Self::from_xauthority() {
-            v.remove(0)
+            if v.is_empty() {
+                Default::default()
+            } else {
+                v.remove(0)
+            }
         } else {
             log::error!("Failed to get AuthInfo from XAUTHORITY, using empty auth info");
             Default::default()
@@ -153,7 +157,13 @@ impl AuthInfo {
     #[inline]
     pub(crate) async fn get_async() -> Self {
         match Self::from_xauthority_async().await {
-            Some(mut v) => v.remove(0),
+            Some(mut v) => {
+                if v.is_empty() {
+                    Default::default()
+                } else {
+                    v.remove(0)
+                }
+            }
             None => Default::default(),
         }
     }

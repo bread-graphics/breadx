@@ -92,6 +92,9 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
     })
     .await?;
 
+    #[cfg(debug_assertions)]
+    log::trace!("Done with write_with()");
+
     Ok(())
 }
 
@@ -100,22 +103,29 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
 #[inline]
 fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
     const MAX_FDS: usize = 16;
+
+    if data.is_empty() {
+        return Ok(());
+    }
+
     let mut cmsg = nix::cmsg_space!([Fd; MAX_FDS]);
     let mut datalen = data.len();
     let mut datavec = [IoVec::from_mut_slice(data)];
 
     let msg = loop {
+        log::debug!("Calling recvmsg with a data buffer of length {}", datalen);
         match recvmsg(conn, &datavec, Some(&mut cmsg), MsgFlags::empty()) {
             Ok(m) if m.bytes == 0 => break m,
             Ok(m) if m.bytes == datalen => break m,
             Ok(m) => {
+                #[cfg(debug_assertions)]
                 log::debug!("recvmsg: yet to receive {} bytes", data.len() - m.bytes);
                 data = &mut data[m.bytes..];
                 datalen = data.len();
                 datavec = [IoVec::from_mut_slice(data)];
             }
             Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => {
-                log::debug!("Interrupt occurred during read ");
+                log::info!("Interrupt occurred during read");
             }
             Err(e) => return Err(convert_nix_error(e)),
         }
