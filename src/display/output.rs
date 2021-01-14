@@ -3,7 +3,7 @@
 use super::{Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE};
 use crate::{util::cycled_zeroes, Fd, Request};
 use alloc::{string::ToString, vec, vec::Vec};
-use core::{iter, mem};
+use core::iter;
 use tinyvec::TinyVec;
 
 #[cfg(feature = "async")]
@@ -26,6 +26,7 @@ impl<Conn> super::Display<Conn> {
         &mut self,
         req: &R,
         ext_opcode: Option<u8>,
+        discard_reply: bool,
     ) -> (u64, TinyVec<[u8; 32]>) {
         let sequence = self.request_number;
         self.request_number += 1;
@@ -74,6 +75,7 @@ impl<Conn> super::Display<Conn> {
 
         let mut flags = PendingRequestFlags {
             expects_fds: R::REPLY_EXPECTS_FDS,
+            discard_reply,
             ..Default::default()
         };
 
@@ -84,11 +86,6 @@ impl<Conn> super::Display<Conn> {
         // to summarize, the X server makes an arithmatic error when calculating the length of the reply of
         // requests GetFBConfigs and VendorPrivate. in these replies, they forget to multiply the length value
         // by two. therefore, on the input end, we have to multiply it by two ourselves.
-        //
-        // the reason why this is enraging is because i just came out of combing through the codebase of both
-        // breadglx and breadx for why this would happen, when it turns out the answer is just "X server broke,
-        // multiply value by two, lol". the rage i feel that this bug is now baked into the X protocol is
-        // immeasurable, but not immeasurable enough for me to switch to Wayland
         match (
             R::EXTENSION,
             R::OPCODE,
@@ -105,9 +102,7 @@ impl<Conn> super::Display<Conn> {
             _ => (),
         }
 
-        if mem::size_of::<R::Reply>() != 0 {
-            self.expect_reply(sequence, flags);
-        }
+        self.expect_reply(sequence, flags);
 
         (sequence, bytes)
     }
@@ -118,12 +113,14 @@ impl<Conn: Connection> super::Display<Conn> {
     pub fn send_request_internal<R: Request>(
         &mut self,
         mut req: R,
+        discard_reply: bool,
     ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,
             Some(ext) => Some(self.get_ext_opcode(ext)?),
         };
-        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) = self.encode_request(&req, ext_opcode);
+        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) =
+            self.encode_request(&req, ext_opcode, discard_reply);
 
         let mut _dummy: Vec<Fd> = vec![];
         let fds = match req.file_descriptors() {
@@ -159,12 +156,13 @@ impl<Conn: AsyncConnection + Send> super::Display<Conn> {
     pub async fn send_request_internal_async<R: Request>(
         &mut self,
         mut req: R,
+        discard_reply: bool,
     ) -> crate::Result<RequestCookie<R>> {
         let ext_opcode = match R::EXTENSION {
             None => None,
             Some(ext) => Some(self.get_ext_opcode_async(ext).await?),
         };
-        let (sequence, bytes) = self.encode_request(&req, ext_opcode);
+        let (sequence, bytes) = self.encode_request(&req, ext_opcode, discard_reply);
 
         let mut _dummy: Vec<Fd> = vec![];
         let fds = match req.file_descriptors() {
@@ -190,6 +188,9 @@ impl<Conn: AsyncConnection + Send> super::Display<Conn> {
         Once send_packet_async is done, even if it finished with an error, we return the Connection
         to its place in the display. If it isn't there, we can assume it's tainted and we can throw
         an error.
+
+        As a side effect, the connection becomes tainted if send_packet panics. This might be desirable
+        behavior.
 
         */
 

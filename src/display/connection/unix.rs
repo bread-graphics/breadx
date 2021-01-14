@@ -92,6 +92,9 @@ pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
     })
     .await?;
 
+    #[cfg(debug_assertions)]
+    log::trace!("Done with write_with()");
+
     Ok(())
 }
 
