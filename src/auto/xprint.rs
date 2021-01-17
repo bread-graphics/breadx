@@ -2226,78 +2226,6 @@ impl AsByteSequence for PrintGetImageResolutionReply {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum GetDoc {
-    Finished = 0,
-    SecondConsumer = 1,
-}
-impl AsByteSequence for GetDoc {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Finished, sz)),
-            1 => Some((Self::SecondConsumer, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for GetDoc {
-    #[inline]
-    fn default() -> GetDoc {
-        GetDoc::Finished
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Attr {
-    JobAttr = 1,
-    DocAttr = 2,
-    PageAttr = 3,
-    PrinterAttr = 4,
-    ServerAttr = 5,
-    MediumAttr = 6,
-    SpoolerAttr = 7,
-}
-impl AsByteSequence for Attr {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            1 => Some((Self::JobAttr, sz)),
-            2 => Some((Self::DocAttr, sz)),
-            3 => Some((Self::PageAttr, sz)),
-            4 => Some((Self::PrinterAttr, sz)),
-            5 => Some((Self::ServerAttr, sz)),
-            6 => Some((Self::MediumAttr, sz)),
-            7 => Some((Self::SpoolerAttr, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for Attr {
-    #[inline]
-    fn default() -> Attr {
-        Attr::JobAttr
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Detail {
     StartJobNotify = 1,
     EndJobNotify = 2,
@@ -2433,6 +2361,78 @@ impl core::ops::BitXor for EvMask {
         EvMask {
             inner: self.inner ^ rhs.inner,
         }
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Attr {
+    JobAttr = 1,
+    DocAttr = 2,
+    PageAttr = 3,
+    PrinterAttr = 4,
+    ServerAttr = 5,
+    MediumAttr = 6,
+    SpoolerAttr = 7,
+}
+impl AsByteSequence for Attr {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            1 => Some((Self::JobAttr, sz)),
+            2 => Some((Self::DocAttr, sz)),
+            3 => Some((Self::PageAttr, sz)),
+            4 => Some((Self::PrinterAttr, sz)),
+            5 => Some((Self::ServerAttr, sz)),
+            6 => Some((Self::MediumAttr, sz)),
+            7 => Some((Self::SpoolerAttr, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for Attr {
+    #[inline]
+    fn default() -> Attr {
+        Attr::JobAttr
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GetDoc {
+    Finished = 0,
+    SecondConsumer = 1,
+}
+impl AsByteSequence for GetDoc {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Finished, sz)),
+            1 => Some((Self::SecondConsumer, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for GetDoc {
+    #[inline]
+    fn default() -> GetDoc {
+        GetDoc::Finished
     }
 }
 #[derive(Clone, Debug, Default)]

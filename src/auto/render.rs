@@ -4342,6 +4342,37 @@ impl Default for PolyMode {
 }
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PolyEdge {
+    Sharp = 0,
+    Smooth = 1,
+}
+impl AsByteSequence for PolyEdge {
+    #[inline]
+    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
+        (*self as i32).as_bytes(bytes)
+    }
+    #[inline]
+    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
+        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
+        match underlying {
+            0 => Some((Self::Sharp, sz)),
+            1 => Some((Self::Smooth, sz)),
+            _ => None,
+        }
+    }
+    #[inline]
+    fn size(&self) -> usize {
+        ::core::mem::size_of::<i32>()
+    }
+}
+impl Default for PolyEdge {
+    #[inline]
+    fn default() -> PolyEdge {
+        PolyEdge::Sharp
+    }
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SubPixel {
     Unknown = 0,
     HorizontalRgb = 1,
@@ -4412,36 +4443,5 @@ impl Default for Repeat {
     #[inline]
     fn default() -> Repeat {
         Repeat::None
-    }
-}
-#[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum PolyEdge {
-    Sharp = 0,
-    Smooth = 1,
-}
-impl AsByteSequence for PolyEdge {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        (*self as i32).as_bytes(bytes)
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let (underlying, sz): (i32, usize) = <i32>::from_bytes(bytes)?;
-        match underlying {
-            0 => Some((Self::Sharp, sz)),
-            1 => Some((Self::Smooth, sz)),
-            _ => None,
-        }
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        ::core::mem::size_of::<i32>()
-    }
-}
-impl Default for PolyEdge {
-    #[inline]
-    fn default() -> PolyEdge {
-        PolyEdge::Sharp
     }
 }

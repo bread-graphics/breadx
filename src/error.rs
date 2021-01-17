@@ -2,7 +2,7 @@
 
 //! This module provides structures used in error handling of `breadx` functions.
 
-use alloc::borrow::Cow;
+use alloc::{borrow::Cow, string::String};
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
 use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
@@ -11,6 +11,8 @@ use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
 #[derive(Debug, Clone)]
 pub enum BreadError {
     StaticMsg(&'static str),
+    Msg(String),
+    StaticErr(&'static BreadError),
     /// Unable to parse connection name.
     UnableToParseConnection,
     /// Unable to open connection to X11 server.
@@ -77,6 +79,8 @@ impl fmt::Display for BreadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::StaticMsg(m) => f.write_str(m),
+            Self::Msg(m) => f.write_str(m),
+            Self::StaticErr(e) => write!(f, "{}", e),
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
             Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),

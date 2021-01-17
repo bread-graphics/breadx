@@ -224,11 +224,59 @@ impl<Conn> Display<Conn> {
 
     /// Register a queue for special events in the display.
     #[inline]
-    pub fn register_special_event(&mut self) -> crate::Result<XID> {
-        let eid = self.generate_xid()?;
+    pub fn register_special_event(&mut self, eid: XID) {
         self.special_event_queues
             .insert(eid, VecDeque::with_capacity(8));
-        Ok(eid)
+    }
+
+    /// Unregister for a special event.
+    #[inline]
+    pub fn unregister_special_event(&mut self, eid: XID) {
+        self.special_event_queues.remove(&eid);
+    }
+
+    /// Try to get a special event without waiting for it.
+    #[inline]
+    pub fn get_special_event(&mut self, eid: XID) -> Option<Event> {
+        self.special_event_queues
+            .get_mut(&eid)
+            .and_then(VecDeque::pop_front)
+    }
+
+    /// Try to get special events without waiting for them.
+    #[inline]
+    pub fn get_special_events(&mut self, eid: XID) -> impl Iterator<Item = Event> + '_ {
+        enum SpecEventIter<'a> {
+            QueueDrain(std::collections::vec_deque::Drain<'a, Event>),
+            Empty,
+        }
+
+        impl<'a> Iterator for SpecEventIter<'a> {
+            type Item = Event;
+
+            #[inline]
+            fn next(&mut self) -> Option<Event> {
+                match self {
+                    Self::Empty => None,
+                    Self::QueueDrain(ref mut qd) => qd.next(),
+                }
+            }
+
+            #[inline]
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                match self {
+                    Self::QueueDrain(ref qd) => qd.size_hint(),
+                    Self::Empty => (0, Some(0)),
+                }
+            }
+        }
+
+        impl<'a> ExactSizeIterator for SpecEventIter<'a> {}
+
+        match self.special_event_queues.get_mut(&eid) {
+            Some(queue) => SpecEventIter::QueueDrain(queue.drain(..)),
+            None => SpecEventIter::Empty,
+        }
     }
 
     #[inline]
@@ -369,6 +417,11 @@ impl<Conn> Display<Conn> {
         if !checked {
             self.pending_requests.retain(|_, val| !val.flags.checked);
         }
+    }
+
+    #[inline]
+    pub fn checked(&self) -> bool {
+        self.checked
     }
 }
 
