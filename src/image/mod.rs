@@ -12,7 +12,7 @@ pub(crate) mod put;
 
 use crate::{
     auto::xproto::{ImageFormat, ImageOrder, Visualtype},
-    display::{Connection, Display},
+    display::Display,
     util::{reverse_bytes, roundup},
 };
 use alloc::boxed::Box;
@@ -131,7 +131,7 @@ const OS_BYTE_ORDER: ImageOrder = ImageOrder::MsbFirst;
 
 /// Helper function to get the bits per pixel and scanline pad for a given depth.
 #[inline]
-fn bits_per_pixel<Conn: Connection>(dpy: &Display<Conn>, depth: u8) -> u8 {
+fn bits_per_pixel<Conn>(dpy: &Display<Conn>, depth: u8) -> u8 {
     dpy.setup()
         .pixmap_formats
         .iter()
@@ -315,7 +315,7 @@ where
     /// height, scanline quantum (8, 16, or 32) and the number of bytes per line (how many
     /// bytes between a pixel on one line and a pixel with the same X position on another line?)
     #[inline]
-    pub fn new<Conn: Connection>(
+    pub fn new<Conn>(
         dpy: &Display<Conn>,
         visual: Option<&Visualtype>,
         depth: u8,
