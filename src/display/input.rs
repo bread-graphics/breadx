@@ -11,7 +11,7 @@ use super::AsyncConnection;
 
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
-const GENERIC_EVENT: u8 = 32;
+const GENERIC_EVENT: u8 = 35;
 const GE_MASK: u8 = 0x7f;
 
 impl<Conn> super::Display<Conn> {
