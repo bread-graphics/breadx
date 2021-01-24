@@ -34,7 +34,7 @@ impl<Conn: Connection> Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> Display<Conn> {
+impl<Conn: AsyncConnection + Send> Display<Conn> {
     #[inline]
     pub async fn trigger_fence_async(&mut self, fence: Fence) -> crate::Result {
         sr_request!(
