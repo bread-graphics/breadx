@@ -247,7 +247,7 @@ impl<Conn> Display<Conn> {
     #[inline]
     pub fn get_special_events(&mut self, eid: XID) -> impl Iterator<Item = Event> + '_ {
         enum SpecEventIter<'a> {
-            QueueDrain(std::collections::vec_deque::Drain<'a, Event>),
+            QueueDrain(alloc::collections::vec_deque::Drain<'a, Event>),
             Empty,
         }
 
