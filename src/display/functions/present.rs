@@ -3,10 +3,12 @@
 #![cfg(feature = "present")]
 
 use crate::{
-    auto::present::QueryVersionRequest,
+    auto::present::{
+        Event, EventMask, QueryCapabilitiesRequest, QueryVersionRequest, SelectInputRequest,
+    },
     display::{Connection, Display, RequestCookie},
     extension::ExtensionVersion,
-    send_request,
+    send_request, sr_request, Drawable, Window, XID,
 };
 
 #[cfg(feature = "async")]
@@ -42,6 +44,48 @@ impl<Conn: Connection> Display<Conn> {
             minor: reply.minor_version,
         })
     }
+
+    #[inline]
+    pub fn present_capabilities<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> crate::Result<RequestCookie<QueryCapabilitiesRequest>> {
+        send_request!(
+            self,
+            QueryCapabilitiesRequest {
+                target: drawable.into().xid,
+                ..Default::default()
+            }
+        )
+    }
+
+    #[inline]
+    pub fn present_capabilities_immediate<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> crate::Result<u32> {
+        let tok = self.present_capabilities(drawable)?;
+        let pc = self.resolve_request(tok)?;
+        Ok(pc.capabilities)
+    }
+
+    #[inline]
+    pub fn present_select_input(
+        &mut self,
+        eid: XID,
+        window: Window,
+        em: EventMask,
+    ) -> crate::Result<()> {
+        sr_request!(
+            self,
+            SelectInputRequest {
+                eid: Event::const_from_xid(eid),
+                window,
+                event_mask: em,
+                ..Default::default()
+            }
+        )
+    }
 }
 
 #[cfg(feature = "async")]
@@ -76,5 +120,51 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
             major: reply.major_version,
             minor: reply.minor_version,
         })
+    }
+
+    #[inline]
+    pub async fn present_capabilities_async<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> crate::Result<RequestCookie<QueryCapabilitiesRequest>> {
+        send_request!(
+            self,
+            QueryCapabilitiesRequest {
+                target: drawable.into().xid,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    #[inline]
+    pub async fn present_capabilities_immediate_async<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> crate::Result<u32> {
+        let tok = self.present_capabilities_async(drawable).await?;
+        let pc = self.resolve_request_async(tok).await?;
+        Ok(pc.capabilities)
+    }
+
+    #[inline]
+    pub async fn present_select_input_async(
+        &mut self,
+        eid: XID,
+        window: Window,
+        em: EventMask,
+    ) -> crate::Result<()> {
+        sr_request!(
+            self,
+            SelectInputRequest {
+                eid: Event::const_from_xid(eid),
+                window,
+                event_mask: em,
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 }

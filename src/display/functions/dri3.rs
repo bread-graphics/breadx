@@ -5,8 +5,10 @@
 use crate::{
     auto::{
         dri3::{
-            FenceFromFdRequest, GetSupportedModifiersReply, GetSupportedModifiersRequest,
-            OpenRequest, PixmapFromBufferRequest, PixmapFromBuffersRequest, QueryVersionRequest,
+            BufferFromPixmapReply, BufferFromPixmapRequest, BuffersFromPixmapReply,
+            BuffersFromPixmapRequest, FenceFromFdRequest, GetSupportedModifiersReply,
+            GetSupportedModifiersRequest, OpenRequest, PixmapFromBufferRequest,
+            PixmapFromBuffersRequest, QueryVersionRequest,
         },
         sync::Fence,
         xproto::Drawable,
@@ -212,11 +214,58 @@ impl<Conn: Connection> Display<Conn> {
             FenceFromFdRequest {
                 drawable,
                 initially_triggered,
+                fence: xid.xid,
                 fence_fd: vec![fence_fd],
                 ..Default::default()
             }
         )?;
         Ok(xid)
+    }
+
+    #[inline]
+    pub fn buffer_from_pixmap(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<RequestCookie<BufferFromPixmapRequest>> {
+        send_request!(
+            self,
+            BufferFromPixmapRequest {
+                pixmap,
+                ..Default::default()
+            }
+        )
+    }
+
+    #[inline]
+    pub fn buffer_from_pixmap_immediate(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<BufferFromPixmapReply> {
+        let bfp = self.buffer_from_pixmap(pixmap)?;
+        self.resolve_request(bfp)
+    }
+
+    #[inline]
+    pub fn buffers_from_pixmap(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<RequestCookie<BuffersFromPixmapRequest>> {
+        send_request!(
+            self,
+            BuffersFromPixmapRequest {
+                pixmap,
+                ..Default::default()
+            }
+        )
+    }
+
+    #[inline]
+    pub fn buffers_from_pixmap_immediate(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<BuffersFromPixmapReply> {
+        let bfp = self.buffers_from_pixmap(pixmap)?;
+        self.resolve_request(bfp)
     }
 }
 
@@ -408,6 +457,7 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
             FenceFromFdRequest {
                 drawable,
                 initially_triggered,
+                fence: xid.xid,
                 fence_fd: vec![fence_fd],
                 ..Default::default()
             },
@@ -415,5 +465,55 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         )
         .await?;
         Ok(xid)
+    }
+
+    #[inline]
+    pub async fn buffer_from_pixmap_async(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<RequestCookie<BufferFromPixmapRequest>> {
+        send_request!(
+            self,
+            BufferFromPixmapRequest {
+                pixmap,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    #[inline]
+    pub async fn buffer_from_pixmap_immediate_async(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<BufferFromPixmapReply> {
+        let bfp = self.buffer_from_pixmap_async(pixmap).await?;
+        self.resolve_request_async(bfp).await
+    }
+
+    #[inline]
+    pub async fn buffers_from_pixmap_async(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<RequestCookie<BuffersFromPixmapRequest>> {
+        send_request!(
+            self,
+            BuffersFromPixmapRequest {
+                pixmap,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    #[inline]
+    pub async fn buffers_from_pixmap_immediate_async(
+        &mut self,
+        pixmap: Pixmap,
+    ) -> crate::Result<BuffersFromPixmapReply> {
+        let bfp = self.buffers_from_pixmap_async(pixmap).await?;
+        self.resolve_request_async(bfp).await
     }
 }

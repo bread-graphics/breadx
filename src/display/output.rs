@@ -35,7 +35,7 @@ impl<Conn> super::Display<Conn> {
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(req.size());
 
         let mut len = req.as_bytes(&mut bytes);
-        log::trace!("len is {} bytes long", len);
+        log::debug!("Request is given sequence number {}", sequence);
 
         // pad to a multiple of four bytes if we can
         let remainder = len % 4;

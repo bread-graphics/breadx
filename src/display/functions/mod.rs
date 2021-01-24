@@ -10,6 +10,8 @@ mod dri3;
 mod glx;
 #[cfg(feature = "present")]
 mod present;
+#[cfg(feature = "sync")]
+mod sync;
 
 #[cfg(feature = "dri3")]
 pub use dri3::*;
@@ -17,6 +19,8 @@ pub use dri3::*;
 pub use glx::*;
 #[cfg(feature = "present")]
 pub use present::*;
+#[cfg(feature = "sync")]
+pub use sync::*;
 pub use xproto::*;
 
 /// Helper macro to send a request to the server and return its token.
