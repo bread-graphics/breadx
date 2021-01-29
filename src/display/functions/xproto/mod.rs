@@ -9,15 +9,16 @@ use crate::{
         ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
         ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
         CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
-        ForceScreenSaverRequest, Gc, Gcontext, Gravity, Gx, InternAtomRequest, JoinStyle, Kb,
-        LedMode, LineStyle, Pixmap, QueryExtensionRequest, ScreenSaver, SendEventRequest,
-        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
-        Window, WindowClass,
+        ForceScreenSaverRequest, Gc, Gcontext, GetKeyboardMappingReply, GetKeyboardMappingRequest,
+        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomRequest,
+        JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
+        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
+        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
     },
     display::{Connection, Display, RequestCookie},
     send_request, sr_request, Event, Extension,
 };
-use alloc::string::String;
+use alloc::{boxed::Box, string::String};
 use cty::c_char;
 
 #[cfg(feature = "async")]
@@ -155,6 +156,38 @@ impl GcParameters {
         req.arc_mode = create_req.arc_mode;
 
         gc
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct KeyboardMapping {
+    pub keysyms_per_keycode: u8,
+    pub keysyms: Box<[Keysym]>,
+}
+
+impl From<GetKeyboardMappingReply> for KeyboardMapping {
+    #[inline]
+    fn from(gkmr: GetKeyboardMappingReply) -> Self {
+        Self {
+            keysyms_per_keycode: gkmr.keysyms_per_keycode,
+            keysyms: gkmr.keysyms.into_boxed_slice(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ModifierMapping {
+    pub keycodes_per_modifier: u8,
+    pub keycodes: Box<[Keycode]>,
+}
+
+impl From<GetModifierMappingReply> for ModifierMapping {
+    #[inline]
+    fn from(gmmr: GetModifierMappingReply) -> Self {
+        Self {
+            keycodes_per_modifier: gmmr.keycodes_per_modifier,
+            keycodes: gmmr.keycodes.into_boxed_slice(),
+        }
     }
 }
 
@@ -623,6 +656,48 @@ impl<Conn: Connection> Display<Conn> {
         )?;
         Ok(cid)
     }
+
+    /// Get the keyboard mapping for this display.
+    #[inline]
+    pub fn get_keyboard_mapping(
+        &mut self,
+    ) -> crate::Result<RequestCookie<GetKeyboardMappingRequest>> {
+        let min_keycode = self.setup().min_keycode;
+        let max_keycode = self.setup().max_keycode;
+
+        send_request!(
+            self,
+            GetKeyboardMappingRequest {
+                first_keycode: min_keycode,
+                count: max_keycode - min_keycode,
+                ..Default::default()
+            }
+        )
+    }
+
+    /// Immediately get the keyboard mapping for this display.
+    #[inline]
+    pub fn get_keyboard_mapping_immediate(&mut self) -> crate::Result<KeyboardMapping> {
+        let tok = self.get_keyboard_mapping()?;
+        let repl = self.resolve_request(tok)?;
+        Ok(repl.into())
+    }
+
+    /// Get the modifier mapping for this display.
+    #[inline]
+    pub fn get_modifier_mapping(
+        &mut self,
+    ) -> crate::Result<RequestCookie<GetModifierMappingRequest>> {
+        send_request!(self, GetModifierMappingRequest::default())
+    }
+
+    /// Immediately get the modifier mapping for this display.
+    #[inline]
+    pub fn get_modifier_mapping_immediate(&mut self) -> crate::Result<ModifierMapping> {
+        let tok = self.get_modifier_mapping()?;
+        let repl = self.resolve_request(tok)?;
+        Ok(repl.into())
+    }
 }
 
 #[cfg(feature = "async")]
@@ -916,5 +991,49 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         )
         .await?;
         Ok(cid)
+    }
+
+    /// Get the keyboard mapping for this display, async redox.
+    #[inline]
+    pub async fn get_keyboard_mapping_async(
+        &mut self,
+    ) -> crate::Result<RequestCookie<GetKeyboardMappingRequest>> {
+        let min_keycode = self.setup().min_keycode;
+        let max_keycode = self.setup().max_keycode;
+
+        send_request!(
+            self,
+            GetKeyboardMappingRequest {
+                first_keycode: min_keycode,
+                count: max_keycode - min_keycode,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    /// Immediately get the keyboard mapping for this display, async redox.
+    #[inline]
+    pub async fn get_keyboard_mapping_immediate_async(&mut self) -> crate::Result<KeyboardMapping> {
+        let tok = self.get_keyboard_mapping__async().await?;
+        let repl = self.resolve_request_async(tok).await?;
+        Ok(repl.into())
+    }
+
+    /// Get the modifier mapping for this display, async redox.
+    #[inline]
+    pub async fn get_modifier_mapping_async(
+        &mut self,
+    ) -> crate::Result<RequestCookie<GetModifierMappingRequest>> {
+        send_request!(self, GetModifierMappingRequest::default(), async).await
+    }
+
+    /// Immediately get the modifier mapping for this display.
+    #[inline]
+    pub async fn get_modifier_mapping_immediate_async(&mut self) -> crate::Result<ModifierMapping> {
+        let tok = self.get_modifier_mapping_async().await?;
+        let repl = self.resolve_request_async(tok).await?;
+        Ok(repl.into())
     }
 }

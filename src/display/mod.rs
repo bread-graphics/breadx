@@ -19,14 +19,11 @@ use crate::{
     xid::XidGenerator,
     Fd, Request, XID,
 };
-use alloc::{boxed::Box, collections::VecDeque, vec, vec::Vec};
+use alloc::{borrow::Cow, boxed::Box, collections::VecDeque, vec, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
 use cty::c_int;
 use hashbrown::HashMap;
 use tinyvec::TinyVec;
-
-#[cfg(feature = "std")]
-use std::borrow::Cow;
 
 #[cfg(feature = "async")]
 use core::{future::Future, pin::Pin};
@@ -108,6 +105,11 @@ pub struct Display<Conn> {
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
+
+    // when using XKB, we "usually" have a context that contains a handful of atoms (not
+    // actually XID atoms) for cacheing strings. this takes care of that atom table
+    #[cfg(feature = "xkb")]
+    xkb_atom_table: HashMap<Cow<'static, str>, crate::keyboard::Atom>,
 }
 
 /// Unique identifier for a context.
@@ -295,9 +297,11 @@ impl<Conn> Display<Conn> {
             pending_errors: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
-            checked: true,
+            checked: cfg!(debug_assertions),
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
+            #[cfg(feature = "xkb")]
+            xkb_atom_table: HashMap::new(),
         }
     }
 
@@ -750,6 +754,29 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         );
 
         Ok(())
+    }
+}
+
+#[cfg(feature = "xkb")]
+impl<Conn> Display<Conn> {
+    #[inline]
+    pub(crate) fn intern_xkb_atom<Str: Into<Cow<'static, str>>>(
+        &mut self,
+        s: Str,
+    ) -> crate::keyboard::Atom {
+        match self.xkb_atom_table.get(&s) {
+            Some(atom) => *atom,
+            None => {
+                let new_atom = self.xkb_atom_table.len();
+                self.xkb_atom_table.insert(s, new_atom);
+                Ok(new_atom)
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn lookup_xkb_atom(&self, s: &str) -> Option<crate::keyboard::Atom> {
+        self.xkb_atom_table.get(s).cloned()
     }
 }
 
