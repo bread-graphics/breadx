@@ -30,7 +30,7 @@ impl<Conn: Connection> Display<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> Display<Conn> {
+impl<Conn: AsyncConnection + Send> Display<Conn> {
     #[inline]
     pub async fn create_region_async(
         &mut self,
@@ -65,7 +65,10 @@ impl Region {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn destroy_async<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+    pub async fn destroy_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
         sr_request!(
             dpy,
             DestroyRegionRequest {

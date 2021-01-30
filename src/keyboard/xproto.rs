@@ -3,7 +3,7 @@
 use super::Keymap;
 use crate::{
     auto::xproto::{Keycode, Keysym},
-    display::{Connection, Display, KeyboardMapping, ModifierMapping},
+    display::{Connection, Display, KeyboardMapping},
 };
 use alloc::boxed::Box;
 
@@ -34,7 +34,7 @@ impl XprotoKeymap {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub(crate) async fn init_from_async<Conn: AsyncConnection>(
+    pub(crate) async fn init_from_async<Conn: AsyncConnection + Send>(
         display: &mut Display<Conn>,
     ) -> crate::Result<Self> {
         let keyboard_tok = display.get_keyboard_mapping_async().await?;

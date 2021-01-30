@@ -1016,7 +1016,7 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
     /// Immediately get the keyboard mapping for this display, async redox.
     #[inline]
     pub async fn get_keyboard_mapping_immediate_async(&mut self) -> crate::Result<KeyboardMapping> {
-        let tok = self.get_keyboard_mapping__async().await?;
+        let tok = self.get_keyboard_mapping_async().await?;
         let repl = self.resolve_request_async(tok).await?;
         Ok(repl.into())
     }

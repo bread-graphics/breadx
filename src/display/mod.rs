@@ -105,11 +105,6 @@ pub struct Display<Conn> {
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
-
-    // when using XKB, we "usually" have a context that contains a handful of atoms (not
-    // actually XID atoms) for cacheing strings. this takes care of that atom table
-    #[cfg(feature = "xkb")]
-    xkb_atom_table: HashMap<Cow<'static, str>, crate::keyboard::Atom>,
 }
 
 /// Unique identifier for a context.
@@ -300,8 +295,6 @@ impl<Conn> Display<Conn> {
             checked: cfg!(debug_assertions),
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
-            #[cfg(feature = "xkb")]
-            xkb_atom_table: HashMap::new(),
         }
     }
 
@@ -754,29 +747,6 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         );
 
         Ok(())
-    }
-}
-
-#[cfg(feature = "xkb")]
-impl<Conn> Display<Conn> {
-    #[inline]
-    pub(crate) fn intern_xkb_atom<Str: Into<Cow<'static, str>>>(
-        &mut self,
-        s: Str,
-    ) -> crate::keyboard::Atom {
-        match self.xkb_atom_table.get(&s) {
-            Some(atom) => *atom,
-            None => {
-                let new_atom = self.xkb_atom_table.len();
-                self.xkb_atom_table.insert(s, new_atom);
-                Ok(new_atom)
-            }
-        }
-    }
-
-    #[inline]
-    pub(crate) fn lookup_xkb_atom(&self, s: &str) -> Option<crate::keyboard::Atom> {
-        self.xkb_atom_table.get(s).cloned()
     }
 }
 

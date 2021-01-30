@@ -13,11 +13,9 @@ both of the above.
 */
 
 use crate::{
-    auto::xproto::{KeyButMask, Keycode, Keysym, ModMask},
+    auto::xproto::{KeyButMask, Keycode, Keysym},
     display::{Connection, Display},
 };
-use alloc::{borrow::Cow, boxed::Box};
-use core::{future::Future, pin::Pin};
 use gluten_keyboard::Key;
 
 #[cfg(feature = "async")]
@@ -52,7 +50,7 @@ impl KeyboardState<XprotoKeymap> {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn new_async<Conn: AsyncConnection>(
+    pub async fn new_async<Conn: AsyncConnection + Send>(
         display: &mut Display<Conn>,
     ) -> crate::Result<Self> {
         Ok(Self::from_keymap(
