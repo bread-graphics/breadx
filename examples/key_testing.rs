@@ -21,7 +21,7 @@ fn main() -> breadx::Result {
 
     window.map(&mut conn)?;
     window.set_title(&mut conn, "Hello world!")?;
-    window.set_event_mask(&mut conn, EventMask::KEY_PRESS | EventMask::KEY_RELEASE)?;
+    window.set_event_mask(&mut conn, EventMask::KEY_PRESS)?;
 
     let wm_delete_window = conn.intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false)?;
     window.set_wm_protocols(&mut conn, &[wm_delete_window])?;
@@ -37,11 +37,7 @@ fn main() -> breadx::Result {
                 }
             }
             Event::KeyPress(kp) => {
-                println!("{:?}", keystate.process_keycode_press(kp.detail));
-                //println!("{:?}", keystate.lookup_keysyms(kp.detail));
-            }
-            Event::KeyRelease(kr) => {
-                keystate.process_keycode_release(kr.detail);
+                println!("{:?}", keystate.process_keycode(kp.detail, kp.state));
             }
             _ => (),
         }
