@@ -4,7 +4,7 @@
 CARGO = cargo
 GENR = $(PWD)/generator/target/debug/breadx_generator
 GENR_SRC = $(PWD)/generator/src
-KEYSYM = $(PWD)/keysym/target/debug/keysym
+KEYSYM = $(PWD)/keysym/target/debug/breadx-keysym-generator
 KEYSYM_SRC = $(PWD)/keysym/src
 XML = $(PWD)/xml
 OUTPUT = $(PWD)/src/auto
