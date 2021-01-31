@@ -3,13 +3,21 @@
 #![cfg(feature = "present")]
 
 use crate::{
-    auto::present::{
-        Event, EventMask, QueryCapabilitiesRequest, QueryVersionRequest, SelectInputRequest,
+    auto::{
+        present::{
+            Event, EventMask, Notify, PixmapRequest, QueryCapabilitiesRequest, QueryVersionRequest,
+            SelectInputRequest,
+        },
+        randr::Crtc,
+        sync::Fence,
+        xfixes::Region,
+        xproto::Pixmap,
     },
     display::{Connection, Display, RequestCookie},
     extension::ExtensionVersion,
     send_request, sr_request, Drawable, Window, XID,
 };
+use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
@@ -82,6 +90,48 @@ impl<Conn: Connection> Display<Conn> {
                 eid: Event::const_from_xid(eid),
                 window,
                 event_mask: em,
+                ..Default::default()
+            }
+        )
+    }
+
+    #[inline]
+    pub fn present_pixmap(
+        &mut self,
+        window: Window,
+        pixmap: Pixmap,
+        serial: u32,
+        valid: Region,
+        update: Region,
+        xoff: i16,
+        yoff: i16,
+        target_crtc: Crtc,
+        wait_fence: Fence,
+        idle_fence: Fence,
+        options: u32,
+        target_msc: u64,
+        divisor: u64,
+        remainder: u64,
+        notifies: Vec<Notify>,
+    ) -> crate::Result {
+        sr_request!(
+            self,
+            PixmapRequest {
+                window,
+                pixmap,
+                serial,
+                valid,
+                update,
+                x_off: xoff,
+                y_off: yoff,
+                target_crtc,
+                wait_fence,
+                idle_fence,
+                options,
+                target_msc,
+                divisor,
+                remainder,
+                notifies,
                 ..Default::default()
             }
         )
@@ -161,6 +211,50 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
                 eid: Event::const_from_xid(eid),
                 window,
                 event_mask: em,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    #[inline]
+    pub async fn present_pixmap_async(
+        &mut self,
+        window: Window,
+        pixmap: Pixmap,
+        serial: u32,
+        valid: Region,
+        update: Region,
+        xoff: i16,
+        yoff: i16,
+        target_crtc: Crtc,
+        wait_fence: Fence,
+        idle_fence: Fence,
+        options: u32,
+        target_msc: u64,
+        divisor: u64,
+        remainder: u64,
+        notifies: Vec<Notify>,
+    ) -> crate::Result {
+        sr_request!(
+            self,
+            PixmapRequest {
+                window,
+                pixmap,
+                serial,
+                valid,
+                update,
+                x_off: xoff,
+                y_off: yoff,
+                target_crtc,
+                wait_fence,
+                idle_fence,
+                options,
+                target_msc,
+                divisor,
+                remainder,
+                notifies,
                 ..Default::default()
             },
             async

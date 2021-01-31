@@ -142,6 +142,7 @@ mod xid;
 pub mod action;
 #[cfg(feature = "xkb")]
 pub mod behavior;
+pub mod keyboard;
 
 #[cfg(feature = "randr")]
 pub mod notify_data;
@@ -152,6 +153,7 @@ pub use display::*;
 pub use error::*;
 pub use event::Event;
 pub use extension::*;
+pub use keyboard::*;
 pub use xid::*;
 
 pub type Fd = cty::c_int;

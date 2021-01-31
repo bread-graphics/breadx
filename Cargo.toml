@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["notgull <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -16,6 +16,7 @@ bytemuck = "1.4.1"
 cfg-if = "1"
 cty = "0.2.1"
 futures-lite = { version = "1.11.2", optional = true }
+gluten-keyboard = "0.1.2"
 hashbrown = "0.9.1"
 image = { version = "0.23.12", default-features = false, optional = true }
 log = "0.4"

@@ -19,14 +19,11 @@ use crate::{
     xid::XidGenerator,
     Fd, Request, XID,
 };
-use alloc::{boxed::Box, collections::VecDeque, vec, vec::Vec};
+use alloc::{borrow::Cow, boxed::Box, collections::VecDeque, vec, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
 use cty::c_int;
 use hashbrown::HashMap;
 use tinyvec::TinyVec;
-
-#[cfg(feature = "std")]
-use std::borrow::Cow;
 
 #[cfg(feature = "async")]
 use core::{future::Future, pin::Pin};
@@ -295,7 +292,7 @@ impl<Conn> Display<Conn> {
             pending_errors: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
-            checked: true,
+            checked: cfg!(debug_assertions),
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
         }

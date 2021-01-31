@@ -5,9 +5,10 @@
 use crate::{
     auto::{
         glx::{
-            Context, CreateContextAttribsArbRequest, Drawable, Fbconfig,
+            Context, ContextTag, CreateContextAttribsArbRequest, Drawable, Fbconfig,
             GetDrawableAttributesRequest, GetFbConfigsReply, GetFbConfigsRequest,
             GetVisualConfigsReply, GetVisualConfigsRequest, QueryVersionRequest,
+            SwapBuffersRequest,
         },
         xproto,
     },
@@ -197,6 +198,23 @@ impl<Conn: Connection> Display<Conn> {
         )?;
         Ok(xid)
     }
+
+    /// Swap buffers.
+    #[inline]
+    pub fn swap_buffers<Target: Into<Drawable>>(
+        &mut self,
+        context_tag: ContextTag,
+        drawable: Target,
+    ) -> crate::Result {
+        sr_request!(
+            self,
+            SwapBuffersRequest {
+                context_tag,
+                drawable: drawable.into(),
+                ..Default::default()
+            }
+        )
+    }
 }
 
 #[cfg(feature = "async")]
@@ -315,7 +333,6 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         Ok(self.resolve_request_async(tok).await?.attribs)
     }
 
-    #[cfg(feature = "async")]
     #[inline]
     pub async fn create_context_attribs_arb_async(
         &mut self,
@@ -335,5 +352,24 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         )
         .await?;
         Ok(xid)
+    }
+
+    /// Swap buffers, async redox.
+    #[inline]
+    pub async fn swap_buffers_async<Target: Into<Drawable>>(
+        &mut self,
+        context_tag: ContextTag,
+        drawable: Target,
+    ) -> crate::Result {
+        sr_request!(
+            self,
+            SwapBuffersRequest {
+                context_tag,
+                drawable: drawable.into(),
+                ..Default::default()
+            },
+            async
+        )
+        .await
     }
 }
