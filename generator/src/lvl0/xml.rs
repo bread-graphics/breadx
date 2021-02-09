@@ -3,7 +3,7 @@
 //! XML Helper functions
 
 use quick_xml::events::BytesStart;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// Get the attributes from a byte item.
 #[inline]
@@ -11,8 +11,8 @@ pub fn get_attributes<'a>(
     bs: &BytesStart<'a>,
     attrs: &[&[u8]],
     required: &[bool],
-) -> Option<HashMap<Box<[u8]>, String>> {
-    let res = bs.attributes().fold(HashMap::new(), |mut res, attr| {
+) -> Option<BTreeMap<Box<[u8]>, String>> {
+    let res = bs.attributes().fold(BTreeMap::new(), |mut res, attr| {
         if let Ok(attr) = attr {
             // if we need the value
             if attrs.contains(&attr.key) {

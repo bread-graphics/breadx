@@ -10,7 +10,7 @@ use crate::lvl2::{
 };
 use proc_macro2::Span;
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     fmt,
     hash::{Hash, Hasher},
     iter, mem,
@@ -65,7 +65,7 @@ impl fmt::Debug for RStruct {
 #[inline]
 fn cond_vars(
     condition: &Option<Rc<UseCondition>>,
-    conds: &mut HashMap<Rc<Expression>, Box<str>>,
+    conds: &mut BTreeMap<Rc<Expression>, Box<str>>,
     last_cond_index: &mut usize,
     use_self: bool,
 ) -> (Option<(Rc<UseCondition>, Box<str>)>, Option<SumStatement>) {
@@ -130,7 +130,7 @@ impl RStruct {
     #[inline]
     pub fn populate_as_bytes(&mut self) {
         let mut last_cond_index: usize = 0;
-        let mut conds: HashMap<Rc<Expression>, Box<str>> = HashMap::new();
+        let mut conds: BTreeMap<Rc<Expression>, Box<str>> = BTreeMap::new();
         let stmts = iter::once(super::CreateIndexVariable.into())
             .chain(self.fields.iter().flat_map(|f| match f {
                 StructureItem::Field(Field {
@@ -178,9 +178,9 @@ impl RStruct {
     /// Populate the from_bytes statements.
     #[inline]
     pub fn populate_from_bytes(&mut self) {
-        let mut len_map = HashMap::<String, Box<str>>::with_capacity(self.fields.len());
+        let mut len_map = BTreeMap::<String, Box<str>>::new();
         let mut i: u32 = 0;
-        let mut cond_map = HashMap::<Rc<Expression>, Box<str>>::new();
+        let mut cond_map = BTreeMap::<Rc<Expression>, Box<str>>::new();
         let mut last_cond_index: usize = 0;
 
         let stmts = vec![

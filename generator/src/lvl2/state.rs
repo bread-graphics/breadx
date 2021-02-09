@@ -11,7 +11,7 @@ use crate::lvl1::{
 use heck::{CamelCase, SnakeCase};
 use std::{
     borrow::Cow,
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashSet},
     iter, mem,
     ops::Deref,
     rc::Rc,
@@ -23,11 +23,11 @@ pub struct Lvl2State {
     // type names of things that aren't enums, collected on the first pass
     nonenum_typenames: HashSet<Box<str>>,
     // enums that have not been identified to a specific type yet
-    unresolved_enums: HashMap<String, EnumReprGenerator>,
+    unresolved_enums: BTreeMap<String, EnumReprGenerator>,
     // a list of errors, kept here to help resolve errorcopies
-    errors: HashMap<Box<str>, Struct>,
+    errors: BTreeMap<Box<str>, Struct>,
     // a list of events, kept here to help resolve eventcopies
-    events: HashMap<Box<str>, Struct>,
+    events: BTreeMap<Box<str>, Struct>,
     // output: list of XIDs
     pub xidtypes: Vec<Box<str>>,
 }
@@ -47,9 +47,9 @@ impl Lvl2State {
     pub fn new() -> Self {
         Self {
             nonenum_typenames: HashSet::new(),
-            unresolved_enums: HashMap::new(),
-            errors: HashMap::<Box<str>, Struct>::new(),
-            events: HashMap::new(),
+            unresolved_enums: BTreeMap::new(),
+            errors: BTreeMap::<Box<str>, Struct>::new(),
+            events: BTreeMap::new(),
             xidtypes: vec![],
         }
     }
@@ -116,8 +116,9 @@ impl Lvl2State {
     /// Instantly resolve all enums.
     #[inline]
     pub fn resolve_enums(&mut self) -> Vec<Lvl2Item> {
-        self.unresolved_enums
-            .drain()
+        let unresolved_enums = std::mem::replace(&mut self.unresolved_enums, BTreeMap::new());
+        unresolved_enums
+            .into_iter()
             .map(|(_, ue)| Lvl2Item::Enum((ue)(Type::BasicType("i32".into()))))
             .collect()
     }
@@ -131,7 +132,7 @@ impl Lvl2State {
         fds: &mut Vec<String>,
     ) -> (TinyVec<[StructureItem; 6]>, TinyVec<[Lvl2Item; 1]>) {
         let mut side_effect_enums = TinyVec::new();
-        let mut align_indices: HashMap<usize, usize> = HashMap::new();
+        let mut align_indices: BTreeMap<usize, usize> = BTreeMap::new();
         let mut index: usize = 0;
 
         fields.retain(|i| {
@@ -482,9 +483,12 @@ pub fn convert_series(
         .collect();
 
     // now, take all of the aux. stuff
+    let errors = mem::replace(&mut state.errors, BTreeMap::new());
+    let events = mem::replace(&mut state.events, BTreeMap::new());
+
     res.extend(state.resolve_enums());
-    res.extend(state.errors.drain().map(|(_k, v)| Item::Struct(v)));
-    res.extend(state.events.drain().map(|(_k, v)| Item::Struct(v)));
+    res.extend(errors.into_iter().map(|(_k, v)| Item::Struct(v)));
+    res.extend(events.into_iter().map(|(_k, v)| Item::Struct(v)));
 
     (res, state.xidtypes)
 }
