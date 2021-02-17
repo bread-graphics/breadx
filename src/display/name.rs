@@ -7,7 +7,7 @@
 
 use super::Connection;
 use crate::Fd;
-use alloc::{borrow::Cow, string::String, vec::Vec, format};
+use alloc::{borrow::Cow, format, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
 use std::{env, net, path::Path};
