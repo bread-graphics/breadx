@@ -68,3 +68,5 @@ jobs:
       displayName: "All Features Build"
     - bash: cargo build --examples --all-features
       displayName: "Build Examples"
+    - bash: cargo test --all-features
+      displayName: "Run Tests"

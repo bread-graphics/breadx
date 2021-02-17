@@ -44,15 +44,15 @@ use super::Display;
 /// }
 ///
 /// impl<Dpy: DisplayLike> DisplayLike for Extension1Display<Dpy> {
-///     type Conn = Dpy::Conn;
+///     type Connection = Dpy::Connection;
 ///     
 ///     #[inline]
-///     fn display(&self) -> &Display<Dpy::Conn> {
+///     fn display(&self) -> &Display<Dpy::Connection> {
 ///         self.dpy.display()
 ///     }
 ///
 ///     #[inline]
-///     fn display_mut(&mut self) -> &mut Display<Dpy::Conn> {
+///     fn display_mut(&mut self) -> &mut Display<Dpy::Connection> {
 ///         self.dpy.display_mut()
 ///     }
 /// }

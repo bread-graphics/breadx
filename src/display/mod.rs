@@ -203,7 +203,7 @@ const fn endian_byte() -> u8 {
 impl<Conn> Display<Conn> {
     /// Gets the connection associated with this display, and producing an error if the connection
     /// is tainted.
-    pub(crate) fn connection(&mut self) -> crate::Result<&mut Conn> {
+    pub fn connection(&mut self) -> crate::Result<&mut Conn> {
         self.connection.as_mut().ok_or(crate::BreadError::Tainted)
     }
 
@@ -535,11 +535,10 @@ impl<Conn: Connection> Display<Conn> {
         let mut _fds: Vec<Fd> = vec![];
         let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
         let len = setup.as_bytes(&mut bytes);
-        bytes.truncate(len);
 
         log::trace!("Sending setup request to server.");
         self.connection()?.send_packet(&bytes[0..len], &mut _fds)?;
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
+        let mut bytes: TinyVec<[u8; 8]> = cycled_zeroes(8);
 
         log::trace!("Reading setup response from server.");
         self.connection()?.read_packet(&mut bytes, &mut _fds)?;

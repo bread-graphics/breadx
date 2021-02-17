@@ -173,12 +173,9 @@ pub trait Request: auto::AsByteSequence {
     const REPLY_EXPECTS_FDS: bool;
 }
 
-//pub use display::*;
-pub use xid::{XidType, XID};
-
 pub use auto::xproto::{
-    Arc, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle, Segment,
-    VisualClass, Visualid, Visualtype, Window, WindowClass,
+    Atom, Arc, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle, Segment,
+    VisualClass, Visualid, Visualtype, Window, WindowClass, Setup,
 };
 
 #[path = "../tutorials/mod.rs"]

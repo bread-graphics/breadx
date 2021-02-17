@@ -91,7 +91,7 @@
 //! # let mut conn = DisplayConnection::create(None, None)?;
 //! let red_color = conn
 //!     .default_colormap()
-//!     .alloc_color_immediate(std::u16::MAX, 0, 0)?
+//!     .alloc_color_immediate(&mut conn, std::u16::MAX, 0, 0)?
 //!     .pixel();
 //! let window = conn.create_simple_window(
 //!         conn.default_root(),

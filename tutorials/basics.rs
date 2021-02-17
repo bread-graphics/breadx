@@ -67,7 +67,7 @@
 //! Shrewd programmers will check the documentation and realize that `DisplayConnection` is actually a
 //! type alias.
 //!
-//! ```rust,no_compile
+//! ```rust,ignore
 //! type DisplayConnection = Display<NameConnection>;
 //! ```
 //!
@@ -129,7 +129,7 @@
 //! fn main() -> Result<(), Box<dyn Error>> {
 //!     // hold a lock on Stdin and Stdout for convenience
 //!     let ins = stdin();
-//!     let outs = stdout();
+//!     let mut outs = stdout();
 //!     let mut buffer = String::with_capacity(10);
 //!
 //!     loop {
@@ -338,7 +338,7 @@
 //! let atom_names: Vec<String> = vec![ /* ... */ ];
 //! let mut atoms: Vec<Atom> = Vec::with_capacity(atom_names.len());
 //!
-//! for aton_name in atom_names {
+//! for atom_name in atom_names {
 //!     atoms.push(conn.intern_atom_immediate(atom_name, false)?);
 //! }
 //! # Ok(())
