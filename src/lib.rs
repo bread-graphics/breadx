@@ -117,7 +117,9 @@
     clippy::needless_pass_by_value,
     clippy::too_many_arguments, // we need this sometimes for compliance
     clippy::unknown_clippy_lints, // nightly has lints that stable doesn't
-    clippy::used_underscore_binding
+    clippy::unknown_lints,
+    clippy::used_underscore_binding,
+    clippy::ptr_as_ptr,
 )]
 
 #[cfg(feature = "std")]
@@ -174,8 +176,8 @@ pub trait Request: auto::AsByteSequence {
 }
 
 pub use auto::xproto::{
-    Atom, Arc, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle, Segment,
-    VisualClass, Visualid, Visualtype, Window, WindowClass, Setup,
+    Arc, Atom, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle,
+    Segment, Setup, VisualClass, Visualid, Visualtype, Window, WindowClass,
 };
 
 #[path = "../tutorials/mod.rs"]

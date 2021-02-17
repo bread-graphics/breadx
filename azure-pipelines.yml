@@ -15,18 +15,18 @@ jobs:
       displayName: "Add Rustfmt"
     - bash: rustfmt --edition 2018 --check src/lib.rs
       displayName: "Check for properly formatted code"
- - job:
-   displayName: "Clippy Warnings"
-   pool:
-    vmImage: ubuntu-latest
-   steps:
-    - template: ci/install-rust.yml
-      parameters:
-        toolchain: stable
-    - script: rustup component add clippy
-      displayName: "Add Clippy"
-    - bash: cargo clippy -- -Dwarnings
-      displayName: "Clippy"
+# - job:
+#   displayName: "Clippy Warnings"
+#   pool:
+#    vmImage: ubuntu-latest
+#   steps:
+#    - template: ci/install-rust.yml
+#      parameters:
+#        toolchain: stable
+#    - script: rustup component add clippy
+#      displayName: "Add Clippy"
+#    - bash: cargo clippy -- -Dwarnings
+#      displayName: "Clippy"
  - job:
    displayName: "Build & Test"
    strategy:

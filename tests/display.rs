@@ -15,7 +15,7 @@ fn setup() -> Setup {
         release_number: 12009000,
         resource_id_base: 67108864,
         resource_id_mask: 2097181,
-        maximum_request_length: std::u16::MAX as u32,
+        maximum_request_length: std::u16::MAX,
         vendor: "Dummy Connection".to_string(),
         ..Default::default()
     };
