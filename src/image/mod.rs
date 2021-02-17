@@ -361,9 +361,9 @@ where
             Some(bytes_per_line) => {
                 if bytes_per_line < min_bytes_per_line {
                     return None;
-                } else {
-                    bytes_per_line
                 }
+
+                bytes_per_line
             }
         };
 

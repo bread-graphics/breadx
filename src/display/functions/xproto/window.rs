@@ -36,10 +36,10 @@ macro_rules! retrieve_atom {
                 if wpa.xid() == 0 {
                     log::error!("Unable to intern {} atom", $name);
                     return Ok(());
-                } else {
-                    $dpy.$dfield = core::num::NonZeroU32::new(wpa.xid());
-                    wpa
                 }
+
+                $dpy.$dfield = core::num::NonZeroU32::new(wpa.xid());
+                wpa
             }
         }
     }};

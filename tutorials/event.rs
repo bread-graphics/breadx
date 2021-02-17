@@ -9,6 +9,10 @@
 //! Note that we already handle an event: the `ClientMessageEvent` required to close the window.
 //!
 //! ```no_run
+//! # use breadx::{Atom, Event};
+//! # let wm_delete_window = Atom::const_from_xid(0);
+//! # loop {
+//! # let ev = Event::ClientMessage(Default::default());
 //! match ev {
 //!     Event::ClientMessage(cme) => {
 //!         if cme.data.longs()[0] == wm_delete_window.xid {
@@ -17,6 +21,7 @@
 //!     }
 //!     _ => (),
 //! }
+//! # }
 //! ```
 //!
 //! It's slightly more complicated to handle other events.

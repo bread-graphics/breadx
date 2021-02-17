@@ -7,13 +7,10 @@
 
 use super::Connection;
 use crate::Fd;
-use alloc::{borrow::Cow, string::String, vec::Vec};
+use alloc::{borrow::Cow, format, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
 use std::{env, net, path::Path};
-
-#[cfg(unix)]
-use alloc::format;
 
 #[cfg(feature = "async")]
 use super::{AsyncConnection, GenericConnFuture};
@@ -494,84 +491,6 @@ fn parse_display_screen_and_protocol() {
             }
         );
     }
-}
-
-#[test]
-fn parse_display_host_screen_and_protocol() {
-    // display with host, screen and protocol
-    let xconn = XConnection::parse(Some(Cow::Borrowed("unix/127.6.6.7:27.65"))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Borrowed("127.6.6.7")),
-            protocol: Some(Protocol::Unix),
-            screen: 65,
-            display: 27
-        },
-        "input: unix/127.6.6.7:27.65",
-    );
-
-    let xconn = XConnection::parse(Some(Cow::Owned("inet6/255.255.1.1:0".to_owned()))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Owned("255.255.1.1".to_owned())),
-            protocol: Some(Protocol::Inet6),
-            screen: 0,
-            display: 0
-        },
-        "input: inet6/255.255.1.1:0",
-    );
-}
-
-#[test]
-fn parse_socket_filename() {
-    let xconn = XConnection::parse(Some(Cow::Borrowed("/tmp/.X11-unix/X0"))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Borrowed("/tmp/.X11-unix/X0")),
-            protocol: Some(Protocol::Unix),
-            screen: 0,
-            display: 0
-        }
-    );
-
-    let xconn = XConnection::parse(Some(Cow::Owned("/tmp/.X11-unix/X0".to_owned()))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Owned("/tmp/.X11-unix/X0".to_owned())),
-            protocol: Some(Protocol::Unix),
-            screen: 0,
-            display: 0
-        }
-    );
-}
-
-#[test]
-fn parse_socket_filename_with_screen() {
-    let xconn = XConnection::parse(Some(Cow::Borrowed("/tmp/.X11-unix/X0.5"))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Borrowed("/tmp/.X11-unix/X0")),
-            protocol: Some(Protocol::Unix),
-            screen: 5,
-            display: 0
-        }
-    );
-
-    let xconn = XConnection::parse(Some(Cow::Owned("/tmp/.X11-unix/X0.7".to_owned()))).unwrap();
-    assert_eq!(
-        xconn,
-        XConnection {
-            host: Some(Cow::Owned("/tmp/.X11-unix/X0".to_owned())),
-            protocol: Some(Protocol::Unix),
-            screen: 7,
-            display: 0
-        }
-    );
 }
 
 #[should_panic]
