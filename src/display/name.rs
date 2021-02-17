@@ -7,13 +7,10 @@
 
 use super::Connection;
 use crate::Fd;
-use alloc::{borrow::Cow, string::String, vec::Vec};
+use alloc::{borrow::Cow, string::String, vec::Vec, format};
 use core::mem;
 use memchr::memrchr;
 use std::{env, net, path::Path};
-
-#[cfg(unix)]
-use alloc::format;
 
 #[cfg(feature = "async")]
 use super::{AsyncConnection, GenericConnFuture};
