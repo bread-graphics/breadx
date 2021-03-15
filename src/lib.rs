@@ -136,6 +136,7 @@ pub mod error;
 pub mod event;
 pub mod extension;
 pub mod image;
+pub mod keyboard;
 pub(crate) mod paramatizer;
 pub(crate) mod util;
 mod xid;
@@ -144,10 +145,12 @@ mod xid;
 pub mod action;
 #[cfg(feature = "xkb")]
 pub mod behavior;
-pub mod keyboard;
 
 #[cfg(feature = "randr")]
 pub mod notify_data;
+
+#[cfg(feature = "render")]
+pub mod render;
 
 pub use crate::image::Image;
 pub use auth_info::*;
