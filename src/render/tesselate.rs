@@ -2,12 +2,13 @@
 
 use super::{double_to_fixed, fixed_to_double};
 use crate::auto::render::{Fixed, Linefix, Pointfix, Trapezoid};
-use core::cmp::Ordering;
+use alloc::{vec, vec::Vec};
+use core::{cmp::Ordering, iter::FusedIterator};
 
 #[inline]
-pub(crate) fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> Vec<Trapezoid> {
-    edges_to_trapezoid(PolyEdges {
-        inner: i.into_iter(),
+pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> Vec<Trapezoid> {
+    edges_to_trapezoids(PolyEdges {
+        inner: Some(i.into_iter()),
         firstx: 0,
         firsty: 0,
         prevx: 0,
@@ -22,7 +23,7 @@ struct Edge {
     y1: Fixed,
     x2: Fixed,
     y2: Fixed,
-    clockwise: bool,
+    //    clockwise: bool,
     current_x: Fixed,
 }
 
@@ -31,7 +32,7 @@ impl Edge {
     fn compute_x(&mut self, y: Fixed) {
         let dx = self.x2 - self.x1;
         let dy = self.y2 - self.y1;
-        let ex = (y - line.y1) as f64 * dx as f64;
+        let ex = (y - self.y1) as f64 * dx as f64;
 
         self.current_x = self.x1 + (ex / (dy as f64)) as Fixed;
     }
@@ -51,7 +52,7 @@ impl Edge {
 
     #[inline]
     fn x_intercept(self) -> f64 {
-        fixed_to_double(self.x1) - (self.inverse_slope() * fixed_double(self.y1))
+        fixed_to_double(self.x1) - (self.inverse_slope() * fixed_to_double(self.y1))
     }
 }
 
@@ -99,7 +100,7 @@ where
                                 y1: self.prevy,
                                 x2: x,
                                 y2: y,
-                                clockwise: true,
+                                //                                clockwise: true,
                                 current_x: 0,
                             });
                         } else if self.prevy > y {
@@ -108,8 +109,8 @@ where
                                 y1: y,
                                 x2: self.prevx,
                                 y2: self.prevy,
-                                clockwise: false,
-                                current_y: 0,
+                                //                                clockwise: false,
+                                current_x: 0,
                             });
                         }
 
@@ -138,7 +139,7 @@ impl<I: ExactSizeIterator> ExactSizeIterator for PolyEdges<I> where I: Iterator<
 #[inline]
 fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
     // put the edges into a vec and then sort them
-    let mut edges: Vec<Edge> = i.collect();
+    let mut edges: Vec<Edge> = i.into_iter().collect();
 
     if edges.is_empty() {
         return vec![];
@@ -148,18 +149,18 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
     let edges_len = edges.len();
 
     // active and inactive lists
-    let mut active: Vec<Edge> = vec![];
+    let mut active: Vec<Edge> = Vec::with_capacity(edges.len());
     let mut inactive: usize = 0;
 
     // trapezoids
     let mut trapezoids: Vec<Trapezoid> = Vec::with_capacity(edges_len * edges_len);
 
     let mut y = edges[0].y1;
-    let mut next_y = 0;
+    let mut next_y;
 
     while !active.is_empty() || inactive < edges_len {
         while inactive < edges_len {
-            let e = *edges[inactive];
+            let e = edges[inactive];
             if e.y1 > y {
                 break;
             }
@@ -169,7 +170,7 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
             inactive += 1;
         }
 
-        active.iter_mut().for_each(|e| e.compute_x());
+        active.iter_mut().for_each(|e| e.compute_x(y));
 
         // sort the active list
         active.sort_unstable_by(|e1, e2| {
@@ -181,14 +182,14 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
         });
 
         // find the inflection point
-        let y2 = active
+        next_y = active
             .iter()
             .map(|e| e.y2)
             .chain(active.windows(2).filter_map(|edges| {
                 let e1 = edges[0];
                 let e2 = edges[1];
                 if e1.x2 > e2.x2 {
-                    Some(e1.intersect(e2) + 1)
+                    Some(e1.intersection(e2) + 1)
                 } else {
                     None
                 }
@@ -211,7 +212,7 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
                     p1: Pointfix { x: e1.x1, y: e1.y1 },
                     p2: Pointfix { x: e1.x2, y: e1.y2 },
                 },
-                right: LineFix {
+                right: Linefix {
                     p1: Pointfix { x: e2.x1, y: e2.y1 },
                     p2: Pointfix { x: e2.x2, y: e2.y2 },
                 },

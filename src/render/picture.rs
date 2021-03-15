@@ -3,12 +3,14 @@
 use crate::{
     auto::{
         render::{
-            ChangePictureRequest, CompositeRequest, Cp, CreatePictureRequest, PictOp, Picture,
-            PolyEdge, PolyMode, Repeat, Trapezoid,
+            ChangePictureRequest, Color, CompositeRequest, Cp, CreatePictureRequest,
+            FillRectanglesRequest, FreePictureRequest, PictOp, Pictformat, Picture, PolyEdge,
+            PolyMode, Repeat, Trapezoid, TrapezoidsRequest,
         },
         xproto::{Atom, Pixmap, Rectangle, SubwindowMode},
     },
     display::{Connection, Display},
+    sr_request,
 };
 
 #[cfg(feature = "async")]
@@ -59,11 +61,11 @@ impl PictureParameters {
 impl Picture {
     #[inline]
     fn change_request(self, params: PictureParameters) -> ChangePictureRequest {
-        let mut cr = ChangeRequest {
+        let mut cr = ChangePictureRequest {
             picture: self,
             ..Default::default()
         };
-        let mask = params.convert_to_flags(&mut cr);
+        let mask = params.mask_to_change_picture_request(&mut cr);
         cr.value_mask = mask;
         cr
     }
@@ -159,6 +161,138 @@ impl Picture {
                 dst_y: dsty,
                 width,
                 height,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    /// Fill a series of solid color rectangles on this surface.
+    #[inline]
+    pub fn fill_rectangles<Conn: Connection>(
+        self,
+        display: &mut Display<Conn>,
+        op: PictOp,
+        color: Color,
+        rects: &[Rectangle],
+    ) -> crate::Result {
+        sr_request!(
+            display,
+            FillRectanglesRequest {
+                dst: self,
+                op,
+                color,
+                rects: rects.to_vec(),
+                ..Default::default()
+            }
+        )
+    }
+
+    /// Fill a series of solid color rectangles on this surface, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn fill_rectangles_async<Conn: AsyncConnection + Send>(
+        self,
+        display: &mut Display<Conn>,
+        op: PictOp,
+        color: Color,
+        rects: &[Rectangle],
+    ) -> crate::Result {
+        sr_request!(
+            display,
+            FillRectanglesRequest {
+                dst: self,
+                op,
+                color,
+                rects: rects.to_vec(),
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    /// Free this picture.
+    #[inline]
+    pub fn free<Conn: Connection>(self, display: &mut Display<Conn>) -> crate::Result {
+        sr_request!(
+            display,
+            FreePictureRequest {
+                picture: self,
+                ..Default::default()
+            }
+        )
+    }
+
+    /// Free this picture, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn free_async<Conn: AsyncConnection + Send>(
+        self,
+        display: &mut Display<Conn>,
+    ) -> crate::Result {
+        sr_request!(
+            display,
+            FreePictureRequest {
+                picture: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    /// Draw a set of trapezoids.
+    #[inline]
+    pub fn trapezoids<Conn: Connection>(
+        self,
+        display: &mut Display<Conn>,
+        op: PictOp,
+        src: Picture,
+        mask_format: Pictformat,
+        srcx: i16,
+        srcy: i16,
+        trapezoids: &[Trapezoid],
+    ) -> crate::Result {
+        sr_request!(
+            display,
+            TrapezoidsRequest {
+                src,
+                dst: self,
+                op,
+                mask_format,
+                src_x: srcx,
+                src_y: srcy,
+                traps: trapezoids.to_vec(),
+                ..Default::default()
+            }
+        )
+    }
+
+    /// Draw a set of trapezoids, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn trapezoids_async<Conn: AsyncConnection + Send>(
+        self,
+        display: &mut Display<Conn>,
+        op: PictOp,
+        src: Picture,
+        mask_format: Pictformat,
+        srcx: i16,
+        srcy: i16,
+        trapezoids: &[Trapezoid],
+    ) -> crate::Result {
+        sr_request!(
+            display,
+            TrapezoidsRequest {
+                src,
+                dst: self,
+                op,
+                mask_format,
+                src_x: srcx,
+                src_y: srcy,
+                traps: trapezoids.to_vec(),
                 ..Default::default()
             },
             async
