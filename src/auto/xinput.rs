@@ -11,7 +11,7 @@ pub type EventClass = Card32;
 pub type KeyCode = Card8;
 pub type DeviceId = Card16;
 pub type Fp1616 = Int32;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Fp3232 {
     pub integral: Int32,
     pub frac: Card32,
@@ -46,7 +46,7 @@ impl AsByteSequence for Fp3232 {
         self.integral.size() + self.frac.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetExtensionVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -106,7 +106,7 @@ impl Request for GetExtensionVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetExtensionVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetExtensionVersionReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -175,7 +175,7 @@ impl AsByteSequence for GetExtensionVersionReply {
             + 19
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceInfo {
     pub device_type: Atom,
     pub device_id: Card8,
@@ -227,7 +227,7 @@ impl AsByteSequence for DeviceInfo {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceUse {
     IsXPointer = 0,
     IsXKeyboard = 1,
@@ -263,7 +263,7 @@ impl Default for DeviceUse {
         DeviceUse::IsXPointer
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyInfo {
     pub class_id: InputClass,
     pub len: Card8,
@@ -321,7 +321,7 @@ impl AsByteSequence for KeyInfo {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum InputClass {
     Key = 0,
     Button = 1,
@@ -361,7 +361,7 @@ impl Default for InputClass {
         InputClass::Key
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonInfo {
     pub class_id: InputClass,
     pub len: Card8,
@@ -401,7 +401,7 @@ impl AsByteSequence for ButtonInfo {
         self.class_id.size() + self.len.size() + self.num_buttons.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AxisInfo {
     pub resolution: Card32,
     pub minimum: Int32,
@@ -441,7 +441,7 @@ impl AsByteSequence for AxisInfo {
         self.resolution.size() + self.minimum.size() + self.maximum.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValuatorInfo {
     pub class_id: InputClass,
     pub len: Card8,
@@ -508,7 +508,7 @@ impl AsByteSequence for ValuatorInfo {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ValuatorMode {
     Relative = 0,
     Absolute = 1,
@@ -538,7 +538,7 @@ impl Default for ValuatorMode {
         ValuatorMode::Relative
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputInfo {
     pub class_id: InputClass,
     pub len: Card8,
@@ -675,7 +675,7 @@ impl AsByteSequence for InputInfo {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceName {
     pub string: String,
 }
@@ -711,7 +711,7 @@ impl AsByteSequence for DeviceName {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListInputDevicesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -754,7 +754,7 @@ impl Request for ListInputDevicesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListInputDevicesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListInputDevicesReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -859,7 +859,7 @@ impl AsByteSequence for ListInputDevicesReply {
     }
 }
 pub type EventTypeBase = Card8;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputClassInfo {
     pub class_id: InputClass,
     pub event_type_base: EventTypeBase,
@@ -895,7 +895,7 @@ impl AsByteSequence for InputClassInfo {
         self.class_id.size() + self.event_type_base.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -945,7 +945,7 @@ impl Request for OpenDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = OpenDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenDeviceReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1014,7 +1014,7 @@ impl AsByteSequence for OpenDeviceReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CloseDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1064,7 +1064,7 @@ impl Request for CloseDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceModeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1119,7 +1119,7 @@ impl Request for SetDeviceModeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SetDeviceModeReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceModeReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1176,7 +1176,7 @@ impl AsByteSequence for SetDeviceModeReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectExtensionEventRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1248,7 +1248,7 @@ impl Request for SelectExtensionEventRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectedExtensionEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1296,7 +1296,7 @@ impl Request for GetSelectedExtensionEventsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSelectedExtensionEventsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectedExtensionEventsReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1383,7 +1383,7 @@ impl AsByteSequence for GetSelectedExtensionEventsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDeviceDontPropagateListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1462,7 +1462,7 @@ impl Request for ChangeDeviceDontPropagateListRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PropagateMode {
     AddToList = 0,
     DeleteFromList = 1,
@@ -1492,7 +1492,7 @@ impl Default for PropagateMode {
         PropagateMode::AddToList
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceDontPropagateListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1540,7 +1540,7 @@ impl Request for GetDeviceDontPropagateListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceDontPropagateListReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceDontPropagateListReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1609,7 +1609,7 @@ impl AsByteSequence for GetDeviceDontPropagateListReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeKeyboardDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1659,7 +1659,7 @@ impl Request for ChangeKeyboardDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ChangeKeyboardDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeKeyboardDeviceReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1716,7 +1716,7 @@ impl AsByteSequence for ChangeKeyboardDeviceReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangePointerDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1782,7 +1782,7 @@ impl Request for ChangePointerDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ChangePointerDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangePointerDeviceReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1839,7 +1839,7 @@ impl AsByteSequence for ChangePointerDeviceReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1941,7 +1941,7 @@ impl Request for GrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GrabDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabDeviceReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -1998,7 +1998,7 @@ impl AsByteSequence for GrabDeviceReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UngrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2053,7 +2053,7 @@ impl Request for UngrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabDeviceKeyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2168,7 +2168,7 @@ impl Request for GrabDeviceKeyRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ModifierDevice {
     UseXKeyboard = 255,
 }
@@ -2196,7 +2196,7 @@ impl Default for ModifierDevice {
         ModifierDevice::UseXKeyboard
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UngrabDeviceKeyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2271,7 +2271,7 @@ impl Request for UngrabDeviceKeyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabDeviceButtonRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2385,7 +2385,7 @@ impl Request for GrabDeviceButtonRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UngrabDeviceButtonRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2463,7 +2463,7 @@ impl Request for UngrabDeviceButtonRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AllowDeviceEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2530,7 +2530,7 @@ impl Request for AllowDeviceEventsRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceInputMode {
     AsyncThisDevice = 0,
     SyncThisDevice = 1,
@@ -2568,7 +2568,7 @@ impl Default for DeviceInputMode {
         DeviceInputMode::AsyncThisDevice
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceFocusRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2618,7 +2618,7 @@ impl Request for GetDeviceFocusRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceFocusReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceFocusReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -2687,7 +2687,7 @@ impl AsByteSequence for GetDeviceFocusReply {
             + 15
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceFocusRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2759,7 +2759,7 @@ impl Request for SetDeviceFocusRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KbdFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -2853,7 +2853,7 @@ impl AsByteSequence for KbdFeedbackState {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FeedbackClass {
     Keyboard = 0,
     Pointer = 1,
@@ -2891,7 +2891,7 @@ impl Default for FeedbackClass {
         FeedbackClass::Keyboard
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PtrFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -2954,7 +2954,7 @@ impl AsByteSequence for PtrFeedbackState {
             + self.threshold.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3014,7 +3014,7 @@ impl AsByteSequence for IntegerFeedbackState {
             + self.max_value.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StringFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3080,7 +3080,7 @@ impl AsByteSequence for StringFeedbackState {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BellFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3143,7 +3143,7 @@ impl AsByteSequence for BellFeedbackState {
             + self.duration.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LedFeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3197,7 +3197,7 @@ impl AsByteSequence for LedFeedbackState {
             + self.led_values.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FeedbackState {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3521,7 +3521,7 @@ impl AsByteSequence for FeedbackState {
             + self.duration_.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFeedbackControlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3571,7 +3571,7 @@ impl Request for GetFeedbackControlRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetFeedbackControlReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFeedbackControlReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -3640,7 +3640,7 @@ impl AsByteSequence for GetFeedbackControlReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KbdFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3730,7 +3730,7 @@ impl AsByteSequence for KbdFeedbackCtl {
             + self.led_values.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PtrFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3793,7 +3793,7 @@ impl AsByteSequence for PtrFeedbackCtl {
             + self.threshold.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3841,7 +3841,7 @@ impl AsByteSequence for IntegerFeedbackCtl {
             + self.int_to_display.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StringFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3904,7 +3904,7 @@ impl AsByteSequence for StringFeedbackCtl {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BellFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -3967,7 +3967,7 @@ impl AsByteSequence for BellFeedbackCtl {
             + self.duration.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LedFeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -4021,7 +4021,7 @@ impl AsByteSequence for LedFeedbackCtl {
             + self.led_values.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FeedbackCtl {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
@@ -4310,7 +4310,7 @@ impl AsByteSequence for FeedbackCtl {
             + self.duration.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeFeedbackControlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4384,7 +4384,7 @@ impl Request for ChangeFeedbackControlRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChangeFeedbackControlMask {
     pub inner: u32,
 }
@@ -4594,7 +4594,7 @@ impl core::ops::BitXor for ChangeFeedbackControlMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceKeyMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4660,7 +4660,7 @@ impl Request for GetDeviceKeyMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceKeyMappingReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceKeyMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -4731,7 +4731,7 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDeviceKeyMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4816,7 +4816,7 @@ impl Request for ChangeDeviceKeyMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceModifierMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4866,7 +4866,7 @@ impl Request for GetDeviceModifierMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceModifierMappingReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceModifierMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -4939,7 +4939,7 @@ impl AsByteSequence for GetDeviceModifierMappingReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceModifierMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5015,7 +5015,7 @@ impl Request for SetDeviceModifierMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SetDeviceModifierMappingReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceModifierMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -5072,7 +5072,7 @@ impl AsByteSequence for SetDeviceModifierMappingReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceButtonMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5122,7 +5122,7 @@ impl Request for GetDeviceButtonMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceButtonMappingReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceButtonMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -5191,7 +5191,7 @@ impl AsByteSequence for GetDeviceButtonMappingReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceButtonMappingRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5263,7 +5263,7 @@ impl Request for SetDeviceButtonMappingRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SetDeviceButtonMappingReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceButtonMappingReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -5320,7 +5320,7 @@ impl AsByteSequence for SetDeviceButtonMappingReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyState {
     pub class_id: InputClass,
     pub len: Card8,
@@ -5367,7 +5367,7 @@ impl AsByteSequence for KeyState {
         self.class_id.size() + self.len.size() + self.num_keys.size() + 1 + self.keys.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonState {
     pub class_id: InputClass,
     pub len: Card8,
@@ -5414,7 +5414,7 @@ impl AsByteSequence for ButtonState {
         self.class_id.size() + self.len.size() + self.num_buttons.size() + 1 + self.buttons.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValuatorState {
     pub class_id: InputClass,
     pub len: Card8,
@@ -5476,7 +5476,7 @@ impl AsByteSequence for ValuatorState {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ValuatorStateModeMask {
     pub inner: u8,
 }
@@ -5575,7 +5575,7 @@ impl core::ops::BitXor for ValuatorStateModeMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputState {
     pub class_id: InputClass,
     pub len: Card8,
@@ -5686,7 +5686,7 @@ impl AsByteSequence for InputState {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryDeviceStateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5736,7 +5736,7 @@ impl Request for QueryDeviceStateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryDeviceStateReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryDeviceStateReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -5805,7 +5805,7 @@ impl AsByteSequence for QueryDeviceStateReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceBellRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5874,7 +5874,7 @@ impl Request for DeviceBellRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceValuatorsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5952,7 +5952,7 @@ impl Request for SetDeviceValuatorsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SetDeviceValuatorsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceValuatorsReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -6009,7 +6009,7 @@ impl AsByteSequence for SetDeviceValuatorsReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceResolutionState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6095,7 +6095,7 @@ impl AsByteSequence for DeviceResolutionState {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceControl {
     Resolution = 1,
     AbsCalib = 2,
@@ -6131,7 +6131,7 @@ impl Default for DeviceControl {
         DeviceControl::Resolution
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceAbsCalibState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6216,7 +6216,7 @@ impl AsByteSequence for DeviceAbsCalibState {
             + self.button_threshold.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceAbsAreaState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6289,7 +6289,7 @@ impl AsByteSequence for DeviceAbsAreaState {
             + self.following.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceCoreState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6337,7 +6337,7 @@ impl AsByteSequence for DeviceCoreState {
         self.control_id.size() + self.len.size() + self.status.size() + self.iscore.size() + 2
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceEnableState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6380,7 +6380,7 @@ impl AsByteSequence for DeviceEnableState {
         self.control_id.size() + self.len.size() + self.enable.size() + 3
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceState {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6701,7 +6701,7 @@ impl AsByteSequence for DeviceState {
             + self.following.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceControlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6762,7 +6762,7 @@ impl Request for GetDeviceControlRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceControlReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceControlReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -6825,7 +6825,7 @@ impl AsByteSequence for GetDeviceControlReply {
             + self.control.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceResolutionCtl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6889,7 +6889,7 @@ impl AsByteSequence for DeviceResolutionCtl {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceAbsCalibCtl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -6974,7 +6974,7 @@ impl AsByteSequence for DeviceAbsCalibCtl {
             + self.button_threshold.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceAbsAreaCtrl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -7047,7 +7047,7 @@ impl AsByteSequence for DeviceAbsAreaCtrl {
             + self.following.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceCoreCtrl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -7090,7 +7090,7 @@ impl AsByteSequence for DeviceCoreCtrl {
         self.control_id.size() + self.len.size() + self.status.size() + 3
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceEnableCtrl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -7133,7 +7133,7 @@ impl AsByteSequence for DeviceEnableCtrl {
         self.control_id.size() + self.len.size() + self.enable.size() + 3
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceCtl {
     pub control_id: DeviceControl,
     pub len: Card16,
@@ -7417,7 +7417,7 @@ impl AsByteSequence for DeviceCtl {
             + self.following.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDeviceControlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7484,7 +7484,7 @@ impl Request for ChangeDeviceControlRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ChangeDeviceControlReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDeviceControlReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -7541,7 +7541,7 @@ impl AsByteSequence for ChangeDeviceControlReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListDevicePropertiesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7591,7 +7591,7 @@ impl Request for ListDevicePropertiesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListDevicePropertiesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListDevicePropertiesReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -7660,7 +7660,7 @@ impl AsByteSequence for ListDevicePropertiesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDevicePropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7790,7 +7790,7 @@ impl Request for ChangeDevicePropertyRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PropertyFormat {
     EightBits = 8,
     SixteenBits = 16,
@@ -7822,7 +7822,7 @@ impl Default for PropertyFormat {
         PropertyFormat::EightBits
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeleteDevicePropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7882,7 +7882,7 @@ impl Request for DeleteDevicePropertyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDevicePropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7966,7 +7966,7 @@ impl Request for GetDevicePropertyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDevicePropertyReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDevicePropertyReply {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
@@ -8092,7 +8092,7 @@ impl AsByteSequence for GetDevicePropertyReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GroupInfo {
     pub base: Card8,
     pub latched: Card8,
@@ -8137,7 +8137,7 @@ impl AsByteSequence for GroupInfo {
         self.base.size() + self.latched.size() + self.locked.size() + self.effective.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ModifierInfo {
     pub base: Card32,
     pub latched: Card32,
@@ -8182,7 +8182,7 @@ impl AsByteSequence for ModifierInfo {
         self.base.size() + self.latched.size() + self.locked.size() + self.effective.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryPointerRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8242,7 +8242,7 @@ impl Request for XiQueryPointerRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiQueryPointerReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryPointerReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8360,7 +8360,7 @@ impl AsByteSequence for XiQueryPointerReply {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Device {
     All = 0,
     AllMaster = 1,
@@ -8390,7 +8390,7 @@ impl Default for Device {
         Device::All
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiWarpPointerRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8492,7 +8492,7 @@ impl Request for XiWarpPointerRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiChangeCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8558,7 +8558,7 @@ impl Request for XiChangeCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AddMaster {
     pub ty: HierarchyChangeType,
     pub len: Card16,
@@ -8625,7 +8625,7 @@ impl AsByteSequence for AddMaster {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum HierarchyChangeType {
     AddMaster = 1,
     RemoveMaster = 2,
@@ -8659,7 +8659,7 @@ impl Default for HierarchyChangeType {
         HierarchyChangeType::AddMaster
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RemoveMaster {
     pub ty: HierarchyChangeType,
     pub len: Card16,
@@ -8724,7 +8724,7 @@ impl AsByteSequence for RemoveMaster {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ChangeMode {
     Attach = 1,
     Float = 2,
@@ -8754,7 +8754,7 @@ impl Default for ChangeMode {
         ChangeMode::Attach
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AttachSlave {
     pub ty: HierarchyChangeType,
     pub len: Card16,
@@ -8800,7 +8800,7 @@ impl AsByteSequence for AttachSlave {
         self.ty.size() + self.len.size() + self.deviceid.size() + self.master.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DetachSlave {
     pub ty: HierarchyChangeType,
     pub len: Card16,
@@ -8843,7 +8843,7 @@ impl AsByteSequence for DetachSlave {
         self.ty.size() + self.len.size() + self.deviceid.size() + 2
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HierarchyChange {
     pub ty: HierarchyChangeType,
     pub len: Card16,
@@ -9025,7 +9025,7 @@ impl AsByteSequence for HierarchyChange {
             + 2
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiChangeHierarchyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9086,7 +9086,7 @@ impl Request for XiChangeHierarchyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiSetClientPointerRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9146,7 +9146,7 @@ impl Request for XiSetClientPointerRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetClientPointerRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9194,7 +9194,7 @@ impl Request for XiGetClientPointerRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiGetClientPointerReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetClientPointerReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9254,7 +9254,7 @@ impl AsByteSequence for XiGetClientPointerReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EventMask {
     pub deviceid: DeviceId,
     pub mask: Vec<Card32>,
@@ -9300,7 +9300,7 @@ impl AsByteSequence for EventMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiSelectEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9372,7 +9372,7 @@ impl Request for XiSelectEventsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9429,7 +9429,7 @@ impl Request for XiQueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiQueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9489,7 +9489,7 @@ impl AsByteSequence for XiQueryVersionReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -9568,7 +9568,7 @@ impl AsByteSequence for ButtonClass {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceClassType {
     Key = 0,
     Button = 1,
@@ -9604,7 +9604,7 @@ impl Default for DeviceClassType {
         DeviceClassType::Key
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -9664,7 +9664,7 @@ impl AsByteSequence for KeyClass {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ScrollClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -9734,7 +9734,7 @@ impl AsByteSequence for ScrollClass {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ScrollType {
     Vertical = 1,
     Horizontal = 2,
@@ -9765,7 +9765,7 @@ impl Default for ScrollType {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ScrollFlags {
     pub inner: u32,
 }
@@ -9864,7 +9864,7 @@ impl core::ops::BitXor for ScrollFlags {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TouchClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -9919,7 +9919,7 @@ impl AsByteSequence for TouchClass {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TouchMode {
     Direct = 1,
     Dependent = 2,
@@ -9949,7 +9949,7 @@ impl Default for TouchMode {
         TouchMode::Direct
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValuatorClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -10036,7 +10036,7 @@ impl AsByteSequence for ValuatorClass {
             + 3
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceClass {
     pub ty: DeviceClassType,
     pub len: Card16,
@@ -10316,7 +10316,7 @@ impl AsByteSequence for DeviceClass {
             + self.num_touches.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiDeviceInfo {
     pub deviceid: DeviceId,
     pub ty: DeviceType,
@@ -10403,7 +10403,7 @@ impl AsByteSequence for XiDeviceInfo {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceType {
     MasterPointer = 1,
     MasterKeyboard = 2,
@@ -10439,7 +10439,7 @@ impl Default for DeviceType {
         DeviceType::MasterPointer
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10489,7 +10489,7 @@ impl Request for XiQueryDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiQueryDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiQueryDeviceReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10555,7 +10555,7 @@ impl AsByteSequence for XiQueryDeviceReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiSetFocusRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10621,7 +10621,7 @@ impl Request for XiSetFocusRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetFocusRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10671,7 +10671,7 @@ impl Request for XiGetFocusRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiGetFocusReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetFocusReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10725,7 +10725,7 @@ impl AsByteSequence for XiGetFocusReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10833,7 +10833,7 @@ impl Request for XiGrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiGrabDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGrabDeviceReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10888,7 +10888,7 @@ impl AsByteSequence for XiGrabDeviceReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GrabOwner {
     NoOwner = 0,
     Owner = 1,
@@ -10918,7 +10918,7 @@ impl Default for GrabOwner {
         GrabOwner::NoOwner
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiUngrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10973,7 +10973,7 @@ impl Request for XiUngrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiAllowEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11052,7 +11052,7 @@ impl Request for XiAllowEventsRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EventMode {
     AsyncDevice = 0,
     SyncDevice = 1,
@@ -11094,7 +11094,7 @@ impl Default for EventMode {
         EventMode::AsyncDevice
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabModifierInfo {
     pub modifiers: Card32,
     pub status: GrabStatus,
@@ -11132,7 +11132,7 @@ impl AsByteSequence for GrabModifierInfo {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModifierMask {
     pub inner: u32,
 }
@@ -11214,7 +11214,7 @@ impl core::ops::BitXor for ModifierMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiPassiveGrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11352,7 +11352,7 @@ impl Request for XiPassiveGrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiPassiveGrabDeviceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiPassiveGrabDeviceReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -11419,7 +11419,7 @@ impl AsByteSequence for XiPassiveGrabDeviceReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GrabType {
     Button = 0,
     Keycode = 1,
@@ -11456,7 +11456,7 @@ impl Default for GrabType {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GrabMode22 {
     Sync = 0,
     Async = 1,
@@ -11488,7 +11488,7 @@ impl Default for GrabMode22 {
         GrabMode22::Sync
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiPassiveUngrabDeviceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11578,7 +11578,7 @@ impl Request for XiPassiveUngrabDeviceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiListPropertiesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11628,7 +11628,7 @@ impl Request for XiListPropertiesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiListPropertiesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiListPropertiesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -11694,7 +11694,7 @@ impl AsByteSequence for XiListPropertiesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiChangePropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11820,7 +11820,7 @@ impl Request for XiChangePropertyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiDeletePropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11880,7 +11880,7 @@ impl Request for XiDeletePropertyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetPropertyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11964,7 +11964,7 @@ impl Request for XiGetPropertyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiGetPropertyReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetPropertyReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -12081,7 +12081,7 @@ impl AsByteSequence for XiGetPropertyReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetSelectedEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -12129,7 +12129,7 @@ impl Request for XiGetSelectedEventsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = XiGetSelectedEventsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiGetSelectedEventsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -12195,7 +12195,7 @@ impl AsByteSequence for XiGetSelectedEventsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BarrierReleasePointerInfo {
     pub deviceid: DeviceId,
     pub barrier: Barrier,
@@ -12237,7 +12237,7 @@ impl AsByteSequence for BarrierReleasePointerInfo {
         self.deviceid.size() + 2 + self.barrier.size() + self.eventid.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct XiBarrierReleasePointerRequest {
     pub req_type: u8,
     pub length: u16,
@@ -12306,7 +12306,7 @@ impl Request for XiBarrierReleasePointerRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClassesReportedMask {
     pub inner: u8,
 }
@@ -12463,7 +12463,7 @@ impl core::ops::BitXor for ClassesReportedMask {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ChangeDevice {
     NewPointer = 0,
     NewKeyboard = 1,
@@ -12494,7 +12494,7 @@ impl Default for ChangeDevice {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DeviceChange {
     Added = 0,
     Removed = 1,
@@ -12533,7 +12533,7 @@ impl Default for DeviceChange {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ChangeReason {
     SlaveSwitch = 1,
     DeviceChange = 2,
@@ -12564,7 +12564,7 @@ impl Default for ChangeReason {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KeyEventFlags {
     pub inner: u32,
 }
@@ -12647,7 +12647,7 @@ impl core::ops::BitXor for KeyEventFlags {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PointerEventFlags {
     pub inner: u32,
 }
@@ -12729,7 +12729,7 @@ impl core::ops::BitXor for PointerEventFlags {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HierarchyInfo {
     pub deviceid: DeviceId,
     pub attachment: DeviceId,
@@ -12787,7 +12787,7 @@ impl AsByteSequence for HierarchyInfo {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct HierarchyMask {
     pub inner: u32,
 }
@@ -12998,7 +12998,7 @@ impl core::ops::BitXor for HierarchyMask {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PropertyFlag {
     Deleted = 0,
     Created = 1,
@@ -13031,7 +13031,7 @@ impl Default for PropertyFlag {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TouchEventFlags {
     pub inner: u32,
 }
@@ -13131,7 +13131,7 @@ impl core::ops::BitXor for TouchEventFlags {
     }
 }
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TouchOwnershipFlags {
     None = 0,
 }
@@ -13160,7 +13160,7 @@ impl Default for TouchOwnershipFlags {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BarrierFlags {
     pub inner: u32,
 }
@@ -13259,7 +13259,7 @@ impl core::ops::BitXor for BarrierFlags {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SendExtensionEventRequest {
     pub req_type: u8,
     pub length: u16,
@@ -13362,7 +13362,7 @@ impl Request for SendExtensionEventRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MoreEventsMask {
     pub inner: i32,
 }
@@ -13445,7 +13445,7 @@ impl core::ops::BitXor for MoreEventsMask {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NotifyDetail {
     Ancestor = 0,
     Virtual = 1,
@@ -13488,7 +13488,7 @@ impl Default for NotifyDetail {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NotifyMode {
     Normal = 0,
     Grab = 1,
@@ -13527,7 +13527,7 @@ impl Default for NotifyMode {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct XiEventMask {
     pub inner: i32,
 }
@@ -14061,7 +14061,7 @@ impl core::ops::BitXor for XiEventMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BarrierHitEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -14181,7 +14181,7 @@ impl AsByteSequence for BarrierHitEvent {
 impl crate::auto::Event for BarrierHitEvent {
     const OPCODE: u8 = 25;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BarrierLeaveEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -14301,7 +14301,7 @@ impl AsByteSequence for BarrierLeaveEvent {
 impl crate::auto::Event for BarrierLeaveEvent {
     const OPCODE: u8 = 26;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonPressEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -14486,7 +14486,7 @@ impl AsByteSequence for ButtonPressEvent {
 impl crate::auto::Event for ButtonPressEvent {
     const OPCODE: u8 = 4;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ButtonReleaseEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -14671,7 +14671,7 @@ impl AsByteSequence for ButtonReleaseEvent {
 impl crate::auto::Event for ButtonReleaseEvent {
     const OPCODE: u8 = 5;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDeviceNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -14731,7 +14731,7 @@ impl AsByteSequence for ChangeDeviceNotifyEvent {
 impl crate::auto::Event for ChangeDeviceNotifyEvent {
     const OPCODE: u8 = 12;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceButtonPressEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -14842,7 +14842,7 @@ impl AsByteSequence for DeviceButtonPressEvent {
 impl crate::auto::Event for DeviceButtonPressEvent {
     const OPCODE: u8 = 3;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceButtonReleaseEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -14953,7 +14953,7 @@ impl AsByteSequence for DeviceButtonReleaseEvent {
 impl crate::auto::Event for DeviceButtonReleaseEvent {
     const OPCODE: u8 = 4;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceButtonStateNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -15001,7 +15001,7 @@ impl AsByteSequence for DeviceButtonStateNotifyEvent {
 impl crate::auto::Event for DeviceButtonStateNotifyEvent {
     const OPCODE: u8 = 14;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceChangedEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -15085,7 +15085,7 @@ impl AsByteSequence for DeviceChangedEvent {
 impl crate::auto::Event for DeviceChangedEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceFocusInEvent {
     pub event_type: u8,
     pub detail: super::xproto::NotifyDetail,
@@ -15159,7 +15159,7 @@ impl AsByteSequence for DeviceFocusInEvent {
 impl crate::auto::Event for DeviceFocusInEvent {
     const OPCODE: u8 = 6;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceFocusOutEvent {
     pub event_type: u8,
     pub detail: super::xproto::NotifyDetail,
@@ -15233,7 +15233,7 @@ impl AsByteSequence for DeviceFocusOutEvent {
 impl crate::auto::Event for DeviceFocusOutEvent {
     const OPCODE: u8 = 7;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceKeyPressEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -15344,7 +15344,7 @@ impl AsByteSequence for DeviceKeyPressEvent {
 impl crate::auto::Event for DeviceKeyPressEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceKeyReleaseEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -15455,7 +15455,7 @@ impl AsByteSequence for DeviceKeyReleaseEvent {
 impl crate::auto::Event for DeviceKeyReleaseEvent {
     const OPCODE: u8 = 2;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceKeyStateNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -15503,7 +15503,7 @@ impl AsByteSequence for DeviceKeyStateNotifyEvent {
 impl crate::auto::Event for DeviceKeyStateNotifyEvent {
     const OPCODE: u8 = 13;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceMappingNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -15578,7 +15578,7 @@ impl AsByteSequence for DeviceMappingNotifyEvent {
 impl crate::auto::Event for DeviceMappingNotifyEvent {
     const OPCODE: u8 = 11;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceMotionNotifyEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -15689,7 +15689,7 @@ impl AsByteSequence for DeviceMotionNotifyEvent {
 impl crate::auto::Event for DeviceMotionNotifyEvent {
     const OPCODE: u8 = 5;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DevicePresenceNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -15758,7 +15758,7 @@ impl AsByteSequence for DevicePresenceNotifyEvent {
 impl crate::auto::Event for DevicePresenceNotifyEvent {
     const OPCODE: u8 = 15;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DevicePropertyNotifyEvent {
     pub event_type: u8,
     pub state: Property,
@@ -15824,7 +15824,7 @@ impl AsByteSequence for DevicePropertyNotifyEvent {
 impl crate::auto::Event for DevicePropertyNotifyEvent {
     const OPCODE: u8 = 16;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceStateNotifyEvent {
     pub event_type: u8,
     pub device_id: Byte,
@@ -15918,7 +15918,7 @@ impl AsByteSequence for DeviceStateNotifyEvent {
 impl crate::auto::Event for DeviceStateNotifyEvent {
     const OPCODE: u8 = 10;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeviceValuatorEvent {
     pub event_type: u8,
     pub device_id: Card8,
@@ -15987,7 +15987,7 @@ impl AsByteSequence for DeviceValuatorEvent {
 impl crate::auto::Event for DeviceValuatorEvent {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EnterEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16142,7 +16142,7 @@ impl AsByteSequence for EnterEvent {
 impl crate::auto::Event for EnterEvent {
     const OPCODE: u8 = 7;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FocusInEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16297,7 +16297,7 @@ impl AsByteSequence for FocusInEvent {
 impl crate::auto::Event for FocusInEvent {
     const OPCODE: u8 = 9;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FocusOutEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16452,7 +16452,7 @@ impl AsByteSequence for FocusOutEvent {
 impl crate::auto::Event for FocusOutEvent {
     const OPCODE: u8 = 10;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HierarchyEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16530,7 +16530,7 @@ impl AsByteSequence for HierarchyEvent {
 impl crate::auto::Event for HierarchyEvent {
     const OPCODE: u8 = 11;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyPressEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16714,7 +16714,7 @@ impl AsByteSequence for KeyPressEvent {
 impl crate::auto::Event for KeyPressEvent {
     const OPCODE: u8 = 2;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyReleaseEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -16898,7 +16898,7 @@ impl AsByteSequence for KeyReleaseEvent {
 impl crate::auto::Event for KeyReleaseEvent {
     const OPCODE: u8 = 3;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LeaveEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17053,7 +17053,7 @@ impl AsByteSequence for LeaveEvent {
 impl crate::auto::Event for LeaveEvent {
     const OPCODE: u8 = 8;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MotionEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17238,7 +17238,7 @@ impl AsByteSequence for MotionEvent {
 impl crate::auto::Event for MotionEvent {
     const OPCODE: u8 = 6;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PropertyEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17304,7 +17304,7 @@ impl AsByteSequence for PropertyEvent {
 impl crate::auto::Event for PropertyEvent {
     const OPCODE: u8 = 12;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProximityInEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -17415,7 +17415,7 @@ impl AsByteSequence for ProximityInEvent {
 impl crate::auto::Event for ProximityInEvent {
     const OPCODE: u8 = 8;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProximityOutEvent {
     pub event_type: u8,
     pub detail: Byte,
@@ -17526,7 +17526,7 @@ impl AsByteSequence for ProximityOutEvent {
 impl crate::auto::Event for ProximityOutEvent {
     const OPCODE: u8 = 9;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawButtonPressEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17661,7 +17661,7 @@ impl AsByteSequence for RawButtonPressEvent {
 impl crate::auto::Event for RawButtonPressEvent {
     const OPCODE: u8 = 15;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawButtonReleaseEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17796,7 +17796,7 @@ impl AsByteSequence for RawButtonReleaseEvent {
 impl crate::auto::Event for RawButtonReleaseEvent {
     const OPCODE: u8 = 16;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawKeyPressEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -17930,7 +17930,7 @@ impl AsByteSequence for RawKeyPressEvent {
 impl crate::auto::Event for RawKeyPressEvent {
     const OPCODE: u8 = 13;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawKeyReleaseEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18064,7 +18064,7 @@ impl AsByteSequence for RawKeyReleaseEvent {
 impl crate::auto::Event for RawKeyReleaseEvent {
     const OPCODE: u8 = 14;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawMotionEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18199,7 +18199,7 @@ impl AsByteSequence for RawMotionEvent {
 impl crate::auto::Event for RawMotionEvent {
     const OPCODE: u8 = 17;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawTouchBeginEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18333,7 +18333,7 @@ impl AsByteSequence for RawTouchBeginEvent {
 impl crate::auto::Event for RawTouchBeginEvent {
     const OPCODE: u8 = 22;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawTouchEndEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18467,7 +18467,7 @@ impl AsByteSequence for RawTouchEndEvent {
 impl crate::auto::Event for RawTouchEndEvent {
     const OPCODE: u8 = 24;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RawTouchUpdateEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18601,7 +18601,7 @@ impl AsByteSequence for RawTouchUpdateEvent {
 impl crate::auto::Event for RawTouchUpdateEvent {
     const OPCODE: u8 = 23;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TouchBeginEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18785,7 +18785,7 @@ impl AsByteSequence for TouchBeginEvent {
 impl crate::auto::Event for TouchBeginEvent {
     const OPCODE: u8 = 18;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TouchEndEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -18969,7 +18969,7 @@ impl AsByteSequence for TouchEndEvent {
 impl crate::auto::Event for TouchEndEvent {
     const OPCODE: u8 = 20;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TouchOwnershipEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,
@@ -19063,7 +19063,7 @@ impl AsByteSequence for TouchOwnershipEvent {
 impl crate::auto::Event for TouchOwnershipEvent {
     const OPCODE: u8 = 21;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TouchUpdateEvent {
     pub event_type: u8,
     pub deviceid: DeviceId,

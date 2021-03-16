@@ -28,6 +28,7 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
             "Eq",
             "PartialOrd",
             "Ord",
+            "Hash",
         ],
         fds: vec![],
         is_transparent: true,

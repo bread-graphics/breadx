@@ -160,7 +160,7 @@ pub type Float32 = Float;
 pub type Float64 = Double;
 pub type Bool32 = Card32;
 pub type ContextTag = Card32;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RenderRequest {
     pub req_type: u8,
     pub length: u16,
@@ -221,7 +221,7 @@ impl Request for RenderRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RenderLargeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -302,7 +302,7 @@ impl Request for RenderLargeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -382,7 +382,7 @@ impl Request for CreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -431,7 +431,7 @@ impl Request for DestroyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MakeCurrentRequest {
     pub req_type: u8,
     pub length: u16,
@@ -496,7 +496,7 @@ impl Request for MakeCurrentRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = MakeCurrentReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MakeCurrentReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -550,7 +550,7 @@ impl AsByteSequence for MakeCurrentReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsDirectRequest {
     pub req_type: u8,
     pub length: u16,
@@ -599,7 +599,7 @@ impl Request for IsDirectRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsDirectReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsDirectReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -653,7 +653,7 @@ impl AsByteSequence for IsDirectReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -710,7 +710,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -770,7 +770,7 @@ impl AsByteSequence for QueryVersionReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct WaitGlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -818,7 +818,7 @@ impl Request for WaitGlRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct WaitXRequest {
     pub req_type: u8,
     pub length: u16,
@@ -866,7 +866,7 @@ impl Request for WaitXRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CopyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -937,7 +937,7 @@ impl Request for CopyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SwapBuffersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -995,7 +995,7 @@ impl Request for SwapBuffersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UseXFontRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1070,7 +1070,7 @@ impl Request for UseXFontRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateGlxPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1141,7 +1141,7 @@ impl Request for CreateGlxPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVisualConfigsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1189,7 +1189,7 @@ impl Request for GetVisualConfigsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetVisualConfigsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVisualConfigsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1263,7 +1263,7 @@ impl AsByteSequence for GetVisualConfigsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyGlxPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1312,7 +1312,7 @@ impl Request for DestroyGlxPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VendorPrivateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1383,7 +1383,7 @@ impl Request for VendorPrivateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VendorPrivateWithReplyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1454,7 +1454,7 @@ impl Request for VendorPrivateWithReplyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = VendorPrivateWithReplyReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VendorPrivateWithReplyReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1525,7 +1525,7 @@ impl AsByteSequence for VendorPrivateWithReplyReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryExtensionsStringRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1573,7 +1573,7 @@ impl Request for QueryExtensionsStringRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryExtensionsStringReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryExtensionsStringReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1630,7 +1630,7 @@ impl AsByteSequence for QueryExtensionsStringReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryServerStringRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1683,7 +1683,7 @@ impl Request for QueryServerStringRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryServerStringReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryServerStringReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1752,7 +1752,7 @@ impl AsByteSequence for QueryServerStringReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ClientInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1827,7 +1827,7 @@ impl Request for ClientInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFbConfigsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1875,7 +1875,7 @@ impl Request for GetFbConfigsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetFbConfigsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFbConfigsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1949,7 +1949,7 @@ impl AsByteSequence for GetFbConfigsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreatePixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2040,7 +2040,7 @@ impl Request for CreatePixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2089,7 +2089,7 @@ impl Request for DestroyPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateNewContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2175,7 +2175,7 @@ impl Request for CreateNewContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2224,7 +2224,7 @@ impl Request for QueryContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2292,7 +2292,7 @@ impl AsByteSequence for QueryContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MakeContextCurrentRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2364,7 +2364,7 @@ impl Request for MakeContextCurrentRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = MakeContextCurrentReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MakeContextCurrentReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2418,7 +2418,7 @@ impl AsByteSequence for MakeContextCurrentReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreatePbufferRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2501,7 +2501,7 @@ impl Request for CreatePbufferRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyPbufferRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2549,7 +2549,7 @@ impl Request for DestroyPbufferRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDrawableAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2598,7 +2598,7 @@ impl Request for GetDrawableAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDrawableAttributesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDrawableAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2666,7 +2666,7 @@ impl AsByteSequence for GetDrawableAttributesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeDrawableAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2738,7 +2738,7 @@ impl Request for ChangeDrawableAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2829,7 +2829,7 @@ impl Request for CreateWindowRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeleteWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2878,7 +2878,7 @@ impl Request for DeleteWindowRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetClientInfoArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2991,7 +2991,7 @@ impl Request for SetClientInfoArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateContextAttribsArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3091,7 +3091,7 @@ impl Request for CreateContextAttribsArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetClientInfo2ArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3204,7 +3204,7 @@ impl Request for SetClientInfo2ArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NewListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3267,7 +3267,7 @@ impl Request for NewListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EndListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3315,7 +3315,7 @@ impl Request for EndListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeleteListsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3378,7 +3378,7 @@ impl Request for DeleteListsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenListsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3431,7 +3431,7 @@ impl Request for GenListsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GenListsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenListsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -3478,7 +3478,7 @@ impl AsByteSequence for GenListsReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.ret_val.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FeedbackBufferRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3541,7 +3541,7 @@ impl Request for FeedbackBufferRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectBufferRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3594,7 +3594,7 @@ impl Request for SelectBufferRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RenderModeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3647,7 +3647,7 @@ impl Request for RenderModeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = RenderModeReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RenderModeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -3725,7 +3725,7 @@ impl AsByteSequence for RenderModeReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FinishRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3773,7 +3773,7 @@ impl Request for FinishRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = FinishReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FinishReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -3815,7 +3815,7 @@ impl AsByteSequence for FinishReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PixelStorefRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3878,7 +3878,7 @@ impl Request for PixelStorefRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PixelStoreiRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3941,7 +3941,7 @@ impl Request for PixelStoreiRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ReadPixelsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4040,7 +4040,7 @@ impl Request for ReadPixelsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ReadPixelsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ReadPixelsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4097,7 +4097,7 @@ impl AsByteSequence for ReadPixelsReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetBooleanvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4150,7 +4150,7 @@ impl Request for GetBooleanvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetBooleanvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetBooleanvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4225,7 +4225,7 @@ impl AsByteSequence for GetBooleanvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClipPlaneRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4278,7 +4278,7 @@ impl Request for GetClipPlaneRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetClipPlaneReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClipPlaneReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4335,7 +4335,7 @@ impl AsByteSequence for GetClipPlaneReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDoublevRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4388,7 +4388,7 @@ impl Request for GetDoublevRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDoublevReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDoublevReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4463,7 +4463,7 @@ impl AsByteSequence for GetDoublevReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetErrorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4511,7 +4511,7 @@ impl Request for GetErrorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetErrorReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetErrorReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4558,7 +4558,7 @@ impl AsByteSequence for GetErrorReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.error.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFloatvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4611,7 +4611,7 @@ impl Request for GetFloatvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetFloatvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetFloatvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4686,7 +4686,7 @@ impl AsByteSequence for GetFloatvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetIntegervRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4739,7 +4739,7 @@ impl Request for GetIntegervRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetIntegervReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetIntegervReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4814,7 +4814,7 @@ impl AsByteSequence for GetIntegervReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetLightfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4877,7 +4877,7 @@ impl Request for GetLightfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetLightfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetLightfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -4952,7 +4952,7 @@ impl AsByteSequence for GetLightfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetLightivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5015,7 +5015,7 @@ impl Request for GetLightivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetLightivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetLightivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5090,7 +5090,7 @@ impl AsByteSequence for GetLightivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapdvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5153,7 +5153,7 @@ impl Request for GetMapdvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMapdvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapdvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5228,7 +5228,7 @@ impl AsByteSequence for GetMapdvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5291,7 +5291,7 @@ impl Request for GetMapfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMapfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5366,7 +5366,7 @@ impl AsByteSequence for GetMapfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5429,7 +5429,7 @@ impl Request for GetMapivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMapivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMapivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5504,7 +5504,7 @@ impl AsByteSequence for GetMapivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMaterialfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5567,7 +5567,7 @@ impl Request for GetMaterialfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMaterialfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMaterialfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5642,7 +5642,7 @@ impl AsByteSequence for GetMaterialfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMaterialivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5705,7 +5705,7 @@ impl Request for GetMaterialivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMaterialivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMaterialivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5780,7 +5780,7 @@ impl AsByteSequence for GetMaterialivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5833,7 +5833,7 @@ impl Request for GetPixelMapfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPixelMapfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -5908,7 +5908,7 @@ impl AsByteSequence for GetPixelMapfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapuivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5961,7 +5961,7 @@ impl Request for GetPixelMapuivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPixelMapuivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapuivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6036,7 +6036,7 @@ impl AsByteSequence for GetPixelMapuivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapusvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6089,7 +6089,7 @@ impl Request for GetPixelMapusvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPixelMapusvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPixelMapusvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6164,7 +6164,7 @@ impl AsByteSequence for GetPixelMapusvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPolygonStippleRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6221,7 +6221,7 @@ impl Request for GetPolygonStippleRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPolygonStippleReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPolygonStippleReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6278,7 +6278,7 @@ impl AsByteSequence for GetPolygonStippleReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetStringRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6331,7 +6331,7 @@ impl Request for GetStringRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetStringReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetStringReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6400,7 +6400,7 @@ impl AsByteSequence for GetStringReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexEnvfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6463,7 +6463,7 @@ impl Request for GetTexEnvfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexEnvfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexEnvfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6538,7 +6538,7 @@ impl AsByteSequence for GetTexEnvfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexEnvivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6601,7 +6601,7 @@ impl Request for GetTexEnvivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexEnvivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexEnvivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6676,7 +6676,7 @@ impl AsByteSequence for GetTexEnvivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGendvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6739,7 +6739,7 @@ impl Request for GetTexGendvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexGendvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGendvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6814,7 +6814,7 @@ impl AsByteSequence for GetTexGendvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGenfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6877,7 +6877,7 @@ impl Request for GetTexGenfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexGenfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGenfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -6952,7 +6952,7 @@ impl AsByteSequence for GetTexGenfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGenivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7015,7 +7015,7 @@ impl Request for GetTexGenivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexGenivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexGenivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7090,7 +7090,7 @@ impl AsByteSequence for GetTexGenivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7171,7 +7171,7 @@ impl Request for GetTexImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexImageReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexImageReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7254,7 +7254,7 @@ impl AsByteSequence for GetTexImageReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7317,7 +7317,7 @@ impl Request for GetTexParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7392,7 +7392,7 @@ impl AsByteSequence for GetTexParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7455,7 +7455,7 @@ impl Request for GetTexParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7530,7 +7530,7 @@ impl AsByteSequence for GetTexParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexLevelParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7599,7 +7599,7 @@ impl Request for GetTexLevelParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexLevelParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexLevelParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7674,7 +7674,7 @@ impl AsByteSequence for GetTexLevelParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexLevelParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7743,7 +7743,7 @@ impl Request for GetTexLevelParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTexLevelParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTexLevelParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7818,7 +7818,7 @@ impl AsByteSequence for GetTexLevelParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsEnabledRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7875,7 +7875,7 @@ impl Request for IsEnabledRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsEnabledReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsEnabledReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -7922,7 +7922,7 @@ impl AsByteSequence for IsEnabledReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.ret_val.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7975,7 +7975,7 @@ impl Request for IsListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsListReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsListReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8022,7 +8022,7 @@ impl AsByteSequence for IsListReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.ret_val.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FlushRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8070,7 +8070,7 @@ impl Request for FlushRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AreTexturesResidentRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8139,7 +8139,7 @@ impl Request for AreTexturesResidentRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = AreTexturesResidentReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AreTexturesResidentReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8207,7 +8207,7 @@ impl AsByteSequence for AreTexturesResidentReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeleteTexturesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8276,7 +8276,7 @@ impl Request for DeleteTexturesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenTexturesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8329,7 +8329,7 @@ impl Request for GenTexturesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GenTexturesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenTexturesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8386,7 +8386,7 @@ impl AsByteSequence for GenTexturesReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsTextureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8443,7 +8443,7 @@ impl Request for IsTextureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsTextureReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsTextureReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8490,7 +8490,7 @@ impl AsByteSequence for IsTextureReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.ret_val.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8565,7 +8565,7 @@ impl Request for GetColorTableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetColorTableReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8636,7 +8636,7 @@ impl AsByteSequence for GetColorTableReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8699,7 +8699,7 @@ impl Request for GetColorTableParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetColorTableParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8774,7 +8774,7 @@ impl AsByteSequence for GetColorTableParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8837,7 +8837,7 @@ impl Request for GetColorTableParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetColorTableParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetColorTableParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -8912,7 +8912,7 @@ impl AsByteSequence for GetColorTableParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionFilterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8987,7 +8987,7 @@ impl Request for GetConvolutionFilterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetConvolutionFilterReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionFilterReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9061,7 +9061,7 @@ impl AsByteSequence for GetConvolutionFilterReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9124,7 +9124,7 @@ impl Request for GetConvolutionParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetConvolutionParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9199,7 +9199,7 @@ impl AsByteSequence for GetConvolutionParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9262,7 +9262,7 @@ impl Request for GetConvolutionParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetConvolutionParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetConvolutionParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9337,7 +9337,7 @@ impl AsByteSequence for GetConvolutionParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSeparableFilterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9412,7 +9412,7 @@ impl Request for GetSeparableFilterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSeparableFilterReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSeparableFilterReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9486,7 +9486,7 @@ impl AsByteSequence for GetSeparableFilterReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9567,7 +9567,7 @@ impl Request for GetHistogramRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetHistogramReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9638,7 +9638,7 @@ impl AsByteSequence for GetHistogramReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9701,7 +9701,7 @@ impl Request for GetHistogramParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetHistogramParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9776,7 +9776,7 @@ impl AsByteSequence for GetHistogramParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9839,7 +9839,7 @@ impl Request for GetHistogramParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetHistogramParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetHistogramParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -9914,7 +9914,7 @@ impl AsByteSequence for GetHistogramParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9995,7 +9995,7 @@ impl Request for GetMinmaxRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMinmaxReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10052,7 +10052,7 @@ impl AsByteSequence for GetMinmaxReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxParameterfvRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10115,7 +10115,7 @@ impl Request for GetMinmaxParameterfvRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMinmaxParameterfvReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxParameterfvReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10190,7 +10190,7 @@ impl AsByteSequence for GetMinmaxParameterfvReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxParameterivRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10253,7 +10253,7 @@ impl Request for GetMinmaxParameterivRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMinmaxParameterivReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetMinmaxParameterivReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10328,7 +10328,7 @@ impl AsByteSequence for GetMinmaxParameterivReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCompressedTexImageArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10391,7 +10391,7 @@ impl Request for GetCompressedTexImageArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetCompressedTexImageArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCompressedTexImageArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10462,7 +10462,7 @@ impl AsByteSequence for GetCompressedTexImageArbReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeleteQueriesArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10531,7 +10531,7 @@ impl Request for DeleteQueriesArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenQueriesArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10584,7 +10584,7 @@ impl Request for GenQueriesArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GenQueriesArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GenQueriesArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10641,7 +10641,7 @@ impl AsByteSequence for GenQueriesArbReply {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsQueryArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10694,7 +10694,7 @@ impl Request for IsQueryArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsQueryArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsQueryArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10741,7 +10741,7 @@ impl AsByteSequence for IsQueryArbReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.ret_val.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryivArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10804,7 +10804,7 @@ impl Request for GetQueryivArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetQueryivArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryivArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -10879,7 +10879,7 @@ impl AsByteSequence for GetQueryivArbReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryObjectivArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10942,7 +10942,7 @@ impl Request for GetQueryObjectivArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetQueryObjectivArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryObjectivArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -11017,7 +11017,7 @@ impl AsByteSequence for GetQueryObjectivArbReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryObjectuivArbRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11080,7 +11080,7 @@ impl Request for GetQueryObjectuivArbRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetQueryObjectuivArbReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetQueryObjectuivArbReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -11156,7 +11156,7 @@ impl AsByteSequence for GetQueryObjectuivArbReply {
     }
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Gc {
     pub inner: i32,
 }
@@ -11583,7 +11583,7 @@ impl core::ops::BitXor for Gc {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Pbcdt {
     Window = 32793,
     Pbuffer = 32794,
@@ -11614,7 +11614,7 @@ impl Default for Pbcdt {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Pbcet {
     Damaged = 32791,
     Saved = 32792,
@@ -11645,7 +11645,7 @@ impl Default for Pbcet {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Rm {
     GlRender = 7168,
     GlFeedback = 7169,
@@ -11677,7 +11677,7 @@ impl Default for Rm {
         Rm::GlRender
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BufferSwapCompleteEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -11765,7 +11765,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
 impl crate::auto::Event for BufferSwapCompleteEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PbufferClobberEvent {
     pub event_type: u8,
     pub sequence: u16,

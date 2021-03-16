@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -63,7 +63,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -120,7 +120,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenRequest {
     pub req_type: u8,
     pub length: u16,
@@ -173,7 +173,7 @@ impl Request for OpenRequest {
     const REPLY_EXPECTS_FDS: bool = true;
     type Reply = OpenReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenReply {
     pub reply_type: u8,
     pub nfd: Card8,
@@ -226,7 +226,7 @@ impl AsByteSequence for OpenReply {
         Some(&mut self.device_fd)
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PixmapFromBufferRequest {
     pub req_type: u8,
     pub length: u16,
@@ -325,7 +325,7 @@ impl Request for PixmapFromBufferRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BufferFromPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -373,7 +373,7 @@ impl Request for BufferFromPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = true;
     type Reply = BufferFromPixmapReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BufferFromPixmapReply {
     pub reply_type: u8,
     pub nfd: Card8,
@@ -466,7 +466,7 @@ impl AsByteSequence for BufferFromPixmapReply {
         Some(&mut self.pixmap_fd)
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FenceFromFdRequest {
     pub req_type: u8,
     pub length: u16,
@@ -538,7 +538,7 @@ impl Request for FenceFromFdRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FdFromFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -591,7 +591,7 @@ impl Request for FdFromFenceRequest {
     const REPLY_EXPECTS_FDS: bool = true;
     type Reply = FdFromFenceReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FdFromFenceReply {
     pub reply_type: u8,
     pub nfd: Card8,
@@ -644,7 +644,7 @@ impl AsByteSequence for FdFromFenceReply {
         Some(&mut self.fence_fd)
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSupportedModifiersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -710,7 +710,7 @@ impl Request for GetSupportedModifiersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSupportedModifiersReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSupportedModifiersReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -794,7 +794,7 @@ impl AsByteSequence for GetSupportedModifiersReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PixmapFromBuffersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -953,7 +953,7 @@ impl Request for PixmapFromBuffersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BuffersFromPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1001,7 +1001,7 @@ impl Request for BuffersFromPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = BuffersFromPixmapReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BuffersFromPixmapReply {
     pub reply_type: u8,
     pub nfd: Card8,

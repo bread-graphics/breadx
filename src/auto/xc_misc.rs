@@ -5,7 +5,7 @@
 
 use super::prelude::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -62,7 +62,7 @@ impl Request for GetVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -119,7 +119,7 @@ impl AsByteSequence for GetVersionReply {
             + self.server_minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetXidRangeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -162,7 +162,7 @@ impl Request for GetXidRangeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetXidRangeReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetXidRangeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -219,7 +219,7 @@ impl AsByteSequence for GetXidRangeReply {
             + self.count.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetXidListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -267,7 +267,7 @@ impl Request for GetXidListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetXidListReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetXidListReply {
     pub reply_type: u8,
     pub sequence: u16,

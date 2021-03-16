@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -66,7 +66,7 @@ impl Request for GetVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionReply {
     pub reply_type: u8,
     pub major_version: Card8,
@@ -120,7 +120,7 @@ impl AsByteSequence for GetVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CompareCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -173,7 +173,7 @@ impl Request for CompareCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CompareCursorReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CompareCursorReply {
     pub reply_type: u8,
     pub same: bool,
@@ -218,7 +218,7 @@ impl AsByteSequence for CompareCursorReply {
         self.reply_type.size() + self.same.size() + self.sequence.size() + self.length.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FakeInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -314,7 +314,7 @@ impl Request for FakeInputRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GrabControlRequest {
     pub req_type: u8,
     pub length: u16,
@@ -365,7 +365,7 @@ impl Request for GrabControlRequest {
     type Reply = ();
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Cursor {
     None = 0,
     Current = 1,

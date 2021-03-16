@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -63,7 +63,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -120,7 +120,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.server_minor.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -179,7 +179,7 @@ impl Request for SetDeviceCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -222,7 +222,7 @@ impl Request for GetDeviceCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceCreateContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceCreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -288,7 +288,7 @@ impl AsByteSequence for GetDeviceCreateContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetDeviceContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -357,7 +357,7 @@ impl Request for SetDeviceContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -405,7 +405,7 @@ impl Request for GetDeviceContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -471,7 +471,7 @@ impl AsByteSequence for GetDeviceContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetWindowCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -530,7 +530,7 @@ impl Request for SetWindowCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetWindowCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -573,7 +573,7 @@ impl Request for GetWindowCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetWindowCreateContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetWindowCreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -639,7 +639,7 @@ impl AsByteSequence for GetWindowCreateContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetWindowContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -687,7 +687,7 @@ impl Request for GetWindowContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetWindowContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetWindowContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -753,7 +753,7 @@ impl AsByteSequence for GetWindowContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListItem {
     pub name: Atom,
     pub object_context: String,
@@ -819,7 +819,7 @@ impl AsByteSequence for ListItem {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetPropertyCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -878,7 +878,7 @@ impl Request for SetPropertyCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -921,7 +921,7 @@ impl Request for GetPropertyCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPropertyCreateContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyCreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -987,7 +987,7 @@ impl AsByteSequence for GetPropertyCreateContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetPropertyUseContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1046,7 +1046,7 @@ impl Request for SetPropertyUseContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyUseContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1089,7 +1089,7 @@ impl Request for GetPropertyUseContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPropertyUseContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyUseContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1155,7 +1155,7 @@ impl AsByteSequence for GetPropertyUseContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1208,7 +1208,7 @@ impl Request for GetPropertyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPropertyContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1274,7 +1274,7 @@ impl AsByteSequence for GetPropertyContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyDataContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1327,7 +1327,7 @@ impl Request for GetPropertyDataContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPropertyDataContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetPropertyDataContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1393,7 +1393,7 @@ impl AsByteSequence for GetPropertyDataContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListPropertiesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1441,7 +1441,7 @@ impl Request for ListPropertiesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListPropertiesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListPropertiesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1507,7 +1507,7 @@ impl AsByteSequence for ListPropertiesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetSelectionCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1566,7 +1566,7 @@ impl Request for SetSelectionCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionCreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1609,7 +1609,7 @@ impl Request for GetSelectionCreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSelectionCreateContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionCreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1675,7 +1675,7 @@ impl AsByteSequence for GetSelectionCreateContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetSelectionUseContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1734,7 +1734,7 @@ impl Request for SetSelectionUseContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionUseContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1777,7 +1777,7 @@ impl Request for GetSelectionUseContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSelectionUseContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionUseContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1843,7 +1843,7 @@ impl AsByteSequence for GetSelectionUseContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1891,7 +1891,7 @@ impl Request for GetSelectionContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSelectionContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1957,7 +1957,7 @@ impl AsByteSequence for GetSelectionContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionDataContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2005,7 +2005,7 @@ impl Request for GetSelectionDataContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetSelectionDataContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetSelectionDataContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2071,7 +2071,7 @@ impl AsByteSequence for GetSelectionDataContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListSelectionsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2114,7 +2114,7 @@ impl Request for ListSelectionsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListSelectionsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ListSelectionsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2180,7 +2180,7 @@ impl AsByteSequence for ListSelectionsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClientContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2228,7 +2228,7 @@ impl Request for GetClientContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetClientContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClientContextReply {
     pub reply_type: u8,
     pub sequence: u16,

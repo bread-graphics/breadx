@@ -8,7 +8,7 @@ use super::prelude::*;
 use super::render::*;
 use super::shape::*;
 use super::xproto::*;
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -65,7 +65,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -125,7 +125,7 @@ impl AsByteSequence for QueryVersionReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeSaveSetRequest {
     pub req_type: u8,
     pub length: u16,
@@ -198,7 +198,7 @@ impl Request for ChangeSaveSetRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SaveSetMode {
     Insert = 0,
     Delete = 1,
@@ -229,7 +229,7 @@ impl Default for SaveSetMode {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SaveSetTarget {
     Nearest = 0,
     Root = 1,
@@ -260,7 +260,7 @@ impl Default for SaveSetTarget {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SaveSetMapping {
     Map = 0,
     Unmap = 1,
@@ -291,7 +291,7 @@ impl Default for SaveSetMapping {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SelectionEvent {
     SetSelectionOwner = 0,
     SelectionWindowDestroy = 1,
@@ -323,7 +323,7 @@ impl Default for SelectionEvent {
         SelectionEvent::SetSelectionOwner
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectSelectionInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -388,7 +388,7 @@ impl Request for SelectSelectionInputRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SelectionEventMask {
     pub inner: u32,
 }
@@ -508,7 +508,7 @@ impl core::ops::BitXor for SelectionEventMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectCursorInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -563,7 +563,7 @@ impl Request for SelectCursorInputRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CursorNotifyMask {
     pub inner: u32,
 }
@@ -645,7 +645,7 @@ impl core::ops::BitXor for CursorNotifyMask {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -688,7 +688,7 @@ impl Request for GetCursorImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetCursorImageReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorImageReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -815,7 +815,7 @@ impl XidType for Region {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -876,7 +876,7 @@ impl Request for CreateRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRegionFromBitmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -929,7 +929,7 @@ impl Request for CreateRegionFromBitmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRegionFromWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -995,7 +995,7 @@ impl Request for CreateRegionFromWindowRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRegionFromGcRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1048,7 +1048,7 @@ impl Request for CreateRegionFromGcRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRegionFromPictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1101,7 +1101,7 @@ impl Request for CreateRegionFromPictureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1149,7 +1149,7 @@ impl Request for DestroyRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1210,7 +1210,7 @@ impl Request for SetRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CopyRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1263,7 +1263,7 @@ impl Request for CopyRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnionRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1326,7 +1326,7 @@ impl Request for UnionRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntersectRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1389,7 +1389,7 @@ impl Request for IntersectRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SubtractRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1452,7 +1452,7 @@ impl Request for SubtractRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvertRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1515,7 +1515,7 @@ impl Request for InvertRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TranslateRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1578,7 +1578,7 @@ impl Request for TranslateRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RegionExtentsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1631,7 +1631,7 @@ impl Request for RegionExtentsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FetchRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1679,7 +1679,7 @@ impl Request for FetchRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = FetchRegionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FetchRegionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1747,7 +1747,7 @@ impl AsByteSequence for FetchRegionReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetGcClipRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1817,7 +1817,7 @@ impl Request for SetGcClipRegionRequest {
     type Reply = ();
 }
 pub const REGION_NONE: Region = <Region>::const_from_xid(0);
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetWindowShapeRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1895,7 +1895,7 @@ impl Request for SetWindowShapeRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetPictureClipRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1964,7 +1964,7 @@ impl Request for SetPictureClipRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetCursorNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2035,7 +2035,7 @@ impl Request for SetCursorNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2083,7 +2083,7 @@ impl Request for GetCursorNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetCursorNameReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorNameReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2154,7 +2154,7 @@ impl AsByteSequence for GetCursorNameReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorImageAndNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2197,7 +2197,7 @@ impl Request for GetCursorImageAndNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetCursorImageAndNameReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetCursorImageAndNameReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2326,7 +2326,7 @@ impl AsByteSequence for GetCursorImageAndNameReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2379,7 +2379,7 @@ impl Request for ChangeCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChangeCursorByNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2450,7 +2450,7 @@ impl Request for ChangeCursorByNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExpandRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2531,7 +2531,7 @@ impl Request for ExpandRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HideCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2579,7 +2579,7 @@ impl Request for HideCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ShowCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2648,7 +2648,7 @@ impl XidType for Barrier {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreatePointerBarrierRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2758,7 +2758,7 @@ impl Request for CreatePointerBarrierRequest {
     type Reply = ();
 }
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BarrierDirections {
     pub inner: u32,
 }
@@ -2891,7 +2891,7 @@ impl core::ops::BitXor for BarrierDirections {
         }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DeletePointerBarrierRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2939,7 +2939,7 @@ impl Request for DeletePointerBarrierRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CursorNotifyEvent {
     pub event_type: u8,
     pub subtype: Card8,
@@ -3011,7 +3011,7 @@ impl AsByteSequence for CursorNotifyEvent {
 impl crate::auto::Event for CursorNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectionNotifyEvent {
     pub event_type: u8,
     pub subtype: SelectionEvent,

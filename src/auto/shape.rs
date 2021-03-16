@@ -9,7 +9,7 @@ use super::xproto::*;
 pub type Op = Card8;
 pub type Kind = Card8;
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Sk {
     Bounding = 0,
     Clip = 1,
@@ -41,7 +41,7 @@ impl Default for Sk {
         Sk::Bounding
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -84,7 +84,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -141,7 +141,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RectanglesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -240,7 +240,7 @@ impl Request for RectanglesRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum So {
     Set = 0,
     Union = 1,
@@ -276,7 +276,7 @@ impl Default for So {
         So::Set
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MaskRequest {
     pub req_type: u8,
     pub length: u16,
@@ -360,7 +360,7 @@ impl Request for MaskRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CombineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -450,7 +450,7 @@ impl Request for CombineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OffsetRequest {
     pub req_type: u8,
     pub length: u16,
@@ -522,7 +522,7 @@ impl Request for OffsetRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryExtentsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -570,7 +570,7 @@ impl Request for QueryExtentsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryExtentsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryExtentsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -686,7 +686,7 @@ impl AsByteSequence for QueryExtentsReply {
             + self.clip_shape_extents_height.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SelectInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -746,7 +746,7 @@ impl Request for SelectInputRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputSelectedRequest {
     pub req_type: u8,
     pub length: u16,
@@ -794,7 +794,7 @@ impl Request for InputSelectedRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = InputSelectedReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputSelectedReply {
     pub reply_type: u8,
     pub enabled: bool,
@@ -839,7 +839,7 @@ impl AsByteSequence for InputSelectedReply {
         self.reply_type.size() + self.enabled.size() + self.sequence.size() + self.length.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetRectanglesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -899,7 +899,7 @@ impl Request for GetRectanglesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetRectanglesReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetRectanglesReply {
     pub reply_type: u8,
     pub ordering: ClipOrdering,
@@ -968,7 +968,7 @@ impl AsByteSequence for GetRectanglesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NotifyEvent {
     pub event_type: u8,
     pub shape_kind: Sk,

@@ -5,7 +5,7 @@
 
 use super::prelude::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DrmClipRect {
     pub x1: Int16,
     pub y1: Int16,
@@ -50,7 +50,7 @@ impl AsByteSequence for DrmClipRect {
         self.x1.size() + self.y1.size() + self.x2.size() + self.x3.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -93,7 +93,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -156,7 +156,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.dri_minor_patch.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryDirectRenderingCapableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -204,7 +204,7 @@ impl Request for QueryDirectRenderingCapableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryDirectRenderingCapableReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryDirectRenderingCapableReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -255,7 +255,7 @@ impl AsByteSequence for QueryDirectRenderingCapableReply {
             + self.is_capable.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenConnectionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -303,7 +303,7 @@ impl Request for OpenConnectionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = OpenConnectionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OpenConnectionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -381,7 +381,7 @@ impl AsByteSequence for OpenConnectionReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CloseConnectionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -429,7 +429,7 @@ impl Request for CloseConnectionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClientDriverNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -477,7 +477,7 @@ impl Request for GetClientDriverNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetClientDriverNameReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetClientDriverNameReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -570,7 +570,7 @@ impl AsByteSequence for GetClientDriverNameReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -633,7 +633,7 @@ impl Request for CreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CreateContextReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -684,7 +684,7 @@ impl AsByteSequence for CreateContextReply {
             + self.hw_context.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -737,7 +737,7 @@ impl Request for DestroyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateDrawableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -790,7 +790,7 @@ impl Request for CreateDrawableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CreateDrawableReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateDrawableReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -841,7 +841,7 @@ impl AsByteSequence for CreateDrawableReply {
             + self.hw_drawable_handle.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyDrawableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -894,7 +894,7 @@ impl Request for DestroyDrawableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDrawableInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -947,7 +947,7 @@ impl Request for GetDrawableInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDrawableInfoReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDrawableInfoReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1076,7 +1076,7 @@ impl AsByteSequence for GetDrawableInfoReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1124,7 +1124,7 @@ impl Request for GetDeviceInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceInfoReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetDeviceInfoReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1218,7 +1218,7 @@ impl AsByteSequence for GetDeviceInfoReply {
             }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AuthConnectionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1271,7 +1271,7 @@ impl Request for AuthConnectionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = AuthConnectionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AuthConnectionReply {
     pub reply_type: u8,
     pub sequence: u16,

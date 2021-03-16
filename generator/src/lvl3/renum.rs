@@ -35,7 +35,7 @@ impl ToSyn for REnum {
                     bracket_token: Default::default(),
                     path: str_to_path("derive"),
                     tokens: TokenStream::from_str(&format!(
-                        "(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)"
+                        "(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)"
                     ))
                     .unwrap(),
                 },

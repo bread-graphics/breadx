@@ -5,7 +5,7 @@
 
 use super::prelude::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -62,7 +62,7 @@ impl Request for GetVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -119,7 +119,7 @@ impl AsByteSequence for GetVersionReply {
             + self.server_minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CapableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -162,7 +162,7 @@ impl Request for CapableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CapableReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CapableReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -216,7 +216,7 @@ impl AsByteSequence for CapableReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTimeoutsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -259,7 +259,7 @@ impl Request for GetTimeoutsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetTimeoutsReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GetTimeoutsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -325,7 +325,7 @@ impl AsByteSequence for GetTimeoutsReply {
             + 18
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SetTimeoutsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -388,7 +388,7 @@ impl Request for SetTimeoutsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EnableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -431,7 +431,7 @@ impl Request for EnableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DisableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -474,7 +474,7 @@ impl Request for DisableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ForceLevelRequest {
     pub req_type: u8,
     pub length: u16,
@@ -523,7 +523,7 @@ impl Request for ForceLevelRequest {
     type Reply = ();
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DpmsMode {
     On = 0,
     Standby = 1,
@@ -557,7 +557,7 @@ impl Default for DpmsMode {
         DpmsMode::On
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -600,7 +600,7 @@ impl Request for InfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = InfoReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InfoReply {
     pub reply_type: u8,
     pub sequence: u16,

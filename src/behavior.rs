@@ -10,7 +10,7 @@ use super::auto::{
     AsByteSequence,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Behavior {
     Common(CommonBehavior),
     Default(DefaultBehavior),

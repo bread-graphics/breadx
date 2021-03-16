@@ -28,7 +28,7 @@ impl XidType for Damage {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -85,7 +85,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -145,7 +145,7 @@ impl AsByteSequence for QueryVersionReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -212,7 +212,7 @@ impl Request for CreateRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ReportLevel {
     RawRectangles = 0,
     DeltaRectangles = 1,
@@ -246,7 +246,7 @@ impl Default for ReportLevel {
         ReportLevel::RawRectangles
     }
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DestroyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -294,7 +294,7 @@ impl Request for DestroyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SubtractRequest {
     pub req_type: u8,
     pub length: u16,
@@ -357,7 +357,7 @@ impl Request for SubtractRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AddRequest {
     pub req_type: u8,
     pub length: u16,
@@ -410,7 +410,7 @@ impl Request for AddRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NotifyEvent {
     pub event_type: u8,
     pub level: ReportLevel,
