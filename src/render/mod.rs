@@ -10,7 +10,14 @@ pub use display::*;
 pub use picture::*;
 pub use tesselate::*;
 
-use crate::auto::render::Fixed;
+pub use crate::auto::render::{
+    Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid,
+};
+
+impl Copy for Pointfix {}
+impl Copy for Linefix {}
+impl Copy for Color {}
+impl Copy for Trapezoid {}
 
 const MULTIPLIER: f64 = 0xFFFF as f64;
 

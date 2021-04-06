@@ -26,6 +26,7 @@ pub fn keysym_to_key(keysym: Keysym) -> Option<Key> {
         36 => Some(Key::Dollar),
         37 => Some(Key::Percent),
         38 => Some(Key::Ampersand),
+        39 => Some(Key::Quote),
         40 => Some(Key::ParenthesisLeft),
         41 => Some(Key::ParenthesisRight),
         42 => Some(Key::Asterisk),

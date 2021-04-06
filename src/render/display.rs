@@ -4,9 +4,10 @@ use super::PictureParameters;
 use crate::{
     auto::{
         render::{
-            CreatePictureRequest, PictType, Pictformat, Pictforminfo, Pictscreen, Picture,
-            Pictvisual, QueryPictFormatsReply, QueryPictFormatsRequest, QueryVersionReply,
-            QueryVersionRequest,
+            Color, CreateConicalGradientRequest, CreateLinearGradientRequest, CreatePictureRequest,
+            CreateRadialGradientRequest, Fixed, PictType, Pictformat, Pictforminfo, Pictscreen,
+            Picture, Pictvisual, Pointfix, QueryPictFormatsReply, QueryPictFormatsRequest,
+            QueryVersionReply, QueryVersionRequest,
         },
         xproto::{Drawable, Visualtype},
     },
@@ -160,6 +161,70 @@ impl<Dpy> RenderDisplay<Dpy> {
         cpr.value_mask = cp;
         cpr
     }
+
+    #[inline]
+    fn create_linear_gradient_request(
+        pid: Picture,
+        p1: Pointfix,
+        p2: Pointfix,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> CreateLinearGradientRequest {
+        assert_eq!(stops.len(), colors.len());
+        CreateLinearGradientRequest {
+            picture: pid,
+            p1,
+            p2,
+            num_stops: stops.len() as u32,
+            stops: stops.to_vec(),
+            colors: colors.to_vec(),
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    fn create_radial_gradient_request(
+        pid: Picture,
+        inner: Pointfix,
+        outer: Pointfix,
+        inner_radius: Fixed,
+        outer_radius: Fixed,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> CreateRadialGradientRequest {
+        assert_eq!(stops.len(), colors.len());
+        CreateRadialGradientRequest {
+            picture: pid,
+            inner,
+            outer,
+            inner_radius,
+            outer_radius,
+            num_stops: stops.len() as u32,
+            stops: stops.to_vec(),
+            colors: colors.to_vec(),
+            ..Default::default()
+        }
+    }
+
+    #[inline]
+    fn create_conical_gradient_request(
+        pid: Picture,
+        center: Pointfix,
+        angle: Fixed,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> CreateConicalGradientRequest {
+        assert_eq!(stops.len(), colors.len());
+        CreateConicalGradientRequest {
+            picture: pid,
+            center,
+            angle,
+            num_stops: stops.len() as u32,
+            stops: stops.to_vec(),
+            colors: colors.to_vec(),
+            ..Default::default()
+        }
+    }
 }
 
 /// Standard formats.
@@ -230,6 +295,60 @@ where
         sr_request!(self.display_mut(), cpr)?;
         Ok(pic)
     }
+
+    /// Create a new linear gradient.
+    #[inline]
+    pub fn create_linear_gradient(
+        &mut self,
+        p1: Pointfix,
+        p2: Pointfix,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> crate::Result<Picture> {
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
+        sr_request!(self.display_mut(), clgr)?;
+        Ok(pic)
+    }
+
+    /// Create a new radial gradient.
+    #[inline]
+    pub fn create_radial_gradient(
+        &mut self,
+        inner: Pointfix,
+        outer: Pointfix,
+        inner_radius: Fixed,
+        outer_radius: Fixed,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> crate::Result<Picture> {
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let crgr = Self::create_radial_gradient_request(
+            pic,
+            inner,
+            outer,
+            inner_radius,
+            outer_radius,
+            stops,
+            colors,
+        );
+        sr_request!(self.display_mut(), crgr)?;
+        Ok(pic)
+    }
+
+    #[inline]
+    pub fn create_conical_gradient(
+        &mut self,
+        center: Pointfix,
+        angle: Fixed,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> crate::Result<Picture> {
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
+        sr_request!(self.display_mut(), ccgr)?;
+        Ok(pic)
+    }
 }
 
 #[cfg(feature = "async")]
@@ -290,6 +409,60 @@ where
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
         sr_request!(self.display_mut(), cpr, async).await?;
+        Ok(pic)
+    }
+
+    /// Create a new linear gradient, async redox.
+    #[inline]
+    pub async fn create_linear_gradient_async(
+        &mut self,
+        p1: Pointfix,
+        p2: Pointfix,
+        stops: &[Fixed],
+        colors: &[Color],
+    ) -> crate::Result<Picture> {
+        let pic = self.display_mut().generate_xid()?;
+        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
+        sr_request!(self.display_mut(), clgr, async).await?;
+        Ok(pic)
+    }
+
+    /// Create a new radial gradient, async redox.
+    #[inline]
+    pub async fn create_radial_gradient_async(
+        &mut self,
+        inner: Pointfix,
+        outer: Pointfix,
+        inner_radius: Fixed,
+        outer_radius: Fixed,
+        stops: &[Fixed],
+        colors: &[Fixed],
+    ) -> crate::Result<Picture> {
+        let pic = self.display_mut().generate_xid()?;
+        let crgr = Self::create_radial_gradient_request(
+            pic,
+            inner,
+            outer,
+            inner_radius,
+            outer_radius,
+            stops,
+            colors,
+        );
+        sr_request!(self.display_mut(), crgr, async).await?;
+        Ok(pic)
+    }
+
+    #[inline]
+    pub async fn create_conical_gradient_async(
+        &mut self,
+        center: Pointfix,
+        angle: Fixed,
+        stops: &[Fixed],
+        colors: &[Fixed],
+    ) -> crate::Result<Picture> {
+        let pic = self.display_mut().generate_xid()?;
+        let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
+        sr_request!(self.display_mut(), ccgr, async).await?;
         Ok(pic)
     }
 }
