@@ -16,6 +16,7 @@
   ["0x24", "Dollar"],
   ["0x25", "Percent"],
   ["0x26", "Ampersand"],
+  ["0x27", "Quote"],
   ["0x28", "ParenthesisLeft"],
   ["0x29", "ParenthesisRight"],
   ["0x2A", "Asterisk"],
