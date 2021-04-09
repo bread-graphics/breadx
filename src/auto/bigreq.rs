@@ -5,7 +5,7 @@
 
 use super::prelude::*;
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EnableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -48,7 +48,7 @@ impl Request for EnableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = EnableReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EnableReply {
     pub reply_type: u8,
     pub sequence: u16,

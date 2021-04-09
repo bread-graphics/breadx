@@ -7,7 +7,7 @@ use super::prelude::*;
 
 use super::xfixes::*;
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -64,7 +64,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -124,7 +124,7 @@ impl AsByteSequence for QueryVersionReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct RedirectWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -180,7 +180,7 @@ impl Request for RedirectWindowRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Redirect {
     Automatic = 0,
     Manual = 1,
@@ -210,7 +210,7 @@ impl Default for Redirect {
         Redirect::Automatic
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct RedirectSubwindowsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -265,7 +265,7 @@ impl Request for RedirectSubwindowsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UnredirectWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -320,7 +320,7 @@ impl Request for UnredirectWindowRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UnredirectSubwindowsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -375,7 +375,7 @@ impl Request for UnredirectSubwindowsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateRegionFromBorderClipRequest {
     pub req_type: u8,
     pub length: u16,
@@ -428,7 +428,7 @@ impl Request for CreateRegionFromBorderClipRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NameWindowPixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -481,7 +481,7 @@ impl Request for NameWindowPixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetOverlayWindowRequest {
     pub req_type: u8,
     pub length: u16,
@@ -529,7 +529,7 @@ impl Request for GetOverlayWindowRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetOverlayWindowReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetOverlayWindowReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -583,7 +583,7 @@ impl AsByteSequence for GetOverlayWindowReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ReleaseOverlayWindowRequest {
     pub req_type: u8,
     pub length: u16,

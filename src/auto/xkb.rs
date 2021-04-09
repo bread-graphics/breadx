@@ -10,7 +10,7 @@ pub type DeviceSpec = Card16;
 pub type LedClassSpec = Card16;
 pub type BellClassSpec = Card16;
 pub type IdSpec = Card16;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IndicatorMap {
     pub flags: ImFlag,
     pub which_groups: ImGroupsWhich,
@@ -1304,7 +1304,7 @@ impl core::ops::BitXor for BoolCtrl {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ModDef {
     pub mask: ModMask,
     pub real_mods: ModMask,
@@ -1344,7 +1344,7 @@ impl AsByteSequence for ModDef {
         self.mask.size() + self.real_mods.size() + self.vmods.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyName {
     pub name: [c_char; 4],
 }
@@ -1369,7 +1369,7 @@ impl AsByteSequence for KeyName {
         self.name.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyAlias {
     pub real: [c_char; 4],
     pub alias: [c_char; 4],
@@ -1404,7 +1404,7 @@ impl AsByteSequence for KeyAlias {
         self.real.size() + self.alias.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CountedString16 {
     pub length: Card16,
     pub string: String,
@@ -1464,7 +1464,7 @@ impl AsByteSequence for CountedString16 {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KtMapEntry {
     pub active: bool,
     pub mods_mask: ModMask,
@@ -1521,7 +1521,7 @@ impl AsByteSequence for KtMapEntry {
             + 2
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyType {
     pub mods_mask: ModMask,
     pub mods_mods: ModMask,
@@ -1614,7 +1614,7 @@ impl AsByteSequence for KeyType {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeySymMap {
     pub kt_index: [Card8; 4],
     pub group_info: Card8,
@@ -1674,7 +1674,7 @@ impl AsByteSequence for KeySymMap {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CommonBehavior {
     pub ty: Card8,
     pub data: Card8,
@@ -1703,7 +1703,7 @@ impl AsByteSequence for CommonBehavior {
         self.ty.size() + self.data.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DefaultBehavior {
     pub ty: Card8,
 }
@@ -1731,7 +1731,7 @@ impl AsByteSequence for DefaultBehavior {
     }
 }
 pub type LockBehavior = DefaultBehavior;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct RadioGroupBehavior {
     pub ty: Card8,
     pub group: Card8,
@@ -1766,7 +1766,7 @@ impl AsByteSequence for RadioGroupBehavior {
         self.ty.size() + self.group.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct OverlayBehavior {
     pub ty: Card8,
     pub key: Keycode,
@@ -1798,7 +1798,7 @@ impl AsByteSequence for OverlayBehavior {
 pub type PermamentLockBehavior = LockBehavior;
 pub type PermamentRadioGroupBehavior = RadioGroupBehavior;
 pub type PermamentOverlayBehavior = OverlayBehavior;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetBehavior {
     pub keycode: Keycode,
     pub behavior: Behavior,
@@ -1835,7 +1835,7 @@ impl AsByteSequence for SetBehavior {
         self.keycode.size() + self.behavior.size() + 1
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetExplicit {
     pub keycode: Keycode,
     pub explicit: Explicit,
@@ -2081,7 +2081,7 @@ impl core::ops::BitXor for Explicit {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyModMap {
     pub keycode: Keycode,
     pub mods: ModMask,
@@ -2116,7 +2116,7 @@ impl AsByteSequence for KeyModMap {
         self.keycode.size() + self.mods.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyVModMap {
     pub keycode: Keycode,
     pub vmods: VMod,
@@ -2153,7 +2153,7 @@ impl AsByteSequence for KeyVModMap {
         self.keycode.size() + 1 + self.vmods.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KtSetMapEntry {
     pub level: Card8,
     pub real_mods: ModMask,
@@ -2193,7 +2193,7 @@ impl AsByteSequence for KtSetMapEntry {
         self.level.size() + self.real_mods.size() + self.virtual_mods.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetKeyType {
     pub mask: ModMask,
     pub real_mods: ModMask,
@@ -2287,7 +2287,7 @@ impl AsByteSequence for SetKeyType {
     }
 }
 pub type String8 = Char;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Outline {
     pub corner_radius: Card8,
     pub points: Vec<Point>,
@@ -2335,7 +2335,7 @@ impl AsByteSequence for Outline {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Shape {
     pub name: Atom,
     pub primary_ndx: Card8,
@@ -2398,7 +2398,7 @@ impl AsByteSequence for Shape {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Key {
     pub name: [String8; 4],
     pub gap: Int16,
@@ -2443,7 +2443,7 @@ impl AsByteSequence for Key {
         self.name.size() + self.gap.size() + self.shape_ndx.size() + self.color_ndx.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct OverlayKey {
     pub over: [String8; 4],
     pub under: [String8; 4],
@@ -2478,7 +2478,7 @@ impl AsByteSequence for OverlayKey {
         self.over.size() + self.under.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct OverlayRow {
     pub row_under: Card8,
     pub keys: Vec<OverlayKey>,
@@ -2526,7 +2526,7 @@ impl AsByteSequence for OverlayRow {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Overlay {
     pub name: Atom,
     pub rows: Vec<OverlayRow>,
@@ -2574,7 +2574,7 @@ impl AsByteSequence for Overlay {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Row {
     pub top: Int16,
     pub left: Int16,
@@ -2637,7 +2637,7 @@ impl AsByteSequence for Row {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Listing {
     pub flags: Card16,
     pub length: Card16,
@@ -2685,7 +2685,7 @@ impl AsByteSequence for Listing {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DeviceLedInfo {
     pub led_class: LedClass,
     pub led_id: IdSpec,
@@ -2774,7 +2774,7 @@ impl AsByteSequence for DeviceLedInfo {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum LedClass {
     KbdFeedbackClass = 0,
     LedFeedbackClass = 4,
@@ -2809,7 +2809,7 @@ impl Default for LedClass {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Id {
     UseCoreKbd = 256,
     UseCorePtr = 512,
@@ -2849,7 +2849,7 @@ impl Default for Id {
         Id::UseCoreKbd
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaNoAction {
     pub ty: SaType,
 }
@@ -2877,7 +2877,7 @@ impl AsByteSequence for SaNoAction {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum SaType {
     NoAction = 0,
     SetMods = 1,
@@ -2945,7 +2945,7 @@ impl Default for SaType {
         SaType::NoAction
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaSetMods {
     pub ty: SaType,
     pub flags: Sa,
@@ -3549,7 +3549,7 @@ impl core::ops::BitXor for VModsLow {
 }
 pub type SaLatchMods = SaSetMods;
 pub type SaLockMods = SaSetMods;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaSetGroup {
     pub ty: SaType,
     pub flags: Sa,
@@ -3593,7 +3593,7 @@ impl AsByteSequence for SaSetGroup {
 }
 pub type SaLatchGroup = SaSetGroup;
 pub type SaLockGroup = SaSetGroup;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaMovePtr {
     pub ty: SaType,
     pub flags: SaMovePtrFlag,
@@ -3773,7 +3773,7 @@ impl core::ops::BitXor for SaMovePtrFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaPtrBtn {
     pub ty: SaType,
     pub flags: Card8,
@@ -3820,7 +3820,7 @@ impl AsByteSequence for SaPtrBtn {
         self.ty.size() + self.flags.size() + self.count.size() + self.button.size() + 4
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaLockPtrBtn {
     pub ty: SaType,
     pub flags: Card8,
@@ -3864,7 +3864,7 @@ impl AsByteSequence for SaLockPtrBtn {
         self.ty.size() + self.flags.size() + 1 + self.button.size() + 4
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaSetPtrDflt {
     pub ty: SaType,
     pub flags: SaSetPtrDfltFlag,
@@ -4013,7 +4013,7 @@ impl core::ops::BitXor for SaSetPtrDfltFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaIsoLock {
     pub ty: SaType,
     pub flags: SaIsoLockFlag,
@@ -4359,7 +4359,7 @@ impl core::ops::BitXor for SaIsoLockNoAffect {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaTerminate {
     pub ty: SaType,
 }
@@ -4386,7 +4386,7 @@ impl AsByteSequence for SaTerminate {
         self.ty.size() + 7
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaSwitchScreen {
     pub ty: SaType,
     pub flags: Card8,
@@ -4428,7 +4428,7 @@ impl AsByteSequence for SaSwitchScreen {
         self.ty.size() + self.flags.size() + self.new_screen.size() + 5
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaSetControls {
     pub ty: SaType,
     pub bool_ctrls_high: BoolCtrlsHigh,
@@ -4843,7 +4843,7 @@ impl core::ops::BitXor for BoolCtrlsLow {
     }
 }
 pub type SaLockControls = SaSetControls;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaActionMessage {
     pub ty: SaType,
     pub flags: ActionMessageFlag,
@@ -5001,7 +5001,7 @@ impl core::ops::BitXor for ActionMessageFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaRedirectKey {
     pub ty: SaType,
     pub newkey: Keycode,
@@ -5073,7 +5073,7 @@ impl AsByteSequence for SaRedirectKey {
             + self.vmods_low.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaDeviceBtn {
     pub ty: SaType,
     pub flags: Card8,
@@ -5130,7 +5130,7 @@ impl AsByteSequence for SaDeviceBtn {
             + 3
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaLockDeviceBtn {
     pub ty: SaType,
     pub flags: LockDeviceFlags,
@@ -5279,7 +5279,7 @@ impl core::ops::BitXor for LockDeviceFlags {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SaDeviceValuator {
     pub ty: SaType,
     pub device: Card8,
@@ -5352,7 +5352,7 @@ impl AsByteSequence for SaDeviceValuator {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum SaValWhat {
     IgnoreVal = 0,
     SetValMin = 1,
@@ -5390,7 +5390,7 @@ impl Default for SaValWhat {
         SaValWhat::IgnoreVal
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SiAction {
     pub ty: SaType,
     pub data: [Card8; 7],
@@ -5419,7 +5419,7 @@ impl AsByteSequence for SiAction {
         self.ty.size() + self.data.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SymInterpret {
     pub sym: Keysym,
     pub mods: ModMask,
@@ -5480,7 +5480,7 @@ impl AsByteSequence for SymInterpret {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum SymInterpretMatch {
     NoneOf = 0,
     AnyOfOrNone = 1,
@@ -5516,7 +5516,7 @@ impl Default for SymInterpretMatch {
         SymInterpretMatch::NoneOf
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UseExtensionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -5573,7 +5573,7 @@ impl Request for UseExtensionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = UseExtensionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UseExtensionReply {
     pub reply_type: u8,
     pub supported: bool,
@@ -5636,7 +5636,7 @@ impl AsByteSequence for UseExtensionReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectEventsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6511,7 +6511,7 @@ impl core::ops::BitXor for MapPart {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct BellRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6623,7 +6623,7 @@ impl Request for BellRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6673,7 +6673,7 @@ impl Request for GetStateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetStateReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStateReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -6812,7 +6812,7 @@ impl AsByteSequence for GetStateReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Group {
     One = 0,
     Two = 1,
@@ -6846,7 +6846,7 @@ impl Default for Group {
         Group::One
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct LatchLockStateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6942,7 +6942,7 @@ impl Request for LatchLockStateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetControlsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -6992,7 +6992,7 @@ impl Request for GetControlsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetControlsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetControlsReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -7498,7 +7498,7 @@ impl core::ops::BitXor for AxOption {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetControlsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -7903,7 +7903,7 @@ impl core::ops::BitXor for Control {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8059,7 +8059,7 @@ impl Request for GetMapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMapReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMapReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -8376,7 +8376,7 @@ impl AsByteSequence for GetMapReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8790,7 +8790,7 @@ impl core::ops::BitXor for SetMapFlags {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetCompatMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -8865,7 +8865,7 @@ impl Request for GetCompatMapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetCompatMapReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetCompatMapReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -8969,7 +8969,7 @@ impl AsByteSequence for GetCompatMapReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetCompatMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9082,7 +9082,7 @@ impl Request for SetCompatMapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetIndicatorStateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9132,7 +9132,7 @@ impl Request for GetIndicatorStateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetIndicatorStateReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetIndicatorStateReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -9189,7 +9189,7 @@ impl AsByteSequence for GetIndicatorStateReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetIndicatorMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9249,7 +9249,7 @@ impl Request for GetIndicatorMapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetIndicatorMapReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetIndicatorMapReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -9332,7 +9332,7 @@ impl AsByteSequence for GetIndicatorMapReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetIndicatorMapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9406,7 +9406,7 @@ impl Request for SetIndicatorMapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetNamedIndicatorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9478,7 +9478,7 @@ impl Request for GetNamedIndicatorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetNamedIndicatorReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetNamedIndicatorReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -9698,7 +9698,7 @@ impl core::ops::BitXor for SetOfGroups {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetNamedIndicatorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9841,7 +9841,7 @@ impl Request for SetNamedIndicatorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetNamesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -9901,7 +9901,7 @@ impl Request for GetNamesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetNamesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetNamesReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -10550,7 +10550,7 @@ impl core::ops::BitXor for NameDetail {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetNamesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10892,7 +10892,7 @@ impl Request for SetNamesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PerClientFlagsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -10976,7 +10976,7 @@ impl Request for PerClientFlagsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PerClientFlagsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PerClientFlagsReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -11208,7 +11208,7 @@ impl core::ops::BitXor for PerClientFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListComponentsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11265,7 +11265,7 @@ impl Request for ListComponentsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListComponentsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListComponentsReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -11430,7 +11430,7 @@ impl AsByteSequence for ListComponentsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetKbdByNameRequest {
     pub req_type: u8,
     pub length: u16,
@@ -11502,7 +11502,7 @@ impl Request for GetKbdByNameRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetKbdByNameReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetKbdByNameReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -13091,7 +13091,7 @@ impl core::ops::BitXor for GbnDetail {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDeviceInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -13181,7 +13181,7 @@ impl Request for GetDeviceInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDeviceInfoReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDeviceInfoReply {
     pub reply_type: u8,
     pub device_id: Card8,
@@ -13509,7 +13509,7 @@ impl core::ops::BitXor for XiFeature {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetDeviceInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -13608,7 +13608,7 @@ impl Request for SetDeviceInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetDebuggingFlagsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -13698,7 +13698,7 @@ impl Request for SetDebuggingFlagsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SetDebuggingFlagsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetDebuggingFlagsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -14207,7 +14207,7 @@ impl core::ops::BitXor for StatePart {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum BellClassResult {
     KbdFeedbackClass = 0,
     BellFeedbackClass = 5,
@@ -14431,7 +14431,7 @@ impl core::ops::BitXor for AxnDetail {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum LedClassResult {
     KbdFeedbackClass = 0,
     LedFeedbackClass = 4,
@@ -14462,7 +14462,7 @@ impl Default for LedClassResult {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum BehaviorType {
     Default = 0,
     Lock = 1,
@@ -14507,7 +14507,7 @@ impl Default for BehaviorType {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum BellClass {
     KbdFeedbackClass = 0,
     BellFeedbackClass = 5,
@@ -14640,7 +14640,7 @@ impl core::ops::BitXor for CmDetail {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Const {
     KeyNameLength = 4,
     PerKeyBitArraySize = 32,
@@ -14673,7 +14673,7 @@ impl Default for Const {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum DoodadType {
     Outline = 1,
     Solid = 2,
@@ -14710,7 +14710,7 @@ impl Default for DoodadType {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Error {
     BadId = 253,
     BadClass = 254,
@@ -14743,7 +14743,7 @@ impl Default for Error {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Groups {
     Any = 254,
     All = 255,
@@ -15056,7 +15056,7 @@ impl core::ops::BitXor for SymInterpMatch {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct KeyboardError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -15134,7 +15134,7 @@ impl AsByteSequence for KeyboardError {
 impl crate::auto::Error for KeyboardError {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AccessXNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15218,7 +15218,7 @@ impl AsByteSequence for AccessXNotifyEvent {
 impl crate::auto::Event for AccessXNotifyEvent {
     const OPCODE: u8 = 10;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ActionMessageEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15314,7 +15314,7 @@ impl AsByteSequence for ActionMessageEvent {
 impl crate::auto::Event for ActionMessageEvent {
     const OPCODE: u8 = 9;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct BellNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15423,7 +15423,7 @@ impl AsByteSequence for BellNotifyEvent {
 impl crate::auto::Event for BellNotifyEvent {
     const OPCODE: u8 = 8;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompatMapNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15507,7 +15507,7 @@ impl AsByteSequence for CompatMapNotifyEvent {
 impl crate::auto::Event for CompatMapNotifyEvent {
     const OPCODE: u8 = 7;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ControlsNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15619,7 +15619,7 @@ impl AsByteSequence for ControlsNotifyEvent {
 impl crate::auto::Event for ControlsNotifyEvent {
     const OPCODE: u8 = 3;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExtensionDeviceNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15737,7 +15737,7 @@ impl AsByteSequence for ExtensionDeviceNotifyEvent {
 impl crate::auto::Event for ExtensionDeviceNotifyEvent {
     const OPCODE: u8 = 11;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IndicatorMapNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15812,7 +15812,7 @@ impl AsByteSequence for IndicatorMapNotifyEvent {
 impl crate::auto::Event for IndicatorMapNotifyEvent {
     const OPCODE: u8 = 5;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IndicatorStateNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -15887,7 +15887,7 @@ impl AsByteSequence for IndicatorStateNotifyEvent {
 impl crate::auto::Event for IndicatorStateNotifyEvent {
     const OPCODE: u8 = 4;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct MapNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -16061,7 +16061,7 @@ impl AsByteSequence for MapNotifyEvent {
 impl crate::auto::Event for MapNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NamesNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -16197,7 +16197,7 @@ impl AsByteSequence for NamesNotifyEvent {
 impl crate::auto::Event for NamesNotifyEvent {
     const OPCODE: u8 = 6;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NewKeyboardNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,
@@ -16305,7 +16305,7 @@ impl AsByteSequence for NewKeyboardNotifyEvent {
 impl crate::auto::Event for NewKeyboardNotifyEvent {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct StateNotifyEvent {
     pub event_type: u8,
     pub xkb_type: Card8,

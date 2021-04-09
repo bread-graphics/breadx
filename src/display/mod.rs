@@ -21,7 +21,6 @@ use crate::{
 };
 use alloc::{borrow::Cow, boxed::Box, collections::VecDeque, vec, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
-use cty::c_int;
 use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
@@ -106,9 +105,6 @@ pub struct Display<Conn> {
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
 }
-
-/// Unique identifier for a context.
-pub type ContextID = c_int;
 
 /// A cookie for a request.
 ///

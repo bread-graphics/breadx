@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ScreenInfo {
     pub x_org: Int16,
     pub y_org: Int16,
@@ -51,7 +51,7 @@ impl AsByteSequence for ScreenInfo {
         self.x_org.size() + self.y_org.size() + self.width.size() + self.height.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -104,7 +104,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -161,7 +161,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -209,7 +209,7 @@ impl Request for GetStateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetStateReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStateReply {
     pub reply_type: u8,
     pub state: Byte,
@@ -263,7 +263,7 @@ impl AsByteSequence for GetStateReply {
             + self.window.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetScreenCountRequest {
     pub req_type: u8,
     pub length: u16,
@@ -311,7 +311,7 @@ impl Request for GetScreenCountRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetScreenCountReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetScreenCountReply {
     pub reply_type: u8,
     pub screen_count: Byte,
@@ -365,7 +365,7 @@ impl AsByteSequence for GetScreenCountReply {
             + self.window.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetScreenSizeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -418,7 +418,7 @@ impl Request for GetScreenSizeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetScreenSizeReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetScreenSizeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -487,7 +487,7 @@ impl AsByteSequence for GetScreenSizeReply {
             + self.screen.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IsActiveRequest {
     pub req_type: u8,
     pub length: u16,
@@ -530,7 +530,7 @@ impl Request for IsActiveRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = IsActiveReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IsActiveReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -577,7 +577,7 @@ impl AsByteSequence for IsActiveReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.state.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryScreensRequest {
     pub req_type: u8,
     pub length: u16,
@@ -620,7 +620,7 @@ impl Request for QueryScreensRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryScreensReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryScreensReply {
     pub reply_type: u8,
     pub sequence: u16,

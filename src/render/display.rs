@@ -421,7 +421,7 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = self.display_mut().generate_xid()?;
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
         sr_request!(self.display_mut(), clgr, async).await?;
         Ok(pic)
@@ -436,9 +436,9 @@ where
         inner_radius: Fixed,
         outer_radius: Fixed,
         stops: &[Fixed],
-        colors: &[Fixed],
+        colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = self.display_mut().generate_xid()?;
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let crgr = Self::create_radial_gradient_request(
             pic,
             inner,
@@ -458,9 +458,9 @@ where
         center: Pointfix,
         angle: Fixed,
         stops: &[Fixed],
-        colors: &[Fixed],
+        colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = self.display_mut().generate_xid()?;
+        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
         sr_request!(self.display_mut(), ccgr, async).await?;
         Ok(pic)

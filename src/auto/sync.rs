@@ -69,7 +69,7 @@ impl XidType for Fence {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Systemcounter {
     pub counter: Counter,
     pub resolution: Int64,
@@ -119,7 +119,7 @@ impl AsByteSequence for Systemcounter {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Trigger {
     pub counter: Counter,
     pub wait_type: Valuetype,
@@ -165,7 +165,7 @@ impl AsByteSequence for Trigger {
     }
 }
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Valuetype {
     Absolute = 0,
     Relative = 1,
@@ -196,7 +196,7 @@ impl Default for Valuetype {
     }
 }
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Testtype {
     PositiveTransition = 0,
     NegativeTransition = 1,
@@ -230,7 +230,7 @@ impl Default for Testtype {
         Testtype::PositiveTransition
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Waitcondition {
     pub trigger: Trigger,
     pub event_threshold: Int64,
@@ -265,7 +265,7 @@ impl AsByteSequence for Waitcondition {
         self.trigger.size() + self.event_threshold.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct InitializeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -322,7 +322,7 @@ impl Request for InitializeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = InitializeReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct InitializeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -382,7 +382,7 @@ impl AsByteSequence for InitializeReply {
             + 22
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSystemCountersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -425,7 +425,7 @@ impl Request for ListSystemCountersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListSystemCountersReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSystemCountersReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -491,7 +491,7 @@ impl AsByteSequence for ListSystemCountersReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateCounterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -544,7 +544,7 @@ impl Request for CreateCounterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroyCounterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -592,7 +592,7 @@ impl Request for DestroyCounterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryCounterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -640,7 +640,7 @@ impl Request for QueryCounterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryCounterReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryCounterReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -691,7 +691,7 @@ impl AsByteSequence for QueryCounterReply {
             + self.counter_value.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AwaitRequest {
     pub req_type: u8,
     pub length: u16,
@@ -747,7 +747,7 @@ impl Request for AwaitRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ChangeCounterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -800,7 +800,7 @@ impl Request for ChangeCounterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetCounterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -853,7 +853,7 @@ impl Request for SetCounterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateAlarmRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1165,7 +1165,7 @@ impl core::ops::BitXor for Ca {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ChangeAlarmRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1302,7 +1302,7 @@ impl Request for ChangeAlarmRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroyAlarmRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1350,7 +1350,7 @@ impl Request for DestroyAlarmRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryAlarmRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1398,7 +1398,7 @@ impl Request for QueryAlarmRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryAlarmReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryAlarmReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1471,7 +1471,7 @@ impl AsByteSequence for QueryAlarmReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Alarmstate {
     Active = 0,
     Inactive = 1,
@@ -1503,7 +1503,7 @@ impl Default for Alarmstate {
         Alarmstate::Active
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetPriorityRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1556,7 +1556,7 @@ impl Request for SetPriorityRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPriorityRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1604,7 +1604,7 @@ impl Request for GetPriorityRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPriorityReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPriorityReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1655,7 +1655,7 @@ impl AsByteSequence for GetPriorityReply {
             + self.priority.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1718,7 +1718,7 @@ impl Request for CreateFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct TriggerFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1766,7 +1766,7 @@ impl Request for TriggerFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ResetFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1814,7 +1814,7 @@ impl Request for ResetFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroyFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1862,7 +1862,7 @@ impl Request for DestroyFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1910,7 +1910,7 @@ impl Request for QueryFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryFenceReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryFenceReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1964,7 +1964,7 @@ impl AsByteSequence for QueryFenceReply {
             + 23
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AwaitFenceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2020,7 +2020,7 @@ impl Request for AwaitFenceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AlarmError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -2095,7 +2095,7 @@ impl AsByteSequence for AlarmError {
 impl crate::auto::Error for AlarmError {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CounterError {
     pub _error_type: u8,
     pub error_code: u8,
@@ -2170,7 +2170,7 @@ impl AsByteSequence for CounterError {
 impl crate::auto::Error for CounterError {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AlarmNotifyEvent {
     pub event_type: u8,
     pub kind: Card8,
@@ -2248,7 +2248,7 @@ impl AsByteSequence for AlarmNotifyEvent {
 impl crate::auto::Event for AlarmNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CounterNotifyEvent {
     pub event_type: u8,
     pub kind: Card8,

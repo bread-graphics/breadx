@@ -49,7 +49,7 @@ impl XidType for Encoding {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Rational {
     pub numerator: Int32,
     pub denominator: Int32,
@@ -84,7 +84,7 @@ impl AsByteSequence for Rational {
         self.numerator.size() + self.denominator.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Format {
     pub visual: Visualid,
     pub depth: Card8,
@@ -121,7 +121,7 @@ impl AsByteSequence for Format {
         self.visual.size() + self.depth.size() + 3
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AdaptorInfo {
     pub base_id: Port,
     pub num_ports: Card16,
@@ -358,7 +358,7 @@ impl core::ops::BitXor for Type {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EncodingInfo {
     pub encoding: Encoding,
     pub width: Card16,
@@ -426,7 +426,7 @@ impl AsByteSequence for EncodingInfo {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Image {
     pub id: Card32,
     pub width: Card16,
@@ -520,7 +520,7 @@ impl AsByteSequence for Image {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AttributeInfo {
     pub flags: AttributeFlag,
     pub min: Int32,
@@ -675,7 +675,7 @@ impl core::ops::BitXor for AttributeFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ImageFormatInfo {
     pub id: Card32,
     pub ty: ImageFormatInfoType,
@@ -844,7 +844,7 @@ impl AsByteSequence for ImageFormatInfo {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum ImageFormatInfoType {
     Rgb = 0,
     Yuv = 1,
@@ -875,7 +875,7 @@ impl Default for ImageFormatInfoType {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum ImageFormatInfoFormat {
     Packed = 0,
     Planar = 1,
@@ -906,7 +906,7 @@ impl Default for ImageFormatInfoFormat {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum ScanlineOrder {
     TopToBottom = 0,
     BottomToTop = 1,
@@ -937,7 +937,7 @@ impl Default for ScanlineOrder {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum VideoNotifyReason {
     Started = 0,
     Stopped = 1,
@@ -973,7 +973,7 @@ impl Default for VideoNotifyReason {
         VideoNotifyReason::Started
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryExtensionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1016,7 +1016,7 @@ impl Request for QueryExtensionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryExtensionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryExtensionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1073,7 +1073,7 @@ impl AsByteSequence for QueryExtensionReply {
             + self.minor.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryAdaptorsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1121,7 +1121,7 @@ impl Request for QueryAdaptorsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryAdaptorsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryAdaptorsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1187,7 +1187,7 @@ impl AsByteSequence for QueryAdaptorsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryEncodingsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1235,7 +1235,7 @@ impl Request for QueryEncodingsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryEncodingsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryEncodingsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1301,7 +1301,7 @@ impl AsByteSequence for QueryEncodingsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GrabPortRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1354,7 +1354,7 @@ impl Request for GrabPortRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GrabPortReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GrabPortReply {
     pub reply_type: u8,
     pub result: GrabPortStatus,
@@ -1400,7 +1400,7 @@ impl AsByteSequence for GrabPortReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum GrabPortStatus {
     Success = 0,
     BadExtension = 1,
@@ -1438,7 +1438,7 @@ impl Default for GrabPortStatus {
         GrabPortStatus::Success
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UngrabPortRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1491,7 +1491,7 @@ impl Request for UngrabPortRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PutVideoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1602,7 +1602,7 @@ impl Request for PutVideoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PutStillRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1713,7 +1713,7 @@ impl Request for PutStillRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetVideoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1824,7 +1824,7 @@ impl Request for GetVideoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStillRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1935,7 +1935,7 @@ impl Request for GetStillRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct StopVideoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1988,7 +1988,7 @@ impl Request for StopVideoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectVideoNotifyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2043,7 +2043,7 @@ impl Request for SelectVideoNotifyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectPortNotifyRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2098,7 +2098,7 @@ impl Request for SelectPortNotifyRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryBestSizeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2182,7 +2182,7 @@ impl Request for QueryBestSizeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryBestSizeReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryBestSizeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2239,7 +2239,7 @@ impl AsByteSequence for QueryBestSizeReply {
             + self.actual_height.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetPortAttributeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2302,7 +2302,7 @@ impl Request for SetPortAttributeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPortAttributeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2355,7 +2355,7 @@ impl Request for GetPortAttributeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPortAttributeReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPortAttributeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2402,7 +2402,7 @@ impl AsByteSequence for GetPortAttributeReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.value.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPortAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2450,7 +2450,7 @@ impl Request for QueryPortAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryPortAttributesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPortAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2522,7 +2522,7 @@ impl AsByteSequence for QueryPortAttributesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListImageFormatsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2570,7 +2570,7 @@ impl Request for ListImageFormatsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListImageFormatsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListImageFormatsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2636,7 +2636,7 @@ impl AsByteSequence for ListImageFormatsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryImageAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2705,7 +2705,7 @@ impl Request for QueryImageAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryImageAttributesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryImageAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2805,7 +2805,7 @@ impl AsByteSequence for QueryImageAttributesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PutImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2948,7 +2948,7 @@ impl Request for PutImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ShmPutImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3098,7 +3098,7 @@ impl Request for ShmPutImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PortNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -3164,7 +3164,7 @@ impl AsByteSequence for PortNotifyEvent {
 impl crate::auto::Event for PortNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct VideoNotifyEvent {
     pub event_type: u8,
     pub reason: VideoNotifyReason,

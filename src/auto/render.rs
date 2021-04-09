@@ -71,7 +71,7 @@ impl XidType for Pictformat {
     }
 }
 pub type Fixed = Int32;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Directformat {
     pub red_shift: Card16,
     pub red_mask: Card16,
@@ -143,7 +143,7 @@ impl AsByteSequence for Directformat {
             + self.alpha_mask.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Pictforminfo {
     pub id: Pictformat,
     pub ty: PictType,
@@ -201,7 +201,7 @@ impl AsByteSequence for Pictforminfo {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum PictType {
     Indexed = 0,
     Direct = 1,
@@ -231,7 +231,7 @@ impl Default for PictType {
         PictType::Indexed
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Pictvisual {
     pub visual: Visualid,
     pub format: Pictformat,
@@ -266,7 +266,7 @@ impl AsByteSequence for Pictvisual {
         self.visual.size() + self.format.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Pictdepth {
     pub depth: Card8,
     pub visuals: Vec<Pictvisual>,
@@ -316,7 +316,7 @@ impl AsByteSequence for Pictdepth {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Pictscreen {
     pub fallback: Pictformat,
     pub depths: Vec<Pictdepth>,
@@ -362,7 +362,7 @@ impl AsByteSequence for Pictscreen {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Indexvalue {
     pub pixel: Card32,
     pub red: Card16,
@@ -416,7 +416,7 @@ impl AsByteSequence for Indexvalue {
             + self.alpha.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Color {
     pub red: Card16,
     pub green: Card16,
@@ -461,7 +461,7 @@ impl AsByteSequence for Color {
         self.red.size() + self.green.size() + self.blue.size() + self.alpha.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Pointfix {
     pub x: Fixed,
     pub y: Fixed,
@@ -490,7 +490,7 @@ impl AsByteSequence for Pointfix {
         self.x.size() + self.y.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Linefix {
     pub p1: Pointfix,
     pub p2: Pointfix,
@@ -519,7 +519,7 @@ impl AsByteSequence for Linefix {
         self.p1.size() + self.p2.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Triangle {
     pub p1: Pointfix,
     pub p2: Pointfix,
@@ -559,7 +559,7 @@ impl AsByteSequence for Triangle {
         self.p1.size() + self.p2.size() + self.p3.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Trapezoid {
     pub top: Fixed,
     pub bottom: Fixed,
@@ -604,7 +604,7 @@ impl AsByteSequence for Trapezoid {
         self.top.size() + self.bottom.size() + self.left.size() + self.right.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Glyphinfo {
     pub width: Card16,
     pub height: Card16,
@@ -664,7 +664,7 @@ impl AsByteSequence for Glyphinfo {
             + self.y_off.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -721,7 +721,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -781,7 +781,7 @@ impl AsByteSequence for QueryVersionReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPictFormatsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -824,7 +824,7 @@ impl Request for QueryPictFormatsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryPictFormatsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPictFormatsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -938,7 +938,7 @@ impl AsByteSequence for QueryPictFormatsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPictIndexValuesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -986,7 +986,7 @@ impl Request for QueryPictIndexValuesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryPictIndexValuesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryPictIndexValuesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1052,7 +1052,7 @@ impl AsByteSequence for QueryPictIndexValuesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreatePictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1594,7 +1594,7 @@ impl core::ops::BitXor for Cp {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ChangePictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1823,7 +1823,7 @@ impl Request for ChangePictureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetPictureClipRectanglesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1900,7 +1900,7 @@ impl Request for SetPictureClipRectanglesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct FreePictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1948,7 +1948,7 @@ impl Request for FreePictureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompositeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2069,7 +2069,7 @@ impl Request for CompositeRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum PictOp {
     Clear = 0,
     Src = 1,
@@ -2202,7 +2202,7 @@ impl Default for PictOp {
     }
 }
 pub const PICTURE_NONE: Picture = <Picture>::const_from_xid(0);
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct TrapezoidsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2300,7 +2300,7 @@ impl Request for TrapezoidsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct TrianglesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2398,7 +2398,7 @@ impl Request for TrianglesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct TriStripRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2496,7 +2496,7 @@ impl Request for TriStripRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct TriFanRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2594,7 +2594,7 @@ impl Request for TriFanRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateGlyphSetRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2647,7 +2647,7 @@ impl Request for CreateGlyphSetRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ReferenceGlyphSetRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2700,7 +2700,7 @@ impl Request for ReferenceGlyphSetRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct FreeGlyphSetRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2748,7 +2748,7 @@ impl Request for FreeGlyphSetRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AddGlyphsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2847,7 +2847,7 @@ impl Request for AddGlyphsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct FreeGlyphsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2908,7 +2908,7 @@ impl Request for FreeGlyphsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompositeGlyphs8Request {
     pub req_type: u8,
     pub length: u16,
@@ -3012,7 +3012,7 @@ impl Request for CompositeGlyphs8Request {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompositeGlyphs16Request {
     pub req_type: u8,
     pub length: u16,
@@ -3116,7 +3116,7 @@ impl Request for CompositeGlyphs16Request {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompositeGlyphs32Request {
     pub req_type: u8,
     pub length: u16,
@@ -3220,7 +3220,7 @@ impl Request for CompositeGlyphs32Request {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct FillRectanglesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3300,7 +3300,7 @@ impl Request for FillRectanglesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3369,7 +3369,7 @@ impl Request for CreateCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Transform {
     pub matrix11: Fixed,
     pub matrix12: Fixed,
@@ -3447,7 +3447,7 @@ impl AsByteSequence for Transform {
             + self.matrix33.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetPictureTransformRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3500,7 +3500,7 @@ impl Request for SetPictureTransformRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryFiltersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3548,7 +3548,7 @@ impl Request for QueryFiltersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryFiltersReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryFiltersReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -3632,7 +3632,7 @@ impl AsByteSequence for QueryFiltersReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetPictureFilterRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3718,7 +3718,7 @@ impl Request for SetPictureFilterRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Animcursorelt {
     pub cursor: Cursor,
     pub delay: Card32,
@@ -3753,7 +3753,7 @@ impl AsByteSequence for Animcursorelt {
         self.cursor.size() + self.delay.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateAnimCursorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3814,7 +3814,7 @@ impl Request for CreateAnimCursorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Spanfix {
     pub l: Fixed,
     pub r: Fixed,
@@ -3847,7 +3847,7 @@ impl AsByteSequence for Spanfix {
         self.l.size() + self.r.size() + self.y.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Trap {
     pub top: Spanfix,
     pub bot: Spanfix,
@@ -3876,7 +3876,7 @@ impl AsByteSequence for Trap {
         self.top.size() + self.bot.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AddTrapsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -3953,7 +3953,7 @@ impl Request for AddTrapsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSolidFillRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4006,7 +4006,7 @@ impl Request for CreateSolidFillRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateLinearGradientRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4103,7 +4103,7 @@ impl Request for CreateLinearGradientRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateRadialGradientRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4212,7 +4212,7 @@ impl Request for CreateRadialGradientRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateConicalGradientRequest {
     pub req_type: u8,
     pub length: u16,
@@ -4310,7 +4310,7 @@ impl Request for CreateConicalGradientRequest {
     type Reply = ();
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum PolyEdge {
     Sharp = 0,
     Smooth = 1,
@@ -4341,7 +4341,7 @@ impl Default for PolyEdge {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum PolyMode {
     Precise = 0,
     Imprecise = 1,
@@ -4372,7 +4372,7 @@ impl Default for PolyMode {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Repeat {
     None = 0,
     Normal = 1,
@@ -4407,7 +4407,7 @@ impl Default for Repeat {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum SubPixel {
     Unknown = 0,
     HorizontalRgb = 1,

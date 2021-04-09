@@ -6,7 +6,7 @@ use crate::auto::AsByteSequence;
 use alloc::boxed::Box;
 
 /// TODO: placeholder for input events
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum InputEvent {
     NoneOfTheAbove(Box<[u8]>),
 }

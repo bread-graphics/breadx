@@ -26,7 +26,7 @@ impl XidType for Context {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Range8 {
     pub first: Card8,
     pub last: Card8,
@@ -61,7 +61,7 @@ impl AsByteSequence for Range8 {
         self.first.size() + self.last.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Range16 {
     pub first: Card16,
     pub last: Card16,
@@ -96,7 +96,7 @@ impl AsByteSequence for Range16 {
         self.first.size() + self.last.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExtRange {
     pub major: Range8,
     pub minor: Range16,
@@ -131,7 +131,7 @@ impl AsByteSequence for ExtRange {
         self.major.size() + self.minor.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Range {
     pub core_requests: Range8,
     pub core_replies: Range8,
@@ -211,7 +211,7 @@ impl AsByteSequence for Range {
 }
 pub type ElementHeader = Card8;
 pub type ClientSpec = Card32;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ClientInfo {
     pub client_resource: ClientSpec,
     pub ranges: Vec<Range>,
@@ -257,7 +257,7 @@ impl AsByteSequence for ClientInfo {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -314,7 +314,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -371,7 +371,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -469,7 +469,7 @@ impl Request for CreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct RegisterClientsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -567,7 +567,7 @@ impl Request for RegisterClientsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UnregisterClientsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -637,7 +637,7 @@ impl Request for UnregisterClientsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -686,7 +686,7 @@ impl Request for GetContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetContextReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetContextReply {
     pub reply_type: u8,
     pub enabled: bool,
@@ -765,7 +765,7 @@ impl AsByteSequence for GetContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EnableContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -814,7 +814,7 @@ impl Request for EnableContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = EnableContextReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EnableContextReply {
     pub reply_type: u8,
     pub category: Card8,
@@ -913,7 +913,7 @@ impl AsByteSequence for EnableContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DisableContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -962,7 +962,7 @@ impl Request for DisableContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct FreeContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1012,7 +1012,7 @@ impl Request for FreeContextRequest {
     type Reply = ();
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Cs {
     CurrentClients = 1,
     FutureClients = 2,
@@ -1161,7 +1161,7 @@ impl core::ops::BitXor for HType {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct BadContextError {
     pub _error_type: u8,
     pub error_code: u8,

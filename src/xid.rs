@@ -3,6 +3,7 @@
 use super::auto;
 
 /// An X11 ID.
+#[allow(clippy::upper_case_acronyms)]
 pub type XID = u32;
 
 /// A type that acts as a wrapper around an XID.

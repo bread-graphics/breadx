@@ -113,13 +113,13 @@
     clippy::default_trait_access, // more readable, IMO
     clippy::map_err_ignore, // sometimes we just need to drop the error
     clippy::missing_errors_doc, // lots of "async redox" functions
+    clippy::missing_panics_doc,
     clippy::module_name_repetitions, // doesn't matter IMO
     clippy::needless_pass_by_value,
     clippy::too_many_arguments, // we need this sometimes for compliance
-    clippy::unknown_clippy_lints, // nightly has lints that stable doesn't
-    clippy::unknown_lints,
     clippy::used_underscore_binding,
     clippy::ptr_as_ptr,
+    unknown_lints,
 )]
 
 #[cfg(feature = "std")]

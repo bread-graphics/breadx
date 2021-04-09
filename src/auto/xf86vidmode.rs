@@ -8,7 +8,7 @@ use super::prelude::*;
 pub type Syncrange = Card32;
 pub type Dotclock = Card32;
 pub type ClockFlag = Card32;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ModeInfo {
     pub dotclock: Dotclock,
     pub hdisplay: Card16,
@@ -411,7 +411,7 @@ impl core::ops::BitXor for ModeFlag {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -454,7 +454,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -511,7 +511,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetModeLineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -561,7 +561,7 @@ impl Request for GetModeLineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetModeLineReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetModeLineReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -696,7 +696,7 @@ impl AsByteSequence for GetModeLineReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ModModeLineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -831,7 +831,7 @@ impl Request for ModModeLineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SwitchModeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -884,7 +884,7 @@ impl Request for SwitchModeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMonitorRequest {
     pub req_type: u8,
     pub length: u16,
@@ -934,7 +934,7 @@ impl Request for GetMonitorRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMonitorReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMonitorReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1072,7 +1072,7 @@ impl AsByteSequence for GetMonitorReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct LockModeSwitchRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1125,7 +1125,7 @@ impl Request for LockModeSwitchRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetAllModeLinesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1175,7 +1175,7 @@ impl Request for GetAllModeLinesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetAllModeLinesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetAllModeLinesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1241,7 +1241,7 @@ impl AsByteSequence for GetAllModeLinesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AddModeLineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1448,7 +1448,7 @@ impl Request for AddModeLineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DeleteModeLineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1589,7 +1589,7 @@ impl Request for DeleteModeLineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ValidateModeLineRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1730,7 +1730,7 @@ impl Request for ValidateModeLineRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ValidateModeLineReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ValidateModeLineReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1784,7 +1784,7 @@ impl AsByteSequence for ValidateModeLineReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SwitchToModeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1925,7 +1925,7 @@ impl Request for SwitchToModeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetViewPortRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1975,7 +1975,7 @@ impl Request for GetViewPortRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetViewPortReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetViewPortReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2035,7 +2035,7 @@ impl AsByteSequence for GetViewPortReply {
             + 16
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetViewPortRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2101,7 +2101,7 @@ impl Request for SetViewPortRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDotClocksRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2151,7 +2151,7 @@ impl Request for GetDotClocksRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetDotClocksReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDotClocksReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2234,7 +2234,7 @@ impl AsByteSequence for GetDotClocksReply {
     }
 }
 pub const CLOCK_FLAG_PROGRAMABLE: ClockFlag = 1;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetClientVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2287,7 +2287,7 @@ impl Request for SetClientVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetGammaRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2362,7 +2362,7 @@ impl Request for SetGammaRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2412,7 +2412,7 @@ impl Request for GetGammaRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetGammaReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2478,7 +2478,7 @@ impl AsByteSequence for GetGammaReply {
             + 12
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRampRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2531,7 +2531,7 @@ impl Request for GetGammaRampRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetGammaRampReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRampReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2627,7 +2627,7 @@ impl AsByteSequence for GetGammaRampReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetGammaRampRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2726,7 +2726,7 @@ impl Request for SetGammaRampRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRampSizeRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2776,7 +2776,7 @@ impl Request for GetGammaRampSizeRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetGammaRampSizeReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRampSizeReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2830,7 +2830,7 @@ impl AsByteSequence for GetGammaRampSizeReply {
             + 22
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPermissionsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2880,7 +2880,7 @@ impl Request for GetPermissionsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetPermissionsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPermissionsReply {
     pub reply_type: u8,
     pub sequence: u16,

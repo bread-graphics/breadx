@@ -79,7 +79,7 @@ crate::create_paramaterizer! {
 }
 
 /// The return type of `Window::window_attributes_immediate`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct WindowAttributes {
     pub backing_store: BackingStore,
     pub visual: Visualid,

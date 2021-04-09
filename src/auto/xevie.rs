@@ -5,7 +5,7 @@
 
 use super::prelude::*;
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -62,7 +62,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -122,7 +122,7 @@ impl AsByteSequence for QueryVersionReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct StartRequest {
     pub req_type: u8,
     pub length: u16,
@@ -170,7 +170,7 @@ impl Request for StartRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = StartReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct StartReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -214,7 +214,7 @@ impl AsByteSequence for StartReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EndRequest {
     pub req_type: u8,
     pub length: u16,
@@ -262,7 +262,7 @@ impl Request for EndRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = EndReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EndReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -306,7 +306,7 @@ impl AsByteSequence for EndReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Event {}
 impl Event {}
 impl AsByteSequence for Event {
@@ -328,7 +328,7 @@ impl AsByteSequence for Event {
         32
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SendRequest {
     pub req_type: u8,
     pub length: u16,
@@ -388,7 +388,7 @@ impl Request for SendRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SendReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SendReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -432,7 +432,7 @@ impl AsByteSequence for SendReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + 24
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -480,7 +480,7 @@ impl Request for SelectInputRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SelectInputReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectInputReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -525,7 +525,7 @@ impl AsByteSequence for SelectInputReply {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Datatype {
     Unmodified = 0,
     Modified = 1,

@@ -27,7 +27,7 @@ impl XidType for Seg {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -70,7 +70,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub shared_pixmaps: bool,
@@ -151,7 +151,7 @@ impl AsByteSequence for QueryVersionReply {
             + 15
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AttachRequest {
     pub req_type: u8,
     pub length: u16,
@@ -217,7 +217,7 @@ impl Request for AttachRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DetachRequest {
     pub req_type: u8,
     pub length: u16,
@@ -265,7 +265,7 @@ impl Request for DetachRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PutImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -403,7 +403,7 @@ impl Request for PutImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetImageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -505,7 +505,7 @@ impl Request for GetImageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetImageReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetImageReply {
     pub reply_type: u8,
     pub depth: Card8,
@@ -565,7 +565,7 @@ impl AsByteSequence for GetImageReply {
             + self.size.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreatePixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -655,7 +655,7 @@ impl Request for CreatePixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AttachFdRequest {
     pub req_type: u8,
     pub length: u16,
@@ -721,7 +721,7 @@ impl Request for AttachFdRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSegmentRequest {
     pub req_type: u8,
     pub length: u16,
@@ -787,7 +787,7 @@ impl Request for CreateSegmentRequest {
     const REPLY_EXPECTS_FDS: bool = true;
     type Reply = CreateSegmentReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSegmentReply {
     pub reply_type: u8,
     pub nfd: Card8,
@@ -840,7 +840,7 @@ impl AsByteSequence for CreateSegmentReply {
         Some(&mut self.shm_fd)
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompletionEvent {
     pub event_type: u8,
     pub sequence: u16,

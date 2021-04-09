@@ -9,7 +9,7 @@ use super::randr::*;
 use super::sync::*;
 use super::xfixes::*;
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Notify {
     pub window: Window,
     pub serial: Card32,
@@ -44,7 +44,7 @@ impl AsByteSequence for Notify {
         self.window.size() + self.serial.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -101,7 +101,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -158,7 +158,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PixmapRequest {
     pub req_type: u8,
     pub length: u16,
@@ -304,7 +304,7 @@ impl Request for PixmapRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NotifyMscRequest {
     pub req_type: u8,
     pub length: u16,
@@ -403,7 +403,7 @@ impl XidType for Event {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -605,7 +605,7 @@ impl core::ops::BitXor for EventMask {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryCapabilitiesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -653,7 +653,7 @@ impl Request for QueryCapabilitiesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryCapabilitiesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryCapabilitiesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -705,7 +705,7 @@ impl AsByteSequence for QueryCapabilitiesReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum CompleteKind {
     Pixmap = 0,
     NotifyMsc = 1,
@@ -736,7 +736,7 @@ impl Default for CompleteKind {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum CompleteMode {
     Copy = 0,
     Flip = 1,
@@ -1025,7 +1025,7 @@ impl core::ops::BitXor for Option_ {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CompleteNotifyEvent {
     pub event_type: u8,
     pub kind: CompleteKind,
@@ -1106,7 +1106,7 @@ impl AsByteSequence for CompleteNotifyEvent {
 impl crate::auto::Event for CompleteNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConfigureNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -1214,7 +1214,7 @@ impl AsByteSequence for ConfigureNotifyEvent {
 impl crate::auto::Event for ConfigureNotifyEvent {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GenericEvent {
     pub event_type: u8,
     pub extension: Card8,
@@ -1280,7 +1280,7 @@ impl AsByteSequence for GenericEvent {
 impl crate::auto::Event for GenericEvent {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct IdleNotifyEvent {
     pub event_type: u8,
     pub sequence: u16,

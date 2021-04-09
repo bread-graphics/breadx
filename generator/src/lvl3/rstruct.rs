@@ -415,7 +415,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
 
     let res = RStruct {
         name,
-        derives: vec!["Clone", "Debug", "Default", "Hash", "PartialEq", "Eq", "PartialOrd", "Ord"],
+        derives: vec!["Clone", "Debug", "Default", "PartialEq", "PartialOrd"],
         is_transparent: false, // TODO: monkey patch
         fields,
         fds,

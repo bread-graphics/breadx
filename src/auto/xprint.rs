@@ -7,7 +7,7 @@ use super::prelude::*;
 
 use super::xproto::*;
 pub type String8 = Char;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Printer {
     pub name: Vec<String8>,
     pub description: Vec<String8>,
@@ -88,7 +88,7 @@ impl XidType for Pcontext {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintQueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -131,7 +131,7 @@ impl Request for PrintQueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintQueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintQueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -188,7 +188,7 @@ impl AsByteSequence for PrintQueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetPrinterListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -269,7 +269,7 @@ impl Request for PrintGetPrinterListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetPrinterListReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetPrinterListReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -335,7 +335,7 @@ impl AsByteSequence for PrintGetPrinterListReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintRehashPrinterListRequest {
     pub req_type: u8,
     pub length: u16,
@@ -378,7 +378,7 @@ impl Request for PrintRehashPrinterListRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -465,7 +465,7 @@ impl Request for CreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintSetContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -513,7 +513,7 @@ impl Request for PrintSetContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -556,7 +556,7 @@ impl Request for PrintGetContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetContextReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -603,7 +603,7 @@ impl AsByteSequence for PrintGetContextReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.context.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintDestroyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -651,7 +651,7 @@ impl Request for PrintDestroyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetScreenOfContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -694,7 +694,7 @@ impl Request for PrintGetScreenOfContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetScreenOfContextReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetScreenOfContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -741,7 +741,7 @@ impl AsByteSequence for PrintGetScreenOfContextReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size() + self.root.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintStartJobRequest {
     pub req_type: u8,
     pub length: u16,
@@ -789,7 +789,7 @@ impl Request for PrintStartJobRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintEndJobRequest {
     pub req_type: u8,
     pub length: u16,
@@ -837,7 +837,7 @@ impl Request for PrintEndJobRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintStartDocRequest {
     pub req_type: u8,
     pub length: u16,
@@ -885,7 +885,7 @@ impl Request for PrintStartDocRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintEndDocRequest {
     pub req_type: u8,
     pub length: u16,
@@ -933,7 +933,7 @@ impl Request for PrintEndDocRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintPutDocumentDataRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1038,7 +1038,7 @@ impl Request for PrintPutDocumentDataRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetDocumentDataRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1091,7 +1091,7 @@ impl Request for PrintGetDocumentDataRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetDocumentDataReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetDocumentDataReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1169,7 +1169,7 @@ impl AsByteSequence for PrintGetDocumentDataReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintStartPageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1217,7 +1217,7 @@ impl Request for PrintStartPageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintEndPageRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1267,7 +1267,7 @@ impl Request for PrintEndPageRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintSelectInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1320,7 +1320,7 @@ impl Request for PrintSelectInputRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintInputSelectedRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1368,7 +1368,7 @@ impl Request for PrintInputSelectedRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintInputSelectedReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintInputSelectedReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1425,7 +1425,7 @@ impl AsByteSequence for PrintInputSelectedReply {
             + self.all_events_mask.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1480,7 +1480,7 @@ impl Request for PrintGetAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetAttributesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1546,7 +1546,7 @@ impl AsByteSequence for PrintGetAttributesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetOneAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1624,7 +1624,7 @@ impl Request for PrintGetOneAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetOneAttributesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetOneAttributesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1690,7 +1690,7 @@ impl AsByteSequence for PrintGetOneAttributesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintSetAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1776,7 +1776,7 @@ impl Request for PrintSetAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetPageDimensionsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1824,7 +1824,7 @@ impl Request for PrintGetPageDimensionsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetPageDimensionsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetPageDimensionsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1905,7 +1905,7 @@ impl AsByteSequence for PrintGetPageDimensionsReply {
             + self.reproducible_height.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintQueryScreensRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1948,7 +1948,7 @@ impl Request for PrintQueryScreensRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintQueryScreensReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintQueryScreensReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2014,7 +2014,7 @@ impl AsByteSequence for PrintQueryScreensReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintSetImageResolutionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2071,7 +2071,7 @@ impl Request for PrintSetImageResolutionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintSetImageResolutionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintSetImageResolutionReply {
     pub reply_type: u8,
     pub status: bool,
@@ -2125,7 +2125,7 @@ impl AsByteSequence for PrintSetImageResolutionReply {
             + self.previous_resolutions.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetImageResolutionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -2173,7 +2173,7 @@ impl Request for PrintGetImageResolutionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = PrintGetImageResolutionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct PrintGetImageResolutionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -2225,7 +2225,7 @@ impl AsByteSequence for PrintGetImageResolutionReply {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Attr {
     JobAttr = 1,
     DocAttr = 2,
@@ -2266,7 +2266,7 @@ impl Default for Attr {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Detail {
     StartJobNotify = 1,
     EndJobNotify = 2,
@@ -2405,7 +2405,7 @@ impl core::ops::BitXor for EvMask {
     }
 }
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum GetDoc {
     Finished = 0,
     SecondConsumer = 1,
@@ -2435,7 +2435,7 @@ impl Default for GetDoc {
         GetDoc::Finished
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AttributNotifyEvent {
     pub event_type: u8,
     pub detail: Card8,
@@ -2483,7 +2483,7 @@ impl AsByteSequence for AttributNotifyEvent {
 impl crate::auto::Event for AttributNotifyEvent {
     const OPCODE: u8 = 1;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NotifyEvent {
     pub event_type: u8,
     pub detail: Card8,

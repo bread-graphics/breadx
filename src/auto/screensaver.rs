@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -66,7 +66,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -126,7 +126,7 @@ impl AsByteSequence for QueryVersionReply {
             + 20
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryInfoRequest {
     pub req_type: u8,
     pub length: u16,
@@ -174,7 +174,7 @@ impl Request for QueryInfoRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryInfoReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryInfoReply {
     pub reply_type: u8,
     pub state: Card8,
@@ -256,7 +256,7 @@ impl AsByteSequence for QueryInfoReply {
     }
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Kind {
     Blanked = 0,
     Internal = 1,
@@ -288,7 +288,7 @@ impl Default for Kind {
         Kind::Blanked
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SelectInputRequest {
     pub req_type: u8,
     pub length: u16,
@@ -445,7 +445,7 @@ impl core::ops::BitXor for Event {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SetAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -749,7 +749,7 @@ impl Request for SetAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct UnsetAttributesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -797,7 +797,7 @@ impl Request for UnsetAttributesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SuspendRequest {
     pub req_type: u8,
     pub length: u16,
@@ -846,7 +846,7 @@ impl Request for SuspendRequest {
     type Reply = ();
 }
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum State {
     Off = 0,
     On = 1,
@@ -880,7 +880,7 @@ impl Default for State {
         State::Off
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct NotifyEvent {
     pub event_type: u8,
     pub state: State,

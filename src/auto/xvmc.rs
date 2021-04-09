@@ -69,7 +69,7 @@ impl XidType for Subpicture {
         Self { xid: xid }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SurfaceInfo {
     pub id: Surface,
     pub chroma_format: Card16,
@@ -147,7 +147,7 @@ impl AsByteSequence for SurfaceInfo {
             + self.flags.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -190,7 +190,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -247,7 +247,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSurfaceTypesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -295,7 +295,7 @@ impl Request for ListSurfaceTypesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListSurfaceTypesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSurfaceTypesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -361,7 +361,7 @@ impl AsByteSequence for ListSurfaceTypesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -442,7 +442,7 @@ impl Request for CreateContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CreateContextReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateContextReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -522,7 +522,7 @@ impl AsByteSequence for CreateContextReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroyContextRequest {
     pub req_type: u8,
     pub length: u16,
@@ -570,7 +570,7 @@ impl Request for DestroyContextRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSurfaceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -627,7 +627,7 @@ impl Request for CreateSurfaceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CreateSurfaceReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSurfaceReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -684,7 +684,7 @@ impl AsByteSequence for CreateSurfaceReply {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroySurfaceRequest {
     pub req_type: u8,
     pub length: u16,
@@ -732,7 +732,7 @@ impl Request for DestroySurfaceRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSubpictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -807,7 +807,7 @@ impl Request for CreateSubpictureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CreateSubpictureReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSubpictureReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -899,7 +899,7 @@ impl AsByteSequence for CreateSubpictureReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroySubpictureRequest {
     pub req_type: u8,
     pub length: u16,
@@ -947,7 +947,7 @@ impl Request for DestroySubpictureRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSubpictureTypesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1000,7 +1000,7 @@ impl Request for ListSubpictureTypesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ListSubpictureTypesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSubpictureTypesReply {
     pub reply_type: u8,
     pub sequence: u16,

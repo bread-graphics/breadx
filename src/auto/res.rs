@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Client {
     pub resource_base: Card32,
     pub resource_mask: Card32,
@@ -41,7 +41,7 @@ impl AsByteSequence for Client {
         self.resource_base.size() + self.resource_mask.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Type {
     pub resource_type: Atom,
     pub count: Card32,
@@ -76,7 +76,7 @@ impl AsByteSequence for Type {
         self.resource_type.size() + self.count.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ClientIdSpec {
     pub client: Card32,
     pub mask: ClientIdMask,
@@ -211,7 +211,7 @@ impl core::ops::BitXor for ClientIdMask {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ClientIdValue {
     pub spec: ClientIdSpec,
     pub length: Card32,
@@ -259,7 +259,7 @@ impl AsByteSequence for ClientIdValue {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ResourceIdSpec {
     pub resource: Card32,
     pub ty: Card32,
@@ -294,7 +294,7 @@ impl AsByteSequence for ResourceIdSpec {
         self.resource.size() + self.ty.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ResourceSizeSpec {
     pub spec: ResourceIdSpec,
     pub bytes_: Card32,
@@ -339,7 +339,7 @@ impl AsByteSequence for ResourceSizeSpec {
         self.spec.size() + self.bytes_.size() + self.ref_count.size() + self.use_count.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ResourceSizeValue {
     pub size: ResourceSizeSpec,
     pub cross_references: Vec<ResourceSizeSpec>,
@@ -386,7 +386,7 @@ impl AsByteSequence for ResourceSizeValue {
         }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -443,7 +443,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -500,7 +500,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.server_minor.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -543,7 +543,7 @@ impl Request for QueryClientsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryClientsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -609,7 +609,7 @@ impl AsByteSequence for QueryClientsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientResourcesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -657,7 +657,7 @@ impl Request for QueryClientResourcesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryClientResourcesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientResourcesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -723,7 +723,7 @@ impl AsByteSequence for QueryClientResourcesReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientPixmapBytesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -771,7 +771,7 @@ impl Request for QueryClientPixmapBytesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryClientPixmapBytesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientPixmapBytesReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -828,7 +828,7 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
             + self.bytes_overflow.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientIdsRequest {
     pub req_type: u8,
     pub length: u16,
@@ -887,7 +887,7 @@ impl Request for QueryClientIdsRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryClientIdsReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientIdsReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -953,7 +953,7 @@ impl AsByteSequence for QueryClientIdsReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryResourceBytesRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1022,7 +1022,7 @@ impl Request for QueryResourceBytesRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryResourceBytesReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryResourceBytesReply {
     pub reply_type: u8,
     pub sequence: u16,

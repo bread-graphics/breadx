@@ -275,8 +275,8 @@ impl<'a> XConnection<'a> {
         Ok(XConnection {
             host,
             protocol,
-            screen,
             display,
+            screen,
         })
     }
 

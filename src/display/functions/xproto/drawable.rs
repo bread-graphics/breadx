@@ -119,11 +119,11 @@ fn create_pixmap_request(
     depth: u8,
 ) -> CreatePixmapRequest {
     CreatePixmapRequest {
-        drawable,
+        depth,
         pid,
+        drawable,
         width,
         height,
-        depth,
         ..Default::default()
     }
 }

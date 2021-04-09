@@ -78,11 +78,11 @@ impl AuthInfo {
         *s = &s[10 + address.len() + number.len() + name.len() + data.len()..];
 
         Some(AuthInfo {
+            name,
+            data,
             family,
             address,
             number,
-            name,
-            data,
         })
     }
 

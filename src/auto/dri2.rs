@@ -6,7 +6,7 @@
 use super::prelude::*;
 
 use super::xproto::*;
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Dri2Buffer {
     pub attachment: Attachment,
     pub name: Card32,
@@ -61,7 +61,7 @@ impl AsByteSequence for Dri2Buffer {
     }
 }
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Attachment {
     BufferFrontLeft = 0,
     BufferBackLeft = 1,
@@ -109,7 +109,7 @@ impl Default for Attachment {
         Attachment::BufferFrontLeft
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AttachFormat {
     pub attachment: Attachment,
     pub format: Card32,
@@ -144,7 +144,7 @@ impl AsByteSequence for AttachFormat {
         self.attachment.size() + self.format.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -201,7 +201,7 @@ impl Request for QueryVersionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = QueryVersionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryVersionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -258,7 +258,7 @@ impl AsByteSequence for QueryVersionReply {
             + self.minor_version.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConnectRequest {
     pub req_type: u8,
     pub length: u16,
@@ -311,7 +311,7 @@ impl Request for ConnectRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ConnectReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConnectReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -415,7 +415,7 @@ impl AsByteSequence for ConnectReply {
     }
 }
 #[repr(u32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum DriverType {
     Dri = 0,
     Vdpau = 1,
@@ -445,7 +445,7 @@ impl Default for DriverType {
         DriverType::Dri
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AuthenticateRequest {
     pub req_type: u8,
     pub length: u16,
@@ -498,7 +498,7 @@ impl Request for AuthenticateRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = AuthenticateReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct AuthenticateReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -549,7 +549,7 @@ impl AsByteSequence for AuthenticateReply {
             + self.authenticated.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateDrawableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -597,7 +597,7 @@ impl Request for CreateDrawableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct DestroyDrawableRequest {
     pub req_type: u8,
     pub length: u16,
@@ -645,7 +645,7 @@ impl Request for DestroyDrawableRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetBuffersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -711,7 +711,7 @@ impl Request for GetBuffersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetBuffersReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetBuffersReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -789,7 +789,7 @@ impl AsByteSequence for GetBuffersReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CopyRegionRequest {
     pub req_type: u8,
     pub length: u16,
@@ -858,7 +858,7 @@ impl Request for CopyRegionRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = CopyRegionReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CopyRegionReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -900,7 +900,7 @@ impl AsByteSequence for CopyRegionReply {
         self.reply_type.size() + 1 + self.sequence.size() + self.length.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetBuffersWithFormatRequest {
     pub req_type: u8,
     pub length: u16,
@@ -966,7 +966,7 @@ impl Request for GetBuffersWithFormatRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetBuffersWithFormatReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetBuffersWithFormatReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1044,7 +1044,7 @@ impl AsByteSequence for GetBuffersWithFormatReply {
             }
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SwapBuffersRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1131,7 +1131,7 @@ impl Request for SwapBuffersRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = SwapBuffersReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SwapBuffersReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1188,7 +1188,7 @@ impl AsByteSequence for SwapBuffersReply {
             + self.swap_lo.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMscRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1236,7 +1236,7 @@ impl Request for GetMscRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetMscReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMscReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1317,7 +1317,7 @@ impl AsByteSequence for GetMscReply {
             + self.sbc_lo.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct WaitMscRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1404,7 +1404,7 @@ impl Request for WaitMscRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = WaitMscReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct WaitMscReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1485,7 +1485,7 @@ impl AsByteSequence for WaitMscReply {
             + self.sbc_lo.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct WaitSbcRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1548,7 +1548,7 @@ impl Request for WaitSbcRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = WaitSbcReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct WaitSbcReply {
     pub reply_type: u8,
     pub sequence: u16,
@@ -1629,7 +1629,7 @@ impl AsByteSequence for WaitSbcReply {
             + self.sbc_lo.size()
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct SwapIntervalRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1682,7 +1682,7 @@ impl Request for SwapIntervalRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetParamRequest {
     pub req_type: u8,
     pub length: u16,
@@ -1735,7 +1735,7 @@ impl Request for GetParamRequest {
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = GetParamReply;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetParamReply {
     pub reply_type: u8,
     pub is_param_recognized: bool,
@@ -1796,7 +1796,7 @@ impl AsByteSequence for GetParamReply {
     }
 }
 #[repr(u16)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum EventType {
     ExchangeComplete = 1,
     BlitComplete = 2,
@@ -1828,7 +1828,7 @@ impl Default for EventType {
         EventType::ExchangeComplete
     }
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct BufferSwapCompleteEvent {
     pub event_type: u8,
     pub sequence: u16,
@@ -1915,7 +1915,7 @@ impl AsByteSequence for BufferSwapCompleteEvent {
 impl crate::auto::Event for BufferSwapCompleteEvent {
     const OPCODE: u8 = 0;
 }
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct InvalidateBuffersEvent {
     pub event_type: u8,
     pub sequence: u16,
