@@ -11,8 +11,8 @@ pub use crate::{
             Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, Cursor,
             DeletePropertyRequest, DestroySubwindowsRequest, DestroyWindowRequest, EventMask,
             Gcontext, GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest,
-            Gravity, MapState, MapWindowRequest, PropMode, SetMode, StackMode, Timestamp, Visualid,
-            Window, WindowClass, ATOM_WM_NAME,
+            Gravity, MapState, MapWindowRequest, PropMode, SetMode, StackMode, Timestamp,
+            UnmapWindowRequest, Visualid, Window, WindowClass, ATOM_WM_NAME,
         },
         AsByteSequence,
     },
@@ -140,6 +140,36 @@ impl Window {
         sr_request!(
             dpy,
             MapWindowRequest {
+                window: self,
+                ..Default::default()
+            },
+            async
+        )
+        .await
+    }
+
+    /// Unmap this window.
+    #[inline]
+    pub fn unmap<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
+        sr_request!(
+            dpy,
+            UnmapWindowRequest {
+                window: self,
+                ..Default::default()
+            }
+        )
+    }
+
+    /// Unmap this window, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn unmap_async<Conn: AsyncConnection + Send>(
+        self,
+        dpy: &mut Display<Conn>,
+    ) -> crate::Result {
+        sr_request!(
+            dpy,
+            UnmapWindowRequest {
                 window: self,
                 ..Default::default()
             },
