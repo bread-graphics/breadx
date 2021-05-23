@@ -21,7 +21,6 @@ hashbrown = "0.9.1"
 image = { version = "0.23.12", default-features = false, optional = true }
 log = "0.4"
 memchr = { version = "2.3.3", default-features = false }
-ref_slice = "1.2.0"
 tinyvec = { version = "1.1.0", features = ["alloc"] }
 
 [target.'cfg(unix)'.dependencies]

@@ -16,7 +16,10 @@ use crate::{
     util::{reverse_bytes, roundup},
 };
 use alloc::boxed::Box;
-use core::ops::{Deref, DerefMut};
+use core::{
+    ops::{Deref, DerefMut},
+    slice,
+};
 
 /// An image. This acts as a wrapper around data that represents an image.
 #[derive(Clone, Debug)]
@@ -498,7 +501,7 @@ where
 
         let mut npixel = pixel;
         let mut px = pixel;
-        let pixel_bytes = bytemuck::cast_slice_mut::<u32, u8>(ref_slice::ref_slice_mut(&mut pixel));
+        let pixel_bytes = bytemuck::cast_slice_mut::<u32, u8>(slice::from_mut(&mut pixel));
         for pb in pixel_bytes.iter_mut().take(4) {
             *pb = px as u8;
             px >>= 8;
@@ -512,7 +515,7 @@ where
             (&mut buffer[0..nbytes]).copy_from_slice(&self.data.deref()[addr..addr + nbytes]);
             xy_normalize_bits(&mut buffer[0..nbytes], self);
             let index = (x + self.x_offset) % self.bitmap_unit as usize;
-            let incoming_data = bytemuck::cast_slice::<u32, u8>(ref_slice::ref_slice(&pixel));
+            let incoming_data = bytemuck::cast_slice::<u32, u8>(slice::from_ref(&pixel));
             put_bits(incoming_data, index, 1, &mut buffer[0..nbytes]);
             xy_normalize_bits(&mut buffer[0..nbytes], self);
             (&mut self.data.deref_mut()[addr..addr + nbytes]).copy_from_slice(&buffer[0..nbytes]);
@@ -524,7 +527,7 @@ where
                 let addr = xyindex(x, y, self) + plane;
                 (&mut buffer[0..nbytes]).copy_from_slice(&self.data.deref()[addr..addr + nbytes]);
                 xy_normalize_bits(&mut buffer[0..nbytes], self);
-                let incoming_data = bytemuck::cast_slice::<u32, u8>(ref_slice::ref_slice(&pixel));
+                let incoming_data = bytemuck::cast_slice::<u32, u8>(slice::from_ref(&pixel));
                 put_bits(incoming_data, index, 1, &mut buffer[0..nbytes]);
                 xy_normalize_bits(&mut buffer[0..nbytes], self);
                 (&mut self.data.deref_mut()[addr..addr + nbytes])
@@ -532,7 +535,7 @@ where
 
                 npixel >>= 1;
                 let outgoing_data =
-                    bytemuck::cast_slice_mut::<u32, u8>(ref_slice::ref_slice_mut(&mut pixel));
+                    bytemuck::cast_slice_mut::<u32, u8>(slice::from_mut(&mut pixel));
                 px = npixel;
                 for od in outgoing_data.iter_mut().take(4) {
                     *od = px as u8;
@@ -549,7 +552,7 @@ where
             (&mut buffer[0..nbytes]).copy_from_slice(&self.data.deref()[addr..addr + nbytes]);
             z_normalize_bits(&mut buffer[0..nbytes], self);
             put_bits(
-                bytemuck::cast_slice::<u32, u8>(ref_slice::ref_slice(&pixel)),
+                bytemuck::cast_slice::<u32, u8>(slice::from_ref(&pixel)),
                 (x * self.bits_per_pixel as usize) & 7,
                 self.bits_per_pixel as usize,
                 &mut buffer[0..nbytes],

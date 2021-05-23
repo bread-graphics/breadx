@@ -115,6 +115,7 @@
     clippy::missing_errors_doc, // lots of "async redox" functions
     clippy::missing_panics_doc,
     clippy::module_name_repetitions, // doesn't matter IMO
+    clippy::needless_for_each, // i like using for_each instead of for loops
     clippy::needless_pass_by_value,
     clippy::too_many_arguments, // we need this sometimes for compliance
     clippy::used_underscore_binding,
