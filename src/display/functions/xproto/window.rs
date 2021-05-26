@@ -1002,8 +1002,6 @@ fn convert_get_window_attributes_reply(reply: GetWindowAttributesReply) -> Windo
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum PropertyType {
-    None = 0,
-    Any = 0,
     Primary = 1,
     Secondary = 2,
     Arc = 3,
