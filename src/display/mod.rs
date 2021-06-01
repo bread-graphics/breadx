@@ -57,8 +57,6 @@ pub(crate) const EXT_KEY_SIZE: usize = 24;
 /// requests, receive replies or process events.
 /// 
 /// Objects implementing this trait should further implement `Display` or `AsyncDisplay`,
-pub trait 
-
 pub struct Display<Conn> {
     // the connection to the server
     pub(crate) connection: Option<Conn>,
