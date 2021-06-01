@@ -38,7 +38,7 @@ fn main() -> Result {
     // create a pixmap to use as a mask
     let pixmap = conn.create_pixmap(window, width, height, 8)?;
 
-    let mut conn = RenderDisplay::new(conn, 0, 10)?;
+    let mut conn = RenderDisplay::new(conn, 0, 10).expect("Unable to run XRender connection");
 
     // get the format for the window
     let visual = attrs.visual;

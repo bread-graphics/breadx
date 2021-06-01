@@ -43,30 +43,22 @@ pub use functions::*;
 
 pub(crate) const EXT_KEY_SIZE: usize = 24;
 
-/// The connection to the X11 server. Most operations done in breadx revolve around this object
-/// in some way, shape or form.
-///
-/// Internally, this acts as a layer of abstraction over the inner `Conn` object that keeps track
+/// This trait represents a connection to the X11 server. Most operations in `breadx` revolve around an object
+/// implementing this trait in some way, shape, or form.
+/// 
+/// Internally, this should act as a layer of abstraction over the inner `Connection` object that keeps track
 /// of the setup, outgoing and pending requests and replies, the event queue, et cetera. Orthodoxically,
 /// X11 usually takes place over a TCP stream or a Unix socket connection; however, `Display` is able
 /// to use any object implementing the `Connection` trait as a vehicle for the X11 protocol.
 ///
-/// Upon its instantiation, the `Display` sends bytes to the server requesting the setup information, and
-/// then stores it for later use. Afterwards, it awaits commands from the programmer to send requests,
-/// receive replies or process events.
-///
-/// # Example
-///
-/// Open a connection to the X11 server and get the screen resolution.
-///
-/// ```rust,no_run
-/// use breadx::DisplayConnection;
-///
-/// let mut conn = DisplayConnection::create(None, None).unwrap();
-///
-/// let default_screen = conn.default_screen();
-/// println!("Default screen is {} x {}", default_screen.width_in_pixels, default_screen.height_in_pixels);
-/// ```
+/// Upon its instantiation, the `DisplayBase` should send bytes to the server requesting the setup information, 
+/// and then stores it for later use. This can be done via the "create_setup" convenience method provided by the 
+/// `Connection` and `AsyncConnection` traits.Afterwards, it awaits commands from the programmer to send
+/// requests, receive replies or process events.
+/// 
+/// Objects implementing this trait should further implement `Display` or `AsyncDisplay`,
+pub trait 
+
 pub struct Display<Conn> {
     // the connection to the server
     pub(crate) connection: Option<Conn>,
