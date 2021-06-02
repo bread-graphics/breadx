@@ -8,6 +8,16 @@ mod async_connection;
 mod sync;
 
 #[cfg(feature = "async")]
+mod async_establish;
+mod establish;
+
+#[cfg(feature = "async")]
+pub(crate) use async_establish::establish_connection_async;
+#[cfg(feature = "async")]
+pub(crate) use establish::create_setup;
+pub(crate) use establish::establish_connection;
+
+#[cfg(feature = "async")]
 pub use async_connection::*;
 pub use sync::*;
 

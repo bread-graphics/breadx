@@ -1,5 +1,8 @@
 // MIT/Apache2 License
 
+use super::async_establish_connection;
+use crate::{auth_info::AuthInfo, auto::xproto::Setup, XidGenerator};
+
 #[cfg(all(feature = "std", unix))]
 use super::unix;
 use crate::Fd;
@@ -18,7 +21,8 @@ use super::standard_fd_warning;
 use futures_lite::io::{AsyncReadExt, AsyncWriteExt};
 
 /// Generic future for connections;
-pub type GenericConnFuture<'future> = Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>>;
+pub type GenericConnFuture<'future, T = ()> =
+    Pin<Box<dyn Future<Output = crate::Result<T>> + Send + 'future>>;
 
 /// Asynchronous breadx connection.
 pub trait AsyncConnection {
@@ -43,6 +47,45 @@ pub trait AsyncConnection {
         'a: 'future,
         'b: 'future,
         'c: 'future;
+
+    /// Establish a connection to the server.
+    #[inline]
+    fn establish<'future>(
+        &'future mut self,
+        auth_info: Option<AuthInfo>,
+    ) -> GenericConnFuture<'future, (Setup, XidGenerator)> {
+        Box::pin(async move { async_establish_connection(self, auth_info) })
+    }
+}
+
+impl<C: AsyncConnection + ?Sized> AsyncConnection for &mut C {
+    #[inline]
+    fn send_packet<'future, 'a, 'b, 'c>(
+        &'a mut self,
+        bytes: &'b [u8],
+        fds: &'c mut Vec<Fd>,
+    ) -> GenericConnFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+        'c: 'future,
+    {
+        (**self).send_packet(bytes, fds)
+    }
+
+    #[inline]
+    fn read_packet<'future, 'a, 'b, 'c>(
+        &'a mut self,
+        bytes: &'b mut [u8],
+        fds: &'c mut Vec<Fd>,
+    ) -> GenericConnFuture<'future>
+    where
+        'a: 'future,
+        'b: 'future,
+        'c: 'future,
+    {
+        (**self).read_packet(bytes, fds)
+    }
 }
 
 macro_rules! unix_aware_async_connection_impl {
@@ -105,6 +148,9 @@ macro_rules! unix_aware_async_connection_impl {
 
 #[cfg(feature = "std")]
 unix_aware_async_connection_impl! { TcpStream }
-
 #[cfg(all(feature = "std", unix))]
 unix_aware_async_connection_impl! { UnixStream }
+#[cfg(feature = "std")]
+unix_aware_async_connection_impl! { &TcpStream }
+#[cfg(all(feature = "std", unix))]
+unix_aware_async_connection_impl! { &UnixStream }

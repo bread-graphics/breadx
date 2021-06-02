@@ -1,5 +1,8 @@
 // MIT/Apache2 License
 
+use super::establish_connection;
+use crate::{auth_info::AuthInfo, auto::xproto::Setup, XidGenerator};
+
 #[cfg(all(feature = "std", unix))]
 use super::unix;
 use crate::Fd;
@@ -21,6 +24,23 @@ pub trait Connection {
     fn send_packet(&mut self, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result;
     /// Read a packet from the connection in a blocking manner.
     fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result;
+    /// Establish a setup using this connection.
+    #[inline]
+    fn establish(&mut self, auth_info: Option<AuthInfo>) -> crate::Result<(Setup, XidGenerator)> {
+        establish_connection(self, auth_info)
+    }
+}
+
+impl<C: Connection + ?Sized> Connection for &mut C {
+    #[inline]
+    fn send_packet(&mut self, bytes: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
+        (**self).send_packet(bytes, fds)
+    }
+
+    #[inline]
+    fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
+        (**self).read_packet(bytes, fds)
+    }
 }
 
 // Implement Connection on TcpStream and UnixStream
@@ -63,3 +83,5 @@ macro_rules! unix_aware_connection_impl {
 
 unix_aware_connection_impl! { #[cfg(feature = "std")] TcpStream }
 unix_aware_connection_impl! { #[cfg(all(feature = "std", unix))] UnixStream }
+unix_aware_connection_impl! { #[cfg(feature = "std")] &TcpStream }
+unix_aware_connection_impl! { #[cfg(all(feature = "std", unix))] &UnixStream }
