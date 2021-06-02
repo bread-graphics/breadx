@@ -238,6 +238,14 @@ pub enum StandardFormat {
     A1 = 4,
 }
 
+struct XrenderInfo {
+    formats: Vec<Pictforminfo>,
+    screens: Vec<Pictscreen>,
+    subpixels: Vec<u32>,
+    major_version: u32,
+    minor_version: u32,
+}
+
 impl<Dpy: DisplayLike> RenderDisplay<Dpy>
 where
     Dpy::Connection: Connection,
@@ -248,29 +256,59 @@ where
         mut dpy: Dpy,
         client_major_version: u32,
         client_minor_version: u32,
-    ) -> crate::Result<Self> {
-        // run QueryVersion and QueryPictFormats simultaneously
-        let qvtok = send_request!(
-            dpy.display_mut(),
-            QueryVersionRequest {
-                client_major_version,
-                client_minor_version,
-                ..Default::default()
-            }
-        )?;
-        let qpftok = send_request!(dpy.display_mut(), QueryPictFormatsRequest::default())?;
+    ) -> Result<Self, (Dpy, crate::BreadError)> {
+        #[inline]
+        fn xrender_info<Conn: Connection>(
+            dpy: &mut Display<Conn>,
+            client_major_version: u32,
+            client_minor_version: u32,
+        ) -> crate::Result<XrenderInfo> {
+            // run QueryVersion and QueryPictFormats simultaneously
+            let qvtok = send_request!(
+                dpy,
+                QueryVersionRequest {
+                    client_major_version,
+                    client_minor_version,
+                    ..Default::default()
+                }
+            )?;
+            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default())?;
 
-        let QueryVersionReply {
-            major_version,
-            minor_version,
-            ..
-        } = dpy.display_mut().resolve_request(qvtok)?;
-        let QueryPictFormatsReply {
+            let QueryVersionReply {
+                major_version,
+                minor_version,
+                ..
+            } = dpy.resolve_request(qvtok)?;
+            let QueryPictFormatsReply {
+                formats,
+                screens,
+                subpixels,
+                ..
+            } = dpy.resolve_request(qpftok)?;
+
+            Ok(XrenderInfo {
+                major_version,
+                minor_version,
+                formats,
+                screens,
+                subpixels,
+            })
+        }
+
+        let XrenderInfo {
             formats,
             screens,
             subpixels,
-            ..
-        } = dpy.display_mut().resolve_request(qpftok)?;
+            major_version,
+            minor_version,
+        } = match xrender_info(
+            dpy.display_mut(),
+            client_major_version,
+            client_minor_version,
+        ) {
+            Ok(x) => x,
+            Err(e) => return Err((dpy, e)),
+        };
 
         Ok(Self {
             inner: dpy,
@@ -362,31 +400,62 @@ where
         mut dpy: Dpy,
         client_major_version: u32,
         client_minor_version: u32,
-    ) -> crate::Result<Self> {
-        let qvtok = send_request!(
-            dpy.display_mut(),
-            QueryVersionRequest {
-                client_major_version,
-                client_minor_version,
-                ..Default::default()
-            },
-            async
-        )
-        .await?;
-        let qpftok =
-            send_request!(dpy.display_mut(), QueryPictFormatsRequest::default(), async).await?;
+    ) -> Result<Self, (Dpy, crate::BreadError)> {
+        #[inline]
+        async fn xrender_info<Conn: AsyncConnection + Send>(
+            dpy: &mut Display<Conn>,
+            client_major_version: u32,
+            client_minor_version: u32,
+        ) -> crate::Result<XrenderInfo> {
+            let qvtok = send_request!(
+                dpy,
+                QueryVersionRequest {
+                    client_major_version,
+                    client_minor_version,
+                    ..Default::default()
+                },
+                async
+            )
+            .await?;
+            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default(), async).await?;
 
-        let QueryVersionReply {
+            let QueryVersionReply {
+                major_version,
+                minor_version,
+                ..
+            } = dpy.resolve_request_async(qvtok).await?;
+            let QueryPictFormatsReply {
+                formats,
+                screens,
+                subpixels,
+                ..
+            } = dpy.resolve_request_async(qpftok).await?;
+
+            Ok(XrenderInfo {
+                major_version,
+                minor_version,
+                formats,
+                screens,
+                subpixels,
+            })
+        }
+
+        let XrenderInfo {
             major_version,
             minor_version,
-            ..
-        } = dpy.display_mut().resolve_request_async(qvtok).await?;
-        let QueryPictFormatsReply {
             formats,
             screens,
             subpixels,
-            ..
-        } = dpy.display_mut().resolve_request_async(qpftok).await?;
+        } = match xrender_info(
+            dpy.display_mut(),
+            client_major_version,
+            client_minor_version,
+        )
+        .await
+        {
+            Ok(x) => x,
+            Err(e) => return Err((dpy, e)),
+        };
 
         Ok(Self {
             inner: dpy,
