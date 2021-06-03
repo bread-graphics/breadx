@@ -23,11 +23,16 @@ pub struct SendRequestFuture<'a, D: ?Sized, R> {
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     #[inline]
-    pub(crate) fn run(display: &mut D, request: R) -> Self {
+    pub(crate) fn run(display: &'a mut D, request: R) -> Self {
         Self {
             inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
             _phantom: PhantomData,
         }
+    }
+
+    #[inline]
+    pub(crate) fn display(&mut self) -> &'a mut D {
+        self.inner.display()
     }
 }
 

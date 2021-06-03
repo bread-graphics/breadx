@@ -478,6 +478,16 @@ pub trait DisplayExt {
     fn resolve_request<R: Request>(&mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
     where
         R::Reply: Default;
+
+    /// Send a request to the server and immediately resolve for its reply.
+    #[inline]
+    fn exchange_request<R: Request>(&mut self, request: R) -> crate::Result<R::Reply>
+    where
+        R::Reply: Default,
+    {
+        let tok = self.send_request(request)?;
+        self.resolve_request(tok)
+    }
 }
 
 impl<D: Display + ?Sized> DisplayExt for D {
@@ -540,6 +550,9 @@ pub trait AsyncDisplayExt: AsyncDisplay {
 
     /// Wait for a special event to be sent from the X server.
     fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self>;
+
+    /// Send a request and wait for a reply back
+    fn exchange_request<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R>;
 }
 
 #[cfg(feature = "async")]
@@ -588,6 +601,11 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
     #[inline]
     fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self> {
         WaitForSpecialEventFuture::run(self)
+    }
+
+    #[inline]
+    fn exchange_request<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R> {
+        ExchangeRequestFuture::run(self, request)
     }
 }
 

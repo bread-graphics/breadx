@@ -1,7 +1,9 @@
 // MIT/Apache2 License
 
 mod looping;
+mod map;
 mod read_packet;
+mod request_exchange;
 mod resolve_request;
 mod resolve_request_raw;
 mod send_packet;
@@ -13,7 +15,9 @@ mod wait_for_event;
 mod wait_for_special_event;
 
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
+pub use map::MapFuture;
 pub use read_packet::ReadPacketFuture;
+pub use request_exchange::ExchangeRequestFuture;
 pub use resolve_request::ResolveRequestFuture;
 pub use resolve_request_raw::{ResolveRequestRawFuture, ResolveRequestRawHandler};
 pub use send_packet::SendPacketFuture;
