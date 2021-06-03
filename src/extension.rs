@@ -15,7 +15,6 @@ impl Extension {
     #[inline]
     pub(crate) fn from_reply(
         qer: QueryExtensionReply,
-        ext_name: Cow<'static, str>,
     ) -> crate::Result<Extension> {
         if qer.present {
             Ok(Self {
@@ -24,7 +23,8 @@ impl Extension {
                 first_error: qer.first_error,
             })
         } else {
-            Err(crate::BreadError::ExtensionNotPresent(ext_name))
+            //Err(crate::BreadError::ExtensionNotPresent(ext_name))
+            unimplemented!("Extension not present")
         }
     }
 }

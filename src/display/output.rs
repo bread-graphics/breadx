@@ -106,7 +106,9 @@ pub(crate) fn send_request<D: Display + ?Sized>(
 
     // send the packet
     let mut fds = mem::take(&mut req.fds);
+    display.lock();
     display.connection().send_packet(&req.data, &mut fds)?;
+    display.unlock();
 
     finish_request(self, req)
 }

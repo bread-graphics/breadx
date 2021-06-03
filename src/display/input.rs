@@ -162,6 +162,7 @@ pub(crate) fn wait<D: Display + ?Sized>(display: &mut D) -> crate::Result {
     // replies, errors, and events are all in units of 32 bytes
     let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
     let mut fds: Vec<Fd> = vec![];
+    display.lock();
     display.connection().read_packet(&mut bytes, &mut fds)?;
 
     fix_glx_workaround(
@@ -181,6 +182,7 @@ pub(crate) fn wait<D: Display + ?Sized>(display: &mut D) -> crate::Result {
                 .read_packet(&mut bytes[32..], &mut fds)?;
         }
     }
+    display.unlock();
 
     process_bytes(display, bytes, fds)
 }

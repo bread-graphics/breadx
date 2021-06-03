@@ -552,7 +552,7 @@ pub trait AsyncDisplayExt: AsyncDisplay {
     fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self>;
 
     /// Send a request and wait for a reply back
-    fn exchange_request<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R>;
+    fn exchange_request_async<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R>;
 }
 
 #[cfg(feature = "async")]
@@ -604,7 +604,7 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
     }
 
     #[inline]
-    fn exchange_request<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R> {
+    fn exchange_request_async<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R> {
         ExchangeRequestFuture::run(self, request)
     }
 }
@@ -748,4 +748,9 @@ pub(crate) fn decode_reply<R: Request>(reply: &[u8], fds: Box<[Fd]>) -> crate::R
     }
 
     Ok(r)
+}
+
+#[inline]
+pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut self) -> crate::Result<XID> {
+    display.generate_xid().ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))
 }
