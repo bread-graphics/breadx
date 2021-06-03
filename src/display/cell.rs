@@ -1,13 +1,24 @@
 // MIT/Apache2 License
 
 use super::{Display, DisplayBase, PendingReply, PendingRequest};
-use core::cell::{Cell, RefCell};
+use core::{
+    cell::{Cell, RefCell},
+    num::{NonZeroU32, NonZeroUsize},
+};
+
+#[cfg(feature = "async")]
+use super::{
+    common::{SendBuffer, WaitBuffer, WaitBufferReturn},
+    input, output,
+};
 
 /// An implementor of `Display` and `AsyncDisplay` that uses `Cell` and `RefCell` in order to allow multiple
 /// accesses. The only downside is that it is not `Sync`.
+#[derive(Debug)]
 pub struct CellDisplay<Conn> {
     // the connection to the server
     connection: Option<Conn>,
+    // the connection is in use if the io lock is true
     io_lock: Cell<bool>,
 
     // the setup received from the server
@@ -29,6 +40,10 @@ pub struct CellDisplay<Conn> {
 
     // tell whether or not we care about the output of zero-sized replies
     checked: Cell<bool>,
+
+    // used for polling
+    wait_buffer: RefCell<Option<WaitBuffer>>,
+    send_buffer: RefCell<SendBuffer>,
 }
 
 #[derive(Debug)]
@@ -39,6 +54,32 @@ struct Data {
     pending_replies: HashMap<u16, PendingReply>,
     special_event_queues: HashMap<XID, VecDeque<Event>>,
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
+    #[cfg(feature = "async")]
+    workarounders: Vec<u16>,
+}
+
+impl<Conn> CellDisplay<Conn> {
+    #[inline]
+    fn lock_internal(&mut self) {
+        let io_lock = self.io_lock.get_mut();
+        match *io_lock {
+            true => panic!("Attempted to re-entrantly use connection"),
+            false => {
+                *io_lock = true;
+            }
+        }
+    }
+
+    #[inline]
+    fn lock_internal_immutable(&self) {
+        let io_lock = self.io_lock.get();
+        match io_lock {
+            true => panic!("Attempted to re-entrantly use connection"),
+            false => {
+                self.io_lock.set(true);
+            }
+        }
+    }
 }
 
 impl<Conn> DisplayBase for CellDisplay<Conn> {
@@ -69,6 +110,10 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+        #[cfg(feature = "async")]
+        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+            self.inner.get_mut().workarounders.push(req_id);
+        }
         self.inner.get_mut().pending_requests.insert(req_id, pereq);
     }
     #[inline]
@@ -77,6 +122,8 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        #[cfg(feature = "async")]
+        self.inner.get_mut().workarounders.retain(|&r| r != req_id);
         self.inner.get_mut().pending_requests.remove(&req_id)
     }
     #[inline]
@@ -164,13 +211,7 @@ impl<Connect: Connection> Display for CellDisplay<Connect> {
     // we do have to worry about locking, even with &mut, since someone can later pull up an & access
     #[inline]
     fn lock(&mut self) {
-        let io_lock = self.io_lock.get_mut();
-        match *io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                *io_lock = true;
-            }
-        }
+        self.lock_internal()
     }
 
     #[inline]
@@ -189,21 +230,50 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     }
 
     #[inline]
-    fn poll_lock(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        let io_lock = self.io_lock.get_mut();
-        match *io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                *io_lock = true;
+    fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
+        let data = self.inner.get_mut();
+        let (bytes, fds) = match self
+            .wait_buffer
+            .get_mut()
+            .get_or_insert_with(|| {
+                // try to lock
+                self.lock_internal();
+                WaitBuffer::default()
+            })
+            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(res) => {
+                *self.io_lock.get_mut() = false;
+                self.wait_buffer.get_mut().take();
+                match res {
+                    Ok(WaitBufferReturn { data, fds }) => (data, fds),
+                    Err(e) => return Poll::Ready(Err(e)),
+                }
             }
-        }
+        };
 
-        Poll::Ready(())
+        Poll::Ready(input::process_bytes(self, bytes, fds))
     }
 
     #[inline]
-    fn unlock(&mut self) {
-        *self.io_lock.get_mut() = false;
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.lock_internal();
+        self.send_buffer.get_mut().fill_hole(req);
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        let mut send_buffer = mem::replace(self.send_buffer.get_mut(), SendBuffer::OccupiedHole);
+        let res = send_buffer.poll_send_request(self, cx);
+        *self.send_buffer.get_mut() = send_buffer;
+        if res.is_ready() {
+            self.send_buffer.get_mut().dig_hole();
+            *self.io_lock.get_mut() = false;
+        }
+        match res {
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            res => res,
+        }
     }
 }
 
@@ -235,10 +305,12 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
-        self.inner
-            .borrow_mut()
-            .pending_requests
-            .insert(req_id, pereq);
+        let mut inner = self.inner.borrow_mut();
+        #[cfg(feature = "async")]
+        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+            inner.workarounders.push(req_id);
+        }
+        inner.pending_requests.insert(req_id, pereq);
     }
     #[inline]
     fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
@@ -246,7 +318,10 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
-        self.inner.borrow_mut().pending_requests.remove(&req_id)
+        let mut inner = self.inner.borrow_mut();
+        #[cfg(feature = "async")]
+        inner.workarounders.retain(|&r| r != req_id);
+        inner.pending_requests.remove(&req_id)
     }
     #[inline]
     fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
@@ -343,13 +418,7 @@ impl<'a, Connect: Connection> Display for &'a CellDisplay<Connect> {
 
     #[inline]
     fn lock(&mut self) {
-        let io_lock = self.io_lock.get();
-        match io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                self.io_lock.set(true);
-            }
-        }
+        self.lock_internal_immutable();
     }
 
     #[inline]
@@ -371,20 +440,51 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
     }
 
     #[inline]
-    fn poll_lock(&mut self, _ctx: &mut Context<'_>) -> Poll<()> {
-        let io_lock = self.io_lock.get();
-        match io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                self.io_lock.set(true);
+    fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
+        let data = self.inner.borrow_mut();
+        let wait_buffer = self.wait_buffer.borrow_mut();
+        let (bytes, fds) = match wait_buffer
+            .get_or_insert_with(|| {
+                // try to lock
+                self.lock_internal_immutable();
+                WaitBuffer::default()
+            })
+            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx)
+        {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(res) => {
+                mem::drop(wait_buffer);
+                self.wait_buffer.borrow_mut().take();
+                self.io_lock.set(false);
+                match res {
+                    Ok(WaitBufferReturn { data, fds }) => (data, fds),
+                    Err(e) => return Poll::Ready(Err(e)),
+                }
             }
-        }
+        };
 
-        Poll::Ready(Ok(()))
+        Poll::Ready(input::process_bytes(self, bytes, fds))
     }
 
     #[inline]
-    fn unlock(&mut self) {
-        self.io_lock.set(false);
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.lock_internal_immutable();
+        self.send_buffer.borrow_mut().fill_hole(req);
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        let mut sbslot = self.send_buffer.borrow_mut();
+        let mut send_buffer = mem::replace(&mut *sbslot, SendBuffer::OccupiedHole);
+        let res = send_buffer.poll_send_request(self, cx);
+        *sblslot = send_buffer;
+        if res.is_ready() {
+            sbslot.dig_hole();
+            self.io_lock.set(false);
+        }
+        match res {
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            res => res,
+        }
     }
 }

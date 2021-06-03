@@ -2,7 +2,7 @@
 
 #![allow(clippy::unreadable_literal)]
 
-use core::iter;
+use core::{convert::TryInto, iter, mem};
 use tinyvec::{Array, TinyVec};
 
 #[cfg(all(unix, feature = "std"))]
@@ -21,8 +21,15 @@ pub(crate) fn convert_nix_error(e: NixError) -> IoError {
 }
 
 #[inline]
-pub(crate) fn cycled_zeroes<A: Array<Item = u8>>(len: usize) -> TinyVec<A> {
-    iter::repeat(0).take(len).collect()
+pub(crate) fn difference<T>(i1: &[T], i2: &[T]) -> usize {
+    let i1 = i1 as *const [T] as *const T as isize;
+    let i2 = i2 as *const [T] as *const T as isize;
+    let diff = i2
+        .checked_sub(i1)
+        .expect("Difference is too large to be measured");
+    let diff = diff.abs().try_into().unwrap();
+    diff.checked_div(mem::size_of::<T>())
+        .expect("Size of value is zero")
 }
 
 /// Byte reversal table, copied from Xlib.

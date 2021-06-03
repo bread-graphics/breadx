@@ -40,6 +40,8 @@ mod like;
 pub use like::*;
 
 #[cfg(feature = "async")]
+pub(crate) mod common;
+#[cfg(feature = "async")]
 mod futures;
 
 mod functions;
@@ -434,12 +436,6 @@ pub trait AsyncDisplay {
     /// Get the inner connection.
     fn connection(&mut self) -> &mut Self::Conn;
 
-    /// Lock the connection. This exists as an I/O lock so that multithreaded users don't step on each other's toes.
-    fn poll_lock(&mut self, cx: &mut Context<'_>) -> Poll<()>;
-
-    /// Unlock the connection.
-    fn unlock<'future>(&mut self);
-
     /// Poll the current status of waiting for more input. There is no default implementation; the buffering
     /// strategy depends on the implementor. If this is called after a Poll::Ready is returned, it is assumed
     /// that the user wants to wait again.
@@ -447,10 +443,14 @@ pub trait AsyncDisplay {
 
     /// Begin sending a raw request to the server. In order to poll the status of this operation, use the
     /// `poll_send_request_raw` function, or just use the `send_request_raw`/`send_request` function.
-    fn begin_send_request_raw(&mut self, req: RequestInfo);
+    fn begin_send_request_raw(&mut self, req: RequestInfo, reentrant: bool);
 
     /// Poll an ongoing raw request operation.
-    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>>;
+    fn poll_send_request_raw(
+        &mut self,
+        cx: &mut Context<'_>,
+        reentrant: bool,
+    ) -> Poll<crate::Result<u16>>;
 }
 
 #[cfg(feature = "async")]
@@ -460,11 +460,6 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
     #[inline]
     fn connection(&mut self) -> &mut Self::Conn {
         (**self).connection()
-    }
-
-    #[inline]
-    fn poll_lock(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        (**self).poll_lock(cx)
     }
 
     #[inline]
@@ -529,9 +524,6 @@ pub trait AsyncDisplayExt: AsyncDisplay {
     /// Wait until we recieve data.
     fn wait_async(&mut self) -> WaitFuture<'_, Self>;
 
-    /// Lock the connection.
-    fn lock_async(&mut self) -> LockFuture<'_, Self>;
-
     /// Send a raw request to the server.
     fn send_request_raw_async(&mut self, req: RequestInfo) -> SendRequestRawFuture<'_, Self>;
 
@@ -564,11 +556,6 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
     #[inline]
     fn wait_async(&mut self) -> WaitFuture<Self> {
         WaitFuture::run(self)
-    }
-
-    #[inline]
-    fn lock_async(&mut self) -> LockFuture<'_, Self> {
-        LockFuture::run(self)
     }
 
     #[inline]
@@ -617,7 +604,6 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RequestInfo {
     pub(crate) data: TinyVec<[u8; 32]>,
-    pub(crate) len: usize,
     pub(crate) opcode: u8,
     pub(crate) extension: Option<&'static str>,
     pub(crate) expects_fds: bool,
@@ -636,9 +622,15 @@ impl RequestInfo {
         len = (len + 3) & (!0x03);
         data.truncate(len);
 
+        // Third and fourth bytes need to be length
+        let x_len = len / 4;
+        log::trace!("xlen is {}", x_len);
+        let len_bytes = x_len.to_ne_bytes();
+        data[2] = len_bytes[0];
+        data[3] = len_bytes[1];
+
         RequestInfo {
             data,
-            len,
             opcode: R::OPCODE,
             extension: R::EXTENSION,
             expects_fds: R::REPLY_EXPECTS_FDS,
@@ -720,344 +712,6 @@ impl Default for RequestWorkaround {
     #[inline]
     fn default() -> Self {
         Self::NoWorkaround
-    }
-}
-
-impl<Conn: Connection> Display<Conn> {
-    /// Forces the server to synchronize itself and send all packets.
-    /// This is done by sending a `GetInputFocusRequest` to the server and discarding the reply. Once
-    /// we're sure we've received the discarded `GetInputFocusReply`, we know we've successfully
-    /// emptied the `pending_requests` array.
-    #[inline]
-    pub fn synchronize(&mut self) -> crate::Result {}
-
-    /// Send a request object to the X11 server.
-    ///
-    /// Given a request object, this function sends it across the connection to the X11 server and returns
-    /// a cookie used to determine when this request will resolve. Usually, the `Display` object has functions
-    /// that act as a wrapper around this object; however, if you'd like to circumvent those, this is usually
-    /// the best option.
-    #[inline]
-    pub fn send_request<R: Request>(&mut self, req: R) -> crate::Result<RequestCookie<R>> {
-        self.send_request_internal(req, false)
-    }
-
-    /// Wait for a request from the X11 server.
-    ///
-    /// This function checks the `Display`'s queues to see if a reply matching the given `RequestCookie`
-    /// has been processed by the X11 server. If not, it polls the server for new events until it has
-    /// determined that the request has resolved.
-    #[inline]
-    pub fn resolve_request<R: Request>(
-        &mut self,
-        token: RequestCookie<R>,
-    ) -> crate::Result<R::Reply>
-    where
-        R::Reply: Default,
-    {
-        if mem::size_of::<R::Reply>() == 0 {
-            // check the request for errors by synchronizing the connection, assuming we care about
-            // that
-        }
-
-        loop {
-            log::trace!("Current replies: {:?}", &self.pending_replies);
-
-            match self.pending_replies.remove(&token.sequence) {
-                Some((reply, fds)) => break Self::decode_reply::<R>(reply, fds),
-                None => self.wait()?,
-            }
-        }
-    }
-
-    /// Wait for a special event.
-    #[inline]
-    pub fn wait_for_special_event(&mut self, eid: XID) -> crate::Result<Event> {
-        loop {
-            let queue = match self.special_event_queues.get_mut(&eid) {
-                Some(queue) => queue,
-                None => {
-                    return Err(crate::BreadError::StaticMsg(
-                        "Tried to poll a special event that didn't exist",
-                    ))
-                }
-            };
-
-            match queue.pop_front() {
-                Some(event) => break Ok(event),
-                None => self.wait()?,
-            }
-        }
-    }
-
-    /// Creates a new `Display` from a connection and authentication info.
-    ///
-    /// It is expected that the connection passed in has not had any information sent into it aside from
-    /// what is necessary for the underlying protocol. After the object is created, the `Display` will poll
-    /// the server for setup information.
-    #[inline]
-    pub fn from_connection(connection: Conn, auth: Option<AuthInfo>) -> crate::Result<Self> {
-        let mut d = Self::from_connection_internal(connection);
-        d.init(auth)?;
-        Ok(d)
-    }
-
-    /// Initialize the setup.
-    #[inline]
-    fn init(&mut self, auth: Option<AuthInfo>) -> crate::Result {
-        log::debug!("Establishing connection to server.");
-
-        let setup = Self::create_setup(match auth {
-            Some(auth) => auth,
-            None => AuthInfo::get(),
-        });
-        let mut _fds: Vec<Fd> = vec![];
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
-        let len = setup.as_bytes(&mut bytes);
-
-        log::trace!("Sending setup request to server.");
-        self.connection()?.send_packet(&bytes[0..len], &mut _fds)?;
-        let mut bytes: TinyVec<[u8; 8]> = cycled_zeroes(8);
-
-        log::trace!("Reading setup response from server.");
-        self.connection()?.read_packet(&mut bytes, &mut _fds)?;
-
-        match bytes[0] {
-            0 => return Err(crate::BreadError::FailedToConnect),
-            2 => return Err(crate::BreadError::FailedToAuthorize),
-            _ => (),
-        }
-
-        // read in the rest of the bytes
-        let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
-        let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
-        bytes.extend(iter::once(0).cycle().take(length));
-
-        log::trace!("Reading remainder of setup.");
-        self.connection()?.read_packet(&mut bytes[8..], &mut _fds)?;
-
-        let (setup, _) =
-            Setup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
-        self.setup = setup;
-        self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
-
-        log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
-        log::debug!("resource_id_mask is {:#032b}", self.setup.resource_id_mask);
-        log::debug!(
-            "resource_id inc. is {:#032b}",
-            self.setup.resource_id_mask & self.setup.resource_id_mask.wrapping_neg()
-        );
-
-        Ok(())
-    }
-
-    /// Wait for an event to be generated by the X server.
-    ///
-    /// This checks the event queue for a new event. If the queue is empty, the `Display` will poll the
-    /// server for new events.
-    #[inline]
-    pub fn wait_for_event(&mut self) -> crate::Result<Event> {
-        log::debug!("Beginning event wait...");
-        loop {
-            match self.event_queue.pop_front() {
-                Some(event) => break Ok(event),
-                None => self.wait()?,
-            }
-        }
-    }
-}
-
-#[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
-    /// Forces the server to synchronize itself, async redox.
-    #[inline]
-    pub fn synchronize_async<'future>(
-        &'future mut self,
-    ) -> Pin<Box<dyn Future<Output = crate::Result> + Send + 'future>> {
-        Box::pin(async move {
-            log::debug!("Synchronizing display");
-            let sequence = self
-                .send_request_internal_async(GetInputFocusRequest::default(), true)
-                .await?
-                .sequence();
-            while self.pending_requests.contains_key(&sequence) {
-                self.wait_async().await?;
-            }
-
-            Ok(())
-        })
-    }
-
-    /// Send a request object to the X11 server, async redox. See the `send_request` function for more
-    /// information.
-    #[inline]
-    pub fn send_request_async<'future, R: Request + Send + 'future>(
-        &'future mut self,
-        req: R,
-    ) -> Pin<Box<dyn Future<Output = crate::Result<RequestCookie<R>>> + Send + 'future>> {
-        Box::pin(self.send_request_internal_async(req, false))
-    }
-
-    /// Wait for a request from the X11 server, async redox. See the `resolve_request` function for more
-    /// information.
-    #[inline]
-    pub async fn resolve_request_async<R: Request>(
-        &mut self,
-        token: RequestCookie<R>,
-    ) -> crate::Result<R::Reply>
-    where
-        R::Reply: Default,
-    {
-        if mem::size_of::<R::Reply>() == 0 {
-            // check the request for errors by synchronizing the connection
-            if self.checked {
-                self.synchronize_async().await?;
-                let seq = token.sequence();
-                self.pending_requests.remove(&seq);
-                if let Some(err) = self.pending_errors.remove(&seq) {
-                    return Err(err);
-                };
-            }
-            return Ok(Default::default());
-        }
-
-        loop {
-            match self.pending_replies.remove(&token.sequence) {
-                Some((reply, fds)) => {
-                    break Self::decode_reply::<R>(reply, fds);
-                }
-                None => self.wait_async().await?,
-            }
-        }
-    }
-
-    /// Wait for a special event, async redox.
-    #[inline]
-    pub async fn wait_for_special_event_async(&mut self, eid: XID) -> crate::Result<Event> {
-        loop {
-            let queue = match self.special_event_queues.get_mut(&eid) {
-                Some(queue) => queue,
-                None => {
-                    return Err(crate::BreadError::StaticMsg(
-                        "Tried to poll a special event that didn't exist",
-                    ))
-                }
-            };
-
-            match queue.pop_front() {
-                Some(event) => break Ok(event),
-                None => self.wait_async().await?,
-            }
-        }
-    }
-
-    /// Creates a new `Display` from a connection and authentication info, async redox. See the `from_connection`
-    /// function for more information.
-    #[inline]
-    pub async fn from_connection_async(
-        connection: Conn,
-        auth: Option<AuthInfo>,
-    ) -> crate::Result<Self> {
-        let mut d = Self::from_connection_internal(connection);
-        d.init_async(auth).await?;
-        Ok(d)
-    }
-
-    /// Wait for an event to be generated by the X server, async redox. See the `wait_for_event` function for
-    /// more information.
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn wait_for_event_async(&mut self) -> crate::Result<Event> {
-        loop {
-            match self.event_queue.pop_front() {
-                Some(event) => break Ok(event),
-                None => self.wait_async().await?,
-            }
-        }
-    }
-
-    /// Initialize the setup, async redox.
-    ///
-    /// TODO; lots of copy-pasted code, redo this at some point
-    #[cfg(feature = "async")]
-    #[inline]
-    async fn init_async(&mut self, auth: Option<AuthInfo>) -> crate::Result {
-        let setup = Self::create_setup(match auth {
-            Some(auth) => auth,
-            None => AuthInfo::get_async().await,
-        });
-        let mut _fds: Vec<Fd> = vec![];
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(setup.size());
-        let len = setup.as_bytes(&mut bytes);
-        bytes.truncate(len);
-        self.connection()?
-            .send_packet(&bytes[0..len], &mut _fds)
-            .await?;
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(8);
-        self.connection()?
-            .read_packet(&mut bytes, &mut _fds)
-            .await?;
-
-        match bytes[0] {
-            0 => return Err(crate::BreadError::FailedToConnect),
-            2 => return Err(crate::BreadError::FailedToAuthorize),
-            _ => (),
-        }
-
-        // read in the rest of the bytes
-        let length_bytes: [u8; 2] = [bytes[6], bytes[7]];
-        let length = (u16::from_ne_bytes(length_bytes) as usize) * 4;
-        bytes.extend(iter::once(0).cycle().take(length));
-        self.connection()?
-            .read_packet(&mut bytes[8..], &mut _fds)
-            .await?;
-
-        let (setup, _) = Setup::from_bytes(&bytes)
-            .ok_or_else(|| crate::BreadError::BadObjectRead(Some("Setup")))?;
-        self.setup = setup;
-        self.xid = XidGenerator::new(self.setup.resource_id_base, self.setup.resource_id_mask);
-
-        log::debug!("resource_id_base is {:#032b}", self.setup.resource_id_base);
-        log::debug!("resource_id_mask is {:#032b}", self.setup.resource_id_mask);
-        log::debug!(
-            "resource_id inc. is {:#032b}",
-            self.setup.resource_id_mask & self.setup.resource_id_mask.wrapping_neg()
-        );
-
-        Ok(())
-    }
-}
-
-/// A variant of `Display` that uses X11's default connection mechanisms to connect to the server. In
-/// most cases, you should be using this over any variant of `Display`.
-#[cfg(feature = "std")]
-pub type DisplayConnection = Display<name::NameConnection>;
-
-#[cfg(all(feature = "std", feature = "async"))]
-pub type AsyncDisplayConnection = Display<name::AsyncNameConnection>;
-
-#[cfg(feature = "std")]
-impl DisplayConnection {
-    /// Create a new connection to the X server, given an optional name and authorization information.
-    #[inline]
-    pub fn create(name: Option<Cow<'_, str>>, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
-        let connection = name::NameConnection::connect_internal(name)?;
-        Self::from_connection(connection, auth_info)
-    }
-}
-
-#[cfg(all(feature = "std", feature = "async"))]
-impl AsyncDisplayConnection {
-    /// Create a new connection to the X server, given an optional name and authorization information, async
-    /// redox.
-    #[cfg(feature = "async")]
-    #[inline]
-    pub async fn create_async(
-        name: Option<Cow<'_, str>>,
-        auth_info: Option<AuthInfo>,
-    ) -> crate::Result<Self> {
-        let connection = name::AsyncNameConnection::connect_internal_async(name).await?;
-        Self::from_connection_async(connection, auth_info).await
     }
 }
 

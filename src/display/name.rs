@@ -144,7 +144,7 @@ struct XConnection<'a> {
     host: Option<Cow<'a, str>>,
     protocol: Option<Protocol>,
     display: u16,
-    screen: u64,
+    screen: usize,
 }
 
 impl<'a> XConnection<'a> {
@@ -161,7 +161,7 @@ impl<'a> XConnection<'a> {
                 None => return Err(name),
             };
             let screen = &name[rposn + 1..];
-            let screen: u64 = match screen.parse() {
+            let screen: usize = match screen.parse() {
                 Ok(s) => s,
                 Err(_) => return Err(name),
             };
@@ -402,9 +402,12 @@ impl<'a> XConnection<'a> {
 impl NameConnection {
     /// Open a new connection.
     #[inline]
-    pub(crate) fn connect_internal(name: Option<Cow<'_, str>>) -> crate::Result<NameConnection> {
+    pub(crate) fn connect_internal(
+        name: Option<Cow<'_, str>>,
+    ) -> crate::Result<(NameConnection, usize)> {
         let connection = XConnection::parse(name)?;
-        connection.open()
+        let screen = connection.screen;
+        Ok((connection.open()?, screen))
     }
 }
 
@@ -415,9 +418,10 @@ impl AsyncNameConnection {
     #[cfg(feature = "async")]
     pub(crate) async fn connect_internal_async(
         name: Option<Cow<'_, str>>,
-    ) -> crate::Result<AsyncNameConnection> {
+    ) -> crate::Result<(AsyncNameConnection, usize)> {
         let connection = XConnection::parse(name)?;
-        connection.open_async().await
+        let screen = connection.screen;
+        Ok((connection.open_async().await?, screen))
     }
 }
 

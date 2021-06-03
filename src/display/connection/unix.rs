@@ -18,6 +18,8 @@ use std::{
 use alloc::sync::Arc;
 #[cfg(feature = "async")]
 use async_io::Async;
+#[cfg(feature = "async")]
+use core::task::Context;
 
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::Result<()>) {
@@ -73,44 +75,49 @@ pub fn send_packet_unix<Conn: AsRawFd + Write>(
     Ok(())
 }
 
-/// The same as the above function, but async.
+/// The same as the above function, but in polling form.
 #[cfg(feature = "async")]
 #[inline]
-pub async fn send_packet_unix_async<Conn: AsRawFd + Write + Unpin>(
+pub fn poll_send_packet_unix<Conn: AsRawFd + Write + Unpin>(
     conn: Arc<Async<Conn>>,
-    mut data: &[u8],
+    data: &mut &[u8],
     fds: &mut Vec<Fd>,
-) -> crate::Result {
-    // TODO: make sure this isn't unsound. the way we use it, it shouldn't be
-    conn.write_with(|conn| {
-        let connfd = conn.as_raw_fd();
-        let (offset, res) = send_msg_packet(connfd, data, fds);
-        // the data stream might be interrupted; since this is called in a loop,
-        // we need to keep track of what we've written
-        data = &data[offset..];
-        res
-    })
-    .await?;
+    cx: &mut Context<'_>,
+) -> Poll<crate::Result> {
+    let connfd = conn.as_raw_fd();
+    loop {
+        // try to run until we encounter unwritability
+        let (offset, res) = send_msg_packet(connfd, *data, fds);
+        *data = &*data[offset..];
+        match res {
+            Ok(()) => break Poll::Ready(Ok(())),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => break Poll::Ready(Err(e.into())),
+        }
 
-    #[cfg(debug_assertions)]
-    log::trace!("Done with write_with()");
-
-    Ok(())
+        // poll for writability
+        match conn.poll_writable(cx) {
+            Poll::Pending => break Poll::Pending,
+            Poll::Ready(Ok(())) => { /* continue loop */ }
+            Poll::Ready(Err(e)) => break Poll::Ready(Err(e.into())),
+        }
+    }
 }
 
 /// Read a packet, unix style. Includes fds.
 #[allow(clippy::similar_names)]
 #[inline]
-fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
+fn read_msg_packet(conn: RawFd, data: &mut &mut [u8], fds: &mut Vec<Fd>) -> io::Result<()> {
     const MAX_FDS: usize = 16;
 
     if data.is_empty() {
         return Ok(());
     }
 
+    let mut taken_data = mem::replace(data, &mut []);
     let mut cmsg = nix::cmsg_space!([Fd; MAX_FDS]);
-    let mut datalen = data.len();
-    let mut datavec = [IoVec::from_mut_slice(data)];
+    let mut datalen = taken_data.len();
+    let mut datavec = [IoVec::from_mut_slice(taken_data)];
 
     let msg = loop {
         log::debug!("Calling recvmsg with a data buffer of length {}", datalen);
@@ -118,11 +125,11 @@ fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::R
             Ok(m) if m.bytes == 0 => break m,
             Ok(m) if m.bytes == datalen => break m,
             Ok(m) => {
-                #[cfg(debug_assertions)]
-                log::debug!("recvmsg: yet to receive {} bytes", data.len() - m.bytes);
-                data = &mut data[m.bytes..];
-                datalen = data.len();
-                datavec = [IoVec::from_mut_slice(data)];
+                //#[cfg(debug_assertions)]
+                //log::debug!("recvmsg: yet to receive {} bytes", data.len() - m.bytes);
+                taken_data = &mut taken_data[m.bytes..];
+                datalen = taken_data.len();
+                datavec = [IoVec::from_mut_slice(taken_data)];
             }
             Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => {
                 log::info!("Interrupt occurred during read");
@@ -130,6 +137,8 @@ fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::R
             Err(e) => return Err(convert_nix_error(e)),
         }
     };
+
+    *data = taken_data;
 
     fds.extend(msg.cmsgs().flat_map(|cmsg| match cmsg {
         ControlMessageOwned::ScmRights(r) => r,
@@ -143,28 +152,36 @@ fn read_msg_packet(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> io::R
 #[inline]
 pub fn read_packet_unix<Conn: AsRawFd + Read>(
     conn: &mut Conn,
-    data: &mut [u8],
+    mut data: &mut [u8],
     fds: &mut Vec<Fd>,
 ) -> crate::Result {
     let connfd = conn.as_raw_fd();
-    read_msg_packet(connfd, data, fds)?;
+    read_msg_packet(connfd, &mut data, fds)?;
     Ok(())
 }
 
 /// Read a packet, async redox.
 #[cfg(feature = "async")]
 #[inline]
-pub async fn read_packet_unix_async<Conn: AsRawFd + Read + Unpin>(
+pub fn poll_read_packet_unix<Conn: AsRawFd + Read + Unpin>(
     conn: Arc<Async<Conn>>,
-    data: &mut [u8],
+    data: &mut &mut [u8],
     fds: &mut Vec<Fd>,
-) -> crate::Result {
-    // TODO: same as above
-    conn.read_with(|conn| {
-        let connfd = conn.as_raw_fd();
-        read_msg_packet(connfd, data, fds)
-    })
-    .await?;
+    cx: &mut Context<'_>,
+) -> Poll<crate::Result> {
+    let connfd = conn.as_raw_fd();
+    loop {
+        // try to read until we can't anymore
+        match read_msg_packet(connfd, data, fds) {
+            Ok(()) => break Poll::Ready(Ok(())),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => break Poll::Ready(Err(e.into())),
+        }
 
-    Ok(())
+        match conn.poll_readable(cx) {
+            Poll::Pending => break Poll::Pending,
+            Poll::Ready(Ok(())) => { /* continue loop */ }
+            Poll::Ready(Err(e)) => break Poll::Ready(Err(e.into())),
+        }
+    }
 }

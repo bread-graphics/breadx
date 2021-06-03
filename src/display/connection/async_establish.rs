@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{create_setup, AsyncConnection};
+use super::{create_setup, AsyncConnection, AsyncConnectionExt};
 use crate::auth_info::AuthInfo;
 use tinyvec::TinyVec;
 

@@ -2,8 +2,10 @@
 
 mod lock;
 mod looping;
+mod read_packet;
 mod resolve_request;
 mod resolve_request_raw;
+mod send_packet;
 mod send_request;
 mod send_request_raw;
 mod synchronize;
@@ -13,8 +15,10 @@ mod wait_for_special_event;
 
 pub use lock::LockFuture;
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
+pub use read_packet::ReadPacketFuture;
 pub use resolve_request::ResolveRequestFuture;
 pub use resolve_request_raw::{ResolveRequestRawFuture, ResolveRequestRawHandler};
+pub use send_packet::SendPacketFuture;
 pub use send_request::SendRequestFuture;
 pub use send_request_raw::SendRequestRawFuture;
 pub use synchronize::SynchronizeFuture;

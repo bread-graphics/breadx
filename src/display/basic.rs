@@ -1,11 +1,12 @@
 // MIT/Apache2 License
 
 use super::{
-    name::NameConnection, Connection, Display, DisplayBase, PendingReply, PendingRequest,
+    input, name::NameConnection, Connection, Display, DisplayBase, PendingReply, PendingRequest,
     RequestInfo,
 };
 use crate::{
-    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
+    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, util::difference,
+    XidGenerator, XID,
 };
 use alloc::collections::VecDeque;
 use core::num::NonZeroU32;
@@ -16,22 +17,28 @@ use super::{AsyncConnection, AsyncDisplay};
 
 /// An implementor of `Display` and `AsyncDisplay` that requires &mut access in order to use.
 pub struct StandardDisplay<Conn> {
-    // the connection to the server
+    /// The connection to the server. It is in an `Option`, so that way if it is `None` we know
+    /// the connection has been poisoned.
     connection: Option<Conn>,
 
-    // the setup received from the server
+    /// The setup received from the server.
     setup: Setup,
 
-    // xid generator
+    /// XID generator.
     xid: XidGenerator,
 
-    // the screen to be used by default
+    /// The index of the screen to be used by default.
     default_screen: usize,
 
+    /// Queue for events; more recent events are at the front.
     event_queue: VecDeque<Event>,
+    /// Map associating request numbers to pending requests, that have not been replied to by
+    /// the server yet.
     pending_requests: HashMap<u16, PendingRequest>,
+    /// Map associating request numbers to requests that have error'd out. This map is unlikely
+    /// to ever hold many entries; it might be worth reconsidering its type.
     pending_errors: HashMap<u16, BreadError>,
-    #[allow(clippy::type_complexity)]
+    /// Map associating request numbers with replies sent by the server.
     pending_replies: HashMap<u16, PendingReply>,
 
     // special events queue
@@ -49,6 +56,19 @@ pub struct StandardDisplay<Conn> {
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
+
+    // internal buffer for polling for waiting
+    #[cfg(feature = "async")]
+    wait_buffer: Option<WaitBuffer>,
+
+    // internal buffer for sending a request
+    #[cfg(feature = "async")]
+    send_buffer: SendBuffer,
+
+    /// List of requests we need to consider the GLX workaround for. This simplifies
+    /// async operations.
+    #[cfg(feature = "async")]
+    workarounders: Vec<u16>,
 }
 
 impl<Conn> StandardDisplay<Conn> {
@@ -71,6 +91,12 @@ impl<Conn> StandardDisplay<Conn> {
             checked: cfg!(debug_assertions),
             //            context: HashMap::new(),
             extensions: HashMap::with_capacity(8),
+            #[cfg(feature = "async")]
+            wait_buffer: None,
+            #[cfg(feature = "async")]
+            send_buffer: Default::default(),
+            #[cfg(feature = "async")]
+            workarounders: vec![],
         }
     }
 }
@@ -141,6 +167,10 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
 
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+        #[cfg(feature = "async")]
+        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+            self.workarounders.push(req_id);
+        }
         self.pending_requests.insert(req_id, pereq);
     }
 
@@ -151,6 +181,8 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
 
     #[inline]
     fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        #[cfg(feature = "async")]
+        self.workarounders.retain(|&r| r != req_id);
         self.pending_requests.remove(&req_id)
     }
 
@@ -262,8 +294,75 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for StandardDisplay<Connect>
     }
 
     #[inline]
-    fn poll_lock(&mut self, _cx: &mut Context<'_>) -> Poll<()> { Poll::Ready(()) }
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        let pr_ref = &mut self.pending_requests;
+        let (bytes, fds) = match self
+            .wait_buffer
+            .get_or_insert_with(WaitBuffer::default)
+            .poll_wait(self.connection.as_mut().unwrap(), &self.workarounders, cx)
+        {
+            Poll::Ready(res) => {
+                self.wait_buffer.take();
+                match res {
+                    Ok(WaitBufferReturn { data, fds }) => (data, fds),
+                    Err(e) => return Poll::Ready(Err(e)),
+                }
+            }
+            Poll::Pending => return Poll::Pending,
+        };
+
+        Poll::Ready(input::process_bytes(self, bytes, fds))
+    }
 
     #[inline]
-    fn unlock(&mut self) {}
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.send_buffer.fill_hole(req);
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        let mut send_buffer = mem::replace(&mut self.send_buffer, SendBuffer::OccupiedHole);
+        let res = send_buffer.poll_send_request(self, cx);
+        self.send_buffer = send_buffer;
+        if res.is_ready() {
+            self.send_buffer.dig_hole();
+        }
+        match res {
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            res => res,
+        }
+    }
+}
+
+/// A variant of `BasicDisplay` that uses X11's default connection mechanisms to connect to the server. In
+/// most cases, you should be using either this, or converting this type to a `CellDisplay` or `SyncDisplay`.
+#[cfg(feature = "std")]
+pub type DisplayConnection = BasicDisplay<NameConnection>;
+
+#[cfg(all(feature = "std", feature = "async"))]
+pub type AsyncDisplayConnection = BasicDisplay<AsyncNameConnection>;
+
+#[cfg(feature = "std")]
+impl DisplayConnection {
+    /// Create a new connection to the X server, given an optional name and authorization information.
+    #[inline]
+    pub fn create(name: Option<Cow<'_, str>>, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
+        let (connection, screen) = NameConnection::connect_internal(name)?;
+        Self::from_connection(connection, screen, auth_info)
+    }
+}
+
+#[cfg(all(feature = "std", feature = "async"))]
+impl AsyncDisplayConnection {
+    /// Create a new connection to the X server, given an optional name and authorization information, async
+    /// redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn create_async(
+        name: Option<Cow<'_, str>>,
+        auth_info: Option<AuthInfo>,
+    ) -> crate::Result<Self> {
+        let (connection, screen) = name::AsyncNameConnection::connect_internal_async(name).await?;
+        Self::from_connection_async(connection, screen, auth_info).await
+    }
 }
