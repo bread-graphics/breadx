@@ -3,7 +3,11 @@
 //! Common async implementation functionality between our connection types.
 
 use super::{input, output, RequestInfo, RequestWorkaround};
-use crate::{util::difference, Fd, auto::xproto::{QueryExtensionRequest, QueryExtensionReply}};
+use crate::{
+    auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
+    util::difference,
+    Fd,
+};
 use core::{iter, mem};
 use tinyvec::TinyVec;
 
@@ -213,7 +217,7 @@ impl SendBuffer {
                             }
                             // insert the opcode into the display
                             display.set_extension_opcode(
-                                str_to_key(req.extension.unwrap()),
+                                output::str_to_key(req.extension.unwrap()),
                                 qer.major_opcode,
                             );
                             // TODO: first_event and first_error are probably important too
@@ -233,8 +237,10 @@ impl SendBuffer {
                                 self.dig_hole();
                                 return Poll::Ready(Err(e));
                             }
-                            Poll::Ready(Ok(())) => {
+                            Poll::Ready(Ok(WaitBufferResult { bytes, fds })) => {
                                 *wait_buffer = None;
+                                // ensure that the bytes are processed
+                                match input::process_bytes(display, bytes, fds) {}
                             }
                         }
                     };
@@ -246,7 +252,7 @@ impl SendBuffer {
                         None => break (req, None),
                         Some(extension) => {
                             // see if we have it cached
-                            let key = str_to_key(extension);
+                            let key = output::str_to_key(extension);
                             match display.get_extension_opcode(&key) {
                                 Some(opcode) => break (req, Some(opcode)),
                                 None => {
@@ -309,6 +315,8 @@ impl SendBuffer {
 struct InnerSendBuffer {
     /// The request we are trying to send.
     request: RequestInfo,
+    /// The original length of the request data. Used for checking for drop-while-running.
+    original_length: usize,
     /// Whether or not we've completed our task.
     complete: bool,
     /// Whether or not the data is modified to contain the opcode.
@@ -331,6 +339,7 @@ impl InnerSendBuffer {
     fn new_internal(request: RequestInfo, opcode: Option<u8>) -> Self {
         Self {
             request,
+            original_length: request.data.len(),
             complete: false,
             impl_opcode: Opcode::NotImplemented(opcode),
         }
@@ -357,7 +366,7 @@ impl InnerSendBuffer {
         // if the opcode is not yet implemented, implement it
         if let Opcode::NotImplemented(opcode) = self.impl_opcode {
             let request_opcode = self.request.opcode;
-            input::modify_for_opcode(&mut self.request.data, request_opcode, opcode);
+            output::modify_for_opcode(&mut self.request.data, request_opcode, opcode);
             self.impl_opcode = Opcode::Implemented;
         }
 
@@ -387,10 +396,11 @@ impl InnerSendBuffer {
     }
 }
 
-#[inline]
-fn str_to_key(s: &str) -> [u8; EXT_KEY_SIZE] {
-    let mut key = [0u8; EXT_KEY_SIZE];
-    let b = s.as_bytes();
-    key.copy_from_slice(&b[..EXT_KEY_SIZE]);
-    key
+impl Drop for InnerSendBuffer {
+    #[inline]
+    fn drop(&mut self) {
+        if self.data.len() != 0 || self.data.len() != self.original_len {
+            panic!("Interrupted send future while it was mid-transition!");
+        }
+    }
 }

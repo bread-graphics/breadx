@@ -332,7 +332,8 @@ pub trait Display: DisplayBase {
     /// Get the connection.
     fn connection(&mut self) -> &mut Self::Conn;
 
-    /// Lock the connection. This exists as an I/O lock so that multithreaded users don't step on each other's toes.
+    /// Lock the connection. This exists as an I/O lock so that multithreaded users don't step on each
+    /// other's toes.
     fn lock(&mut self);
 
     /// Unlock the connection.
@@ -346,26 +347,22 @@ pub trait Display: DisplayBase {
 
     /// Send a request across the connection, given the monomorphized request info.
     #[inline]
-    fn send_request_raw(
-        &mut self,
-        request_info: RequestInfo,
-        discard_reply: bool,
-    ) -> crate::Result<u16> {
-        output::send_request(self, request_info, discard_reply)
+    fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16> {
+        output::send_request(self, request_info)
     }
 
     /// Synchronize this display, ensuring that all data sent across it has been replied to.
     #[inline]
     fn synchronize(&mut self) -> crate::Result {
         log::debug!("Synchronizing display");
-        let sequence = self.send_request_raw(
-            RequestInfo::from_request(GetInputFocusRequest::default()),
-            true,
-        )?;
+        let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
+        gifr.discard_reply = true;
+        let sequence = self.send_request_raw(gifr)?;
         // essentially a do/while loop
         while {
+            // run wait() until the simple request we sent shows up in the replies
             self.wait()?;
-            self.remove_pending_request(sequence).is_some()
+            self.get_pending_request(sequence).is_some()
         } {}
 
         Ok(())
@@ -441,14 +438,10 @@ pub trait AsyncDisplay {
 
     /// Begin sending a raw request to the server. In order to poll the status of this operation, use the
     /// `poll_send_request_raw` function, or just use the `send_request_raw`/`send_request` function.
-    fn begin_send_request_raw(&mut self, req: RequestInfo, reentrant: bool);
+    fn begin_send_request_raw(&mut self, req: RequestInfo);
 
     /// Poll an ongoing raw request operation.
-    fn poll_send_request_raw(
-        &mut self,
-        cx: &mut Context<'_>,
-        reentrant: bool,
-    ) -> Poll<crate::Result<u16>>;
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>>;
 }
 
 #[cfg(feature = "async")]
@@ -558,7 +551,7 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 
     #[inline]
     fn send_request_raw_async(&mut self, req: RequestInfo) -> SendRequestRawFuture<'_, Self> {
-        SendRequestRawFuture::run(self, req)
+        SendRequestRawFuture::run(self, req, false)
     }
 
     #[inline]
@@ -602,12 +595,16 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RequestInfo {
     pub(crate) data: TinyVec<[u8; 32]>,
+    pub(crate) zero_sized_reply: bool,
     pub(crate) opcode: u8,
     pub(crate) extension: Option<&'static str>,
     pub(crate) expects_fds: bool,
+    pub(crate) discard_reply: bool,
+    pub(crate) sequence: Option<u16>,
 }
 
 impl RequestInfo {
+    /// Generate a `RequestInfo` given a specific `Request` to generate from.
     #[inline]
     pub fn from_request<R: Request>(req: R) -> Self {
         // TODO: somehow write using uninitialzied data
@@ -629,10 +626,19 @@ impl RequestInfo {
 
         RequestInfo {
             data,
+            zero_sized_reply: mem::size_of::<R::Reply> == 0,
             opcode: R::OPCODE,
             extension: R::EXTENSION,
             expects_fds: R::REPLY_EXPECTS_FDS,
+            discard_reply: false,
+            sequence: None,
         }
+    }
+
+    /// Set the sequence number for this `RequestInfo`.
+    #[inline]
+    pub(crate) fn set_sequence(&mut self, seq: u16) {
+        self.sequence = Some(seq);
     }
 }
 

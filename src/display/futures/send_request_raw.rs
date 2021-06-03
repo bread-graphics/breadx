@@ -18,9 +18,9 @@ pub struct SendRequestRawFuture<'a, D: ?Sized> {
 
 impl<'a, D: ?Sized> SendRequestRawFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D, request: RequestInfo) -> Self {
+    pub(crate) fn run(display: &'a mut D, request: RequestInfo, discard_reply: bool) -> Self {
         // begin the send request process
-        display.begin_send_request_raw(request);
+        display.begin_send_request_raw(request, discard_reply);
         Self {
             display: Some(display),
             is_finished: false,

@@ -30,10 +30,9 @@ pub enum SynchronizeFuture<'a, D: ?Sized> {
 impl<'a, D: ?Sized> SynchronizeFuture<'a, D> {
     #[inline]
     pub(crate) fn run(display: &'a mut D) -> Self {
-        Self::Sending(SendRequestRawFuture::run(
-            display,
-            RequestInfo::from_request(GetInputFocusRequest::default()),
-        ))
+        let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
+        gifr.discard_reply = true;
+        Self::Sending(SendRequestRawFuture::run(display, gifr))
     }
 
     /// Returns the display we are currently synchronizing.

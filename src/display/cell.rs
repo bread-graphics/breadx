@@ -45,6 +45,7 @@ pub struct CellDisplay<Conn> {
     // used for polling
     wait_buffer: RefCell<Option<WaitBuffer>>,
     send_buffer: RefCell<SendBuffer>,
+    discard_reply: Cell<Option<bool>>,
 }
 
 #[derive(Debug)]
@@ -102,6 +103,8 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             wait_buffer: RefCell::new(None),
             #[cfg(feature = "async")]
             send_buffer: Default::default(),
+            #[cfg(feature = "async")]
+            discard_reply: Cell::new(None),
         }
     }
 }
@@ -307,6 +310,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     #[inline]
     fn begin_send_request_raw(&mut self, req: RequestInfo) {
         self.lock_internal();
+        let req = output::preprocess_request(self, req);
         self.send_buffer.get_mut().fill_hole(req);
     }
 
@@ -320,7 +324,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
             *self.io_lock.get_mut() = false;
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
             res => res,
         }
     }
@@ -516,8 +520,9 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+    fn begin_send_request_raw(&mut self, req: RequestInfo, discard_reply: bool) {
         self.lock_internal_immutable();
+        let req = output::preprocess_request(self, req);
         self.send_buffer.borrow_mut().fill_hole(req);
     }
 
@@ -532,7 +537,7 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
             self.io_lock.set(false);
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
             res => res,
         }
     }

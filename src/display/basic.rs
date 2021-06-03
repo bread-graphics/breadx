@@ -319,6 +319,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for StandardDisplay<Connect>
 
     #[inline]
     fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        let req = output::preprocess_request(self, req);
         self.send_buffer.fill_hole(req);
     }
 
@@ -331,7 +332,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for StandardDisplay<Connect>
             self.send_buffer.dig_hole();
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
             res => res,
         }
     }
