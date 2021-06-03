@@ -1,6 +1,7 @@
 // MIT/Apache2 License
 
-use super::{Display, DisplayBase, PendingReply, PendingRequest};
+use super::{BasicDisplay, Display, DisplayBase, PendingReply, PendingRequest, EXT_KEY_SIZE};
+use crate::{auto::xproto::Setup, CellXidGenerator};
 use core::{
     cell::{Cell, RefCell},
     num::{NonZeroU32, NonZeroUsize},
@@ -25,7 +26,7 @@ pub struct CellDisplay<Conn> {
     setup: Setup,
 
     // xid generator
-    xid: XidGenerator,
+    xid: CellXidGenerator,
 
     // the screen to be used by default
     default_screen: usize,
@@ -56,6 +57,53 @@ struct Data {
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
     #[cfg(feature = "async")]
     workarounders: Vec<u16>,
+}
+
+impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
+    /// Convert a `BasicDisplay` into a `CellDisplay`.
+    #[inline]
+    fn from(display: BasicDisplay<Conn>) -> Self {
+        let BasicDisplay {
+            connection,
+            setup,
+            xid,
+            default_screen,
+            event_queue,
+            pending_requests,
+            pending_errors,
+            pending_replies,
+            special_event_queues,
+            request_number,
+            wm_protocols_atom,
+            checked,
+            extensions,
+            ..
+        } = display;
+
+        Self {
+            connection,
+            setup,
+            xid: xid.into(),
+            default_screen,
+            inner: RefCell::new(Data {
+                event_queue,
+                pending_requests,
+                pending_errors,
+                pending_replies,
+                special_event_queues,
+                extensions,
+                #[cfg(feature = "async")]
+                workarounders: vec![],
+            }),
+            request_number: Cell::new(request_number),
+            wm_protocols_atom: Cell::new(wm_protocols_atom),
+            checked: Cell::new(checked),
+            #[cfg(feature = "async")]
+            wait_buffer: RefCell::new(None),
+            #[cfg(feature = "async")]
+            send_buffer: Default::default(),
+        }
+    }
 }
 
 impl<Conn> CellDisplay<Conn> {
@@ -240,7 +288,8 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
                 self.lock_internal();
                 WaitBuffer::default()
             })
-            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx) {
+            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx)
+        {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
                 *self.io_lock.get_mut() = false;

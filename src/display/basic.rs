@@ -17,45 +17,48 @@ use super::{AsyncConnection, AsyncDisplay};
 
 /// An implementor of `Display` and `AsyncDisplay` that requires &mut access in order to use.
 pub struct StandardDisplay<Conn> {
+    // NOTE: every field in this structure is pub(crate), because the implementations of From
+    //       for CellDisplay and SyncDisplay need to deconstruct it
     /// The connection to the server. It is in an `Option`, so that way if it is `None` we know
     /// the connection has been poisoned.
-    connection: Option<Conn>,
+    pub(crate) connection: Option<Conn>,
 
     /// The setup received from the server.
-    setup: Setup,
+    pub(crate) setup: Setup,
 
     /// XID generator.
-    xid: XidGenerator,
+    pub(crate) xid: XidGenerator,
 
     /// The index of the screen to be used by default.
-    default_screen: usize,
+    pub(crate) default_screen: usize,
 
     /// Queue for events; more recent events are at the front.
-    event_queue: VecDeque<Event>,
+    pub(crate) event_queue: VecDeque<Event>,
     /// Map associating request numbers to pending requests, that have not been replied to by
     /// the server yet.
-    pending_requests: HashMap<u16, PendingRequest>,
+    /// TODO: maybe combine into one HashMap that uses an enum?
+    pub(crate) pending_requests: HashMap<u16, PendingRequest>,
     /// Map associating request numbers to requests that have error'd out. This map is unlikely
     /// to ever hold many entries; it might be worth reconsidering its type.
-    pending_errors: HashMap<u16, BreadError>,
+    pub(crate) pending_errors: HashMap<u16, BreadError>,
     /// Map associating request numbers with replies sent by the server.
-    pending_replies: HashMap<u16, PendingReply>,
+    pub(crate) pending_replies: HashMap<u16, PendingReply>,
 
     // special events queue
-    special_event_queues: HashMap<XID, VecDeque<Event>>,
+    pub(crate) special_event_queues: HashMap<XID, VecDeque<Event>>,
 
-    request_number: u64,
+    pub(crate) request_number: u64,
 
     // store the interned atoms
-    wm_protocols_atom: Option<NonZeroU32>,
+    pub(crate) wm_protocols_atom: Option<NonZeroU32>,
 
     // tell whether or not we care about the output of zero-sized replies
-    checked: bool,
+    pub(crate) checked: bool,
 
     // hashmap linking extension names to major opcodes
     // we use byte arrays instead of static string pointers
     // here because cache locality leads to an overall speedup (todo: verify)
-    extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
+    pub(crate) extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
 
     // internal buffer for polling for waiting
     #[cfg(feature = "async")]
