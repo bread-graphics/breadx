@@ -40,7 +40,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
                 sf: SynchronizeFuture::run(display),
                 tok,
             },
-            _ => ResolveRequestFuture::Resolving(ResolveRequestRawFuture::raw(
+            _ => ResolveRequestFuture::Resolving(ResolveRequestRawFuture::run(
                 display,
                 tok.sequence(),
             )),

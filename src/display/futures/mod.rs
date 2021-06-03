@@ -1,6 +1,5 @@
 // MIT/Apache2 License
 
-mod lock;
 mod looping;
 mod read_packet;
 mod resolve_request;
@@ -13,7 +12,6 @@ mod wait;
 mod wait_for_event;
 mod wait_for_special_event;
 
-pub use lock::LockFuture;
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
 pub use read_packet::ReadPacketFuture;
 pub use resolve_request::ResolveRequestFuture;

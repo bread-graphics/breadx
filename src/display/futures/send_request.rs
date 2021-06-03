@@ -25,7 +25,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn run(display: &mut D, request: R) -> Self {
         Self {
-            inner: display.send_request_raw_async(RequestInfo::from_request(request)),
+            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
             _phantom: PhantomData,
         }
     }

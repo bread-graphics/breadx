@@ -28,30 +28,28 @@ use tinyvec::TinyVec;
 use core::{future::Future, pin::Pin};
 
 mod basic;
-pub use basic::*;
 mod cell;
-pub use cell::*;
 mod connection;
+mod functions;
+
+pub use basic::*;
+pub use cell::*;
 pub use connection::*;
-#[cfg(feature = "std")]
-pub mod name;
+pub use functions::*;
 
-mod like;
-pub use like::*;
-
-#[cfg(feature = "async")]
-pub(crate) mod common;
 #[cfg(feature = "async")]
 mod futures;
-
-mod functions;
+#[cfg(feature = "async")]
+pub use futures::*;
 
 pub(crate) mod input;
 pub(crate) mod output;
 
-pub use functions::*;
 #[cfg(feature = "async")]
-pub use futures::*;
+pub(crate) mod common;
+
+#[cfg(feature = "std")]
+pub mod name;
 
 pub(crate) const EXT_KEY_SIZE: usize = 24;
 
@@ -601,7 +599,7 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 }
 
 /// Request information, monomorphized from the Request trait.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RequestInfo {
     pub(crate) data: TinyVec<[u8; 32]>,
     pub(crate) opcode: u8,

@@ -3,7 +3,7 @@
 //! Common async implementation functionality between our connection types.
 
 use super::{input, output, RequestInfo, RequestWorkaround};
-use crate::{util::difference, Fd};
+use crate::{util::difference, Fd, auto::xproto::{QueryExtensionRequest, QueryExtensionReply}};
 use core::{iter, mem};
 use tinyvec::TinyVec;
 
@@ -221,10 +221,9 @@ impl SendBuffer {
                         }
 
                         // run a wait cycle before checking again
-                        // in order to run a wait cycle, we need to unlock the display
                         let res = wait_buffer.get_or_insert_with(Default::default).poll_wait(
-                            self.connection(),
-                            &[],
+                            display.connection(),
+                            &[], // we don't have any GLX workarounds here we need to check
                             cx,
                         );
 

@@ -29,7 +29,7 @@ impl<'a, 'b, 'c, Conn: ?Sized> ReadPacketFuture<'a, 'b, 'c, Conn> {
 }
 
 impl<'a, 'b, 'c, Conn: AsyncConnection + Unpin + ?Sized> Future
-    for SendPacketFuture<'a, 'b, 'c, Conn>
+    for ReadPacketFuture<'a, 'b, 'c, Conn>
 {
     type Output = crate::Result;
 
