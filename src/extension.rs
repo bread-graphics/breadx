@@ -13,9 +13,7 @@ pub struct Extension {
 
 impl Extension {
     #[inline]
-    pub(crate) fn from_reply(
-        qer: QueryExtensionReply,
-    ) -> crate::Result<Extension> {
+    pub(crate) fn from_reply(qer: QueryExtensionReply) -> crate::Result<Extension> {
         if qer.present {
             Ok(Self {
                 major_opcode: qer.major_opcode,

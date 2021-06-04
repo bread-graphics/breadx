@@ -83,34 +83,34 @@ impl Colormap {
 
     /// Allocate a new color in the colormap.
     #[inline]
-    pub fn alloc_color<Conn: Connection>(
+    pub fn alloc_color<Dpy: Display + ?Sized>(
         self,
-        dpy: &mut Display<Conn>,
+        dpy: &mut Dpy,
         r: u16,
         g: u16,
         b: u16,
     ) -> crate::Result<RequestCookie<AllocColorRequest>> {
-        send_request!(dpy, self.alloc_color_request(r, g, b))
+        dpy.send_request(self.alloc_color_request(r, g, b))
     }
 
     /// Allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_async<Conn: AsyncConnection + Send>(
+    pub async fn alloc_color_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        dpy: &mut Display<Conn>,
+        dpy: &mut Dpy,
         r: u16,
         g: u16,
         b: u16,
-    ) -> crate::Result<RequestCookie<AllocColorRequest>> {
-        send_request!(dpy, self.alloc_color_request(r, g, b), async).await
+    ) -> SendFutureRequest<'_, Dpy, AllocColorRequest> {
+        dpy.send_request_async(self.alloc_color_request(r, g, b))
     }
 
     /// Immediately allocate a new color in the colormap.
     #[inline]
-    pub fn alloc_color_immediate<Conn: Connection>(
+    pub fn alloc_color_immediate<Dpy: Display + ?Sized>(
         self,
-        dpy: &mut Display<Conn>,
+        dpy: &mut Dpy,
         r: u16,
         g: u16,
         b: u16,
@@ -127,19 +127,19 @@ impl Colormap {
     /// Immediately allocate a new color in the colormap, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn alloc_color_immediate_async<Conn: AsyncConnection + Send>(
+    pub async fn alloc_color_immediate_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        dpy: &mut Display<Conn>,
+        dpy: &mut Dpy,
         r: u16,
         g: u16,
         b: u16,
-    ) -> crate::Result<ColorAllocation> {
-        let tok = self.alloc_color_async(dpy, r, g, b).await?;
-        Ok(ColorAllocation::from_alloc_color_reply(
-            dpy.resolve_request_async(tok).await?,
-            r,
-            g,
-            b,
-        ))
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Dpy, AllocColorRequest>,
+        BoxedFnOnce<AllocColorReply, ColorAllocation>,
+    > {
+        MapFuture::run(
+            dpy.exchange_request_async(self.alloc_color_request(r, g, b)),
+            Box::new(move |acr| ColorAllocation::from_alloc_color_reply(acr, r, g, b)),
+        )
     }
 }

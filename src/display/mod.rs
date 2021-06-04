@@ -30,7 +30,7 @@ use core::{future::Future, pin::Pin};
 mod basic;
 mod cell;
 mod connection;
-mod functions;
+pub mod traits;
 
 pub use basic::*;
 pub use cell::*;
@@ -50,6 +50,13 @@ pub(crate) mod common;
 
 #[cfg(feature = "std")]
 pub mod name;
+
+pub mod prelude {
+    pub use super::traits::*;
+    #[cfg(feature = "async")]
+    pub use super::{AsyncDisplay, AsyncDisplayExt};
+    pub use super::{Display, DisplayBase, DisplayExt};
+}
 
 pub(crate) const EXT_KEY_SIZE: usize = 24;
 
@@ -552,7 +559,16 @@ pub trait AsyncDisplayExt: AsyncDisplay {
     fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self>;
 
     /// Send a request and wait for a reply back
-    fn exchange_request_async<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R>;
+    fn exchange_request_async<R: Request>(
+        &mut self,
+        request: R,
+    ) -> ExchangeRequestFuture<'_, Self, R>;
+
+    /// Send a no-op request to the server, but resolve for an XID.
+    fn exchange_xid_async<R: Request, U: XidType + Unpin, F: FnOnce(U) -> R>(
+        &mut self,
+        to_request: F,
+    ) -> ExchangeXidFuture<'_, Self, R, U, F>;
 }
 
 #[cfg(feature = "async")]
@@ -604,8 +620,19 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
     }
 
     #[inline]
-    fn exchange_request_async<R: Request>(&mut self, request: R) -> ExchangeRequestFuture<'_, Self, R> {
+    fn exchange_request_async<R: Request>(
+        &mut self,
+        request: R,
+    ) -> ExchangeRequestFuture<'_, Self, R> {
         ExchangeRequestFuture::run(self, request)
+    }
+
+    #[inline]
+    fn exchange_xid_async<R: Request, U: XidType + Unpin, F: FnOnce(U) -> R>(
+        &mut self,
+        to_request: F,
+    ) -> ExchangeXidFuture<'_, Self, R, U, F> {
+        ExchangeXidFuture::run(self, to_request)
     }
 }
 
@@ -752,5 +779,7 @@ pub(crate) fn decode_reply<R: Request>(reply: &[u8], fds: Box<[Fd]>) -> crate::R
 
 #[inline]
 pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut self) -> crate::Result<XID> {
-    display.generate_xid().ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))
+    display
+        .generate_xid()
+        .ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))
 }

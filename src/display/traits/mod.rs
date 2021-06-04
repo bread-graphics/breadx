@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-#![allow(unused_qualifications)]
+//#![allow(unused_qualifications)]
 
 mod xproto;
 

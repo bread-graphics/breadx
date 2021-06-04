@@ -2,6 +2,7 @@
 
 #![allow(clippy::unreadable_literal)]
 
+use alloc::boxed::Box;
 use core::{convert::TryInto, iter, mem};
 use tinyvec::{Array, TinyVec};
 
@@ -31,6 +32,12 @@ pub(crate) fn difference<T>(i1: &[T], i2: &[T]) -> usize {
     diff.checked_div(mem::size_of::<T>())
         .expect("Size of value is zero")
 }
+
+/// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.
+pub(crate) type BoxedFnOnce<A, B> = Box<dyn FnOnce(A) -> B + Send + 'static>;
+
+/// Type alias for a boxed, sendable `FnMyt` that takes an `A` and returns a `B`.
+pub(crate) type BoxedFnMut<A, B> = Box<dyn FnMut(A) -> B + Send + 'static>;
 
 /// Byte reversal table, copied from Xlib.
 pub const REVERSE_BYTES: [u8; 0x100] = [

@@ -14,7 +14,7 @@ use crate::{
         xproto::{Drawable, Gcontext, ImageFormat, ImageOrder, PutImageRequest},
         AsByteSequence,
     },
-    display::Display,
+    display::DisplayBase,
     util::roundup,
 };
 use alloc::{borrow::Cow, boxed::Box, vec, vec::Vec};
@@ -26,8 +26,8 @@ use core::{
 };
 
 /// Prepare a request for an XY image.
-fn prepare_xy_image<Conn, Data: Deref<Target = [u8]>>(
-    dpy: &mut Display<Conn>,
+fn prepare_xy_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
+    dpy: &mut Dpy,
     req: &mut PutImageRequest,
     image: &Image<Data>,
     src_x: usize,
@@ -108,8 +108,8 @@ fn prepare_xy_image<Conn, Data: Deref<Target = [u8]>>(
 
 /// Prepare a request with a `ZImage`
 #[inline]
-fn prepare_z_image<Conn, Data: Deref<Target = [u8]>>(
-    dpy: &mut Display<Conn>,
+fn prepare_z_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
+    dpy: &mut Dpy,
     req: &mut PutImageRequest,
     image: &Image<Data>,
     src_x: usize,
@@ -218,10 +218,10 @@ fn prepare_z_image<Conn, Data: Deref<Target = [u8]>>(
 }
 
 /// Generate a series of requests for a sub-part of an image.
-#[allow(clippy::too_many_lines)] // todo: find good way to split
+#[allow(clippy::too_many_lines)] // TODO: find good way to split
 #[inline]
-fn put_sub_image_req<Conn, Data: Deref<Target = [u8]>>(
-    dpy: &mut Display<Conn>,
+fn put_sub_image_req<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
+    dpy: &mut Dpy,
     drawable: Drawable,
     gc: Gcontext,
     image: &Image<Data>,
@@ -370,8 +370,8 @@ fn put_sub_image_req<Conn, Data: Deref<Target = [u8]>>(
 
 /// Begins the recursion for the image requests.
 #[inline]
-pub(crate) fn put_image_req<Conn, Data: Deref<Target = [u8]>>(
-    dpy: &mut Display<Conn>,
+pub(crate) fn put_image_req<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
+    dpy: &mut Dpy,
     drawable: Drawable,
     gc: Gcontext,
     image: &Image<Data>,

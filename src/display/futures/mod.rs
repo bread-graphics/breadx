@@ -1,8 +1,10 @@
 // MIT/Apache2 License
 
 mod and_then;
+mod either;
 mod looping;
 mod map;
+mod put_image;
 mod read_packet;
 mod request_exchange;
 mod resolve_request;
@@ -15,8 +17,11 @@ mod wait;
 mod wait_for_event;
 mod wait_for_special_event;
 
+pub use and_then::ExchangeXidFuture;
+pub use either::EitherFuture;
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
 pub use map::MapFuture;
+pub use put_image::PutImageFuture;
 pub use read_packet::ReadPacketFuture;
 pub use request_exchange::ExchangeRequestFuture;
 pub use resolve_request::ResolveRequestFuture;

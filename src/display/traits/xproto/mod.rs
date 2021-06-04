@@ -16,7 +16,9 @@ use crate::{
         SubwindowMode, Timestamp, Visualid, Window, WindowClass,
     },
     display::{Display, RequestCookie},
-    send_request, sr_request, Event, Extension,
+    send_request, sr_request,
+    util::BoxedFnOnce,
+    Event, Extension,
 };
 use alloc::{boxed::Box, string::String};
 use cty::c_char;
@@ -191,236 +193,228 @@ impl From<GetModifierMappingReply> for ModifierMapping {
     }
 }
 
-    #[inline]
-    fn create_window_request(
-        wid: Window,
-        parent: Window,
-        class: WindowClass,
-        depth: Option<u8>,
-        visual: Option<Visualid>,
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
-        border_width: u16,
-        props: WindowParameters,
-    ) -> CreateWindowRequest {
-        const INHERITED_DEPTH: u8 = 0;
-        const INHERITED_VISUAL: Visualid = 0;
+#[inline]
+fn create_window_request(
+    wid: Window,
+    parent: Window,
+    class: WindowClass,
+    depth: Option<u8>,
+    visual: Option<Visualid>,
+    x: i16,
+    y: i16,
+    width: u16,
+    height: u16,
+    border_width: u16,
+    props: WindowParameters,
+) -> CreateWindowRequest {
+    const INHERITED_DEPTH: u8 = 0;
+    const INHERITED_VISUAL: Visualid = 0;
 
-        let mut cwr = CreateWindowRequest {
-            wid,
-            parent,
-            class,
-            visual: visual.unwrap_or(INHERITED_VISUAL),
-            depth: depth.unwrap_or(INHERITED_DEPTH),
-            x,
-            y,
-            width,
-            height,
-            border_width,
-            ..Default::default()
-        };
+    let mut cwr = CreateWindowRequest {
+        wid,
+        parent,
+        class,
+        visual: visual.unwrap_or(INHERITED_VISUAL),
+        depth: depth.unwrap_or(INHERITED_DEPTH),
+        x,
+        y,
+        width,
+        height,
+        border_width,
+        ..Default::default()
+    };
 
-        let cw = props.convert_to_flags(&mut cwr);
-        cwr.value_mask = cw;
-        cwr
+    let cw = props.convert_to_flags(&mut cwr);
+    cwr.value_mask = cw;
+    cwr
+}
+
+/// Create a `CreateWindowRequest` but with less arguments.
+#[inline]
+fn create_simple_window_request(
+    wid: Window,
+    parent: Window,
+    x: i16,
+    y: i16,
+    width: u16,
+    height: u16,
+    border_width: u16,
+    border: u32,
+    background: u32,
+) -> CreateWindowRequest {
+    let mut cwr = CreateWindowRequest {
+        parent,
+        x,
+        y,
+        width,
+        height,
+        border_width,
+        depth: 0,
+        class: WindowClass::CopyFromParent,
+        visual: 0,
+        wid,
+        ..Default::default()
+    };
+    let wp = WindowParameters {
+        background_pixel: Some(background),
+        border_pixel: Some(border),
+        ..Default::default()
+    };
+
+    let wpm = wp.convert_to_flags(&mut cwr);
+    cwr.value_mask = wpm;
+    cwr
+}
+
+/// Create a `CreateGcRequest`.
+#[inline]
+fn create_gc_request(cid: Gcontext, drawable: Drawable, props: GcParameters) -> CreateGcRequest {
+    let mut gcr = CreateGcRequest {
+        cid,
+        drawable,
+        ..Default::default()
+    };
+
+    let gcmask = props.convert_to_flags(&mut gcr);
+    gcr.value_mask = gcmask;
+    gcr
+}
+
+/// Create an `InternAtomRequest` for our use.
+#[inline]
+fn intern_atom_request(name: String, exists: bool) -> InternAtomRequest {
+    InternAtomRequest {
+        only_if_exists: exists,
+        name,
+        ..Default::default()
     }
+}
 
-    /// Create a `CreateWindowRequest` but with less arguments.
-    #[inline]
-    fn create_simple_window_request(
-        wid: Window,
-        parent: Window,
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
-        border_width: u16,
-        border: u32,
-        background: u32,
-    ) -> CreateWindowRequest {
-        let mut cwr = CreateWindowRequest {
-            parent,
-            x,
-            y,
-            width,
-            height,
-            border_width,
-            depth: 0,
-            class: WindowClass::CopyFromParent,
-            visual: 0,
-            wid,
-            ..Default::default()
-        };
-        let wp = WindowParameters {
-            background_pixel: Some(background),
-            border_pixel: Some(border),
-            ..Default::default()
-        };
+/// Change Keyboard Control Request
+#[inline]
+fn change_keyboard_control_request(props: KbParameters) -> ChangeKeyboardControlRequest {
+    let mut ckcr: ChangeKeyboardControlRequest = Default::default();
+    let c = props.convert_to_flags(&mut ckcr);
+    ckcr.value_mask = c;
+    ckcr
+}
 
-        let wpm = wp.convert_to_flags(&mut cwr);
-        cwr.value_mask = wpm;
-        cwr
+#[inline]
+fn change_active_pointer_grab_request(
+    event_mask: EventMask,
+    cursor: Cursor,
+    time: Option<Timestamp>,
+) -> ChangeActivePointerGrabRequest {
+    ChangeActivePointerGrabRequest {
+        cursor,
+        event_mask,
+        time: time.unwrap_or(0),
+        ..Default::default()
     }
+}
 
-    /// Create a `CreateGcRequest`.
-    #[inline]
-    fn create_gc_request(
-        cid: Gcontext,
-        drawable: Drawable,
-        props: GcParameters,
-    ) -> CreateGcRequest {
-        let mut gcr = CreateGcRequest {
-            cid,
-            drawable,
-            ..Default::default()
-        };
-
-        let gcmask = props.convert_to_flags(&mut gcr);
-        gcr.value_mask = gcmask;
-        gcr
+#[inline]
+fn change_pointer_control_request(
+    accel_numer: i16,
+    accel_denom: i16,
+    threshold: i16,
+    do_accel: bool,
+    do_threshold: bool,
+) -> ChangePointerControlRequest {
+    ChangePointerControlRequest {
+        acceleration_numerator: accel_numer,
+        acceleration_denominator: accel_denom,
+        threshold,
+        do_acceleration: do_accel,
+        do_threshold,
+        ..Default::default()
     }
+}
 
-    /// Create an `InternAtomRequest` for our use.
-    #[inline]
-    fn intern_atom_request(name: String, exists: bool) -> InternAtomRequest {
-        InternAtomRequest {
-            only_if_exists: exists,
-            name,
-            ..Default::default()
-        }
+/// Create a new cursor request.
+#[inline]
+fn create_cursor_request(
+    cid: Cursor,
+    source: Pixmap,
+    mask: Pixmap,
+    fg_red: u16,
+    fg_green: u16,
+    fg_blue: u16,
+    bg_red: u16,
+    bg_green: u16,
+    bg_blue: u16,
+    x: u16,
+    y: u16,
+) -> CreateCursorRequest {
+    CreateCursorRequest {
+        cid,
+        source,
+        mask,
+        fore_red: fg_red,
+        fore_blue: fg_blue,
+        fore_green: fg_green,
+        back_red: bg_red,
+        back_blue: bg_blue,
+        back_green: bg_green,
+        x,
+        y,
+        ..Default::default()
     }
+}
 
-    /// Change Keyboard Control Request
-    #[inline]
-    fn change_keyboard_control_request(props: KbParameters) -> ChangeKeyboardControlRequest {
-        let mut ckcr: ChangeKeyboardControlRequest = Default::default();
-        let c = props.convert_to_flags(&mut ckcr);
-        ckcr.value_mask = c;
-        ckcr
+#[inline]
+fn send_event_request(target: Window, em: EventMask, event: Event) -> SendEventRequest {
+    let mut bytes: [u8; 32] = [0; 32];
+    event.as_bytes(&mut bytes);
+
+    bytes[0] = event.opcode();
+
+    SendEventRequest {
+        destination: target,
+        event_mask: em,
+        event: bytemuck::cast::<_, [c_char; 32]>(bytes),
+        ..Default::default()
     }
+}
 
-    #[inline]
-    fn change_active_pointer_grab_request(
-        event_mask: EventMask,
-        cursor: Cursor,
-        time: Option<Timestamp>,
-    ) -> ChangeActivePointerGrabRequest {
-        ChangeActivePointerGrabRequest {
-            cursor,
-            event_mask,
-            time: time.unwrap_or(0),
-            ..Default::default()
-        }
+/// Create a new colormap request.
+#[inline]
+fn create_colormap_request(
+    alloc: ColormapAlloc,
+    id: Colormap,
+    win: Window,
+    visual: Visualid,
+) -> CreateColormapRequest {
+    CreateColormapRequest {
+        alloc,
+        mid: id,
+        window: win,
+        visual,
+        ..Default::default()
     }
+}
 
-    #[inline]
-    fn change_pointer_control_request(
-        accel_numer: i16,
-        accel_denom: i16,
-        threshold: i16,
-        do_accel: bool,
-        do_threshold: bool,
-    ) -> ChangePointerControlRequest {
-        ChangePointerControlRequest {
-            acceleration_numerator: accel_numer,
-            acceleration_denominator: accel_denom,
-            threshold,
-            do_acceleration: do_accel,
-            do_threshold,
-            ..Default::default()
-        }
-    }
-
-    /// Create a new cursor request.
-    #[inline]
-    fn create_cursor_request(
-        cid: Cursor,
-        source: Pixmap,
-        mask: Pixmap,
-        fg_red: u16,
-        fg_green: u16,
-        fg_blue: u16,
-        bg_red: u16,
-        bg_green: u16,
-        bg_blue: u16,
-        x: u16,
-        y: u16,
-    ) -> CreateCursorRequest {
-        CreateCursorRequest {
-            cid,
-            source,
-            mask,
-            fore_red: fg_red,
-            fore_blue: fg_blue,
-            fore_green: fg_green,
-            back_red: bg_red,
-            back_blue: bg_blue,
-            back_green: bg_green,
-            x,
-            y,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn send_event_request(target: Window, em: EventMask, event: Event) -> SendEventRequest {
-        let mut bytes: [u8; 32] = [0; 32];
-        event.as_bytes(&mut bytes);
-
-        bytes[0] = event.opcode();
-
-        SendEventRequest {
-            destination: target,
-            event_mask: em,
-            event: bytemuck::cast::<_, [c_char; 32]>(bytes),
-            ..Default::default()
-        }
-    }
-
-    /// Create a new colormap request.
-    #[inline]
-    fn create_colormap_request(
-        alloc: ColormapAlloc,
-        id: Colormap,
-        win: Window,
-        visual: Visualid,
-    ) -> CreateColormapRequest {
-        CreateColormapRequest {
-            alloc,
-            mid: id,
-            window: win,
-            visual,
-            ..Default::default()
-        }
-    }
-
-pub trait DisplayXprotoExt : Display {
+pub trait DisplayXprotoExt: Display {
     /// Query for extension information.
     #[inline]
     fn query_extension(
         &mut self,
         name: String,
     ) -> crate::Result<RequestCookie<QueryExtensionRequest>> {
-        self.send_request(
-            QueryExtensionRequest {
-                name,
-                ..Default::default()
-            }
-        )
+        self.send_request(QueryExtensionRequest {
+            name,
+            ..Default::default()
+        })
     }
 
     /// Query for extension information, but resolve immediately. The `Error::ExtensionNotPresent` error is
     /// returned when the extension is not found.
     #[inline]
     fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
-        let qer = self.exchange_reuqest( 
-            QueryExtensionRequest {
-                name: name.clone(),
-                ..Default::default()
-            }
-        )?;
+        let qer = self.exchange_reuqest(QueryExtensionRequest {
+            name: name.clone(),
+            ..Default::default()
+        })?;
         Extension::from_reply(qer)
     }
 
@@ -495,7 +489,7 @@ pub trait DisplayXprotoExt : Display {
         props: GcParameters,
     ) -> crate::Result<Gcontext> {
         let gid = Gcontext::const_from_xid(generate_xid(self)?);
-        let gcr = Self::create_gc_request(gid, target.into(), props);
+        let gcr = create_gc_request(gid, target.into(), props);
         self.exchange_request(gcr)?;
         Ok(gid)
     }
@@ -507,16 +501,12 @@ pub trait DisplayXprotoExt : Display {
         name: String,
         only_if_exists: bool,
     ) -> crate::Result<RequestCookie<InternAtomRequest>> {
-        self.send_request(Self::intern_atom_request(name, only_if_exists))
+        self.send_request(intern_atom_request(name, only_if_exists))
     }
 
     /// Intern an atom, but try to resolve the request immediately.
     #[inline]
-    fn intern_atom_immediate(
-        &mut self,
-        name: String,
-        only_if_exists: bool,
-    ) -> crate::Result<Atom> {
+    fn intern_atom_immediate(&mut self, name: String, only_if_exists: bool) -> crate::Result<Atom> {
         let r = self.intern_atom(name, only_if_exists)?;
         Ok(self.resolve_request(r)?.atom)
     }
@@ -524,28 +514,24 @@ pub trait DisplayXprotoExt : Display {
     /// Change the keyboard's control properties.
     #[inline]
     fn change_keyboard_control(&mut self, props: KbParameters) -> crate::Result<()> {
-        let ckcr = Self::change_keyboard_control_request(props);
+        let ckcr = change_keyboard_control_request(props);
         self.exchange_request(ckcr)
     }
 
     #[inline]
     fn bell(&mut self, percent: i8) -> crate::Result {
-       self.sr_request( 
-            BellRequest {
-                percent,
-                ..Default::default()
-            }
-        )
+        self.sr_request(BellRequest {
+            percent,
+            ..Default::default()
+        })
     }
 
     #[inline]
     fn set_access_control(&mut self, mode: AccessControl) -> crate::Result {
-       self.sr_request( 
-            SetAccessControlRequest {
-                mode,
-                ..Default::default()
-            }
-        )
+        self.sr_request(SetAccessControlRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
     #[inline]
@@ -555,18 +541,15 @@ pub trait DisplayXprotoExt : Display {
         cursor: Cursor,
         time: Option<Timestamp>,
     ) -> crate::Result {
-        self.exchange_request(
-            Self::change_active_pointer_grab_request(event_mask, cursor, time)
-        )
+        self.exchange_request(change_active_pointer_grab_request(event_mask, cursor, time))
     }
 
     #[inline]
     fn set_close_down_mode(&mut self, mode: CloseDown) -> crate::Result {
-        self.exchange_request(            SetCloseDownModeRequest {
-                mode,
-                ..Default::default()
-            }
-        )
+        self.exchange_request(SetCloseDownModeRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
     #[inline]
@@ -578,15 +561,13 @@ pub trait DisplayXprotoExt : Display {
         do_acceleration: bool,
         do_threshold: bool,
     ) -> crate::Result {
-        self.exchange_request(
-            Self::change_pointer_control_request(
-                accel_numerator,
-                accel_denominator,
-                threshold,
-                do_acceleration,
-                do_threshold,
-            )
-        )
+        self.exchange_request(change_pointer_control_request(
+            accel_numerator,
+            accel_denominator,
+            threshold,
+            do_acceleration,
+            do_threshold,
+        ))
     }
 
     /// Create a new cursor.
@@ -605,28 +586,24 @@ pub trait DisplayXprotoExt : Display {
         y: u16,
     ) -> crate::Result<Cursor> {
         let cid = Cursor::const_from_xid(generate_xid(self)?);
-        self.exchange_request(
-            Self::create_cursor_request(
-                cid, source, mask, fg_red, fg_green, fg_blue, bg_red, bg_green, bg_blue, x, y,
-            )
-        )?;
+        self.exchange_request(create_cursor_request(
+            cid, source, mask, fg_red, fg_green, fg_blue, bg_red, bg_green, bg_blue, x, y,
+        ))?;
         Ok(cid)
     }
 
     #[inline]
     fn force_screensaver(&mut self, mode: ScreenSaver) -> crate::Result {
-        self.exchange_request(
-            ForceScreenSaverRequest {
-                mode,
-                ..Default::default()
-            }
-        )
+        self.exchange_request(ForceScreenSaverRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
     /// Send an event to the X server.
     #[inline]
     fn send_event(&mut self, target: Window, mask: EventMask, event: Event) -> crate::Result {
-        self.exchange_request( Self::send_event_request(target, mask, event))
+        self.exchange_request(send_event_request(target, mask, event))
     }
 
     /// Create a new colormap.
@@ -638,28 +615,21 @@ pub trait DisplayXprotoExt : Display {
         alloc: ColormapAlloc,
     ) -> crate::Result<Colormap> {
         let cid = Colormap::const_from_xid(generate_xid(self)?);
-        sr_request!(
-            self,
-            Self::create_colormap_request(alloc, cid, window, visual)
-        )?;
+        sr_request!(self, create_colormap_request(alloc, cid, window, visual))?;
         Ok(cid)
     }
 
     /// Get the keyboard mapping for this display.
     #[inline]
-    fn get_keyboard_mapping(
-        &mut self,
-    ) -> crate::Result<RequestCookie<GetKeyboardMappingRequest>> {
+    fn get_keyboard_mapping(&mut self) -> crate::Result<RequestCookie<GetKeyboardMappingRequest>> {
         let min_keycode = self.setup().min_keycode;
         let max_keycode = self.setup().max_keycode;
 
-        self.send_request(
-            GetKeyboardMappingRequest {
-                first_keycode: min_keycode,
-                count: max_keycode - min_keycode,
-                ..Default::default()
-            }
-        )
+        self.send_request(GetKeyboardMappingRequest {
+            first_keycode: min_keycode,
+            count: max_keycode - min_keycode,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the keyboard mapping for this display.
@@ -672,9 +642,7 @@ pub trait DisplayXprotoExt : Display {
 
     /// Get the modifier mapping for this display.
     #[inline]
-    fn get_modifier_mapping(
-        &mut self,
-    ) -> crate::Result<RequestCookie<GetModifierMappingRequest>> {
+    fn get_modifier_mapping(&mut self) -> crate::Result<RequestCookie<GetModifierMappingRequest>> {
         self.send_request(GetModifierMappingRequest::default())
     }
 
@@ -690,38 +658,39 @@ pub trait DisplayXprotoExt : Display {
 impl<D: Display + ?Sized> DisplayXprotoExt for D {}
 
 #[cfg(feature = "async")]
-pub trait AsyncDisplayXprotoExt : AsyncDisplay {
-    /// Query for extension information, async redox.
+pub trait AsyncDisplayXprotoExt: AsyncDisplay {
+    /// Query for extension information redox.
     #[inline]
     fn query_extension_async(
         &mut self,
         name: String,
     ) -> SendRequestFuture<'_, Self, QueryExtensionRequest> {
-        self.send_request_async(
-            QueryExtensionRequest {
-                name,
-                ..Default::default()
-            },
-        )
+        self.send_request_async(QueryExtensionRequest {
+            name,
+            ..Default::default()
+        })
     }
 
-    /// Query for extension information, but resolve immediately, async redox . The `Error::ExtensionNotPresent`
+    /// Query for extension information, but resolve immediately redox . The `Error::ExtensionNotPresent`
     /// error is returned when the extension is not found.
     #[inline]
     fn query_extension_immediate_async(
         &mut self,
         name: String,
-    ) -> MapFuture<ExchangeRequestFuture<'_, Self, QueryExtensionRequest>, fn(QueryExtensionReply) -> Extension> {
-        MapFuture::run(self.send_request(
-            QueryExtensionRequest {
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, QueryExtensionRequest>,
+        fn(QueryExtensionReply) -> Extension,
+    > {
+        MapFuture::run(
+            self.send_request(QueryExtensionRequest {
                 name,
                 ..Default::default()
-            }
-        ), 
-        Extension::from_reply)
+            }),
+            Extension::from_reply,
+        )
     }
 
-    /// Create a new window, async redox.
+    /// Create a new window redox.
     #[inline]
     fn create_window_async(
         &mut self,
@@ -735,10 +704,15 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
         height: u16,
         border_width: u16,
         props: WindowParameters,
-    ) -> ExchangeThenReturnFuture<'_, Self, CreateWindowRequest, Window> {
-        let wid = Window::const_from_xid(generate_xid(self));
-        let cw = Self::create_window_request(
-            wid,
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateWindowRequest,
+        Window,
+        BoxedFnOnce<Window, CreateWindowRequest>,
+    > {
+        let mut cw = create_window_request(
+            Window::const_from_xid(0),
             parent,
             class,
             depth,
@@ -751,10 +725,13 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
             props,
         );
 
-        self.exchange_request_async(cw).into_returner(wid)
+        self.exchange_xid_async(Box::new(move |wid| {
+            cw.wid = wid;
+            cw
+        }))
     }
 
-    /// Create a window, but assume some parameters from its parents, async redox.
+    /// Create a window, but assume some parameters from its parents redox.
     #[inline]
     fn create_simple_window_async(
         &mut self,
@@ -766,10 +743,15 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
         border_width: u16,
         border: u32,
         background: u32,
-    ) -> crate::Result<Window> {
-        let wid = Window::const_from_xid(generate_xid(self)?);
-        let cw = Self::create_simple_window_request(
-            wid,
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateWindowRequest,
+        Window,
+        BoxedFnOnce<Window, CreateWindowRequest>,
+    > {
+        let mut cw = create_simple_window_request(
+            Window::const_from_xid(0),
             parent,
             x,
             y,
@@ -780,78 +762,79 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
             background,
         );
 
-        self.exchange_request( cw, async).await?;
-        Ok(wid)
+        self.exchange_xid_async(Box::new(move |wid| {
+            cw.wid = wid;
+            cw
+        }))
     }
 
-    /// Create a new graphics context, async redox.
+    /// Create a new graphics context redox.
     #[inline]
     fn create_gc_async<Target: Into<Drawable>>(
         &mut self,
         target: Target,
         props: GcParameters,
-    ) -> crate::Result<Gcontext> {
-        let gid = Gcontext::const_from_xid(generate_xid(self)?);
-        let gcr = Self::create_gc_request(gid, target.into(), props);
-        self.exchange_request( gcr, async).await?;
-        Ok(gid)
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateGcRequest,
+        Gcontext,
+        BoxedFnOnce<Gcontext, CreateGcRequest>,
+    > {
+        let mut gcr = create_gc_request(Gcontext::const_from_xid(0), target.into(), props);
+        self.exchange_xid_async(Box::new(move |gid| {
+            gcr.gid = gid;
+            gcr
+        }))
     }
 
-    /// Intern a string and get a corresponding atom for that string, async redox.
+    /// Intern a string and get a corresponding atom for that string redox.
     #[inline]
     fn intern_atom_async(
         &mut self,
         name: String,
         only_if_exists: bool,
-    ) -> crate::Result<RequestCookie<InternAtomRequest>> {
-        self.send_request(Self::intern_atom_request(name, only_if_exists), async).await
+    ) -> SendRequestFuture<'_, Self, InternAtomRequest> {
+        self.send_request_async(intern_atom_request(name, only_if_exists))
     }
 
-    /// Intern an atom, but try to resolve the request immediately, async redox.
+    /// Intern an atom, but try to resolve the request immediately redox.
     #[inline]
     fn intern_atom_immediate_async(
         &mut self,
         name: String,
         only_if_exists: bool,
-    ) -> crate::Result<Atom> {
-        let r = self.intern_atom_async(name, only_if_exists).await?;
-        Ok(self.resolve_request_async(r).await?.atom)
+    ) -> ExchangeRequestFuture<'_, Self, InternAtomRequest> {
+        self.exchange_request_async(intern_atom_request(name, only_if_exists))
     }
 
-    /// Change the keyboard's control properties, async redox.
+    /// Change the keyboard's control properties redox.
     #[inline]
     fn change_keyboard_control_async(
         &mut self,
         props: KbParameters,
-    ) -> crate::Result<()> {
-        let ckcr = Self::change_keyboard_control_request(props);
-        self.exchange_request( ckcr, async).await
+    ) -> ExchangeRequestFuture<'_, Self, ChangeKeyboardControlRequest> {
+        let ckcr = change_keyboard_control_request(props);
+        self.exchange_request_async(ckcr)
     }
 
     #[inline]
-    fn bell_async(&mut self, percent: i8) -> crate::Result {
-        sr_request!(
-            self,
-            BellRequest {
-                percent,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    fn bell_async(&mut self, percent: i8) -> ExchangeRequestFuture<'_, Self, BellRequest> {
+        self.exchange_request_async(BellRequest {
+            percent,
+            ..Default::default()
+        })
     }
 
     #[inline]
-    fn set_access_control_async(&mut self, mode: AccessControl) -> crate::Result {
-        sr_request!(
-            self,
-            SetAccessControlRequest {
-                mode,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    fn set_access_control_async(
+        &mut self,
+        mode: AccessControl,
+    ) -> ExchangeRequestFuture<'_, Self, SetAccessControlRequest> {
+        self.exchange_request_async(SetAccessControlRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
     #[inline]
@@ -860,26 +843,19 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
         event_mask: EventMask,
         cursor: Cursor,
         time: Option<Timestamp>,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            Self::change_active_pointer_grab_request(event_mask, cursor, time),
-            async
-        )
-        .await
+    ) -> ExchangeRequestFuture<'_, Self, ChangeActivePointerGrabRequest> {
+        self.exchange_request(change_active_pointer_grab_request(event_mask, cursor, time))
     }
 
     #[inline]
-    fn set_close_down_mode_async(&mut self, mode: CloseDown) -> crate::Result {
-        sr_request!(
-            self,
-            SetCloseDownModeRequest {
-                mode,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    fn set_close_down_mode_async(
+        &mut self,
+        mode: CloseDown,
+    ) -> ExchangeRequestFuture<'_, Self, SetCloseDownModeRequest> {
+        self.exchange_request_async(SetCloseDownModeRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
     #[inline]
@@ -890,22 +866,17 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
         threshold: i16,
         do_acceleration: bool,
         do_threshold: bool,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            Self::change_pointer_control_request(
-                accel_numerator,
-                accel_denominator,
-                threshold,
-                do_acceleration,
-                do_threshold,
-            ),
-            async
-        )
-        .await
+    ) -> ExchangeRequestFuture<'_, Self, ChangePointerControlRequest> {
+        self.exchange_request_async(change_pointer_control_request(
+            accel_numerator,
+            accel_denominator,
+            threshold,
+            do_acceleration,
+            do_threshold,
+        ))
     }
 
-    /// Create a new cursor, async redox.
+    /// Create a new cursor redox.
     #[inline]
     fn create_cursor_async(
         &mut self,
@@ -919,103 +890,121 @@ pub trait AsyncDisplayXprotoExt : AsyncDisplay {
         bg_blue: u16,
         x: u16,
         y: u16,
-    ) -> crate::Result<Cursor> {
-        let cid = Cursor::const_from_xid(generate_xid(self)?);
-        sr_request!(
-            self,
-            Self::create_cursor_request(
-                cid, source, mask, fg_red, fg_green, fg_blue, bg_red, bg_green, bg_blue, x, y,
-            ),
-            async
-        )
-        .await?;
-        Ok(cid)
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateCursorRequest,
+        Cursor,
+        BoxedFnOnce<Cursor, CreateCursorRequest>,
+    > {
+        let mut ccr = create_cursor_request(
+            Cursor::const_from_xid(0),
+            source,
+            mask,
+            fg_red,
+            fg_green,
+            fg_blue,
+            bg_red,
+            bg_green,
+            bg_blue,
+            x,
+            y,
+        );
+        self.exchange_xid_async(Box::new(move |cid| {
+            ccr.cid = cid;
+            ccr
+        }))
     }
 
     #[inline]
-    fn force_screensaver_async(&mut self, mode: ScreenSaver) -> crate::Result {
-        sr_request!(
-            self,
-            ForceScreenSaverRequest {
-                mode,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    fn force_screensaver_async(
+        &mut self,
+        mode: ScreenSaver,
+    ) -> ExchangeRequestFuture<'_, Self, ForceScreenSaverRequest> {
+        self.exchange_request_async(ForceScreenSaverRequest {
+            mode,
+            ..Default::default()
+        })
     }
 
-    /// Send an event to the X server, async redox.
-    #[cfg(feature = "async")]
+    /// Send an event to the X server redox.
     #[inline]
     fn send_event_async(
         &mut self,
         target: Window,
         mask: EventMask,
         event: Event,
-    ) -> crate::Result {
-        self.exchange_request( Self::send_event_request(target, mask, event), async).await
+    ) -> ExchangeRequestFuture<'_, Self, SendEventRequest> {
+        self.exchange_request_async(send_event_request(target, mask, event))
     }
 
-    /// Create a new colormap, async redox.
+    /// Create a new colormap redox.
     #[inline]
     fn create_colormap_async(
         &mut self,
         window: Window,
         visual: Visualid,
         alloc: ColormapAlloc,
-    ) -> crate::Result<Colormap> {
-        let cid = Colormap::const_from_xid(generate_xid(self)?);
-        sr_request!(
-            self,
-            Self::create_colormap_request(alloc, cid, window, visual),
-            async
-        )
-        .await?;
-        Ok(cid)
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateColormapRequest,
+        Colormap,
+        BoxedFnOnce<Colormap, CreateColormapRequest>,
+    > {
+        let mut ccr = create_colormap_request(alloc, cid, window, visual);
+        self.exchange_xid_async(Box::new(move |cid| {
+            crr.cid = cid;
+            ccr
+        }))
     }
 
-    /// Get the keyboard mapping for this display, async redox.
+    /// Get the keyboard mapping for this display redox.
     #[inline]
     fn get_keyboard_mapping_async(
         &mut self,
-    ) -> crate::Result<RequestCookie<GetKeyboardMappingRequest>> {
+    ) -> SendRequestFuture<'_, Self, GetKeyboardMappingRequest> {
         let min_keycode = self.setup().min_keycode;
         let max_keycode = self.setup().max_keycode;
 
-        send_request!(
-            self,
-            GetKeyboardMappingRequest {
-                first_keycode: min_keycode,
-                count: max_keycode - min_keycode,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+        self.send_request_async(GetKeyboardMappingRequest {
+            first_keycode: min_keycode,
+            count: max_keycode - min_keycode,
+            ..Default::default()
+        })
     }
 
-    /// Immediately get the keyboard mapping for this display, async redox.
+    /// Immediately get the keyboard mapping for this display redox.
     #[inline]
-    fn get_keyboard_mapping_immediate_async(&mut self) -> crate::Result<KeyboardMapping> {
-        let tok = self.get_keyboard_mapping_async().await?;
-        let repl = self.resolve_request_async(tok).await?;
-        Ok(repl.into())
+    fn get_keyboard_mapping_immediate_async(
+        &mut self,
+    ) -> ExchangeRequestFuture<'_, Self, GetKeyboardMappingRequest> {
+        let min_keycode = self.setup().min_keycode;
+        let max_keycode = self.setup().max_keycode;
+
+        self.exchange_request_async(GetKeyboardMappingRequest {
+            first_keycode: min_keycode,
+            count: max_keycode - min_keycode,
+            ..Default::default()
+        })
     }
 
-    /// Get the modifier mapping for this display, async redox.
+    /// Get the modifier mapping for this display redox.
     #[inline]
     fn get_modifier_mapping_async(
         &mut self,
-    ) -> crate::Result<RequestCookie<GetModifierMappingRequest>> {
-        self.send_request(GetModifierMappingRequest::default(), async).await
+    ) -> SendRequestFuture<'_, Self, GetModifierMappingRequest> {
+        self.send_request_async(GetModifierMappingRequest::default())
     }
 
     /// Immediately get the modifier mapping for this display.
     #[inline]
-    fn get_modifier_mapping_immediate_async(&mut self) -> crate::Result<ModifierMapping> {
-        let tok = self.get_modifier_mapping_async().await?;
-        let repl = self.resolve_request_async(tok).await?;
-        Ok(repl.into())
+    fn get_modifier_mapping_immediate_async(
+        &mut self,
+    ) -> ExchangeRequestFuture<'_, Self, GetModifierMappingRequest> {
+        self.exchange_request_async(GetModifierMappingRequest::default())
     }
 }
+
+#[cfg(feature = "async")]
+impl<D: AsyncDisplay + ?Sized> AsyncDisplayXprotoExt for D {}

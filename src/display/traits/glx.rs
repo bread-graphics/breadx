@@ -21,10 +21,10 @@ use core::convert::TryInto;
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
 
-impl From<xproto::Drawable> for Drawable {
+impl<I: Into<xproto::Drawable>> From<I> for Drawable {
     #[inline]
-    fn from(d: xproto::Drawable) -> Drawable {
-        Drawable::const_from_xid(d.xid)
+    fn from(d: I) -> Drawable {
+        Drawable::const_from_xid(d.into().xid)
     }
 }
 
@@ -57,51 +57,46 @@ impl From<GetFbConfigsReply> for Configs {
     }
 }
 
-impl<Conn> Display<Conn> {
-    #[inline]
-    fn create_context_attribs_arb_request(
-        context: Context,
-        fbconfig: Fbconfig,
-        screen: usize,
-        share_list: Context,
-        is_direct: bool,
-        attribs: Vec<u32>,
-    ) -> CreateContextAttribsArbRequest {
-        let attribs_len: u32 = attribs.len().try_into().expect("usize dont fit 2");
-        CreateContextAttribsArbRequest {
-            context,
-            fbconfig,
-            screen: screen.try_into().expect("usize dont fit"),
-            share_list,
-            is_direct,
-            num_attribs: attribs_len / 2u32,
-            attribs,
-            ..Default::default()
-        }
+#[inline]
+fn create_context_attribs_arb_request(
+    context: Context,
+    fbconfig: Fbconfig,
+    screen: usize,
+    share_list: Context,
+    is_direct: bool,
+    attribs: Vec<u32>,
+) -> CreateContextAttribsArbRequest {
+    let attribs_len: u32 = attribs.len().try_into().expect("usize dont fit 2");
+    CreateContextAttribsArbRequest {
+        context,
+        fbconfig,
+        screen: screen.try_into().expect("usize dont fit"),
+        share_list,
+        is_direct,
+        num_attribs: attribs_len / 2u32,
+        attribs,
+        ..Default::default()
     }
 }
 
-impl<Conn: Connection> Display<Conn> {
+pub trait DisplayGlxExt: Display {
     /// Query GLX version.
     #[inline]
-    pub fn query_glx_version(
+    fn query_glx_version(
         &mut self,
         required_major: u32,
         required_minor: u32,
     ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        send_request!(
-            self,
-            QueryVersionRequest {
-                major_version: required_major,
-                minor_version: required_minor,
-                ..Default::default()
-            }
-        )
+        self.send_request(QueryVersionRequest {
+            major_version: required_major,
+            minor_version: required_minor,
+            ..Default::default()
+        })
     }
 
     /// Immediately query GLX version.
     #[inline]
-    pub fn query_glx_version_immediate(
+    fn query_glx_version_immediate(
         &mut self,
         required_major: u32,
         required_minor: u32,
@@ -113,29 +108,26 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Get the visual configurations associated with the given screen.
     #[inline]
-    pub fn get_visual_configs(
+    fn get_visual_configs(
         &mut self,
         screen: usize,
     ) -> crate::Result<RequestCookie<GetVisualConfigsRequest>> {
-        send_request!(
-            self,
-            GetVisualConfigsRequest {
-                screen: screen as _,
-                ..Default::default()
-            }
-        )
+        self.send_request(GetVisualConfigsRequest {
+            screen: screen as _,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the visual configurations associated with the given screen.
     #[inline]
-    pub fn get_visual_configs_immediate(&mut self, screen: usize) -> crate::Result<Configs> {
+    fn get_visual_configs_immediate(&mut self, screen: usize) -> crate::Result<Configs> {
         let tok = self.get_visual_configs(screen)?;
         Ok(self.resolve_request(tok)?.into())
     }
 
     /// Get the framebuffer configurations associated with the given screen.
     #[inline]
-    pub fn get_fb_configs(
+    fn get_fb_configs(
         &mut self,
         screen: usize,
     ) -> crate::Result<RequestCookie<GetFbConfigsRequest>> {
@@ -150,14 +142,14 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Immediately get the framebuffer configurations associated with the given screen.
     #[inline]
-    pub fn get_fb_configs_immediate(&mut self, screen: usize) -> crate::Result<Configs> {
+    fn get_fb_configs_immediate(&mut self, screen: usize) -> crate::Result<Configs> {
         let tok = self.get_fb_configs(screen)?;
         Ok(self.resolve_request(tok)?.into())
     }
 
     /// Get the properties of a GLX drawable.
     #[inline]
-    pub fn get_drawable_properties(
+    fn get_drawable_properties(
         &mut self,
         drawable: Drawable,
     ) -> crate::Result<RequestCookie<GetDrawableAttributesRequest>> {
@@ -172,16 +164,13 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Immediately get the properties of a GLX drawable.
     #[inline]
-    pub fn get_drawable_properties_immediate(
-        &mut self,
-        drawable: Drawable,
-    ) -> crate::Result<Vec<u32>> {
+    fn get_drawable_properties_immediate(&mut self, drawable: Drawable) -> crate::Result<Vec<u32>> {
         let tok = self.get_drawable_properties(drawable)?;
         Ok(self.resolve_request(tok)?.attribs)
     }
 
     #[inline]
-    pub fn create_context_attribs_arb(
+    fn create_context_attribs_arb(
         &mut self,
         fbconfig: Fbconfig,
         screen: usize,
@@ -201,7 +190,7 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Swap buffers.
     #[inline]
-    pub fn swap_buffers<Target: Into<Drawable>>(
+    fn swap_buffers<Target: Into<Drawable>>(
         &mut self,
         context_tag: ContextTag,
         drawable: Target,

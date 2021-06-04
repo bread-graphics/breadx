@@ -8,11 +8,13 @@ use crate::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
         GetGeometryRequest, Pixmap, Window,
     },
+    display::PutImageRequest,
     image::{put::put_image_req, Image},
     send_request, sr_request, Connection, Display, Gcontext, RequestCookie,
 };
 use alloc::vec::Vec;
 use core::{convert::TryInto, ops::Deref};
+use futures_lite::stream::{CollectFuture, Then};
 
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
@@ -128,19 +130,19 @@ fn create_pixmap_request(
     }
 }
 
-impl<Conn: Connection> Display<Conn> {
+pub trait DisplayDrawableExt: Display {
     /// Get the geometry of a drawable object.
     #[inline]
-    pub fn get_drawable_geometry<Target: Into<Drawable>>(
+    fn get_drawable_geometry<Target: Into<Drawable>>(
         &mut self,
         target: Target,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        send_request!(self, get_geometry_request(target.into()))
+        self.send_request(get_geometry_request(target.into()))
     }
 
     /// Immediately resolve the geometry of a drawable object.
     #[inline]
-    pub fn get_drawable_geometry_immediate<Target: Into<Drawable>>(
+    fn get_drawable_geometry_immediate<Target: Into<Drawable>>(
         &mut self,
         target: Target,
     ) -> crate::Result<Geometry> {
@@ -150,7 +152,7 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Copy pixels from one area of the drawable to another.
     #[inline]
-    pub fn copy_area<Source: Into<Drawable>, Destination: Into<Drawable>>(
+    fn copy_area<Source: Into<Drawable>, Destination: Into<Drawable>>(
         &mut self,
         source: Source,
         destination: Destination,
@@ -162,25 +164,22 @@ impl<Conn: Connection> Display<Conn> {
         dest_x: i16,
         dest_y: i16,
     ) -> crate::Result {
-        sr_request!(
-            self,
-            copy_area_request(
-                source.into(),
-                destination.into(),
-                gc,
-                src_x,
-                src_y,
-                width,
-                height,
-                dest_x,
-                dest_y,
-            )
-        )
+        self.exchange_request(copy_area_request(
+            source.into(),
+            destination.into(),
+            gc,
+            src_x,
+            src_y,
+            width,
+            height,
+            dest_x,
+            dest_y,
+        ))
     }
 
     /// Copy a plane from one drawable to another.
     #[inline]
-    pub fn copy_plane<Source: Into<Drawable>, Destination: Into<Drawable>>(
+    fn copy_plane<Source: Into<Drawable>, Destination: Into<Drawable>>(
         &mut self,
         source: Source,
         destination: Destination,
@@ -193,26 +192,23 @@ impl<Conn: Connection> Display<Conn> {
         dest_y: i16,
         bit_plane: u32,
     ) -> crate::Result {
-        sr_request!(
-            self,
-            copy_plane_request(
-                source.into(),
-                destination.into(),
-                gc,
-                src_x,
-                src_y,
-                width,
-                height,
-                dest_x,
-                dest_y,
-                bit_plane,
-            )
-        )
+        self.exchange_request(copy_plane_request(
+            source.into(),
+            destination.into(),
+            gc,
+            src_x,
+            src_y,
+            width,
+            height,
+            dest_x,
+            dest_y,
+            bit_plane,
+        ))
     }
 
     /// Create a new pixmap.
     #[inline]
-    pub fn create_pixmap<Target: Into<Drawable>>(
+    fn create_pixmap<Target: Into<Drawable>>(
         &mut self,
         target: Target,
         width: u16,
@@ -220,16 +216,19 @@ impl<Conn: Connection> Display<Conn> {
         depth: u8,
     ) -> crate::Result<Pixmap> {
         let pixmap = Pixmap::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            create_pixmap_request(target.into(), pixmap, width, height, depth)
-        )?;
+        self.exchange_request(create_pixmap_request(
+            target.into(),
+            pixmap,
+            width,
+            height,
+            depth,
+        ))?;
         Ok(pixmap)
     }
 
     /// Write an image to a drawable.
     #[inline]
-    pub fn put_image<Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
+    fn put_image<Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
         &mut self,
         target: Target,
         gc: Gcontext,
@@ -255,7 +254,7 @@ impl<Conn: Connection> Display<Conn> {
         );
         let toks = reqs
             .into_iter()
-            .map(|r| send_request!(self, r))
+            .map(|r| self.send_request(r))
             .collect::<crate::Result<Vec<_>>>()?;
 
         toks.into_iter().try_for_each(|t| self.resolve_request(t))
@@ -263,7 +262,7 @@ impl<Conn: Connection> Display<Conn> {
 
     /// Create a pixmap from an image.
     #[inline]
-    pub fn create_pixmap_from_image<Target: Clone + Into<Drawable>, Data: Deref<Target = [u8]>>(
+    fn create_pixmap_from_image<Target: Clone + Into<Drawable>, Data: Deref<Target = [u8]>>(
         &mut self,
         target: Target,
         image: &Image<Data>,
@@ -288,30 +287,37 @@ impl<Conn: Connection> Display<Conn> {
     }
 }
 
+impl<D: Display + ?Sized> DisplayDrawableExt for D {}
+
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
+pub trait AsyncDisplayDrawableExt: AsyncDisplay {
     /// Get the geometry of a drawable object, async redox.
     #[inline]
-    pub async fn get_drawable_geometry_async<Target: Into<Drawable>>(
+    fn get_drawable_geometry_async<Target: Into<Drawable>>(
         &mut self,
         target: Target,
-    ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
-        send_request!(self, get_geometry_request(target.into()), async).await
+    ) -> SendRequestFuture<'_, Self, GetGeometryRequest> {
+        self.send_request_async(get_geometry_request(target.into()))
     }
 
     /// Immediately resolve the geometry of a drawable object, async redox.
     #[inline]
-    pub async fn get_drawable_geometry_immediate_async<Target: Into<Drawable>>(
+    fn get_drawable_geometry_immediate_async<Target: Into<Drawable>>(
         &mut self,
         target: Target,
-    ) -> crate::Result<Geometry> {
-        let tok = self.get_drawable_geometry_async(target).await?;
-        Ok(self.resolve_request_async(tok).await?.into())
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetGeometryRequest>,
+        fn(GetGeometryReply) -> Geometry,
+    > {
+        MapFuture::run(
+            self.exchange_future_async(get_geometry_request(target.into())),
+            Geometry::from,
+        )
     }
 
     /// Copy pixels from one area of the drawable to another, async redox.
     #[inline]
-    pub async fn copy_area_async<Source: Into<Drawable>, Destination: Into<Drawable>>(
+    fn copy_area_async<Source: Into<Drawable>, Destination: Into<Drawable>>(
         &mut self,
         source: Source,
         destination: Destination,
@@ -322,28 +328,23 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         height: u16,
         dest_x: i16,
         dest_y: i16,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            copy_area_request(
-                source.into(),
-                destination.into(),
-                gc,
-                src_x,
-                src_y,
-                width,
-                height,
-                dest_x,
-                dest_y,
-            ),
-            async
-        )
-        .await
+    ) -> ExchangeRequestFuture<'_, Self, CopyAreaRequest> {
+        self.exchange_request_async(copy_area_request(
+            source.into(),
+            destination.into(),
+            gc,
+            src_x,
+            src_y,
+            width,
+            height,
+            dest_x,
+            dest_y,
+        ))
     }
 
     /// Copy a plane from one drawable to another, async redox.
     #[inline]
-    pub async fn copy_plane_async<Source: Into<Drawable>, Destination: Into<Drawable>>(
+    fn copy_plane_async<Source: Into<Drawable>, Destination: Into<Drawable>>(
         &mut self,
         source: Source,
         destination: Destination,
@@ -355,48 +356,52 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         dest_x: i16,
         dest_y: i16,
         bit_plane: u32,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            copy_plane_request(
-                source.into(),
-                destination.into(),
-                gc,
-                src_x,
-                src_y,
-                width,
-                height,
-                dest_x,
-                dest_y,
-                bit_plane,
-            ),
-            async
-        )
-        .await
+    ) -> ExchangeRequestFuture<'_, Self, CopyPlaneRequest> {
+        self.exchange_request_async(copy_plane_request(
+            source.into(),
+            destination.into(),
+            gc,
+            src_x,
+            src_y,
+            width,
+            height,
+            dest_x,
+            dest_y,
+            bit_plane,
+        ))
     }
 
     /// Create a new pixmap, async redox.
     #[inline]
-    pub async fn create_pixmap_async<Target: Into<Drawable>>(
+    fn create_pixmap_async<Target: Into<Drawable>>(
         &mut self,
         target: Target,
         width: u16,
         height: u16,
         depth: u8,
-    ) -> crate::Result<Pixmap> {
-        let pixmap = Pixmap::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            create_pixmap_request(target.into(), pixmap, width, height, depth),
-            async
-        )
-        .await?;
-        Ok(pixmap)
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreatePixmapRequest,
+        Pixmap,
+        BoxedFnOnce<Pixmap, CreatePixmapRequest>,
+    > {
+        let mut cpr = create_pixmap_request(
+            target.into(),
+            Pixmap::const_from_xid(0),
+            width,
+            height,
+            depth,
+        );
+        self.exchange_xid_future(Box::new(move |pid| {
+            cpr.pid = pid;
+            cpr
+        }))
     }
 
     /// Write an image to a drawable, async redox.
     #[inline]
-    pub async fn put_image_async<Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
+    fn put_image_async<Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
         &mut self,
         target: Target,
         gc: Gcontext,
@@ -407,7 +412,7 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         dest_y: isize,
         width: usize,
         height: usize,
-    ) -> crate::Result<()> {
+    ) -> PutImageFuture<'_, Self, Vec<PutImageRequest>> {
         let reqs = put_image_req(
             self,
             target.into(),
@@ -421,22 +426,14 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
             height,
         );
 
-        // TODO: use streams to do this once async closures are stable
-        let mut toks = Vec::with_capacity(reqs.len());
-        for req in reqs {
-            toks.push(send_request!(self, req, async).await?);
-        }
-
-        for tok in toks {
-            self.resolve_request_async(tok).await?;
-        }
-
-        Ok(())
+        PutImageFuture::run(self, reqs)
     }
 
+    // TODO: too lazy to fix this
+    /*
     /// Create a pixmap from an image, async redox.
     #[inline]
-    pub async fn create_pixmap_from_image_async<
+    fn create_pixmap_from_image_async<
         Target: Clone + Into<Drawable>,
         Data: Deref<Target = [u8]>,
     >(
@@ -468,4 +465,5 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         gc.free_async(self).await?;
         Ok(pixmap)
     }
+    */
 }
