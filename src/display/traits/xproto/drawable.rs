@@ -307,11 +307,11 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
         target: Target,
     ) -> MapFuture<
         ExchangeRequestFuture<'_, Self, GetGeometryRequest>,
-        fn(GetGeometryReply) -> Geometry,
+        fn(crate::Result<GetGeometryReply>) -> crate::Result<Geometry>,
     > {
         MapFuture::run(
             self.exchange_future_async(get_geometry_request(target.into())),
-            Geometry::from,
+            |repl| repl.map(Geometry::from),
         )
     }
 

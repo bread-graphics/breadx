@@ -415,7 +415,7 @@ pub trait DisplayXprotoExt: Display {
             name: name.clone(),
             ..Default::default()
         })?;
-        Extension::from_reply(qer)
+        Ok(Extension::from_reply(qer))
     }
 
     /// Create a new window.
@@ -679,14 +679,14 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
         name: String,
     ) -> MapFuture<
         ExchangeRequestFuture<'_, Self, QueryExtensionRequest>,
-        fn(QueryExtensionReply) -> Extension,
+        fn(crate::Result<QueryExtensionReply>) -> crate::Result<Extension>,
     > {
         MapFuture::run(
             self.send_request(QueryExtensionRequest {
                 name,
                 ..Default::default()
             }),
-            Extension::from_reply,
+            |repl| repl.map(Extension::from_reply),
         )
     }
 
@@ -804,8 +804,14 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
         &mut self,
         name: String,
         only_if_exists: bool,
-    ) -> ExchangeRequestFuture<'_, Self, InternAtomRequest> {
-        self.exchange_request_async(intern_atom_request(name, only_if_exists))
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, InternAtomRequest>,
+        fn(crate::Result<InternAtomReply>) -> crate::Result<Atom>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(intern_atom_request(name, only_if_exists)),
+            |repl| repl.map(|repl| repl.atom),
+        )
     }
 
     /// Change the keyboard's control properties redox.
@@ -1001,8 +1007,14 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     #[inline]
     fn get_modifier_mapping_immediate_async(
         &mut self,
-    ) -> ExchangeRequestFuture<'_, Self, GetModifierMappingRequest> {
-        self.exchange_request_async(GetModifierMappingRequest::default())
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetModifierMappingRequest>,
+        fn(crate::Result<GetModifierMappingReply>) -> crate::Result<ModifierMapping>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(GetModifierMappingRequest::default()),
+            |repl| repl.map(ModifierMapping::from),
+        )
     }
 }
 

@@ -131,13 +131,10 @@ pub trait DisplayGlxExt: Display {
         &mut self,
         screen: usize,
     ) -> crate::Result<RequestCookie<GetFbConfigsRequest>> {
-        send_request!(
-            self,
-            GetFbConfigsRequest {
-                screen: screen as _,
-                ..Default::default()
-            }
-        )
+        self.send_request(GetFbConfigsRequest {
+            screen: screen as _,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the framebuffer configurations associated with the given screen.
@@ -153,13 +150,10 @@ pub trait DisplayGlxExt: Display {
         &mut self,
         drawable: Drawable,
     ) -> crate::Result<RequestCookie<GetDrawableAttributesRequest>> {
-        send_request!(
-            self,
-            GetDrawableAttributesRequest {
-                drawable,
-                ..Default::default()
-            }
-        )
+        self.send_request(GetDrawableAttributesRequest {
+            drawable,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the properties of a GLX drawable.
@@ -179,12 +173,9 @@ pub trait DisplayGlxExt: Display {
         attribs: Vec<u32>,
     ) -> crate::Result<Context> {
         let xid = Context::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            Self::create_context_attribs_arb_request(
-                xid, fbconfig, screen, share_list, is_direct, attribs,
-            )
-        )?;
+        self.exchange_request(create_context_attribs_arb_request(
+            xid, fbconfig, screen, share_list, is_direct, attribs,
+        ))?;
         Ok(xid)
     }
 
@@ -195,170 +186,183 @@ pub trait DisplayGlxExt: Display {
         context_tag: ContextTag,
         drawable: Target,
     ) -> crate::Result {
-        sr_request!(
-            self,
-            SwapBuffersRequest {
-                context_tag,
-                drawable: drawable.into(),
-                ..Default::default()
-            }
-        )
+        self.exchange_request(SwapBuffersRequest {
+            context_tag,
+            drawable: drawable.into(),
+            ..Default::default()
+        })
     }
 }
 
+impl<D: Display + ?Sized> DisplayGlxExt for D {}
+
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
+pub trait AsyncDisplayGlxEdit: AsyncDisplay {
     /// Query GLX version, async redox.
     #[inline]
-    pub async fn query_glx_version_async(
+    fn query_glx_version_async(
         &mut self,
         required_major: u32,
         required_minor: u32,
-    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        send_request!(
-            self,
-            QueryVersionRequest {
+    ) -> SendRequestFuture<'_, Self, QueryVersionRequest> {
+        self.send_request_async(QueryVersionRequest {
+            major_version: required_major,
+            minor_version: required_minor,
+            ..Default::default()
+        })
+    }
+
+    #[inline]
+    fn query_glx_version_immediate_async(
+        &mut self,
+        required_major: u32,
+        required_minor: u32,
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, QueryVersionRequest>,
+        fn(crate::Result<QueryVersionReply>) -> crate::Result<(u32, u32)>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(QueryVersionRequest {
                 major_version: required_major,
                 minor_version: required_minor,
                 ..Default::default()
-            },
-            async
+            }),
+            |repl| repl.map(|repl| (repl.major_version, repl.minor_version)),
         )
-        .await
     }
 
     /// Get the visual configurations associated with the given screen, async redox.
     #[inline]
-    pub async fn get_visual_configs_async(
+    fn get_visual_configs_async(
         &mut self,
         screen: usize,
-    ) -> crate::Result<RequestCookie<GetVisualConfigsRequest>> {
-        send_request!(
-            self,
-            GetVisualConfigsRequest {
-                screen: screen as _,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    ) -> SendRequestFuture<'_, Self, GetVisualConfigsRequest> {
+        self.send_request_async(GetVisualConfigsRequest {
+            screen: screen as _,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the visual configurations associated with the given screen, async redox.
     #[inline]
-    pub async fn get_visual_configs_immediate_async(
+    fn get_visual_configs_immediate_async(
         &mut self,
         screen: usize,
-    ) -> crate::Result<Configs> {
-        let tok = self.get_visual_configs_async(screen).await?;
-        Ok(self.resolve_request_async(tok).await?.into())
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetVisualConfigsRequest>,
+        fn(crate::Result<GetVisualConfigsReply>) -> crate::Result<Configs>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(GetVisualConfigsRequest {
+                screen: screen as _,
+                ..Default::default()
+            }),
+            |repl| repl.map(Configs::from),
+        )
     }
 
     /// Get the framebuffer configurations associated with the given screen, async redox.
     #[inline]
-    pub async fn get_fb_configs_async(
+    fn get_fb_configs_async(
         &mut self,
         screen: usize,
-    ) -> crate::Result<RequestCookie<GetFbConfigsRequest>> {
-        send_request!(
-            self,
-            GetFbConfigsRequest {
-                screen: screen as _,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    ) -> SendRequestFuture<'_, Self, GetFbConfigsRequest> {
+        self.send_request_async(GetFbConfigsRequest {
+            screen: screen as _,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the framebuffer configurations associated with the given screen, async redox.
     #[inline]
-    pub async fn get_fb_configs_immediate_async(
+    fn get_fb_configs_immediate_async(
         &mut self,
         screen: usize,
-    ) -> crate::Result<Configs> {
-        let tok = self.get_fb_configs_async(screen).await?;
-        Ok(self.resolve_request_async(tok).await?.into())
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetFbConfigsRequest>,
+        fn(crate::Result<GetFbConfigsReply>) -> crate::Result<Configs>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(GetFbConfigsRequest {
+                screen: screen as _,
+                ..Default::default()
+            }),
+            |repl| repl.map(Configs::from),
+        )
     }
 
     /// Get the properties of a GLX drawable, async redox.
     #[inline]
-    pub async fn get_drawable_properties_async(
+    fn get_drawable_properties_async(
         &mut self,
         drawable: Drawable,
-    ) -> crate::Result<RequestCookie<GetDrawableAttributesRequest>> {
-        send_request!(
-            self,
-            GetDrawableAttributesRequest {
-                drawable,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-
-    /// Immediately query GLX version, async redox.
-    #[inline]
-    pub async fn query_glx_version_immediate_async(
-        &mut self,
-        required_major: u32,
-        required_minor: u32,
-    ) -> crate::Result<(u32, u32)> {
-        let tok = self
-            .query_glx_version_async(required_major, required_minor)
-            .await?;
-        let repl = self.resolve_request_async(tok).await?;
-        Ok((repl.major_version, repl.minor_version))
+    ) -> SendRequestFuture<'_, Self, GetDrawableAttributesRequest> {
+        self.send_request_async(GetDrawableAttributesRequest {
+            drawable,
+            ..Default::default()
+        })
     }
 
     /// Immediately get the properties of a GLX drawable, async redox.
     #[inline]
-    pub async fn get_drawable_properties_immediate_async(
+    fn get_drawable_properties_immediate_async(
         &mut self,
         drawable: Drawable,
-    ) -> crate::Result<Vec<u32>> {
-        let tok = self.get_drawable_properties_async(drawable).await?;
-        Ok(self.resolve_request_async(tok).await?.attribs)
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetDrawableAttributesRequest>,
+        fn(crate::Result<GetDrawableAttributresReply>) -> crate::Result<Vec<u32>>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(GetDrawableAttributesRequest {
+                drawable,
+                ..Default::default()
+            }),
+            |repl| repl.map(|repl| repl.attribs),
+        )
     }
 
     #[inline]
-    pub async fn create_context_attribs_arb_async(
+    fn create_context_attribs_arb_async(
         &mut self,
         fbconfig: Fbconfig,
         screen: usize,
         share_list: Context,
         is_direct: bool,
         attribs: Vec<u32>,
-    ) -> crate::Result<Context> {
-        let xid = Context::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            Self::create_context_attribs_arb_request(
-                xid, fbconfig, screen, share_list, is_direct, attribs,
-            ),
-            async
-        )
-        .await?;
-        Ok(xid)
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        Context,
+        CreateContextAttribsArbRequest,
+        BoxedFnOnce<Context, CreateContextAttribsArbRequest>,
+    > {
+        let mut cccaar = create_context_attribs_arb_request(
+            Context::const_from_xid(0),
+            fbconfig,
+            screen,
+            share_list,
+            is_direct,
+            attribs,
+        );
+        self.exchange_xid_async(Box::new(move |cid| {
+            cccaar.context = cid;
+            cccaar
+        }))
     }
 
     /// Swap buffers, async redox.
     #[inline]
-    pub async fn swap_buffers_async<Target: Into<Drawable>>(
+    fn swap_buffers_async<Target: Into<Drawable>>(
         &mut self,
         context_tag: ContextTag,
         drawable: Target,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            SwapBuffersRequest {
-                context_tag,
-                drawable: drawable.into(),
-                ..Default::default()
-            },
-            async
-        )
-        .await
+    ) -> ExchangeRequestFuture<'_, Self, SwapBuffersRequest> {
+        self.exchange_request_request(SwapBuffersRequest {
+            context_tag,
+            drawable: drawable.into(),
+            ..Default::default()
+        })
     }
 }
+
+impl<D: AsyncDisplay + ?Sized> AsyncDisplayGlxExt for D {}

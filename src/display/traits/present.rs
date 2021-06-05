@@ -20,27 +20,24 @@ use crate::{
 use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::AsyncDisplay;
 
-impl<Conn: Connection> Display<Conn> {
+pub trait DisplayPresentExt: Display {
     #[inline]
-    pub fn query_present_version(
+    fn query_present_version(
         &mut self,
         major: u32,
         minor: u32,
     ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        send_request!(
-            self,
-            QueryVersionRequest {
-                major_version: major,
-                minor_version: minor,
-                ..Default::default()
-            }
-        )
+        self.send_request(QueryVersionRequest {
+            major_version: major,
+            minor_version: minor,
+            ..Default::default()
+        })
     }
 
     #[inline]
-    pub fn query_present_version_immediate(
+    fn query_present_version_immediate(
         &mut self,
         major: u32,
         minor: u32,
@@ -54,21 +51,18 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     #[inline]
-    pub fn present_capabilities<Target: Into<Drawable>>(
+    fn present_capabilities<Target: Into<Drawable>>(
         &mut self,
         drawable: Target,
     ) -> crate::Result<RequestCookie<QueryCapabilitiesRequest>> {
-        send_request!(
-            self,
-            QueryCapabilitiesRequest {
-                target: drawable.into().xid,
-                ..Default::default()
-            }
-        )
+        self.send_request(QueryCapabilitiesRequest {
+            target: drawable.into().xid,
+            ..Default::default()
+        })
     }
 
     #[inline]
-    pub fn present_capabilities_immediate<Target: Into<Drawable>>(
+    fn present_capabilities_immediate<Target: Into<Drawable>>(
         &mut self,
         drawable: Target,
     ) -> crate::Result<u32> {
@@ -78,148 +72,22 @@ impl<Conn: Connection> Display<Conn> {
     }
 
     #[inline]
-    pub fn present_select_input(
+    fn present_select_input(
         &mut self,
         eid: XID,
         window: Window,
         em: EventMask,
     ) -> crate::Result<()> {
-        sr_request!(
-            self,
-            SelectInputRequest {
-                eid: Event::const_from_xid(eid),
-                window,
-                event_mask: em,
-                ..Default::default()
-            }
-        )
-    }
-
-    #[inline]
-    pub fn present_pixmap(
-        &mut self,
-        window: Window,
-        pixmap: Pixmap,
-        serial: u32,
-        valid: Region,
-        update: Region,
-        xoff: i16,
-        yoff: i16,
-        target_crtc: Crtc,
-        wait_fence: Fence,
-        idle_fence: Fence,
-        options: u32,
-        target_msc: u64,
-        divisor: u64,
-        remainder: u64,
-        notifies: Vec<Notify>,
-    ) -> crate::Result {
-        sr_request!(
-            self,
-            PixmapRequest {
-                window,
-                pixmap,
-                serial,
-                valid,
-                update,
-                x_off: xoff,
-                y_off: yoff,
-                target_crtc,
-                wait_fence,
-                idle_fence,
-                options,
-                target_msc,
-                divisor,
-                remainder,
-                notifies,
-                ..Default::default()
-            }
-        )
-    }
-}
-
-#[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
-    #[inline]
-    pub async fn query_present_version_async(
-        &mut self,
-        major: u32,
-        minor: u32,
-    ) -> crate::Result<RequestCookie<QueryVersionRequest>> {
-        send_request!(
-            self,
-            QueryVersionRequest {
-                major_version: major,
-                minor_version: minor,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-
-    #[inline]
-    pub async fn query_present_version_immediate_async(
-        &mut self,
-        major: u32,
-        minor: u32,
-    ) -> crate::Result<ExtensionVersion> {
-        let qer = self.query_present_version_async(major, minor).await?;
-        let reply = self.resolve_request_async(qer).await?;
-        Ok(ExtensionVersion {
-            major: reply.major_version,
-            minor: reply.minor_version,
+        self.exchange_request(SelectInputRequest {
+            eid: Event::const_from_xid(eid),
+            window,
+            event_mask: em,
+            ..Default::default()
         })
     }
 
     #[inline]
-    pub async fn present_capabilities_async<Target: Into<Drawable>>(
-        &mut self,
-        drawable: Target,
-    ) -> crate::Result<RequestCookie<QueryCapabilitiesRequest>> {
-        send_request!(
-            self,
-            QueryCapabilitiesRequest {
-                target: drawable.into().xid,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-
-    #[inline]
-    pub async fn present_capabilities_immediate_async<Target: Into<Drawable>>(
-        &mut self,
-        drawable: Target,
-    ) -> crate::Result<u32> {
-        let tok = self.present_capabilities_async(drawable).await?;
-        let pc = self.resolve_request_async(tok).await?;
-        Ok(pc.capabilities)
-    }
-
-    #[inline]
-    pub async fn present_select_input_async(
-        &mut self,
-        eid: XID,
-        window: Window,
-        em: EventMask,
-    ) -> crate::Result<()> {
-        sr_request!(
-            self,
-            SelectInputRequest {
-                eid: Event::const_from_xid(eid),
-                window,
-                event_mask: em,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-
-    #[inline]
-    pub async fn present_pixmap_async(
+    fn present_pixmap(
         &mut self,
         window: Window,
         pixmap: Pixmap,
@@ -237,28 +105,153 @@ impl<Conn: AsyncConnection + Send> Display<Conn> {
         remainder: u64,
         notifies: Vec<Notify>,
     ) -> crate::Result {
-        sr_request!(
-            self,
-            PixmapRequest {
-                window,
-                pixmap,
-                serial,
-                valid,
-                update,
-                x_off: xoff,
-                y_off: yoff,
-                target_crtc,
-                wait_fence,
-                idle_fence,
-                options,
-                target_msc,
-                divisor,
-                remainder,
-                notifies,
+        self.exchange_request(PixmapRequest {
+            window,
+            pixmap,
+            serial,
+            valid,
+            update,
+            x_off: xoff,
+            y_off: yoff,
+            target_crtc,
+            wait_fence,
+            idle_fence,
+            options,
+            target_msc,
+            divisor,
+            remainder,
+            notifies,
+            ..Default::default()
+        })
+    }
+}
+
+impl<D: Display + ?Sized> DisplayPresentExt for D {}
+
+#[cfg(feature = "async")]
+pub trait AsyncDisplayPresentExt: AsyncDisplay {
+    #[inline]
+    fn query_present_version_async(
+        &mut self,
+        major: u32,
+        minor: u32,
+    ) -> SendRequestFuture<'_, Self, QueryVersionRequest> {
+        self.send_request_async(QueryVersionRequest {
+            major_version: major,
+            minor_version: minor,
+            ..Default::default()
+        })
+    }
+
+    #[inline]
+    fn query_present_version_immediate_async(
+        &mut self,
+        major: u32,
+        minor: u32,
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, QueryVersionRequest>,
+        fn(crate::Result<QueryVersionReply>) -> crate::Result<ExtensionVersion>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(QueryVersionRequest {
+                major_version: major,
+                minor_version: minor,
                 ..Default::default()
+            }),
+            |repl| {
+                repl.map(
+                    |QueryVersionReply {
+                         major_version,
+                         minor_version,
+                         ..
+                     }| ExtensionVersion {
+                        major: major_version,
+                        minor: minor_version,
+                    },
+                )
             },
-            async
         )
-        .await
+    }
+
+    #[inline]
+    fn present_capabilities_async<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> SendRequestFuture<'_, Self, QueryCapabilitiesRequest> {
+        self.send_request_async(QueryCapabilitiesRequest {
+            target: drawable.into().xid,
+            ..Default::default()
+        })
+    }
+
+    #[inline]
+    fn present_capabilities_immediate_async<Target: Into<Drawable>>(
+        &mut self,
+        drawable: Target,
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, QueryCapabilitiesRequest>,
+        fn(crate::Result<QueryCapabilitiesReply>) -> crate::Result<u32>,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(QueryCapabilitiesRequest {
+                target: drawable.into().xid,
+                ..Default::default()
+            }),
+            |repl| repl.map(|repl| repl.capabilities),
+        )
+    }
+
+    #[inline]
+    fn present_select_input_async(
+        &mut self,
+        eid: XID,
+        window: Window,
+        em: EventMask,
+    ) -> ExchangeRequestFuture<'_, Self, SelectInputRequest> {
+        self.exchange_request_async(SelectInputRequest {
+            eid: Event::const_from_xid(eid),
+            window,
+            event_mask: em,
+            ..Default::default()
+        })
+    }
+
+    #[inline]
+    fn present_pixmap_async(
+        &mut self,
+        window: Window,
+        pixmap: Pixmap,
+        serial: u32,
+        valid: Region,
+        update: Region,
+        xoff: i16,
+        yoff: i16,
+        target_crtc: Crtc,
+        wait_fence: Fence,
+        idle_fence: Fence,
+        options: u32,
+        target_msc: u64,
+        divisor: u64,
+        remainder: u64,
+        notifies: Vec<Notify>,
+    ) -> ExchangeRequestFuture<'_, Self, PixmapRequest> {
+        self.exchange_request_async(PixmapRequest {
+            window,
+            pixmap,
+            serial,
+            valid,
+            update,
+            x_off: xoff,
+            y_off: yoff,
+            target_crtc,
+            wait_fence,
+            idle_fence,
+            options,
+            target_msc,
+            divisor,
+            remainder,
+            notifies,
+            ..Default::default()
+        })
     }
 }

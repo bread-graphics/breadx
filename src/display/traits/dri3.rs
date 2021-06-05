@@ -264,10 +264,13 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
         &mut self,
         drawable: Target,
         provider: u32,
-    ) -> MapFuture<ExchangeRequestFuture<'_, Self, OpenRequest>, fn(OpenReply) -> c_int> {
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, OpenRequest>,
+        fn(crate::Result<OpenReply>) -> crate::Result<c_int>,
+    > {
         MapFuture::run(
             self.exchange_request_async(open_dri3_request(drawable.into(), provider)),
-            |repl| repl.file_descriptors().unwrap()[0],
+            |repl| repl.map(|reply| repl.file_descriptors().unwrap()[0]),
         )
     }
 
@@ -291,7 +294,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
         minor: u32,
     ) -> MapFuture<
         ExchangeRequestFuture<'_, Self, QueryVersionRequest>,
-        fn(QueryVersionReply) -> ExtensionVersion,
+        fn(crate::Result<QueryVersionReply>) -> crate::Result<ExtensionVersion>,
     > {
         MapFuture::run(
             self.exchange_request_async(QueryVersionRequest {
@@ -299,9 +302,11 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
                 minor_version: minor,
                 ..Default::default()
             }),
-            |repl| ExtensionVersion {
-                major: repl.major_version,
-                minor: repl.minor_version,
+            |repl| {
+                repl.map(|repl| ExtensionVersion {
+                    major: repl.major_version,
+                    minor: repl.minor_version,
+                })
             },
         )
     }
@@ -329,7 +334,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
         bpp: u8,
     ) -> MapFuture<
         ExchangeRequestFuture<'_, Self, GetSupportedModifiersRequest>,
-        fn(GetSupportedModifiersReply) -> Modifiers,
+        fn(crate::Result<GetSupportedModifiersReply>) -> crate::Result<Modifiers>,
     > {
         MapFuture::run(
             self.exchange_request_async(GetSupportedModifiersRequest {
@@ -338,13 +343,17 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
                 bpp,
                 ..Default::default()
             }),
-            |GetSupportedModifiersReply {
-                 window_modifiers,
-                 screen_modifiers,
-                 ..
-             }| Modifiers {
-                window: window_modifiers,
-                screen: screen_modifiers,
+            |repl| {
+                repl.map(
+                    |GetSupportedModifiersReply {
+                         window_modifiers,
+                         screen_modifiers,
+                         ..
+                     }| Modifiers {
+                        window: window_modifiers,
+                        screen: screen_modifiers,
+                    },
+                )
             },
         )
     }
@@ -493,7 +502,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
     fn buffers_from_pixmap_immediate_async(
         &mut self,
         pixmap: Pixmap,
-    ) -> ExchangeRequestFuruer<'_, Self, BuffersFromPixmapRequest> {
+    ) -> ExchangeRequestFuture<'_, Self, BuffersFromPixmapRequest> {
         self.exchange_request_async(BuffersFromPixmapRequest {
             pixmap,
             ..Default::default()

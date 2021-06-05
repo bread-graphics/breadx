@@ -7,57 +7,52 @@ use crate::{
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::AsyncDisplay;
 
-impl<Conn: Connection> Display<Conn> {
+pub trait DisplaySyncExt: Display {
     #[inline]
-    pub fn trigger_fence(&mut self, fence: Fence) -> crate::Result {
-        sr_request!(
-            self,
-            TriggerFenceRequest {
-                fence,
-                ..Default::default()
-            }
-        )
+    fn trigger_fence(&mut self, fence: Fence) -> crate::Result {
+        self.exchange_request(TriggerFenceRequest {
+            fence,
+            ..Default::default()
+        })
     }
 
     #[inline]
-    pub fn free_sync_fence(&mut self, fence: Fence) -> crate::Result {
-        sr_request!(
-            self,
-            DestroyFenceRequest {
-                fence,
-                ..Default::default()
-            }
-        )
+    fn free_sync_fence(&mut self, fence: Fence) -> crate::Result {
+        self.exchange_request(DestroyFenceRequest {
+            fence,
+            ..Default::default()
+        })
+    }
+}
+
+impl<D: Display + ?Sized> DisplaySyncExt for D {}
+
+#[cfg(feature = "async")]
+pub trait AsyncDisplaySyncExt: AsyncDisplay {
+    #[inline]
+    fn trigger_fence_async(
+        &mut self,
+        fence: Fence,
+    ) -> ExchangeRequestFuture<'_, Self, TriggerFenceRequest> {
+        self.exchange_request_async(TriggerFenceRequest {
+            fence,
+            ..Default::default()
+        })
+    }
+
+    #[inline]
+    fn free_sync_fence_async(
+        &mut self,
+        fence: Fence,
+    ) -> ExchangeRequestFuture<'_, Self, DestroyFenceRequest> {
+        self.exchange_request_async(DestroyFenceRequest {
+            fence,
+            ..Default::default()
+        })
     }
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
-    #[inline]
-    pub async fn trigger_fence_async(&mut self, fence: Fence) -> crate::Result {
-        sr_request!(
-            self,
-            TriggerFenceRequest {
-                fence,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-
-    #[inline]
-    pub async fn free_sync_fence_async(&mut self, fence: Fence) -> crate::Result {
-        sr_request!(
-            self,
-            DestroyFenceRequest {
-                fence,
-                ..Default::default()
-            },
-            async
-        )
-        .await
-    }
-}
+impl<D: AsyncDisplay + ?Sized> AsyncDisplaySyncExt for D {}
