@@ -44,15 +44,13 @@ impl<Km> KeyboardState<Km> {
 
 impl KeyboardState<XprotoKeymap> {
     #[inline]
-    pub fn new<Conn: Connection>(display: &mut Display<Conn>) -> crate::Result<Self> {
+    pub fn new<Dpy: Display + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
         Ok(Self::from_keymap(XprotoKeymap::init_from(display)?))
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn new_async<Conn: AsyncConnection + Send>(
-        display: &mut Display<Conn>,
-    ) -> crate::Result<Self> {
+    pub async fn new_async<Dpy: AsyncDisplay + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
         Ok(Self::from_keymap(
             XprotoKeymap::init_from_async(display).await?,
         ))

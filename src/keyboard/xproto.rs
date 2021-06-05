@@ -8,7 +8,7 @@ use crate::{
 use alloc::boxed::Box;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::AsyncDisplay;
 
 #[derive(Debug, Clone)]
 pub struct XprotoKeymap {
@@ -20,7 +20,7 @@ pub struct XprotoKeymap {
 
 impl XprotoKeymap {
     #[inline]
-    pub(crate) fn init_from<Conn: Connection>(display: &mut Display<Conn>) -> crate::Result<Self> {
+    pub(crate) fn init_from<Dpy: Display + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
         let keyboard_tok = display.get_keyboard_mapping()?;
         let keyboard_map: KeyboardMapping = display.resolve_request(keyboard_tok)?.into();
 
@@ -34,8 +34,8 @@ impl XprotoKeymap {
 
     #[cfg(feature = "async")]
     #[inline]
-    pub(crate) async fn init_from_async<Conn: AsyncConnection + Send>(
-        display: &mut Display<Conn>,
+    pub(crate) async fn init_from_async<Dpy: AsyncDisplay + ?Sized>(
+        display: &mut Dpy,
     ) -> crate::Result<Self> {
         let keyboard_tok = display.get_keyboard_mapping_async().await?;
         let keyboard_map: KeyboardMapping =

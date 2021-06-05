@@ -23,25 +23,11 @@ use crate::display::AsyncConnection;
 #[derive(Debug)]
 pub struct RenderDisplay<Dpy> {
     inner: Dpy,
-    formats: Vec<Pictforminfo>,
-    screens: Vec<Pictscreen>,
-    subpixels: Vec<u32>,
+    formats: Box<[Pictforminfo]>,
+    screens: Box<[Pictscreen]>,
+    subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
-}
-
-impl<Dpy: DisplayLike> DisplayLike for RenderDisplay<Dpy> {
-    type Connection = Dpy::Connection;
-
-    #[inline]
-    fn display(&self) -> &Display<Dpy::Connection> {
-        self.inner.display()
-    }
-
-    #[inline]
-    fn display_mut(&mut self) -> &mut Display<Dpy::Connection> {
-        self.inner.display_mut()
-    }
 }
 
 impl<Dpy> RenderDisplay<Dpy> {
@@ -239,17 +225,55 @@ pub enum StandardFormat {
 }
 
 struct XrenderInfo {
-    formats: Vec<Pictforminfo>,
-    screens: Vec<Pictscreen>,
-    subpixels: Vec<u32>,
+    formats: Box<[Pictforminfo]>,
+    screens: Box<[Pictscreen]>,
+    subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
 }
 
-impl<Dpy: DisplayLike> RenderDisplay<Dpy>
+impl<Dpy: Display> Display for RenderDisplay<Dpy> {
+    type Conn = Dpy::Conn;
+
+    #[inline]
+    fn connection(&mut self) -> &mut Self::Conn {
+        self.inner.connection()
+    }
+
+    #[inline]
+    fn lock(&mut self) {
+        self.inner.lock();
+    }
+
+    #[inline]
+    fn unlock(&mut self) {
+        self.inner.unlock();
+    }
+}
+
+impl<'a, Dpy> Display for &'a RenderDisplay<Dpy>
 where
-    Dpy::Connection: Connection,
+    &'a Dpy: Display,
 {
+    type Conn = <&'a Dpy as Display>::Conn;
+
+    #[inline]
+    fn connection(&mut self) -> &mut Self::Conn {
+        self.inner.connection()
+    }
+
+    #[inline]
+    fn lock(&mut self) {
+        self.inner.lock();
+    }
+
+    #[inline]
+    fn unlock(&mut self) {
+        self.inner.unlock();
+    }
+}
+
+impl<Dpy: Display> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information.
     #[inline]
     pub fn new(
@@ -258,21 +282,18 @@ where
         client_minor_version: u32,
     ) -> Result<Self, (Dpy, crate::BreadError)> {
         #[inline]
-        fn xrender_info<Conn: Connection>(
-            dpy: &mut Display<Conn>,
+        fn xrender_info<Dpy: Display>(
+            dpy: &mut Dpy,
             client_major_version: u32,
             client_minor_version: u32,
         ) -> crate::Result<XrenderInfo> {
             // run QueryVersion and QueryPictFormats simultaneously
-            let qvtok = send_request!(
-                dpy,
-                QueryVersionRequest {
-                    client_major_version,
-                    client_minor_version,
-                    ..Default::default()
-                }
-            )?;
-            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default())?;
+            let qvtok = dpy.send_request(QueryVersionRequest {
+                client_major_version,
+                client_minor_version,
+                ..Default::default()
+            })?;
+            let qpftok = dpy.send_request(QueryPictFormatsRequest::default())?;
 
             let QueryVersionReply {
                 major_version,
@@ -301,11 +322,7 @@ where
             subpixels,
             major_version,
             minor_version,
-        } = match xrender_info(
-            dpy.display_mut(),
-            client_major_version,
-            client_minor_version,
-        ) {
+        } = match xrender_info(&mut dpy, client_major_version, client_minor_version) {
             Ok(x) => x,
             Err(e) => return Err((dpy, e)),
         };
@@ -330,7 +347,7 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
-        sr_request!(self.display_mut(), cpr)?;
+        self.send_request(cpr)?;
         Ok(pic)
     }
 
@@ -345,7 +362,7 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
-        sr_request!(self.display_mut(), clgr)?;
+        self.exchange_request(clgr)?;
         Ok(pic)
     }
 
@@ -370,7 +387,7 @@ where
             stops,
             colors,
         );
-        sr_request!(self.display_mut(), crgr)?;
+        self.exchange_request(crgr)?;
         Ok(pic)
     }
 
@@ -384,16 +401,66 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
-        sr_request!(self.display_mut(), ccgr)?;
+        self.exchange_request(ccgr)?;
         Ok(pic)
     }
 }
 
 #[cfg(feature = "async")]
-impl<Dpy: DisplayLike> RenderDisplay<Dpy>
+impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
+    type Conn = Dpy::Conn;
+
+    #[inline]
+    fn connection(&mut self) -> &mut Self::Conn {
+        self.inner.connection()
+    }
+
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner.poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner.begin_send_request_raw(req)
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        self.inner.poll_send_request_raw(cx)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'a, Dpy> AsyncDisplay for RenderDisplay<Dpy>
 where
-    Dpy::Connection: AsyncConnection + Send,
+    &'a Dpy: AsyncDisplay,
 {
+    type Conn = <&'a Dpy>::Conn;
+
+    #[inline]
+    fn connection(&mut self) -> &mut Self::Conn {
+        self.inner.connection()
+    }
+
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner.poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner.begin_send_request_raw(req);
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner.poll_send_request_raw(cx)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information, async redox.
     #[inline]
     pub async fn new_async(
@@ -402,22 +469,21 @@ where
         client_minor_version: u32,
     ) -> Result<Self, (Dpy, crate::BreadError)> {
         #[inline]
-        async fn xrender_info<Conn: AsyncConnection + Send>(
-            dpy: &mut Display<Conn>,
+        async fn xrender_info<Dpy: AsyncDisplay>(
+            dpy: &mut Dpy,
             client_major_version: u32,
             client_minor_version: u32,
         ) -> crate::Result<XrenderInfo> {
-            let qvtok = send_request!(
-                dpy,
-                QueryVersionRequest {
+            let qvtok = dpy
+                .send_request_async(QueryVersionRequest {
                     client_major_version,
                     client_minor_version,
                     ..Default::default()
-                },
-                async
-            )
-            .await?;
-            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default(), async).await?;
+                })
+                .await?;
+            let qpftok = dpy
+                .send_request_async(QueryPictFormatsRequest::default())
+                .await?;
 
             let QueryVersionReply {
                 major_version,
@@ -446,13 +512,7 @@ where
             formats,
             screens,
             subpixels,
-        } = match xrender_info(
-            dpy.display_mut(),
-            client_major_version,
-            client_minor_version,
-        )
-        .await
-        {
+        } = match xrender_info(&mut dpy, client_major_version, client_minor_version).await {
             Ok(x) => x,
             Err(e) => return Err((dpy, e)),
         };
@@ -477,7 +537,7 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
-        sr_request!(self.display_mut(), cpr, async).await?;
+        self.exchange_request_async(cpr).await?;
         Ok(pic)
     }
 
@@ -492,7 +552,7 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
-        sr_request!(self.display_mut(), clgr, async).await?;
+        self.exchange_request_async(clgr).await?;
         Ok(pic)
     }
 
@@ -517,7 +577,7 @@ where
             stops,
             colors,
         );
-        sr_request!(self.display_mut(), crgr, async).await?;
+        self.exchange_request_async(crgr).await?;
         Ok(pic)
     }
 
@@ -531,7 +591,7 @@ where
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
         let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
-        sr_request!(self.display_mut(), ccgr, async).await?;
+        self.exchange_request_async(ccgr).await?;
         Ok(pic)
     }
 }

@@ -13,8 +13,31 @@ use super::{
     input, output,
 };
 
-/// An implementor of `Display` and `AsyncDisplay` that uses `Cell` and `RefCell` in order to allow multiple
-/// accesses. The only downside is that it is not `Sync`.
+/// An implementor of [`Display`] and [`AsyncDisplay`] that uses [`Cell`] and [`RefCell`] in order to allow
+/// for immutable use of the `Display`. The primary downside is that it is not [`Sync`].
+///
+/// This is useful in cases where the [`Display`] needs to be kept in an [`Rc`], thread-local [`OnceCell`],
+/// reentrant mutex or any other place where one would only have an immutable reference to a `Display`. However,
+/// async users should be aware that the connection is protected by a re-entrancy lock that will panic if two
+/// I/O operations (e.g. sending two requests at once, or sending a request and then waiting) are attempted
+/// at once.
+///
+/// ## Construction
+///
+/// `CellDisplay` is constructed using the `Into` implementation for [`BasicDisplay`], e.g:
+///
+/// ```rust,no_run
+/// use breadx::display::{CellDisplay, DisplayConnection};
+///
+/// let mut display = DisplayConnection::create(None, None).unwrap();
+/// let display: CellDisplay<_> = display.into();
+/// ```
+///
+/// ## Alternatives
+///
+/// If you *can* restructure your program so that interior mutability is not required, it is considered better
+/// form to use `BasicDisplay`. However, if interior mutability is necessary, `CellDisplay` is preferred over
+/// `RefCell<BasicDisplay>`.
 #[derive(Debug)]
 pub struct CellDisplay<Conn> {
     // the connection to the server
@@ -48,6 +71,7 @@ pub struct CellDisplay<Conn> {
     discard_reply: Cell<Option<bool>>,
 }
 
+/// Collection types for `CellDisplay` that need to be put behind an interior mutability lock.
 #[derive(Debug)]
 struct Data {
     event_queue: VecDeque<Event>,
