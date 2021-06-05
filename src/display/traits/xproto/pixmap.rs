@@ -2,8 +2,7 @@
 
 use crate::{
     auto::xproto::{FreePixmapRequest, Pixmap},
-    display::{Connection, Display},
-    sr_request,
+    display::{prelude::*, Connection, Display},
 };
 
 #[cfg(feature = "async")]
@@ -12,7 +11,7 @@ use crate::display::AsyncDisplay;
 impl Pixmap {
     /// Free the memory used by a pixmap.
     #[inline]
-    pub fn free<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(FreePixmapRequest {
             pixmap: self,
             ..Default::default()

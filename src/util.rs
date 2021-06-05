@@ -28,9 +28,9 @@ pub(crate) fn difference<T>(i1: &[T], i2: &[T]) -> usize {
     let diff = i2
         .checked_sub(i1)
         .expect("Difference is too large to be measured");
-    let diff = diff.abs().try_into().unwrap();
-    diff.checked_div(mem::size_of::<T>())
-        .expect("Size of value is zero")
+    // a non-negative isize will always fit in a usize
+    let diff: usize = diff.abs().try_into().unwrap();
+    diff.checked_div(mem::size_of::<T>()).unwrap_or(0)
 }
 
 /// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.

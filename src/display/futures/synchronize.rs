@@ -77,7 +77,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                     Poll::Ready(Ok(())) => {
                         // check if we contain any pending requests yet
                         let display = wf.display();
-                        if display.remove_pending_request(seq).is_some() {
+                        if display.take_pending_request(seq).is_some() {
                             *self = SynchronizeFuture::Complete;
                             break Poll::Ready(Ok(()));
                         }

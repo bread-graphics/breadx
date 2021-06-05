@@ -74,7 +74,7 @@ where
                     // check for errors and remove the pending request
                     let seq = tok.sequence();
                     let display = sf.display();
-                    display.remove_pending_request(seq);
+                    display.take_pending_request(seq);
                     std_try!(display.check_for_pending_error());
 
                     Poll::Ready(Ok(R::Reply::default()));

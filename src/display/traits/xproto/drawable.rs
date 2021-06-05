@@ -6,15 +6,14 @@
 use crate::{
     auto::xproto::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
-        GetGeometryRequest, Pixmap, Window,
+        GetGeometryRequest, Pixmap, PutImageRequest, Window,
     },
-    display::PutImageRequest,
+    display::{generate_xid, prelude::*},
     image::{put::put_image_req, Image},
-    send_request, sr_request, Connection, Display, Gcontext, RequestCookie,
+    Connection, Display, Gcontext, RequestCookie,
 };
 use alloc::vec::Vec;
 use core::{convert::TryInto, ops::Deref};
-use futures_lite::stream::{CollectFuture, Then};
 
 #[cfg(feature = "async")]
 use crate::display::AsyncConnection;
@@ -130,7 +129,7 @@ fn create_pixmap_request(
     }
 }
 
-pub trait DisplayDrawableExt: Display {
+pub trait DisplayDrawableExt<'a>: Display<'a> {
     /// Get the geometry of a drawable object.
     #[inline]
     fn get_drawable_geometry<Target: Into<Drawable>>(
@@ -215,7 +214,7 @@ pub trait DisplayDrawableExt: Display {
         height: u16,
         depth: u8,
     ) -> crate::Result<Pixmap> {
-        let pixmap = Pixmap::const_from_xid(self.generate_xid()?);
+        let pixmap = Pixmap::const_from_xid(generate_xid(self)?);
         self.exchange_request(create_pixmap_request(
             target.into(),
             pixmap,
@@ -287,7 +286,7 @@ pub trait DisplayDrawableExt: Display {
     }
 }
 
-impl<D: Display + ?Sized> DisplayDrawableExt for D {}
+impl<'a, D: Display<'a> + ?Sized> DisplayDrawableExt<'a> for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayDrawableExt: AsyncDisplay {

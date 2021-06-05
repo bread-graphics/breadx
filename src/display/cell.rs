@@ -1,11 +1,15 @@
 // MIT/Apache2 License
 
-use super::{BasicDisplay, Display, DisplayBase, PendingReply, PendingRequest, EXT_KEY_SIZE};
-use crate::{auto::xproto::Setup, CellXidGenerator};
+use super::{
+    BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest, EXT_KEY_SIZE,
+};
+use crate::{auto::xproto::Setup, BreadError, CellXidGenerator, Event, XID};
+use alloc::collections::VecDeque;
 use core::{
     cell::{Cell, RefCell},
     num::{NonZeroU32, NonZeroUsize},
 };
+use hashbrown::HashMap;
 
 #[cfg(feature = "async")]
 use super::{
@@ -66,8 +70,11 @@ pub struct CellDisplay<Conn> {
     checked: Cell<bool>,
 
     // used for polling
+    #[cfg(feature = "async")]
     wait_buffer: RefCell<Option<WaitBuffer>>,
+    #[cfg(feature = "async")]
     send_buffer: RefCell<SendBuffer>,
+    #[cfg(feature = "async")]
     discard_reply: Cell<Option<bool>>,
 }
 
@@ -107,6 +114,7 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
 
         Self {
             connection,
+            io_lock: Cell::new(false),
             setup,
             xid: xid.into(),
             default_screen,
@@ -163,7 +171,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
         &self.setup
     }
     #[inline]
-    fn default_screen(&self) -> usize {
+    fn default_screen_index(&self) -> usize {
         self.default_screen
     }
     #[inline]
@@ -196,14 +204,14 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
         self.inner.borrow().pending_requests.get(&req_id).cloned()
     }
     #[inline]
-    fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
         #[cfg(feature = "async")]
         self.inner.get_mut().workarounders.retain(|&r| r != req_id);
         self.inner.get_mut().pending_requests.remove(&req_id)
     }
     #[inline]
     fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.inner.get_mut().pending_errors.insert(req_id, error)
+        self.inner.get_mut().pending_errors.insert(req_id, error);
     }
     #[inline]
     fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
@@ -225,7 +233,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
         self.inner
             .get_mut()
             .special_event_queues
-            .insert(xid, VecDeque::new())
+            .insert(xid, VecDeque::new());
     }
     #[inline]
     fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
@@ -247,7 +255,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn delete_special_event_queue(&mut self, xid: XID) {
-        self.inner.get_mut().special_event_queues.remove(&xid)
+        self.inner.get_mut().special_event_queues.remove(&xid);
     }
     #[inline]
     fn checked(&self) -> bool {
@@ -263,7 +271,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
-        self.inner.get_mut().extensions.insert(key, opcode)
+        self.inner.get_mut().extensions.insert(key, opcode);
     }
     #[inline]
     fn wm_protocols_atom(&self) -> Option<NonZeroU32> {
@@ -275,11 +283,11 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
 }
 
-impl<Connect: Connection> Display for CellDisplay<Connect> {
-    type Conn = Connect;
+impl<'a, Connect: Connection + 'a> Display<'a> for CellDisplay<Connect> {
+    type Conn = &'a mut Connect;
 
     #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
+    fn connection(&'a mut self) -> &'a mut Connect {
         self.connection.as_mut().expect("Display has been poisoned")
     }
 
@@ -360,7 +368,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
         &self.setup
     }
     #[inline]
-    fn default_screen(&self) -> usize {
+    fn default_screen_index(&self) -> usize {
         self.default_screen
     }
     #[inline]
@@ -394,7 +402,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
         self.inner.borrow().pending_requests.get(&req_id).cloned()
     }
     #[inline]
-    fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
         let mut inner = self.inner.borrow_mut();
         #[cfg(feature = "async")]
         inner.workarounders.retain(|&r| r != req_id);
@@ -402,7 +410,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.inner.borrow_mut().pending_errors.insert(req_id, error)
+        self.inner.borrow_mut().pending_errors.insert(req_id, error);
     }
     #[inline]
     fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
@@ -427,16 +435,11 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
         self.inner
             .borrow_mut()
             .special_event_queues
-            .insert(xid, VecDeque::new())
+            .insert(xid, VecDeque::new());
     }
     #[inline]
     fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
-        match self
-            .inner
-            .borrow_mut()
-            .special_event_queues
-            .borrow_mut(&xid)
-        {
+        match self.inner.borrow_mut().special_event_queues.get_mut(&xid) {
             Some(queue) => {
                 queue.push_back(event);
                 Ok(())
@@ -449,12 +452,12 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
         self.inner
             .borrow_mut()
             .special_event_queues
-            .borrow_mut(&xid)
+            .get_mut(&xid)
             .and_then(move |queue| queue.pop_front())
     }
     #[inline]
     fn delete_special_event_queue(&mut self, xid: XID) {
-        self.inner.borrow_mut().special_event_queues.remove(&xid)
+        self.inner.borrow_mut().special_event_queues.remove(&xid);
     }
     #[inline]
     fn checked(&self) -> bool {
@@ -470,7 +473,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
-        self.inner.borrow_mut().extensions.insert(key, opcode)
+        self.inner.borrow_mut().extensions.insert(key, opcode);
     }
     #[inline]
     fn wm_protocols_atom(&self) -> Option<NonZeroU32> {
@@ -482,14 +485,17 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
 }
 
-impl<'a, Connect: Connection> Display for &'a CellDisplay<Connect> {
+impl<'a, Connect> Display<'a> for &'a CellDisplay<Connect>
+where
+    &'a Connect: Connection,
+{
     type Conn = &'a Connect;
 
     #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        match &self.connection {
-            Some(ref mut c) => c,
-            None => panic!("Display has been poisoned"),
+    fn connection(&'a mut self) -> &'a Connect {
+        match self.connection {
+            Some(ref c) => c,
+            None => panic!("Connection was tainted"),
         }
     }
 

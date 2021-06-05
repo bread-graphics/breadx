@@ -2,13 +2,13 @@
 
 use super::{
     input, name::NameConnection, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo,
+    RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{
     auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, util::difference,
     XidGenerator, XID,
 };
-use alloc::collections::VecDeque;
+use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
 
@@ -16,7 +16,8 @@ use hashbrown::HashMap;
 use super::{AsyncConnection, AsyncDisplay};
 
 /// An implementor of `Display` and `AsyncDisplay` that requires &mut access in order to use.
-pub struct StandardDisplay<Conn> {
+#[derive(Debug)]
+pub struct BasicDisplay<Conn> {
     // NOTE: every field in this structure is pub(crate), because the implementations of From
     //       for CellDisplay and SyncDisplay need to deconstruct it
     /// The connection to the server. It is in an `Option`, so that way if it is `None` we know
@@ -74,7 +75,7 @@ pub struct StandardDisplay<Conn> {
     workarounders: Vec<u16>,
 }
 
-impl<Conn> StandardDisplay<Conn> {
+impl<Conn> BasicDisplay<Conn> {
     #[inline]
     fn from_connection_internal(connection: Conn, default_screen: usize) -> Self {
         Self {
@@ -104,7 +105,7 @@ impl<Conn> StandardDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> StandardDisplay<Conn> {
+impl<Conn: Connection> BasicDisplay<Conn> {
     #[inline]
     pub fn from_connection(
         connection: Conn,
@@ -112,7 +113,7 @@ impl<Conn: Connection> StandardDisplay<Conn> {
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
-        let (setup, xid) = self.connection.as_mut().unwrap().establish()?;
+        let (setup, xid) = this.connection.as_mut().unwrap().establish(auth_info)?;
         this.setup = setup;
         this.xid = xid;
         Ok(this)
@@ -120,7 +121,7 @@ impl<Conn: Connection> StandardDisplay<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> StandardDisplay<Conn> {
+impl<Conn: AsyncConnection> BasicDisplay<Conn> {
     #[inline]
     pub async fn from_connection_async(
         connection: Conn,
@@ -135,14 +136,14 @@ impl<Conn: AsyncConnection> StandardDisplay<Conn> {
     }
 }
 
-impl<Conn> DisplayBase for StandardDisplay<Conn> {
+impl<Conn> DisplayBase for BasicDisplay<Conn> {
     #[inline]
     fn setup(&self) -> &Setup {
         &self.setup
     }
 
     #[inline]
-    fn default_screen(&self) -> usize {
+    fn default_screen_index(&self) -> usize {
         self.default_screen
     }
 
@@ -183,7 +184,7 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
     }
 
     #[inline]
-    fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
         #[cfg(feature = "async")]
         self.workarounders.retain(|&r| r != req_id);
         self.pending_requests.remove(&req_id)
@@ -191,7 +192,7 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
 
     #[inline]
     fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.pending_errors.insert(req_id, error)
+        self.pending_errors.insert(req_id, error);
     }
 
     #[inline]
@@ -257,7 +258,7 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
 
     #[inline]
     fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
-        self.extensions.insert(key, opcode)
+        self.extensions.insert(key, opcode);
     }
 
     #[inline]
@@ -271,11 +272,11 @@ impl<Conn> DisplayBase for StandardDisplay<Conn> {
     }
 }
 
-impl<Connect: Connection> Display for StandardDisplay<Connect> {
-    type Conn = Connect;
+impl<'a, Connect: Connection + 'a> Display<'a> for BasicDisplay<Connect> {
+    type Conn = &'a mut Connect;
 
     #[inline]
-    fn connection(&mut self) -> &mut Connect {
+    fn connection(&'a mut self) -> &'a mut Connect {
         self.connection.as_mut().expect("Connection was poisoned")
     }
 
@@ -288,7 +289,7 @@ impl<Connect: Connection> Display for StandardDisplay<Connect> {
 }
 
 #[cfg(feature = "async")]
-impl<Connect: AsyncConnection + Unpin> AsyncDisplay for StandardDisplay<Connect> {
+impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
     type Conn = Connect;
 
     #[inline]

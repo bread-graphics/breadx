@@ -15,7 +15,6 @@ use crate::{
     },
     error::BreadError,
     event::Event,
-    util::cycled_zeroes,
     xid::XidGenerator,
     Fd, Request, XID,
 };
@@ -32,10 +31,13 @@ mod cell;
 mod connection;
 pub mod traits;
 
+// "traits" contains some important types.
+pub use traits::{GcParameters, KeyboardMapping, WindowParameters};
+
 pub use basic::*;
 pub use cell::*;
 pub use connection::*;
-pub use functions::*;
+//pub use ::*;
 
 #[cfg(feature = "async")]
 mod futures;
@@ -79,7 +81,7 @@ pub trait DisplayBase {
     fn setup(&self) -> &Setup;
 
     /// Get the default screen index.
-    fn default_screen(&self) -> usize;
+    fn default_screen_index(&self) -> usize;
 
     /// Generate the next request number to be used to define a request.
     fn next_request_number(&mut self) -> u64;
@@ -100,7 +102,7 @@ pub trait DisplayBase {
     fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest>;
 
     /// Remove a pending request from this display.
-    fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest>;
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest>;
 
     /// Add a pending error to this display.
     fn add_pending_error(&mut self, req_id: u16, error: BreadError);
@@ -155,7 +157,7 @@ pub trait DisplayBase {
     /// Get the default screen in this display.
     #[inline]
     fn default_screen(&self) -> &Screen {
-        &self.setup().roots[self.default_screen()]
+        &self.setup().roots[self.default_screen_index()]
     }
 
     /// Get the default pixel used for the white color.
@@ -214,6 +216,7 @@ pub trait DisplayBase {
     }
 }
 
+// So references to a Display can be used as a Display
 impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     #[inline]
     fn setup(&self) -> &Setup {
@@ -221,8 +224,8 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     }
 
     #[inline]
-    fn default_screen(&self) -> usize {
-        (**self).default_screen()
+    fn default_screen_index(&self) -> usize {
+        (**self).default_screen_index()
     }
 
     #[inline]
@@ -256,8 +259,8 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     }
 
     #[inline]
-    fn remove_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
-        (**self).remove_pending_request(req_id)
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        (**self).take_pending_request(req_id)
     }
 
     #[inline]
@@ -332,12 +335,19 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 }
 
 /// A wrapper around a synchronous connection to the X11 server.
-pub trait Display: DisplayBase {
-    /// The connection used in our display.    
-    type Conn: Connection;
+///
+/// The lifetime is used to parameterize references to the connection. Because of Rust Lifetime Madness!™, we
+/// have to be able to do this.
+pub trait Display<'a>: DisplayBase {
+    /// The connection used in our display. This takes the form of a reference to the connection in most cases.
+    type Conn: Connection + 'a;
 
     /// Get the connection.
-    fn connection(&mut self) -> &mut Self::Conn;
+    // Time for some Rust Lifetime Madness!™. Originally, this returned an "&mut Self::Conn". However, this
+    // didn't work for the CellDisplay and SyncDisplay types, who need to be able to return an &Self::Conn, and
+    // the semantics of returning an &mut &Self::Conn aren't possible on a computer. Therefore, Conn for &mut
+    // types is &mut, and Conn for & types is &.
+    fn connection(&'a mut self) -> Self::Conn;
 
     /// Lock the connection. This exists as an I/O lock so that multithreaded users don't step on each
     /// other's toes.
@@ -348,19 +358,19 @@ pub trait Display: DisplayBase {
 
     /// Wait for something to happen on the connection.
     #[inline]
-    fn wait(&mut self) -> crate::Result {
+    fn wait(&'a mut self) -> crate::Result {
         input::wait(self)
     }
 
     /// Send a request across the connection, given the monomorphized request info.
     #[inline]
-    fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16> {
+    fn send_request_raw(&'a mut self, request_info: RequestInfo) -> crate::Result<u16> {
         output::send_request(self, request_info)
     }
 
     /// Synchronize this display, ensuring that all data sent across it has been replied to.
     #[inline]
-    fn synchronize(&mut self) -> crate::Result {
+    fn synchronize(&'a mut self) -> crate::Result {
         log::debug!("Synchronizing display");
         let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
         gifr.discard_reply = true;
@@ -378,7 +388,7 @@ pub trait Display: DisplayBase {
     /// Resolve for a request, returning only the raw data of the reply. The default implementation assumes that
     /// the reply is not zero-sized.
     #[inline]
-    fn resolve_request_raw(&mut self, req_id: u16) -> crate::Result<PendingReply> {
+    fn resolve_request_raw(&'a mut self, req_id: u16) -> crate::Result<PendingReply> {
         loop {
             match self.take_pending_reply(req_id) {
                 Some(p) => break Ok(p),
@@ -389,7 +399,7 @@ pub trait Display: DisplayBase {
 
     /// Wait for an event to be sent from the X server.
     #[inline]
-    fn wait_for_event(&mut self) -> crate::Result<Event> {
+    fn wait_for_event(&'a mut self) -> crate::Result<Event> {
         loop {
             match self.pop_event() {
                 Some(e) => break Ok(e),
@@ -400,7 +410,7 @@ pub trait Display: DisplayBase {
 
     /// Wait for a special event to be sent from the X server.
     #[inline]
-    fn wait_for_special_event(&mut self, xid: XID) -> crate::Result<Event> {
+    fn wait_for_special_event(&'a mut self, xid: XID) -> crate::Result<Event> {
         loop {
             match self.pop_special_event(xid) {
                 Some(e) => break Ok(e),
@@ -410,11 +420,11 @@ pub trait Display: DisplayBase {
     }
 }
 
-impl<D: Display + ?Sized> Display for &mut D {
+impl<'a, D: Display<'a> + ?Sized> Display<'a> for &mut D {
     type Conn = D::Conn;
 
     #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
+    fn connection(&'a mut self) -> Self::Conn {
         (**self).connection()
     }
 
@@ -432,12 +442,6 @@ impl<D: Display + ?Sized> Display for &mut D {
 /// A wrapper around an asynchronous connection to the X server.
 #[cfg(feature = "async")]
 pub trait AsyncDisplay {
-    /// The connection used in our display.
-    type Conn: AsyncConnection;
-
-    /// Get the inner connection.
-    fn connection(&mut self) -> &mut Self::Conn;
-
     /// Poll the current status of waiting for more input. There is no default implementation; the buffering
     /// strategy depends on the implementor. If this is called after a Poll::Ready is returned, it is assumed
     /// that the user wants to wait again.
@@ -453,13 +457,6 @@ pub trait AsyncDisplay {
 
 #[cfg(feature = "async")]
 impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
-    type Conn = D::Conn;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        (**self).connection()
-    }
-
     #[inline]
     fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
         (**self).poll_wait(cx)
@@ -477,18 +474,21 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
 }
 
 /// Monomorphized methods we can't put into the `Display` trait proper.
-pub trait DisplayExt {
+pub trait DisplayExt<'a> {
     /// Send a request to the server.
-    fn send_request<R: Request>(&mut self, request: R) -> crate::Result<RequestCookie<R>>;
+    fn send_request<R: Request>(&'a mut self, request: R) -> crate::Result<RequestCookie<R>>;
 
     /// Resolve a request that we sent to the server.
-    fn resolve_request<R: Request>(&mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
+    fn resolve_request<R: Request>(
+        &'a mut self,
+        token: RequestCookie<R>,
+    ) -> crate::Result<R::Reply>
     where
         R::Reply: Default;
 
     /// Send a request to the server and immediately resolve for its reply.
     #[inline]
-    fn exchange_request<R: Request>(&mut self, request: R) -> crate::Result<R::Reply>
+    fn exchange_request<R: Request>(&'a mut self, request: R) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {
@@ -497,16 +497,16 @@ pub trait DisplayExt {
     }
 }
 
-impl<D: Display + ?Sized> DisplayExt for D {
+impl<'a, D: Display<'a> + ?Sized> DisplayExt<'a> for D {
     #[inline]
-    fn send_request<R: Request>(&mut self, request: R) -> crate::Result<RequestCookie<R>> {
+    fn send_request<R: Request>(&'a mut self, request: R) -> crate::Result<RequestCookie<R>> {
         let r = RequestInfo::from_request(request);
-        let req_id = self.send_request_raw(r, false)?;
-        Ok(RequestCookie::from_request(req_id))
+        let req_id = self.send_request_raw(r)?;
+        Ok(RequestCookie::from_sequence(req_id))
     }
 
     #[inline]
-    fn resolve_request<R: Request>(&mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
+    fn resolve_request<R: Request>(&'a mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {
@@ -514,15 +514,15 @@ impl<D: Display + ?Sized> DisplayExt for D {
             if self.checked() {
                 self.synchronize()?;
                 let seq = token.sequence();
-                self.remove_pending_request(seq);
-                self.check_for_pending_error()?;
+                self.take_pending_request(seq);
+                self.check_for_pending_error(seq)?;
             }
 
             return Ok(Default::default());
         }
 
         let PendingReply { data, fds } = self.resolve_request_raw(token.sequence())?;
-        decode_reply(&data, fds)
+        decode_reply::<R>(&data, fds)
     }
 }
 
@@ -640,6 +640,7 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RequestInfo {
     pub(crate) data: TinyVec<[u8; 32]>,
+    pub(crate) fds: Vec<Fd>,
     pub(crate) zero_sized_reply: bool,
     pub(crate) opcode: u8,
     pub(crate) extension: Option<&'static str>,
@@ -651,10 +652,10 @@ pub struct RequestInfo {
 impl RequestInfo {
     /// Generate a `RequestInfo` given a specific `Request` to generate from.
     #[inline]
-    pub fn from_request<R: Request>(req: R) -> Self {
+    pub fn from_request<R: Request>(mut req: R) -> Self {
         // TODO: somehow write using uninitialzied data
         let mut data = iter::repeat(0)
-            .take(r.size())
+            .take(req.size())
             .collect::<TinyVec<[u8; 32]>>();
         let mut len = req.as_bytes(&mut data);
 
@@ -671,7 +672,11 @@ impl RequestInfo {
 
         RequestInfo {
             data,
-            zero_sized_reply: mem::size_of::<R::Reply> == 0,
+            fds: match req.file_descriptors() {
+                Some(fd) => mem::take(fd),
+                None => Vec::new(),
+            },
+            zero_sized_reply: mem::size_of::<R::Reply>() == 0,
             opcode: R::OPCODE,
             extension: R::EXTENSION,
             expects_fds: R::REPLY_EXPECTS_FDS,
@@ -721,25 +726,9 @@ impl<R: Request> RequestCookie<R> {
     }
 }
 
-impl<Conn: fmt::Debug> fmt::Debug for Display<Conn> {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Display")
-            .field("connection", &self.connection)
-            .field("setup", &self.setup)
-            .field("xid", &self.xid)
-            .field("default_screen", &self.default_screen)
-            .field("event_queue", &self.event_queue)
-            .field("pending_requests", &self.pending_requests)
-            .field("pending_replies", &self.pending_replies)
-            .field("request_number", &self.request_number)
-            .finish()
-    }
-}
-
 #[derive(Debug, Default, Clone)]
 pub struct PendingRequest {
-    pub request: u64,
+    pub request: u16,
     pub flags: PendingRequestFlags,
 }
 
@@ -778,7 +767,7 @@ pub(crate) fn decode_reply<R: Request>(reply: &[u8], fds: Box<[Fd]>) -> crate::R
 }
 
 #[inline]
-pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut self) -> crate::Result<XID> {
+pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut D) -> crate::Result<XID> {
     display
         .generate_xid()
         .ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))

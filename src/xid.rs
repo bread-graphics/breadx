@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::auto;
+use crate::auto;
 use core::cell::Cell;
 
 /// An X11 ID.
@@ -111,7 +111,7 @@ impl From<XidGenerator> for CellXidGenerator {
     }
 }
 
-impl XidGenerator {
+impl CellXidGenerator {
     #[inline]
     pub const fn new(base: XID, mask: XID) -> Self {
         Self {
@@ -124,7 +124,7 @@ impl XidGenerator {
     }
 
     #[inline]
-    pub const fn eval_in_place(&self) -> XID {
+    pub fn eval_in_place(&self) -> XID {
         self.last.get() | self.base
     }
 

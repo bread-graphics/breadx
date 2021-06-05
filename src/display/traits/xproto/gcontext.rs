@@ -6,7 +6,8 @@ use crate::{
         PolyArcRequest, PolyFillArcRequest, PolyFillRectangleRequest, PolyRectangleRequest,
         PolySegmentRequest, PolyShape, Rectangle, Segment,
     },
-    sr_request, Connection, Display, GcParameters,
+    display::prelude::*,
+    Connection, Display, GcParameters,
 };
 
 #[cfg(feature = "async")]
@@ -29,7 +30,7 @@ impl Gcontext {
 
     /// Change the properties of this GC.
     #[inline]
-    pub fn change<Dpy: Display + ?Sized>(
+    pub fn change<'a, Dpy: Display<'a> + ?Sized>(
         self,
         dpy: &mut Dpy,
         params: GcParameters,
@@ -61,7 +62,7 @@ impl Gcontext {
 
     /// Draw a set of lines.
     #[inline]
-    pub fn draw_lines<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_lines<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -94,7 +95,7 @@ impl Gcontext {
 
     /// Draw a singular line.
     #[inline]
-    pub fn draw_line<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_line<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -135,7 +136,7 @@ impl Gcontext {
 
     /// Draw one or more rectangles to the screen.
     #[inline]
-    pub fn draw_rectangles<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_rectangles<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -168,7 +169,7 @@ impl Gcontext {
 
     /// Draw a rectangle to the screen.
     #[inline]
-    pub fn draw_rectangle<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_rectangle<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -205,7 +206,7 @@ impl Gcontext {
 
     /// Draw one or more arcs to the screen.
     #[inline]
-    pub fn draw_arcs<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arcs<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -237,7 +238,7 @@ impl Gcontext {
 
     /// Draw an arc to the screen.
     #[inline]
-    pub fn draw_arc<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arc<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -282,7 +283,7 @@ impl Gcontext {
 
     /// Fill a polygon specified by the given points.
     #[inline]
-    pub fn fill_polygon<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_polygon<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -336,7 +337,7 @@ impl Gcontext {
 
     /// Fill a set of one or more rectangles.
     #[inline]
-    pub fn fill_rectangles<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_rectangles<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -369,7 +370,7 @@ impl Gcontext {
 
     /// Fill a single rectangle.
     #[inline]
-    pub fn fill_rectangle<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_rectangle<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -406,7 +407,7 @@ impl Gcontext {
 
     /// Fill a set of one or more arcs.
     #[inline]
-    pub fn fill_arcs<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_arcs<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -439,7 +440,7 @@ impl Gcontext {
 
     /// Fill an arc.
     #[inline]
-    pub fn fill_arc<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_arc<'a, Dpy: Display<'a> + ?Sized, Target: Into<Drawable>>(
         self,
         dpy: &mut Dpy,
         target: Target,
@@ -466,7 +467,7 @@ impl Gcontext {
     /// Free the memory this GC allocates. Note that this will cause future requests involving this GC
     /// to fail.
     #[inline]
-    pub fn free<Dpy>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(FreeGcRequest {
             gc: self,
             ..Default::default()

@@ -2,8 +2,7 @@
 
 use crate::{
     auto::xproto::{Cursor, FreeCursorRequest},
-    display::{Connection, Display},
-    sr_request,
+    display::{prelude::*, Connection, Display},
 };
 
 #[cfg(feature = "async")]
@@ -11,7 +10,7 @@ use crate::display::AsyncDisplay;
 
 impl Cursor {
     #[inline]
-    pub fn free<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(FreeCursorRequest {
             cursor: self,
             ..Default::default()

@@ -1,9 +1,10 @@
 // MIT/Apache2 License
 
 use super::{
-    input, Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE,
+    input, Connection, Display, DisplayBase, DisplayExt, PendingRequest, PendingRequestFlags,
+    RequestCookie, RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
 };
-use crate::{util::cycled_zeroes, Fd, Request};
+use crate::{auto::xproto::QueryExtensionRequest, Fd, Request};
 use alloc::{string::ToString, vec, vec::Vec};
 use core::{iter, mem};
 use tinyvec::TinyVec;
@@ -14,8 +15,8 @@ use super::AsyncConnection;
 #[inline]
 pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
     display: &mut D,
-    mut pr: PendingRequest,
-) -> PendingRequest {
+    mut pr: RequestInfo,
+) -> RequestInfo {
     let sequence = display.next_request_number();
     // truncate to u16
     let sequence = sequence as u16;
@@ -27,7 +28,7 @@ pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
 #[inline]
 pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
     display: &mut D,
-    pr: PendingRequest,
+    pr: RequestInfo,
 ) -> crate::Result<u16> {
     // data has already been sent over the bandwaves, make sure we acknowledge it
     let mut flags = PendingRequestFlags {
@@ -63,7 +64,7 @@ pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
 }
 
 #[inline]
-pub(crate) fn modify_for_opcode(data: &mut [u8], request_opcode: u8, ext_opcode: Option<u8>) {
+pub(crate) fn modify_for_opcode(bytes: &mut [u8], request_opcode: u8, ext_opcode: Option<u8>) {
     match ext_opcode {
         None => {
             // First byte is opcode
@@ -74,14 +75,14 @@ pub(crate) fn modify_for_opcode(data: &mut [u8], request_opcode: u8, ext_opcode:
             // First byte is extension opcode
             // Second byte is regular opcode
             bytes[0] = extension;
-            bytes[1] = R::OPCODE;
+            bytes[1] = request_opcode;
         }
     }
 }
 
 #[inline]
-pub(crate) fn send_request<D: Display + ?Sized>(
-    display: &mut D,
+pub(crate) fn send_request<'a, D: Display<'a> + ?Sized>(
+    display: &'a mut D,
     request_info: RequestInfo,
 ) -> crate::Result<u16> {
     let mut req = preprocess_request(display, request_info);
@@ -89,11 +90,11 @@ pub(crate) fn send_request<D: Display + ?Sized>(
     let ext_opcode = match request_info.extension {
         None => None,
         Some(extension) => {
-            let key = output::str_to_key(extension);
+            let key = str_to_key(extension);
             match display.get_extension_opcode(&key) {
                 Some(opcode) => Some(opcode),
                 None => {
-                    let opcode = get_ext_opcode(display, extension);
+                    let opcode = get_ext_opcode(display, extension)?;
                     display.set_extension_opcode(key, opcode);
                     Some(opcode)
                 }
@@ -110,11 +111,11 @@ pub(crate) fn send_request<D: Display + ?Sized>(
     display.connection().send_packet(&req.data, &mut fds)?;
     display.unlock();
 
-    finish_request(self, req)
+    finish_request(display, req)
 }
 
 #[inline]
-pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
+pub(crate) fn get_ext_opcode<'a, D: Display<'a> + ?Sized>(
     display: &mut D,
     extension: &'static str,
 ) -> crate::Result<u8> {
@@ -122,7 +123,7 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
         name: extension.to_string(),
         ..Default::default()
     };
-    let tok = display.send_request(req)?;
+    let tok = display.send_request(qer)?;
     let repl = display.resolve_request(tok)?;
 
     if !repl.present {
@@ -132,7 +133,7 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
     let key = str_to_key(extension);
     display.set_extension_opcode(key, repl.major_opcode);
     // TODO: first_event, first_error
-    Ok(())
+    Ok(repl.major_opcode)
 }
 
 #[inline]

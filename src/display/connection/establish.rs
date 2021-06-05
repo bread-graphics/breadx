@@ -3,10 +3,14 @@
 use super::Connection;
 use crate::{
     auth_info::AuthInfo,
-    auto::xproto::{Setup, SetupRequest},
+    auto::{
+        xproto::{Setup, SetupRequest},
+        AsByteSequence,
+    },
     xid::XidGenerator,
     Fd,
 };
+use alloc::vec::Vec;
 use core::iter;
 use tinyvec::TinyVec;
 
@@ -43,17 +47,17 @@ pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest {
 }
 
 #[inline]
-pub(crate) fn establish_connection<C: Connection>(
+pub(crate) fn establish_connection<C: Connection + ?Sized>(
     conn: &mut C,
     auth_info: Option<AuthInfo>,
 ) -> crate::Result<(Setup, XidGenerator)> {
-    let setup = create_setup(match auth {
+    let setup = create_setup(match auth_info {
         Some(auth) => auth,
         None => AuthInfo::get(),
     });
 
     // write setup request
-    let mut _fds: Vec<Fd> = vec![];
+    let mut _fds: Vec<Fd> = Vec::new();
     let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(setup.size()).collect();
     let len = setup.as_bytes(&mut bytes);
 

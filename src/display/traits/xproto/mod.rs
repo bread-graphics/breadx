@@ -15,8 +15,7 @@ use crate::{
         ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
         SubwindowMode, Timestamp, Visualid, Window, WindowClass,
     },
-    display::{Display, RequestCookie},
-    send_request, sr_request,
+    display::{generate_xid, Display, RequestCookie},
     util::BoxedFnOnce,
     Event, Extension,
 };
@@ -394,7 +393,7 @@ fn create_colormap_request(
     }
 }
 
-pub trait DisplayXprotoExt: Display {
+pub trait DisplayXprotoExt<'a>: Display<'a> {
     /// Query for extension information.
     #[inline]
     fn query_extension(
@@ -411,11 +410,11 @@ pub trait DisplayXprotoExt: Display {
     /// returned when the extension is not found.
     #[inline]
     fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
-        let qer = self.exchange_reuqest(QueryExtensionRequest {
+        let qer = self.exchange_request(QueryExtensionRequest {
             name: name.clone(),
             ..Default::default()
         })?;
-        Ok(Extension::from_reply(qer))
+        Extension::from_reply(qer)
     }
 
     /// Create a new window.
@@ -448,7 +447,7 @@ pub trait DisplayXprotoExt: Display {
             props,
         );
 
-        send.exchange_request(cw)?;
+        self.exchange_request(cw)?;
         Ok(wid)
     }
 
@@ -520,7 +519,7 @@ pub trait DisplayXprotoExt: Display {
 
     #[inline]
     fn bell(&mut self, percent: i8) -> crate::Result {
-        self.sr_request(BellRequest {
+        self.exchange_request(BellRequest {
             percent,
             ..Default::default()
         })
@@ -528,7 +527,7 @@ pub trait DisplayXprotoExt: Display {
 
     #[inline]
     fn set_access_control(&mut self, mode: AccessControl) -> crate::Result {
-        self.sr_request(SetAccessControlRequest {
+        self.exchange_request(SetAccessControlRequest {
             mode,
             ..Default::default()
         })
@@ -615,7 +614,7 @@ pub trait DisplayXprotoExt: Display {
         alloc: ColormapAlloc,
     ) -> crate::Result<Colormap> {
         let cid = Colormap::const_from_xid(generate_xid(self)?);
-        sr_request!(self, create_colormap_request(alloc, cid, window, visual))?;
+        self.exchange_request(create_colormap_request(alloc, cid, window, visual))?;
         Ok(cid)
     }
 
@@ -655,7 +654,7 @@ pub trait DisplayXprotoExt: Display {
     }
 }
 
-impl<D: Display + ?Sized> DisplayXprotoExt for D {}
+impl<'a, D: Display<'a> + ?Sized> DisplayXprotoExt<'a> for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayXprotoExt: AsyncDisplay {

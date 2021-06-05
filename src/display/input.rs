@@ -1,7 +1,10 @@
 // MIT/Apache2 License
 
-use super::{Connection, DisplayBase, PendingRequest, PendingRequestFlags, RequestWorkaround};
-use crate::{event::Event, util::cycled_zeroes, Fd, XID};
+use super::{
+    Connection, Display, DisplayBase, PendingReply, PendingRequest, PendingRequestFlags,
+    RequestWorkaround,
+};
+use crate::{event::Event, Fd, XID};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
@@ -157,10 +160,10 @@ pub(crate) fn expect_reply<D: DisplayBase + ?Sized>(
 
 /// Wait for bytes to appear on a synchronous connection.
 #[inline]
-pub(crate) fn wait<D: Display + ?Sized>(display: &mut D) -> crate::Result {
+pub(crate) fn wait<'a, D: Display<'a> + ?Sized>(display: &'a mut D) -> crate::Result {
     log::debug!("Running wait cycle");
     // replies, errors, and events are all in units of 32 bytes
-    let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(32);
+    let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(32).collect();
     let mut fds: Vec<Fd> = vec![];
     display.lock();
     display.connection().read_packet(&mut bytes, &mut fds)?;

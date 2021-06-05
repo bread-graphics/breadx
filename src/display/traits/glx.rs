@@ -194,7 +194,7 @@ pub trait DisplayGlxExt: Display {
     }
 }
 
-impl<D: Display + ?Sized> DisplayGlxExt for D {}
+impl<'a, D: Display<'a> + ?Sized> DisplayGlxExt for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayGlxEdit: AsyncDisplay {

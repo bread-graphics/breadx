@@ -5,6 +5,7 @@
 
 use crate::{util::convert_nix_error, Fd};
 use alloc::{vec, vec::Vec};
+use core::mem;
 use nix::sys::{
     socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
     uio::IoVec,
@@ -64,14 +65,8 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
 
 /// For Unix stream types, we can use this function to send FDs.
 #[inline]
-pub fn send_packet_unix<Conn: AsRawFd + Write>(
-    conn: &mut Conn,
-    data: &[u8],
-    fds: &mut Vec<Fd>,
-) -> crate::Result {
-    let connfd = conn.as_raw_fd();
-
-    send_msg_packet(connfd, data, fds).1?;
+pub fn send_packet_unix(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
+    send_msg_packet(conn, data, fds).1?;
     Ok(())
 }
 
@@ -150,13 +145,8 @@ fn read_msg_packet(conn: RawFd, data: &mut &mut [u8], fds: &mut Vec<Fd>) -> io::
 
 /// Read a packet, unix style.
 #[inline]
-pub fn read_packet_unix<Conn: AsRawFd + Read>(
-    conn: &mut Conn,
-    mut data: &mut [u8],
-    fds: &mut Vec<Fd>,
-) -> crate::Result {
-    let connfd = conn.as_raw_fd();
-    read_msg_packet(connfd, &mut data, fds)?;
+pub fn read_packet_unix(conn: RawFd, mut data: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
+    read_msg_packet(conn, &mut data, fds)?;
     Ok(())
 }
 

@@ -126,7 +126,7 @@ pub trait DisplayPresentExt: Display {
     }
 }
 
-impl<D: Display + ?Sized> DisplayPresentExt for D {}
+impl<'a, D: Display<'a> + ?Sized> DisplayPresentExt for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayPresentExt: AsyncDisplay {
