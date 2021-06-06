@@ -246,7 +246,7 @@ pub trait DisplayDri3Ext: Display {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> DisplayDri3Ext for D {}
+impl<D: Display + ?Sized> DisplayDri3Ext for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayDri3Ext: AsyncDisplay {

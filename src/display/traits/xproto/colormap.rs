@@ -84,7 +84,7 @@ impl Colormap {
 
     /// Allocate a new color in the colormap.
     #[inline]
-    pub fn alloc_color<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn alloc_color<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         r: u16,
@@ -109,7 +109,7 @@ impl Colormap {
 
     /// Immediately allocate a new color in the colormap.
     #[inline]
-    pub fn alloc_color_immediate<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn alloc_color_immediate<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         r: u16,

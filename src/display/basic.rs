@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use super::{
-    input, name::NameConnection, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo, EXT_KEY_SIZE,
+    input, name::NameConnection, output, Connection, Display, DisplayBase, HasConnection,
+    PendingReply, PendingRequest, RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{
     auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, util::difference,
@@ -76,6 +76,11 @@ pub struct BasicDisplay<Conn> {
 }
 
 impl<Conn> BasicDisplay<Conn> {
+    #[inline]
+    fn connection(&mut self) -> &mut Conn {
+        self.connection.as_mut().expect("Connection was poisoned")
+    }
+
     #[inline]
     fn from_connection_internal(connection: Conn, default_screen: usize) -> Self {
         Self {
@@ -272,31 +277,26 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     }
 }
 
-impl<'a, Connect: Connection + 'a> Display<'a> for BasicDisplay<Connect> {
-    type Conn = &'a mut Connect;
-
+impl<Connect: Connection> Display for BasicDisplay<Connect> {
     #[inline]
-    fn connection(&'a mut self) -> &'a mut Connect {
-        self.connection.as_mut().expect("Connection was poisoned")
+    fn wait(&mut self) -> crate::Result {
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = input::wait(self, &mut conn);
+        self.connection = Some(conn);
+        res
     }
 
-    // locks mean nothing, &mut access is necessary to do anything
     #[inline]
-    fn lock(&mut self) {}
-
-    #[inline]
-    fn unlock(&mut self) {}
+    fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16> {
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = output::send_request(self, &mut conn, request_info);
+        self.connection = Some(conn);
+        res
+    }
 }
 
 #[cfg(feature = "async")]
 impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
-    type Conn = Connect;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Connect {
-        self.connection.as_mut().expect("Connection was poisoned")
-    }
-
     #[inline]
     fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
         let pr_ref = &mut self.pending_requests;

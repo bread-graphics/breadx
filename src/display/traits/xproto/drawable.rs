@@ -129,7 +129,7 @@ fn create_pixmap_request(
     }
 }
 
-pub trait DisplayDrawableExt<'a>: Display<'a> {
+pub trait DisplayDrawableExt: Display {
     /// Get the geometry of a drawable object.
     #[inline]
     fn get_drawable_geometry<Target: Into<Drawable>>(
@@ -251,12 +251,15 @@ pub trait DisplayDrawableExt<'a>: Display<'a> {
             width,
             height,
         );
-        let toks = reqs
-            .into_iter()
-            .map(|r| self.send_request(r))
-            .collect::<crate::Result<Vec<_>>>()?;
 
-        toks.into_iter().try_for_each(|t| self.resolve_request(t))
+        let mut toks = Vec::with_capacity(reqs.len());
+        for req in reqs {
+            toks.push(self.send_request(req)?);
+        }
+        for tok in toks {
+            self.resolve_request(tok)?;
+        }
+        Ok(())
     }
 
     /// Create a pixmap from an image.
@@ -286,7 +289,7 @@ pub trait DisplayDrawableExt<'a>: Display<'a> {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> DisplayDrawableExt<'a> for D {}
+impl<D: Display + ?Sized> DisplayDrawableExt for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayDrawableExt: AsyncDisplay {

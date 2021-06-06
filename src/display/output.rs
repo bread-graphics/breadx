@@ -28,7 +28,7 @@ pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
 #[inline]
 pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
     display: &mut D,
-    pr: RequestInfo,
+    mut pr: RequestInfo,
 ) -> crate::Result<u16> {
     // data has already been sent over the bandwaves, make sure we acknowledge it
     let mut flags = PendingRequestFlags {
@@ -81,13 +81,14 @@ pub(crate) fn modify_for_opcode(bytes: &mut [u8], request_opcode: u8, ext_opcode
 }
 
 #[inline]
-pub(crate) fn send_request<'a, D: Display<'a> + ?Sized>(
-    display: &'a mut D,
+pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
+    display: &mut D,
+    connection: &mut C,
     request_info: RequestInfo,
 ) -> crate::Result<u16> {
     let mut req = preprocess_request(display, request_info);
     // figure out the extension opcode
-    let ext_opcode = match request_info.extension {
+    let ext_opcode = match req.extension {
         None => None,
         Some(extension) => {
             let key = str_to_key(extension);
@@ -107,15 +108,13 @@ pub(crate) fn send_request<'a, D: Display<'a> + ?Sized>(
 
     // send the packet
     let mut fds = mem::take(&mut req.fds);
-    display.lock();
-    display.connection().send_packet(&req.data, &mut fds)?;
-    display.unlock();
+    connection.send_packet(&req.data, &mut fds)?;
 
     finish_request(display, req)
 }
 
 #[inline]
-pub(crate) fn get_ext_opcode<'a, D: Display<'a> + ?Sized>(
+pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
     display: &mut D,
     extension: &'static str,
 ) -> crate::Result<u8> {

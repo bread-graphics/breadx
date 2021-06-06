@@ -88,12 +88,12 @@ impl<C: AsyncConnection + ?Sized> AsyncConnection for &mut C {
 /// Extension trait for `AsyncConnection` that provides futures.
 pub trait AsyncConnectionExt {
     fn read_packet_async<'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b [u8],
         fds: &'c mut Vec<Fd>,
     ) -> ReadPacketFuture<'a, 'b, 'c, Self>;
     fn send_packet_async<'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> SendPacketFuture<'a, 'b, 'c, Self>;
@@ -102,7 +102,7 @@ pub trait AsyncConnectionExt {
 impl<C: AsyncConnection + ?Sized> AsyncConnectionExt for C {
     #[inline]
     fn read_packet_async<'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b [u8],
         fds: &'c mut Vec<Fd>,
     ) -> ReadPacketFuture<'a, 'b, 'c, Self> {
@@ -110,7 +110,7 @@ impl<C: AsyncConnection + ?Sized> AsyncConnectionExt for C {
     }
     #[inline]
     fn send_packet_async<'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> SendPacketFuture<'a, 'b, 'c, Self> {

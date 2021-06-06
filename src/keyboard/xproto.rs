@@ -20,9 +20,7 @@ pub struct XprotoKeymap {
 
 impl XprotoKeymap {
     #[inline]
-    pub(crate) fn init_from<'a, Dpy: Display<'a> + ?Sized>(
-        display: &mut Dpy,
-    ) -> crate::Result<Self> {
+    pub(crate) fn init_from<Dpy: Display + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
         let keyboard_tok = display.get_keyboard_mapping()?;
         let keyboard_map: KeyboardMapping = display.resolve_request(keyboard_tok)?.into();
 

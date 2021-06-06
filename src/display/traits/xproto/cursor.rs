@@ -10,7 +10,7 @@ use crate::display::AsyncDisplay;
 
 impl Cursor {
     #[inline]
-    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(FreeCursorRequest {
             cursor: self,
             ..Default::default()

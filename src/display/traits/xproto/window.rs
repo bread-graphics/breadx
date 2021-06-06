@@ -121,7 +121,7 @@ pub struct WindowGeometry {
 impl Window {
     /// Map this window to the screen.
     #[inline]
-    pub fn map<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn map<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(MapWindowRequest {
             window: self,
             ..Default::default()
@@ -141,7 +141,7 @@ impl Window {
 
     /// Unmap this window.
     #[inline]
-    pub fn unmap<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn unmap<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(UnmapWindowRequest {
             window: self,
             ..Default::default()
@@ -194,7 +194,7 @@ impl Window {
 
     /// Change a property of the window, given an atom that identifies that property.
     #[inline]
-    pub fn change_property<'a, Dpy: Display<'a> + ?Sized, T: AsByteSequence>(
+    pub fn change_property<Dpy: Display + ?Sized, T: AsByteSequence>(
         self,
         dpy: &mut Dpy,
         property: Atom,
@@ -236,7 +236,7 @@ impl Window {
 
     /// Delete a property of this window.
     #[inline]
-    pub fn delete_property<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn delete_property<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         property: Atom,
@@ -266,7 +266,7 @@ impl Window {
 
     /// Set the protocols for the WM in regards to this window.
     #[inline]
-    pub fn set_wm_protocols<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn set_wm_protocols<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         protocols: &[Atom],
@@ -316,11 +316,7 @@ impl Window {
 
     /// Set the title for this window.
     #[inline]
-    pub fn set_title<'a, Dpy: Display<'a> + ?Sized>(
-        self,
-        dpy: &mut Dpy,
-        title: &str,
-    ) -> crate::Result<()> {
+    pub fn set_title<Dpy: Display + ?Sized>(self, dpy: &mut Dpy, title: &str) -> crate::Result<()> {
         self.change_property(
             dpy,
             ATOM_WM_NAME,
@@ -361,7 +357,7 @@ impl Window {
 
     /// Get the current set of window attributes for this window.
     #[inline]
-    pub fn window_attributes<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn window_attributes<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
     ) -> crate::Result<RequestCookie<GetWindowAttributesRequest>> {
@@ -381,7 +377,7 @@ impl Window {
 
     /// Immediately get the current set of window attributes for this window.
     #[inline]
-    pub fn window_attributes_immediate<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn window_attributes_immediate<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
     ) -> crate::Result<WindowAttributes> {
@@ -406,7 +402,7 @@ impl Window {
 
     /// Get the geometry of this window.
     #[inline]
-    pub fn geometry<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn geometry<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
     ) -> crate::Result<RequestCookie<GetGeometryRequest>> {
@@ -425,7 +421,7 @@ impl Window {
 
     /// Immediately get the geometry of this window.
     #[inline]
-    pub fn geometry_immediate<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn geometry_immediate<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
     ) -> crate::Result<DrawableGeometry> {
@@ -457,7 +453,7 @@ impl Window {
 
     /// Change the properties of this window.
     #[inline]
-    pub fn change_attributes<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn change_attributes<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         props: WindowParameters,
@@ -479,7 +475,7 @@ impl Window {
 
     /// Set this window's background color.
     #[inline]
-    pub fn set_background_color<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn set_background_color<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         clr: u32,
@@ -518,7 +514,7 @@ impl Window {
 
     /// Configure the window's physical properties.
     #[inline]
-    pub fn configure<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn configure<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         props: ConfigureWindowParameters,
@@ -540,7 +536,7 @@ impl Window {
 
     /// Set the border of this window.
     #[inline]
-    pub fn set_border_width<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn set_border_width<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         width: u32,
@@ -569,7 +565,7 @@ impl Window {
 
     /// Change the colormap associated with this window.
     #[inline]
-    pub fn set_colormap<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn set_colormap<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         colormap: Colormap,
@@ -604,7 +600,7 @@ impl Window {
     }
 
     #[inline]
-    pub fn change_save_set<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn change_save_set<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         mode: SetMode,
@@ -625,7 +621,7 @@ impl Window {
 
     /// Resize the window.
     #[inline]
-    pub fn resize<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn resize<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         width: u32,
@@ -656,7 +652,7 @@ impl Window {
 
     /// Move and resize the window.
     #[inline]
-    pub fn move_resize<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn move_resize<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         x: i32,
@@ -705,7 +701,7 @@ impl Window {
     }
 
     #[inline]
-    pub fn circulate<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn circulate<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         direction: Circulate,
@@ -747,7 +743,7 @@ impl Window {
 
     /// Clear an area of the window.
     #[inline]
-    pub fn clear_area<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn clear_area<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         x: i16,
@@ -777,7 +773,7 @@ impl Window {
 
     /// Clear the entire window.
     #[inline]
-    pub fn clear<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn clear<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         self.clear_area(dpy, 0, 0, 0, 0, false) // means: clear the whole dang thing
     }
 
@@ -807,7 +803,7 @@ impl Window {
     }
 
     #[inline]
-    pub fn convert_selection<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn convert_selection<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         selection: Atom,
@@ -836,11 +832,7 @@ impl Window {
 
     /// Set the cursor used by this window.
     #[inline]
-    pub fn set_cursor<'a, Dpy: Display<'a> + ?Sized>(
-        self,
-        dpy: &mut Dpy,
-        cursor: Cursor,
-    ) -> crate::Result {
+    pub fn set_cursor<Dpy: Display + ?Sized>(self, dpy: &mut Dpy, cursor: Cursor) -> crate::Result {
         let props = WindowParameters {
             cursor: Some(cursor),
             ..Default::default()
@@ -865,7 +857,7 @@ impl Window {
 
     /// Destroy this window's subwindows.
     #[inline]
-    pub fn destroy_subwindows<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn destroy_subwindows<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(DestroySubwindowsRequest {
             window: self,
             ..Default::default()
@@ -888,7 +880,7 @@ impl Window {
 
     /// Free this window.
     #[inline]
-    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(DestroyWindowRequest {
             window: self,
             ..Default::default()
@@ -908,7 +900,7 @@ impl Window {
 
     /// Set the event mask.
     #[inline]
-    pub fn set_event_mask<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn set_event_mask<Dpy: Display + ?Sized>(
         self,
         dpy: &mut Dpy,
         em: EventMask,

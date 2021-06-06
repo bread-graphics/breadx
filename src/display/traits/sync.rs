@@ -27,7 +27,7 @@ pub trait DisplaySyncExt: Display {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> DisplaySyncExt for D {}
+impl<D: Display + ?Sized> DisplaySyncExt for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplaySyncExt: AsyncDisplay {

@@ -37,7 +37,6 @@ pub use traits::{GcParameters, KeyboardMapping, WindowParameters};
 pub use basic::*;
 pub use cell::*;
 pub use connection::*;
-//pub use ::*;
 
 #[cfg(feature = "async")]
 mod futures;
@@ -335,42 +334,18 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 }
 
 /// A wrapper around a synchronous connection to the X11 server.
-///
-/// The lifetime is used to parameterize references to the connection. Because of Rust Lifetime Madness!™, we
-/// have to be able to do this.
-pub trait Display<'a>: DisplayBase {
-    /// The connection used in our display. This takes the form of a reference to the connection in most cases.
-    type Conn: Connection + 'a;
-
-    /// Get the connection.
-    // Time for some Rust Lifetime Madness!™. Originally, this returned an "&mut Self::Conn". However, this
-    // didn't work for the CellDisplay and SyncDisplay types, who need to be able to return an &Self::Conn, and
-    // the semantics of returning an &mut &Self::Conn aren't possible on a computer. Therefore, Conn for &mut
-    // types is &mut, and Conn for & types is &.
-    fn connection(&'a mut self) -> Self::Conn;
-
-    /// Lock the connection. This exists as an I/O lock so that multithreaded users don't step on each
-    /// other's toes.
-    fn lock(&mut self);
-
-    /// Unlock the connection.
-    fn unlock(&mut self);
-
+pub trait Display: DisplayBase {
     /// Wait for something to happen on the connection.
     #[inline]
-    fn wait(&'a mut self) -> crate::Result {
-        input::wait(self)
-    }
+    fn wait(&mut self) -> crate::Result;
 
     /// Send a request across the connection, given the monomorphized request info.
     #[inline]
-    fn send_request_raw(&'a mut self, request_info: RequestInfo) -> crate::Result<u16> {
-        output::send_request(self, request_info)
-    }
+    fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16>;
 
     /// Synchronize this display, ensuring that all data sent across it has been replied to.
     #[inline]
-    fn synchronize(&'a mut self) -> crate::Result {
+    fn synchronize(&mut self) -> crate::Result {
         log::debug!("Synchronizing display");
         let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
         gifr.discard_reply = true;
@@ -388,7 +363,7 @@ pub trait Display<'a>: DisplayBase {
     /// Resolve for a request, returning only the raw data of the reply. The default implementation assumes that
     /// the reply is not zero-sized.
     #[inline]
-    fn resolve_request_raw(&'a mut self, req_id: u16) -> crate::Result<PendingReply> {
+    fn resolve_request_raw(&mut self, req_id: u16) -> crate::Result<PendingReply> {
         loop {
             match self.take_pending_reply(req_id) {
                 Some(p) => break Ok(p),
@@ -399,7 +374,7 @@ pub trait Display<'a>: DisplayBase {
 
     /// Wait for an event to be sent from the X server.
     #[inline]
-    fn wait_for_event(&'a mut self) -> crate::Result<Event> {
+    fn wait_for_event(&mut self) -> crate::Result<Event> {
         loop {
             match self.pop_event() {
                 Some(e) => break Ok(e),
@@ -410,7 +385,7 @@ pub trait Display<'a>: DisplayBase {
 
     /// Wait for a special event to be sent from the X server.
     #[inline]
-    fn wait_for_special_event(&'a mut self, xid: XID) -> crate::Result<Event> {
+    fn wait_for_special_event(&mut self, xid: XID) -> crate::Result<Event> {
         loop {
             match self.pop_special_event(xid) {
                 Some(e) => break Ok(e),
@@ -420,22 +395,15 @@ pub trait Display<'a>: DisplayBase {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> Display<'a> for &mut D {
-    type Conn = D::Conn;
-
+impl<D: Display + ?Sized> Display for &mut D {
     #[inline]
-    fn connection(&'a mut self) -> Self::Conn {
-        (**self).connection()
+    fn wait(&mut self) -> crate::Result {
+        (**self).wait()
     }
 
     #[inline]
-    fn lock(&mut self) {
-        (**self).lock()
-    }
-
-    #[inline]
-    fn unlock(&mut self) {
-        (**self).unlock()
+    fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16> {
+        (**self).send_request_raw(request_info)
     }
 }
 
@@ -474,21 +442,18 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
 }
 
 /// Monomorphized methods we can't put into the `Display` trait proper.
-pub trait DisplayExt<'a> {
+pub trait DisplayExt {
     /// Send a request to the server.
-    fn send_request<R: Request>(&'a mut self, request: R) -> crate::Result<RequestCookie<R>>;
+    fn send_request<R: Request>(&mut self, request: R) -> crate::Result<RequestCookie<R>>;
 
     /// Resolve a request that we sent to the server.
-    fn resolve_request<R: Request>(
-        &'a mut self,
-        token: RequestCookie<R>,
-    ) -> crate::Result<R::Reply>
+    fn resolve_request<R: Request>(&mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
     where
         R::Reply: Default;
 
     /// Send a request to the server and immediately resolve for its reply.
     #[inline]
-    fn exchange_request<R: Request>(&'a mut self, request: R) -> crate::Result<R::Reply>
+    fn exchange_request<R: Request>(&mut self, request: R) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {
@@ -497,16 +462,16 @@ pub trait DisplayExt<'a> {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> DisplayExt<'a> for D {
+impl<D: Display + ?Sized> DisplayExt for D {
     #[inline]
-    fn send_request<R: Request>(&'a mut self, request: R) -> crate::Result<RequestCookie<R>> {
+    fn send_request<R: Request>(&mut self, request: R) -> crate::Result<RequestCookie<R>> {
         let r = RequestInfo::from_request(request);
         let req_id = self.send_request_raw(r)?;
         Ok(RequestCookie::from_sequence(req_id))
     }
 
     #[inline]
-    fn resolve_request<R: Request>(&'a mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
+    fn resolve_request<R: Request>(&mut self, token: RequestCookie<R>) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {
@@ -726,7 +691,7 @@ impl<R: Request> RequestCookie<R> {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct PendingRequest {
     pub request: u16,
     pub flags: PendingRequestFlags,
@@ -771,4 +736,10 @@ pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut D) -> crate::R
     display
         .generate_xid()
         .ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))
+}
+
+/// Internal use helper trait. The implementations for `input::wait` and `output::send_request` rely on
+/// `Display`s having `Connection`s. This allows those displays to be quantified.
+pub(crate) trait HasConnection<'a, C> {
+    fn connection(&'a mut self) -> C;
 }

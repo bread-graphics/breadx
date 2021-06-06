@@ -1,12 +1,14 @@
 // MIT/Apache2 License
 
 use super::{
-    BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest, EXT_KEY_SIZE,
+    input, output, BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest,
+    RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{auto::xproto::Setup, BreadError, CellXidGenerator, Event, XID};
 use alloc::collections::VecDeque;
 use core::{
     cell::{Cell, RefCell},
+    mem,
     num::{NonZeroU32, NonZeroUsize},
 };
 use hashbrown::HashMap;
@@ -283,35 +285,40 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
 }
 
-impl<'a, Connect: Connection + 'a> Display<'a> for CellDisplay<Connect> {
-    type Conn = &'a mut Connect;
-
+impl<Connect: Connection> Display for CellDisplay<Connect> {
     #[inline]
-    fn connection(&'a mut self) -> &'a mut Connect {
-        self.connection.as_mut().expect("Display has been poisoned")
-    }
+    fn wait(&mut self) -> crate::Result {
+        self.lock_internal();
+        let mut connection = self
+            .connection
+            .take()
+            .expect("Poisoned!");
 
-    // we do have to worry about locking, even with &mut, since someone can later pull up an & access
-    #[inline]
-    fn lock(&mut self) {
-        self.lock_internal()
-    }
+        let res = input::wait(self, &mut connection);
 
-    #[inline]
-    fn unlock(&mut self) {
+        self.connection = Some(connection);
         *self.io_lock.get_mut() = false;
+        res
+    }
+
+    #[inline]
+    fn send_request_raw(&mut self, req: RequestInfo) -> crate::Result<u16> {
+        self.lock_internal();
+        let mut connection = self
+            .connection
+            .take()
+            .expect("Poisoned!");
+
+        let res = output::send_request(self, &mut connection, req);
+
+        self.connection = Some(connection);
+        *self.io_lock.get_mut() = false;
+        res
     }
 }
 
 #[cfg(feature = "async")]
 impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
-    type Conn = Connect;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        self.connection.as_mut().expect("Display has been poisoned")
-    }
-
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let data = self.inner.get_mut();
@@ -485,43 +492,33 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
 }
 
-impl<'a, Connect> Display<'a> for &'a CellDisplay<Connect>
+impl<'a, Connect> Display for &'a CellDisplay<Connect>
 where
     &'a Connect: Connection,
 {
-    type Conn = &'a Connect;
-
     #[inline]
-    fn connection(&'a mut self) -> &'a Connect {
-        match self.connection {
-            Some(ref c) => c,
-            None => panic!("Connection was tainted"),
-        }
-    }
-
-    #[inline]
-    fn lock(&mut self) {
+    fn wait(&mut self) -> crate::Result {
         self.lock_internal_immutable();
+
+        let res = input::wait(self, &mut self.connection.as_ref().expect("Poisoned!"));
+
+        self.io_lock.set(false);
+        res
     }
 
     #[inline]
-    fn unlock(&mut self) {
+    fn send_request_raw(&mut self, req: RequestInfo) -> crate::Result<u16> {
+        self.lock_internal_immutable();
+
+        let res = output::send_request(self, &mut self.connection.as_ref().expect("Poisoned!"), req);
+
         self.io_lock.set(false);
+        res
     }
 }
 
 #[cfg(feature = "async")]
 impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Connect> {
-    type Conn = &'a Connect;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        match &self.connection {
-            Some(ref mut c) => c,
-            None => panic!("Display has been poisoned"),
-        }
-    }
-
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let data = self.inner.borrow_mut();

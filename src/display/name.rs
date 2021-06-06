@@ -68,7 +68,7 @@ pub enum AsyncNameConnection {
 impl AsyncConnection for AsyncNameConnection {
     #[inline]
     fn send_packet<'future, 'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b [u8],
         fds: &'c mut Vec<Fd>,
     ) -> GenericConnFuture<'future>
@@ -86,7 +86,7 @@ impl AsyncConnection for AsyncNameConnection {
 
     #[inline]
     fn read_packet<'future, 'a, 'b, 'c>(
-        &'a mut self,
+        &mut self,
         bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> GenericConnFuture<'future>

@@ -393,7 +393,7 @@ fn create_colormap_request(
     }
 }
 
-pub trait DisplayXprotoExt<'a>: Display<'a> {
+pub trait DisplayXprotoExt: Display {
     /// Query for extension information.
     #[inline]
     fn query_extension(
@@ -654,7 +654,7 @@ pub trait DisplayXprotoExt<'a>: Display<'a> {
     }
 }
 
-impl<'a, D: Display<'a> + ?Sized> DisplayXprotoExt<'a> for D {}
+impl<D: Display + ?Sized> DisplayXprotoExt for D {}
 
 #[cfg(feature = "async")]
 pub trait AsyncDisplayXprotoExt: AsyncDisplay {

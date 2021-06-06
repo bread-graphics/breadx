@@ -72,7 +72,7 @@ impl Picture {
 
     /// Change an attribute of this picture.
     #[inline]
-    pub fn change<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn change<Dpy: Display + ?Sized>(
         self,
         display: &mut Dpy,
         params: PictureParameters,
@@ -95,7 +95,7 @@ impl Picture {
 
     /// Composite this picture with another.
     #[inline]
-    pub fn composite<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn composite<Dpy: Display + ?Sized>(
         self,
         display: &mut Dpy,
         op: PictOp,
@@ -166,7 +166,7 @@ impl Picture {
 
     /// Fill a series of solid color rectangles on this surface.
     #[inline]
-    pub fn fill_rectangles<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn fill_rectangles<Dpy: Display + ?Sized>(
         self,
         display: &mut Dpy,
         op: PictOp,
@@ -203,7 +203,7 @@ impl Picture {
 
     /// Free this picture.
     #[inline]
-    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, display: &mut Dpy) -> crate::Result {
+    pub fn free<Dpy: Display + ?Sized>(self, display: &mut Dpy) -> crate::Result {
         display.exchange_request(FreePictureRequest {
             picture: self,
             ..Default::default()
@@ -224,7 +224,7 @@ impl Picture {
 
     /// Draw a set of trapezoids.
     #[inline]
-    pub fn trapezoids<'a, Dpy: Display<'a> + ?Sized>(
+    pub fn trapezoids<Dpy: Display + ?Sized>(
         self,
         display: &mut Dpy,
         op: PictOp,

@@ -44,7 +44,7 @@ impl<Km> KeyboardState<Km> {
 
 impl KeyboardState<XprotoKeymap> {
     #[inline]
-    pub fn new<'a, Dpy: Display<'a> + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
+    pub fn new<Dpy: Display + ?Sized>(display: &mut Dpy) -> crate::Result<Self> {
         Ok(Self::from_keymap(XprotoKeymap::init_from(display)?))
     }
 

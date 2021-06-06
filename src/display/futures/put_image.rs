@@ -19,7 +19,7 @@ use futures_lite::prelude::*;
 pub enum PutImageFuture<'a, D: ?Sized, I: IntoIterator> {
     /// We haven't been polled yet.
     #[doc(hidden)]
-    AwaitingPoll { display: &'a mut D, requests: I },
+    AwaitingPoll { display: &mut D, requests: I },
     /// We are beginning to poll these requests.
     #[doc(hidden)]
     PollingRequests {
@@ -40,7 +40,7 @@ pub enum PutImageFuture<'a, D: ?Sized, I: IntoIterator> {
 
 impl<'a, D: ?Sized, I: IntoIterator> PutImageFuture<'a, D, I> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D, requests: I) -> Self {
+    pub(crate) fn run(display: &mut D, requests: I) -> Self {
         Self::AwaitingPoll { display, requests }
     }
 }

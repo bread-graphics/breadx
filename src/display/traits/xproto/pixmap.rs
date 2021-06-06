@@ -11,7 +11,7 @@ use crate::display::AsyncDisplay;
 impl Pixmap {
     /// Free the memory used by a pixmap.
     #[inline]
-    pub fn free<'a, Dpy: Display<'a> + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+    pub fn free<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
         dpy.exchange_request(FreePixmapRequest {
             pixmap: self,
             ..Default::default()

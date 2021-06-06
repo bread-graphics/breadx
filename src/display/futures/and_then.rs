@@ -13,7 +13,7 @@ use crate::{
 pub enum ExchangeXidFuture<'a, D: ?Sized, R: Request, U, F> {
     /// We need to generate an XID.
     #[doc(hidden)]
-    GeneratingXid { display: &'a mut D, to_request: F },
+    GeneratingXid { display: &mut D, to_request: F },
     /// We're using that XID to run an `ExchangeRequestFuture`.
     #[doc(hidden)]
     Exchanging {
@@ -27,7 +27,7 @@ pub enum ExchangeXidFuture<'a, D: ?Sized, R: Request, U, F> {
 
 impl<'a, D: ?Sized, R: Request, U, F> ExchangeXidFuture<'a, D, R, U, F> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D, to_request: F) -> Self {
+    pub(crate) fn run(display: &mut D, to_request: F) -> Self {
         ExchangeXidFuture::GeneratingXid {
             display,
             to_request,

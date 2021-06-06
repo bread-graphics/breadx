@@ -33,7 +33,7 @@ pub enum ResolveRequestFuture<'a, D: ?Sized, R: Request> {
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D, tok: RequestCookie<R>) -> Self {
+    pub(crate) fn run(display: &mut D, tok: RequestCookie<R>) -> Self {
         match (mem::size_of::<R::Reply>(), display.checked()) {
             (0, false) => ResolveRequestFuture::FastPath,
             (0, true) => ResolveRequestFuture::Synchronizing {

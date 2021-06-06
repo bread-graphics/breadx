@@ -12,13 +12,13 @@ use core::{
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct SendRequestRawFuture<'a, D: ?Sized> {
-    display: Option<&'a mut D>,
+    display: Option<&mut D>,
     is_finished: bool,
 }
 
 impl<'a, D: ?Sized> SendRequestRawFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D, request: RequestInfo, discard_reply: bool) -> Self {
+    pub(crate) fn run(display: &mut D, request: RequestInfo, discard_reply: bool) -> Self {
         // begin the send request process
         display.begin_send_request_raw(request, discard_reply);
         Self {
@@ -29,7 +29,7 @@ impl<'a, D: ?Sized> SendRequestRawFuture<'a, D> {
 
     /// Returns the display we are currently sending a request to.
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
+    pub(crate) fn display(&mut self) -> &mut D {
         self.display.take().expect("Display was already taken")
     }
 }

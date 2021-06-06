@@ -26,7 +26,7 @@ pub enum RequestExchangeFuture<'a, D: ?Sized, R: Request> {
 
 impl<'a, D: ?Sized, R: Request> RequestExchangeFuture<'a, D, R> {
     #[inline]
-    pub(crate) fn new(display: &'a mut D, request: R) -> Self {
+    pub(crate) fn new(display: &mut D, request: R) -> Self {
         Self::SendRequest(SendRequestFuture::run(display, request))
     }
 }

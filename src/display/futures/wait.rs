@@ -12,13 +12,13 @@ use core::{
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct WaitFuture<'a, D: ?Sized> {
-    display: Option<&'a mut D>,
+    display: Option<&mut D>,
     finished: bool,
 }
 
 impl<'a, D: ?Sized> WaitFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &'a mut D) -> Self {
+    pub(crate) fn run(display: &mut D) -> Self {
         Self {
             display: Some(display),
             finished: false,
@@ -27,7 +27,7 @@ impl<'a, D: ?Sized> WaitFuture<'a, D> {
 
     /// Returns the display we are currently waiting on, but disables the future.
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
+    pub(crate) fn display(&mut self) -> &mut D {
         this.display.take().expect("Display was already taken")
     }
 }
