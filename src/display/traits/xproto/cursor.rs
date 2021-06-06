@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncDisplay;
+use crate::display::{futures::ExchangeRequestFuture, AsyncDisplay};
 
 impl Cursor {
     #[inline]

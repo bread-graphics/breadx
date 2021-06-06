@@ -10,10 +10,11 @@ use crate::{
         ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
         CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
         ForceScreenSaverRequest, Gc, Gcontext, GetKeyboardMappingReply, GetKeyboardMappingRequest,
-        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomRequest,
-        JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
-        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
-        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
+        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomReply,
+        InternAtomRequest, JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap,
+        QueryExtensionReply, QueryExtensionRequest, ScreenSaver, SendEventRequest,
+        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
+        Window, WindowClass,
     },
     display::{generate_xid, Display, RequestCookie},
     util::BoxedFnOnce,
@@ -23,7 +24,10 @@ use alloc::{boxed::Box, string::String};
 use cty::c_char;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::{
+    futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
+    AsyncDisplay,
+};
 
 mod colormap;
 mod cursor;
@@ -957,9 +961,9 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
         Colormap,
         BoxedFnOnce<Colormap, CreateColormapRequest>,
     > {
-        let mut ccr = create_colormap_request(alloc, cid, window, visual);
+        let mut ccr = create_colormap_request(alloc, Colormap::const_from_xid(0), window, visual);
         self.exchange_xid_async(Box::new(move |cid| {
-            crr.cid = cid;
+            ccr.cid = cid;
             ccr
         }))
     }

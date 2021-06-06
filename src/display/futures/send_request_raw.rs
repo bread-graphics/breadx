@@ -12,15 +12,15 @@ use core::{
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct SendRequestRawFuture<'a, D: ?Sized> {
-    display: Option<&mut D>,
+    display: Option<&'a mut D>,
     is_finished: bool,
 }
 
-impl<'a, D: ?Sized> SendRequestRawFuture<'a, D> {
+impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &mut D, request: RequestInfo, discard_reply: bool) -> Self {
+    pub(crate) fn run(display: &'a mut D, request: RequestInfo) -> Self {
         // begin the send request process
-        display.begin_send_request_raw(request, discard_reply);
+        display.begin_send_request_raw(request);
         Self {
             display: Some(display),
             is_finished: false,
@@ -35,7 +35,7 @@ impl<'a, D: ?Sized> SendRequestRawFuture<'a, D> {
 }
 
 impl<'a, D: AsyncDisplay + ?Sized> Future for SendRequestRawFuture<'a, D> {
-    type Output = crate::Result<PendingReply>;
+    type Output = crate::Result<PendingRequest>;
 
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {

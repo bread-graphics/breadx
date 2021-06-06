@@ -12,11 +12,19 @@ use crate::{
     image::{put::put_image_req, Image},
     Connection, Display, Gcontext, RequestCookie,
 };
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::{convert::TryInto, ops::Deref};
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::{
+    display::{
+        futures::{
+            ExchangeRequestFuture, ExchangeXidFuture, MapFuture, PutImageFuture, SendRequestFuture,
+        },
+        AsyncDisplay,
+    },
+    util::BoxedFnOnce,
+};
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]

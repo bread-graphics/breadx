@@ -14,6 +14,8 @@ use std::{env, net, path::Path};
 
 #[cfg(feature = "async")]
 use super::{AsyncConnection, GenericConnFuture};
+#[cfg(feature = "async")]
+use core::task::{Context, Poll};
 
 #[cfg(test)]
 use std::borrow::ToOwned;
@@ -67,38 +69,30 @@ pub enum AsyncNameConnection {
 #[cfg(feature = "async")]
 impl AsyncConnection for AsyncNameConnection {
     #[inline]
-    fn send_packet<'future, 'a, 'b, 'c>(
+    fn poll_send_packet(
         &mut self,
-        bytes: &'b [u8],
-        fds: &'c mut Vec<Fd>,
-    ) -> GenericConnFuture<'future>
-    where
-        'a: 'future,
-        'b: 'future,
-        'c: 'future,
-    {
+        bytes: &mut &[u8],
+        fds: &mut Vec<Fd>,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result> {
         match self {
-            Self::Tcp(t) => t.send_packet(bytes, fds),
+            Self::Tcp(t) => t.poll_send_packet(bytes, fds, cx),
             #[cfg(unix)]
-            Self::Socket(s) => s.send_packet(bytes, fds),
+            Self::Socket(s) => s.poll_send_packet(bytes, fds, cx),
         }
     }
 
     #[inline]
-    fn read_packet<'future, 'a, 'b, 'c>(
+    fn poll_read_packet(
         &mut self,
-        bytes: &'b mut [u8],
-        fds: &'c mut Vec<Fd>,
-    ) -> GenericConnFuture<'future>
-    where
-        'a: 'future,
-        'b: 'future,
-        'c: 'future,
-    {
+        bytes: &mut &mut [u8],
+        fds: &mut Vec<Fd>,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result> {
         match self {
-            Self::Tcp(t) => t.read_packet(bytes, fds),
+            Self::Tcp(t) => t.poll_read_packet(bytes, fds, cx),
             #[cfg(unix)]
-            Self::Socket(s) => s.read_packet(bytes, fds),
+            Self::Socket(s) => s.poll_read_packet(bytes, fds, cx),
         }
     }
 }

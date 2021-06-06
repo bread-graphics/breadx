@@ -502,7 +502,43 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {}
+impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner.poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner.begin_send_request_raw(req)
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        self.inner.poll_send_request_raw(cx)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'a, Dpy: DisplayBase> AsyncDisplay for &'a RenderDisplay<Dpy>
+where
+    &'a Dpy: AsyncDisplay,
+{
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner().poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner().begin_send_request_raw(req)
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        self.inner().poll_send_request_raw(cx)
+    }
+}
 
 impl<Dpy: Display> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information.

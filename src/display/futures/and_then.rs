@@ -6,6 +6,11 @@ use crate::{
     xid::XidType,
     Request,
 };
+use core::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 /// An `ExchangeRequestFuture`, but it potentially returns an XID.
 #[derive(Debug)]
@@ -13,7 +18,7 @@ use crate::{
 pub enum ExchangeXidFuture<'a, D: ?Sized, R: Request, U, F> {
     /// We need to generate an XID.
     #[doc(hidden)]
-    GeneratingXid { display: &mut D, to_request: F },
+    GeneratingXid { display: &'a mut D, to_request: F },
     /// We're using that XID to run an `ExchangeRequestFuture`.
     #[doc(hidden)]
     Exchanging {

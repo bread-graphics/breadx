@@ -13,7 +13,13 @@ use core::num::NonZeroU32;
 use hashbrown::HashMap;
 
 #[cfg(feature = "async")]
-use super::{AsyncConnection, AsyncDisplay};
+use super::{
+    common::{SendBuffer, WaitBuffer, WaitBufferReturn},
+    name::AsyncNameConnection,
+    AsyncConnection, AsyncDisplay,
+};
+#[cfg(feature = "async")]
+use core::task::{Context, Poll};
 
 /// An implementor of `Display` and `AsyncDisplay` that requires &mut access in order to use.
 #[derive(Debug)]
@@ -367,7 +373,7 @@ impl AsyncDisplayConnection {
         name: Option<Cow<'_, str>>,
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
-        let (connection, screen) = name::AsyncNameConnection::connect_internal_async(name).await?;
+        let (connection, screen) = AsyncNameConnection::connect_internal_async(name).await?;
         Self::from_connection_async(connection, screen, auth_info).await
     }
 }

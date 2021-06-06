@@ -1,7 +1,8 @@
 // MIT/Apache2 License
 
 use super::{create_setup, AsyncConnection, AsyncConnectionExt};
-use crate::auth_info::AuthInfo;
+use crate::{auth_info::AuthInfo, auto::xproto::Setup, xid::XidGenerator, Fd};
+use alloc::vec::Vec;
 use tinyvec::TinyVec;
 
 #[inline]
@@ -9,7 +10,7 @@ pub(crate) async fn establish_connection_async<C: AsyncConnection>(
     conn: &mut C,
     auth_info: Option<AuthInfo>,
 ) -> crate::Result<(Setup, XidGenerator)> {
-    let setup = create_setup(match auth {
+    let setup = create_setup(match auth_info {
         Some(auth) => auth,
         None => AuthInfo::get_async().await,
     });

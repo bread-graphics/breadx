@@ -19,7 +19,7 @@ use crate::{
 use gluten_keyboard::Key;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::AsyncDisplay;
 
 mod convert;
 pub use convert::*;

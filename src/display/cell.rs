@@ -16,8 +16,12 @@ use hashbrown::HashMap;
 #[cfg(feature = "async")]
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
-    input, output,
+    input, output, AsyncConnection, AsyncDisplay,
 };
+#[cfg(feature = "async")]
+use alloc::vec::Vec;
+#[cfg(feature = "async")]
+use core::task::{Context, Poll};
 
 /// An implementor of [`Display`] and [`AsyncDisplay`] that uses [`Cell`] and [`RefCell`] in order to allow
 /// for immutable use of the `Display`. The primary downside is that it is not [`Sync`].
@@ -357,7 +361,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
             *self.io_lock.get_mut() = false;
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
             res => res,
         }
     }
@@ -528,7 +532,7 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
         {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
-                mem::drop(wait_buffer);
+                drop(wait_buffer);
                 self.wait_buffer.borrow_mut().take();
                 self.io_lock.set(false);
                 match res {
@@ -553,7 +557,7 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
         let mut sbslot = self.send_buffer.borrow_mut();
         let mut send_buffer = mem::replace(&mut *sbslot, SendBuffer::OccupiedHole);
         let res = send_buffer.poll_send_request(self, cx);
-        *sblslot = send_buffer;
+        *sbslot = send_buffer;
         if res.is_ready() {
             sbslot.dig_hole();
             self.io_lock.set(false);

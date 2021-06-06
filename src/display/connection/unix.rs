@@ -5,7 +5,10 @@
 
 use crate::{util::convert_nix_error, Fd};
 use alloc::{vec, vec::Vec};
-use core::mem;
+use core::{
+    mem,
+    task::{Context, Poll},
+};
 use nix::sys::{
     socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
     uio::IoVec,

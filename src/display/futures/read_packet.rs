@@ -12,7 +12,7 @@ use core::{
 /// The future returned by `AsyncConnectionExt::read_packet`.
 #[derive(Debug)]
 pub struct ReadPacketFuture<'a, 'b, 'c, Conn: ?Sized> {
-    connection: &mut Conn,
+    connection: &'a mut Conn,
     bytes: &'b mut [u8],
     fds: &'c mut Vec<Fd>,
 }

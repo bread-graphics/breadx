@@ -11,6 +11,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+use futures_lite::prelude::*;
 
 /// The future returned by the `AsyncDisplayExt::send_request_async` method. It is a basic wrapper around
 /// sending the raw request.
@@ -25,7 +26,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn run(display: &mut D, request: R) -> Self {
         Self {
-            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
+            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request), true),
             _phantom: PhantomData,
         }
     }
@@ -41,7 +42,6 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> Future for SendRequestFuture<'a, 
 
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<RequestCookie<R>>> {
-        let this = self.project();
-        this.inner.poll(cx).map_ok(RequestCookie::from_sequence)
+        self.inner.poll(cx).map_ok(RequestCookie::from_sequence)
     }
 }

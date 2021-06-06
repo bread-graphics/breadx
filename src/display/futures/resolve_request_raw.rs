@@ -23,7 +23,7 @@ impl WaitLoopHandler for ResolveRequestRawHandler {
     type Output = PendingReply;
 
     #[inline]
-    fn handle<D: AsyncDisplay + ?Sized>(display: &mut &mut D) -> Option<PendingReply> {
+    fn handle<D: AsyncDisplay + ?Sized>(&self, display: &mut &mut D) -> Option<PendingReply> {
         (**display).take_pending_reply(self.req_id)
     }
 }

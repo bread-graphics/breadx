@@ -2,7 +2,7 @@
 
 use super::{ResolveRequestRawFuture, SynchronizeFuture};
 use crate::{
-    display::{decode_reply, AsyncDisplay, RequestCookie},
+    display::{decode_reply, AsyncDisplay, PendingReply, RequestCookie},
     Request,
 };
 use core::{

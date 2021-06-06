@@ -161,7 +161,7 @@ macro_rules! unix_aware_async_connection_impl {
             ) -> Poll<crate::Result> {
                 cfg_if::cfg_if! {
                     if #[cfg(unix)] {
-                        unix::read_packet_unix_async(self.clone().into(), bytes, fds)
+                        unix::poll_read_packet_unix(self.clone().into(), bytes, fds)
                     } else {
                         let _ = fds;
                         while !bytes.is_empty() {

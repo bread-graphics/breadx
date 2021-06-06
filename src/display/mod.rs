@@ -24,7 +24,13 @@ use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 #[cfg(feature = "async")]
-use core::{future::Future, pin::Pin};
+use crate::xid::XidType;
+#[cfg(feature = "async")]
+use core::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 mod basic;
 mod cell;
@@ -39,7 +45,7 @@ pub use cell::*;
 pub use connection::*;
 
 #[cfg(feature = "async")]
-mod futures;
+pub(crate) mod futures;
 #[cfg(feature = "async")]
 pub use futures::*;
 
@@ -336,11 +342,9 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 /// A wrapper around a synchronous connection to the X11 server.
 pub trait Display: DisplayBase {
     /// Wait for something to happen on the connection.
-    #[inline]
     fn wait(&mut self) -> crate::Result;
 
     /// Send a request across the connection, given the monomorphized request info.
-    #[inline]
     fn send_request_raw(&mut self, request_info: RequestInfo) -> crate::Result<u16>;
 
     /// Synchronize this display, ensuring that all data sent across it has been replied to.
@@ -409,7 +413,7 @@ impl<D: Display + ?Sized> Display for &mut D {
 
 /// A wrapper around an asynchronous connection to the X server.
 #[cfg(feature = "async")]
-pub trait AsyncDisplay {
+pub trait AsyncDisplay: DisplayBase {
     /// Poll the current status of waiting for more input. There is no default implementation; the buffering
     /// strategy depends on the implementor. If this is called after a Poll::Ready is returned, it is assumed
     /// that the user wants to wait again.

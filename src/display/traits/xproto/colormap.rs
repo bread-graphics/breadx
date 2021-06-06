@@ -9,7 +9,15 @@ use crate::{
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::{
+    display::{
+        futures::{ExchangeRequestFuture, MapFuture, SendRequestFuture},
+        AsyncDisplay,
+    },
+    util::BoxedFnOnce,
+};
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
 /// Convenience function for producing an RGB pixel value for supported monitors.
 #[inline]
@@ -103,7 +111,7 @@ impl Colormap {
         r: u16,
         g: u16,
         b: u16,
-    ) -> SendFutureRequest<'_, Dpy, AllocColorRequest> {
+    ) -> SendRequestFuture<'_, Dpy, AllocColorRequest> {
         dpy.send_request_async(self.alloc_color_request(r, g, b))
     }
 

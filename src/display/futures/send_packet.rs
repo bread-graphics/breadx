@@ -12,14 +12,14 @@ use core::{
 /// The future returned by `AsyncConnectionExt::send_packet`.
 #[derive(Debug)]
 pub struct SendPacketFuture<'a, 'b, 'c, Conn: ?Sized> {
-    connection: &mut Conn,
+    connection: &'a mut Conn,
     bytes: &'b [u8],
     fds: &'c mut Vec<Fd>,
 }
 
 impl<'a, 'b, 'c, Conn: ?Sized> SendPacketFuture<'a, 'b, 'c, Conn> {
     #[inline]
-    pub(crate) fn run(connection: &mut Conn, bytes: &'b [u8], fds: &'c mut Vec<Fd>) -> Self {
+    pub(crate) fn run(connection: &'a mut Conn, bytes: &'b [u8], fds: &'c mut Vec<Fd>) -> Self {
         Self {
             connection,
             bytes,

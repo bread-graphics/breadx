@@ -27,7 +27,7 @@ impl<A: Future, B: Future<Output = A::Output>> Future for EitherFuture<A, B> {
     type Output = A::Output;
 
     #[inline]
-    fn poll(pin: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<A::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<A::Output> {
         let this = self.project();
         match this {
             EitherFutureProj::Left { future } => future.poll(cx),

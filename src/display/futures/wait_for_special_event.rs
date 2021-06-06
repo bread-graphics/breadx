@@ -28,7 +28,7 @@ impl WaitLoopHandler for WaitForSpecialEventHandler {
     type Output = Event;
 
     #[inline]
-    fn handle<D: AsyncDisplay + ?Sized>(display: &mut &mut D) -> Option<Event> {
-        self.pop_special_event(self.xid)
+    fn handle<D: AsyncDisplay + ?Sized>(&self, display: &mut &mut D) -> Option<Event> {
+        display.pop_special_event(self.xid)
     }
 }

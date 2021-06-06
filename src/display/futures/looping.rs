@@ -28,22 +28,22 @@ pub struct WaitLoopFuture<'a, D: ?Sized, Handler> {
 
 enum Inner<'a, D: ?Sized> {
     Waiter(WaitFuture<'a, D>),
-    FirstTake(Option<&mut D>),
+    FirstTake(Option<&'a mut D>),
 }
 
-impl<'a, D: ?Sized, Handler> WaitLoopFuture<'a, D> {
+impl<'a, D: ?Sized, Handler> WaitLoopFuture<'a, D, Handler> {
     #[inline]
     pub(crate) fn construct(display: &mut D, handler: Handler) -> Self {
         Self {
             inner: Inner::FirstTake(display),
             handler,
-            completed: bool,
+            completed: false,
         }
     }
 
     #[inline]
     pub(crate) fn display(&mut self) -> &mut D {
-        match this.inner {
+        match self.inner {
             Inner::Waiter(w) => w.display(),
             Inner::FirstTake(d) => d.take().expect("Display was already taken"),
         }
@@ -51,7 +51,7 @@ impl<'a, D: ?Sized, Handler> WaitLoopFuture<'a, D> {
 }
 
 impl<'a, D: AsyncDisplay + ?Sized, Handler: WaitLoopHandler + Unpin> Future
-    for WaitLoopFuture<'a, D>
+    for WaitLoopFuture<'a, D, Handler>
 {
     type Output = crate::Result<Handler::Output>;
 

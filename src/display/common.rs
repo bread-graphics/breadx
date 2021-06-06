@@ -2,13 +2,20 @@
 
 //! Common async implementation functionality between our connection types.
 
-use super::{input, output, RequestInfo, RequestWorkaround};
+use super::{
+    decode_reply, input, output, AsyncConnection, AsyncDisplay, PendingReply, PendingRequest,
+    RequestInfo, RequestWorkaround,
+};
 use crate::{
     auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
     util::difference,
     Fd,
 };
-use core::{iter, mem};
+use alloc::{string::String, vec::Vec};
+use core::{
+    iter, mem,
+    task::{Context, Poll},
+};
 use tinyvec::TinyVec;
 
 /// A buffer used to hold variables related to the `poll_wait` function.
@@ -71,7 +78,7 @@ impl WaitBuffer {
 
         loop {
             // the portion of the buffer we're reading into
-            let mut readme = &mut *self.buffer[self.cursor..];
+            let mut readme = &mut self.buffer[self.cursor..];
             // read into the buffer as much as we can
             let res = conn.poll_read_packet(&mut readme, &mut self.fds, cx);
             // whether or not the end result is pending, "readme" will be adjusted so that it
@@ -86,7 +93,7 @@ impl WaitBuffer {
                 Poll::Pending => return Poll::Pending,
                 // errors should also be propogated
                 Poll::Ready(Err(e)) => {
-                    self.dig_hole();
+                    self.complete();
                     return Poll::Ready(Err(e));
                 }
                 Poll::Ready(Ok(())) => {}
@@ -109,13 +116,15 @@ impl WaitBuffer {
                     self.buffer = buf;
                     continue; // redo the loop
                 }
+
+                buf
             } else {
                 mem::take(&mut self.buffer)
             };
 
             // process the bytes/fds and return
             let fds = mem::take(&mut self.fds);
-            self.dig_hole();
+            self.complete();
             return Poll::Ready(Ok(WaitBufferReturn { data: buf, fds }));
         }
     }
@@ -166,9 +175,10 @@ impl SendBuffer {
     /// Poll for the creation of a new `SendBuffer`, given the `Display` one wants to create
     /// it with.
     #[inline]
-    fn poll_init<D: AsyncDisplay + ?Sized>(
+    fn poll_init<D: AsyncDisplay + ?Sized, C: AsyncConnection + Unpin + ?Sized>(
         &mut self,
         display: &mut D,
+        conn: &mut C,
         cx: &mut Context<'_>,
     ) -> Poll<crate::Result> {
         let (req, opcode) = loop {
@@ -183,22 +193,25 @@ impl SendBuffer {
                 // we are already initialized
                 SendBuffer::Init(sb) => return Poll::Ready(Ok(())),
                 // we are currently polling for requesting the extension opcode
-                SendBuffer::PollingForExt(req, sb) => {
-                    match sb.poll_send_request(display.connection(), cx) {
-                        Poll::Ready(Ok(req_id)) => {
-                            *self = SendBuffer::WaitingForExt(mem::take(req), req_id, None);
-                        }
-                        Poll::Ready(Err(e)) => {
-                            self.dig_hole();
-                            return Poll::Ready(Err(e));
-                        }
-                        Poll::Pending => return Poll::Pending,
+                SendBuffer::PollingForExt(req, sb) => match sb.poll_send_request(conn, cx) {
+                    Poll::Ready(Ok(pereq)) => {
+                        let req_id = match output::finish_request(display, pereq) {
+                            Ok(req_id) => req_id,
+                            Err(e) => return Poll::Ready(Err(e)),
+                        };
+                        *self = SendBuffer::WaitingForExt(mem::take(req), req_id, None);
                     }
-                }
+                    Poll::Ready(Err(e)) => {
+                        self.dig_hole();
+                        return Poll::Ready(Err(e));
+                    }
+                    Poll::Pending => return Poll::Pending,
+                },
                 // we are currently polling for receiving the extension opcode from the server
                 SendBuffer::WaitingForExt(req, req_id, wait_buffer) => {
                     break loop {
-                        if let Some(PendingReply { data, fds }) = display.take_pending_reply(req_id)
+                        if let Some(PendingReply { data, fds }) =
+                            display.take_pending_reply(*req_id)
                         {
                             // decode the reply, which should be a QueryExtensionReply
                             let qer = match decode_reply::<QueryExtensionRequest>(&data, fds) {
@@ -221,12 +234,12 @@ impl SendBuffer {
                                 qer.major_opcode,
                             );
                             // TODO: first_event and first_error are probably important too
-                            break (mem::take(req), Some(qer.opcode));
+                            break (mem::take(req), Some(qer.major_opcode));
                         }
 
                         // run a wait cycle before checking again
                         let res = wait_buffer.get_or_insert_with(Default::default).poll_wait(
-                            display.connection(),
+                            conn,
                             &[], // we don't have any GLX workarounds here we need to check
                             cx,
                         );
@@ -237,10 +250,10 @@ impl SendBuffer {
                                 self.dig_hole();
                                 return Poll::Ready(Err(e));
                             }
-                            Poll::Ready(Ok(WaitBufferResult { bytes, fds })) => {
+                            Poll::Ready(Ok(WaitBufferReturn { data, fds })) => {
                                 *wait_buffer = None;
                                 // ensure that the bytes are processed
-                                match input::process_bytes(display, bytes, fds) {}
+                                match input::process_bytes(display, data, fds) {}
                             }
                         }
                     };
@@ -260,10 +273,23 @@ impl SendBuffer {
                                     *self = SendBuffer::PollingForExt(
                                         req,
                                         InnerSendBuffer::new_internal(
-                                            RequestInfo::from_request(QueryExtensionRequest {
-                                                name: extension.to_string(),
-                                                ..Default::default()
-                                            }),
+                                            {
+                                                let mut qer = output::preprocess_request(
+                                                    display,
+                                                    RequestInfo::from_request(
+                                                        QueryExtensionRequest {
+                                                            name: String::from(extension),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                );
+                                                output::modify_for_opcode(
+                                                    &mut qer.data,
+                                                    qer.opcode,
+                                                    None,
+                                                );
+                                                qer
+                                            },
                                             None,
                                         ),
                                     );
@@ -283,20 +309,24 @@ impl SendBuffer {
     /// Poll for the sending of a raw request. This calls `poll_init` until the SendRequest buffer is initialized
     /// (read: the extension opcode is recognized) and then calls `poll_send_request` on the inner SendRequest.
     #[inline]
-    pub(crate) fn poll_send_request<D: AsyncDisplay + ?Sized>(
+    pub(crate) fn poll_send_request<
+        D: AsyncDisplay + ?Sized,
+        C: AsyncConnection + Unpin + ?Sized,
+    >(
         &mut self,
         display: &mut D,
+        conn: &mut C,
         context: &mut Context<'_>,
-    ) -> Poll<crate::Result<u16>> {
+    ) -> Poll<crate::Result<RequestInfo>> {
         loop {
             // if we're already initialized, start polling to actually send the request
             match self {
                 SendBuffer::Init(isb) => {
-                    return isb.poll_send_request(display.connection(), context);
+                    return isb.poll_send_request(conn, context);
                 }
                 this => {
                     // poll to initialize this send buffer
-                    match self.poll_init(display, &mut lock_fn, context) {
+                    match self.poll_init(display, conn, context) {
                         Poll::Pending => return Poll::Pending,
                         Poll::Ready(Err(e)) => {
                             self.dig_hole();
@@ -357,7 +387,7 @@ impl InnerSendBuffer {
         &mut self,
         conn: &mut C,
         ctx: &mut Context<'_>,
-    ) -> Poll<crate::Result<PendingRequest>> {
+    ) -> Poll<crate::Result<RequestInfo>> {
         // if we are already completed, panick
         if self.complete {
             panic!("Attempted to poll buffer past completion");
@@ -371,8 +401,8 @@ impl InnerSendBuffer {
         }
 
         // begin polling for sending
-        let mut sendme = &mut *sb.req.data;
-        let res = conn.poll_send_packet(&mut sendme, &mut self.request.fds);
+        let mut sendme = &*self.request.data;
+        let res = conn.poll_send_packet(&mut sendme, &mut self.request.fds, ctx);
 
         // see above for explanation of what's happening here
         let sendme = &*sendme;
@@ -384,14 +414,12 @@ impl InnerSendBuffer {
             // bubble up pending and error, making sure to complete on error
             Poll::Pending => return Poll::Pending,
             Poll::Ready(Err(e)) => {
-                self.dig_hole();
                 return Poll::Ready(Err(e));
             }
             Poll::Ready(Ok(())) => {}
         }
 
         // take the request and return it, the display knows what to do with it
-        self.dig_hole();
         Poll::Ready(Ok(mem::take(&mut self.request)))
     }
 }
@@ -399,7 +427,7 @@ impl InnerSendBuffer {
 impl Drop for InnerSendBuffer {
     #[inline]
     fn drop(&mut self) {
-        if self.data.len() != 0 || self.data.len() != self.original_len {
+        if self.request.data.len() != 0 || self.request.data.len() != self.original_length {
             panic!("Interrupted send future while it was mid-transition!");
         }
     }
