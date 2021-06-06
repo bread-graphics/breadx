@@ -19,7 +19,7 @@ pub struct ReadPacketFuture<'a, 'b, 'c, Conn: ?Sized> {
 
 impl<'a, 'b, 'c, Conn: ?Sized> ReadPacketFuture<'a, 'b, 'c, Conn> {
     #[inline]
-    pub(crate) fn run(connection: &mut Conn, bytes: &'b mut [u8], fds: &'c mut Vec<Fd>) -> Self {
+    pub(crate) fn run(connection: &'a mut Conn, bytes: &'b mut [u8], fds: &'c mut Vec<Fd>) -> Self {
         Self {
             connection,
             bytes,
@@ -35,10 +35,10 @@ impl<'a, 'b, 'c, Conn: AsyncConnection + Unpin + ?Sized> Future
 
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
-        let mut fds = mem::take(&mut **self.fds);
+        let mut fds = mem::take(self.fds);
         let mut bytes = mem::replace(&mut self.bytes, &mut []);
         let res = self.connection.poll_read_packet(&mut bytes, &mut fds, cx);
-        self.fds = fds;
+        *self.fds = fds;
         self.bytes = bytes;
         res
     }

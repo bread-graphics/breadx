@@ -11,7 +11,7 @@ pub type WaitForEventFuture<'a, D: ?Sized> = WaitLoopFuture<'a, D, WaitForEventH
 
 impl<'a, D: ?Sized> WaitForEventFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &mut D) -> Self {
+    pub(crate) fn run(display: &'a mut D) -> Self {
         Self::construct(display, WaitForEventHandler)
     }
 }

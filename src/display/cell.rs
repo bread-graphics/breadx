@@ -2,7 +2,7 @@
 
 use super::{
     input, output, BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo, EXT_KEY_SIZE,
+    RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
 };
 use crate::{auto::xproto::Setup, BreadError, CellXidGenerator, Event, XID};
 use alloc::collections::VecDeque;
@@ -16,10 +16,10 @@ use hashbrown::HashMap;
 #[cfg(feature = "async")]
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
-    input, output, AsyncConnection, AsyncDisplay,
+    AsyncConnection, AsyncDisplay,
 };
 #[cfg(feature = "async")]
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 
@@ -320,7 +320,8 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let data = self.inner.get_mut();
-        let (bytes, fds) = match self
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = self
             .wait_buffer
             .get_mut()
             .get_or_insert_with(|| {
@@ -328,8 +329,10 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
                 self.lock_internal();
                 WaitBuffer::default()
             })
-            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx)
-        {
+            .poll_wait(&mut conn, &data.workarounders, ctx);
+        self.connection = Some(conn);
+
+        let (bytes, fds) = match res {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
                 *self.io_lock.get_mut() = false;
@@ -354,8 +357,11 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     #[inline]
     fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
         let mut send_buffer = mem::replace(self.send_buffer.get_mut(), SendBuffer::OccupiedHole);
-        let res = send_buffer.poll_send_request(self, cx);
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = send_buffer.poll_send_request(self, &mut conn, cx);
         *self.send_buffer.get_mut() = send_buffer;
+        self.connection = Some(conn);
+
         if res.is_ready() {
             self.send_buffer.get_mut().dig_hole();
             *self.io_lock.get_mut() = false;
@@ -528,7 +534,7 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
                 self.lock_internal_immutable();
                 WaitBuffer::default()
             })
-            .poll_wait(self.connection.as_mut().unwrap(), &data.workarounders, ctx)
+            .poll_wait(self.connection.as_ref().unwrap(), &data.workarounders, ctx)
         {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
@@ -546,7 +552,7 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo, discard_reply: bool) {
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
         self.lock_internal_immutable();
         let req = output::preprocess_request(self, req);
         self.send_buffer.borrow_mut().fill_hole(req);
@@ -556,14 +562,15 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
     fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
         let mut sbslot = self.send_buffer.borrow_mut();
         let mut send_buffer = mem::replace(&mut *sbslot, SendBuffer::OccupiedHole);
-        let res = send_buffer.poll_send_request(self, cx);
+        let res =
+            send_buffer.poll_send_request(self, self.connection.as_ref().expect("Poisoned!"), cx);
         *sbslot = send_buffer;
         if res.is_ready() {
             sbslot.dig_hole();
             self.io_lock.set(false);
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
             res => res,
         }
     }

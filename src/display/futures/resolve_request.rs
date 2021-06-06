@@ -12,6 +12,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+use futures_lite::prelude::*;
 
 /// The future returned by `AsyncDisplayExt::resolve_request_async`.
 #[derive(Debug)]
@@ -19,7 +20,7 @@ use core::{
 pub enum ResolveRequestFuture<'a, D: ?Sized, R: Request> {
     /// We can fast-path to the answer, since we aren't checked.
     #[doc(hidden)]
-    FastPath,
+    FastPath { display: Option<&'a mut D> },
     /// The reply type is zero sized, and the display is currently synchronizing.
     #[doc(hidden)]
     Synchronizing {
@@ -28,22 +29,38 @@ pub enum ResolveRequestFuture<'a, D: ?Sized, R: Request> {
     },
     /// The reply type is not zero typed, so we are calling the raw function.
     #[doc(hidden)]
-    Resolving(ResolveRequestRawFuture<'a, D>),
+    Resolving {
+        rrrf: ResolveRequestRawFuture<'a, D>,
+    },
+    /// We've completed.
+    #[doc(hidden)]
+    Complete { display: Option<&'a mut D> },
 }
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
     #[inline]
-    pub(crate) fn run(display: &mut D, tok: RequestCookie<R>) -> Self {
+    pub(crate) fn run(display: &'a mut D, tok: RequestCookie<R>) -> Self {
         match (mem::size_of::<R::Reply>(), display.checked()) {
-            (0, false) => ResolveRequestFuture::FastPath,
+            (0, false) => ResolveRequestFuture::FastPath {
+                display: Some(display),
+            },
             (0, true) => ResolveRequestFuture::Synchronizing {
                 sf: SynchronizeFuture::run(display),
                 tok,
             },
-            _ => ResolveRequestFuture::Resolving(ResolveRequestRawFuture::run(
-                display,
-                tok.sequence(),
-            )),
+            _ => ResolveRequestFuture::Resolving {
+                rrrf: ResolveRequestRawFuture::run(display, tok.sequence()),
+            },
+        }
+    }
+
+    #[inline]
+    pub(crate) fn display(&mut self) -> &'a mut D {
+        match mem::replace(self, ResolveRequestFuture::Complete { display: None }) {
+            ResolveRequestFuture::FastPath { display } => display.expect("Already taken"),
+            ResolveRequestFuture::Complete { display } => display.expect("Already taken"),
+            ResolveRequestFuture::Synchronizing { sf, .. } => sf.display(),
+            ResolveRequestFuture::Resolving { rrrf } => rrrf.display(),
         }
     }
 }
@@ -65,28 +82,42 @@ where
             }};
         }
 
-        match self {
-            ResolveRequestFuture::FastPath => Poll::Ready(Ok(R::Reply::default())),
+        match mem::replace(&mut *self, ResolveRequestFuture::Complete(None)) {
+            ResolveRequestFuture::FastPath { .. } => Poll::Ready(Ok(R::Reply::default())),
             ResolveRequestFuture::Synchronizing { sf, tok } => match sf.poll(cx) {
-                Poll::Pending => Poll::Pending,
+                Poll::Pending => {
+                    *self = ResolveRequestFuture::Synchronizing { sf, tok };
+                    Poll::Pending
+                }
                 Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
                 Poll::Ready(Ok(())) => {
                     // check for errors and remove the pending request
                     let seq = tok.sequence();
                     let display = sf.display();
                     display.take_pending_request(seq);
-                    std_try!(display.check_for_pending_error());
-
-                    Poll::Ready(Ok(R::Reply::default()));
+                    std_try!(display.check_for_pending_error(seq));
+                    *self = ResolveRequestFuture::Complete {
+                        display: Some(display),
+                    };
+                    Poll::Ready(Ok(R::Reply::default()))
                 }
             },
-            ResolveRequestFuture::Resolving(rrrf) => match rrrf.poll(cx) {
-                Poll::Pending => Poll::Pending,
+            ResolveRequestFuture::Resolving { rrrf } => match rrrf.poll(cx) {
+                Poll::Pending => {
+                    *self = ResolveRequestFuture::Resolving { rrrf };
+                    Poll::Pending
+                }
                 Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
                 Poll::Ready(Ok(PendingReply { data, fds })) => {
+                    *self = ResolveRequestFuture::Complete {
+                        display: Some(rrrf.display()),
+                    };
                     Poll::Ready(decode_reply::<R>(&data, fds))
                 }
             },
+            ResolveRequestFuture::Complete { .. } => {
+                panic!("Attempted to poll future past completion")
+            }
         }
     }
 }

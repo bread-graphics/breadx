@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[cfg(feature = "async")]
-use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendFuture};
+use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendRequestFuture};
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 

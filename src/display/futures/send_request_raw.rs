@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::display::{AsyncDisplay, PendingReply, RequestInfo};
+use crate::display::{AsyncDisplay, PendingReply, PendingRequest, RequestInfo};
 use core::{
     future::Future,
     pin::Pin,
@@ -35,7 +35,7 @@ impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
 }
 
 impl<'a, D: AsyncDisplay + ?Sized> Future for SendRequestRawFuture<'a, D> {
-    type Output = crate::Result<PendingRequest>;
+    type Output = crate::Result<u16>;
 
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {

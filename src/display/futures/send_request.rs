@@ -2,7 +2,7 @@
 
 use super::SendRequestRawFuture;
 use crate::{
-    display::{decode_reply, AsyncDisplay, RequestCookie, RequestInfo},
+    display::{decode_reply, AsyncDisplay, PendingRequest, RequestCookie, RequestInfo},
     Request,
 };
 use core::{
@@ -24,9 +24,9 @@ pub struct SendRequestFuture<'a, D: ?Sized, R> {
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     #[inline]
-    pub(crate) fn run(display: &mut D, request: R) -> Self {
+    pub(crate) fn run(display: &'a mut D, request: R) -> Self {
         Self {
-            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request), true),
+            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
             _phantom: PhantomData,
         }
     }

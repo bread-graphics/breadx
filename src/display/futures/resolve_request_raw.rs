@@ -8,7 +8,7 @@ pub type ResolveRequestRawFuture<'a, D: ?Sized> = WaitLoopFuture<'a, D, ResolveR
 
 impl<'a, D: ?Sized> ResolveRequestRawFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &mut D, req_id: u16) -> Self {
+    pub(crate) fn run(display: &'a mut D, req_id: u16) -> Self {
         Self::construct(display, ResolveRequestRawHandler { req_id })
     }
 }

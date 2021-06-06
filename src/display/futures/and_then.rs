@@ -8,6 +8,7 @@ use crate::{
 };
 use core::{
     future::Future,
+    mem,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -32,7 +33,7 @@ pub enum ExchangeXidFuture<'a, D: ?Sized, R: Request, U, F> {
 
 impl<'a, D: ?Sized, R: Request, U, F> ExchangeXidFuture<'a, D, R, U, F> {
     #[inline]
-    pub(crate) fn run(display: &mut D, to_request: F) -> Self {
+    pub(crate) fn run(display: &'a mut D, to_request: F) -> Self {
         ExchangeXidFuture::GeneratingXid {
             display,
             to_request,
@@ -48,7 +49,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request, U: XidType + Unpin, F: FnOnce(U) 
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<U>> {
         loop {
-            match mem::replace(&mut **self, ExchangeXidFuture::Complete) {
+            match mem::replace(&mut *self, ExchangeXidFuture::Complete) {
                 ExchangeXidFuture::Complete => panic!("Attempted to poll future past completion"),
                 ExchangeXidFuture::GeneratingXid {
                     display,

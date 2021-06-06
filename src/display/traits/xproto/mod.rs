@@ -685,7 +685,7 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
         fn(crate::Result<QueryExtensionReply>) -> crate::Result<Extension>,
     > {
         MapFuture::run(
-            self.send_request(QueryExtensionRequest {
+            self.exchange_request_async(QueryExtensionRequest {
                 name,
                 ..Default::default()
             }),
@@ -963,7 +963,7 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     > {
         let mut ccr = create_colormap_request(alloc, Colormap::const_from_xid(0), window, visual);
         self.exchange_xid_async(Box::new(move |cid| {
-            ccr.cid = cid;
+            ccr.mid = cid;
             ccr
         }))
     }

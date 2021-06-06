@@ -5,10 +5,7 @@
 
 use crate::{util::convert_nix_error, Fd};
 use alloc::{vec, vec::Vec};
-use core::{
-    mem,
-    task::{Context, Poll},
-};
+use core::mem;
 use nix::sys::{
     socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
     uio::IoVec,
@@ -23,7 +20,7 @@ use alloc::sync::Arc;
 #[cfg(feature = "async")]
 use async_io::Async;
 #[cfg(feature = "async")]
-use core::task::Context;
+use core::task::{Context, Poll};
 
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::Result<()>) {

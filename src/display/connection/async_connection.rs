@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::async_establish_connection;
+use super::establish_connection_async;
 use crate::{
     auth_info::AuthInfo,
     auto::xproto::Setup,
@@ -59,7 +59,7 @@ pub trait AsyncConnection {
     where
         Self: Send,
     {
-        Box::pin(async move { async_establish_connection(self, auth_info) })
+        Box::pin(async move { establish_connection_async(self, auth_info) })
     }
 }
 
@@ -88,13 +88,13 @@ impl<C: AsyncConnection + ?Sized> AsyncConnection for &mut C {
 /// Extension trait for `AsyncConnection` that provides futures.
 pub trait AsyncConnectionExt {
     fn read_packet_async<'a, 'b, 'c>(
-        &mut self,
-        bytes: &'b [u8],
+        &'a mut self,
+        bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> ReadPacketFuture<'a, 'b, 'c, Self>;
     fn send_packet_async<'a, 'b, 'c>(
-        &mut self,
-        bytes: &'b mut [u8],
+        &'a mut self,
+        bytes: &'b [u8],
         fds: &'c mut Vec<Fd>,
     ) -> SendPacketFuture<'a, 'b, 'c, Self>;
 }
@@ -102,16 +102,16 @@ pub trait AsyncConnectionExt {
 impl<C: AsyncConnection + ?Sized> AsyncConnectionExt for C {
     #[inline]
     fn read_packet_async<'a, 'b, 'c>(
-        &mut self,
-        bytes: &'b [u8],
+        &'a mut self,
+        bytes: &'b mut [u8],
         fds: &'c mut Vec<Fd>,
     ) -> ReadPacketFuture<'a, 'b, 'c, Self> {
         ReadPacketFuture::run(self, bytes, fds)
     }
     #[inline]
     fn send_packet_async<'a, 'b, 'c>(
-        &mut self,
-        bytes: &'b mut [u8],
+        &'a mut self,
+        bytes: &'b [u8],
         fds: &'c mut Vec<Fd>,
     ) -> SendPacketFuture<'a, 'b, 'c, Self> {
         SendPacketFuture::run(self, bytes, fds)
@@ -119,7 +119,7 @@ impl<C: AsyncConnection + ?Sized> AsyncConnectionExt for C {
 }
 
 macro_rules! unix_aware_async_connection_impl {
-    ($name: ident) => {
+    ($name: ty) => {
         impl AsyncConnection for $name {
             #[inline]
             fn poll_send_packet(
@@ -130,7 +130,7 @@ macro_rules! unix_aware_async_connection_impl {
             ) -> Poll<crate::Result> {
                 cfg_if::cfg_if! {
                     if #[cfg(unix)] {
-                        unix::poll_send_packet_unix(self.clone().into(), bytes, fds)
+                        unix::poll_send_packet_unix(self.clone().into(), bytes, fds, cx)
                     } else {
                         standard_fd_warning(fds);
                         while !bytes.is_empty() {
@@ -161,7 +161,7 @@ macro_rules! unix_aware_async_connection_impl {
             ) -> Poll<crate::Result> {
                 cfg_if::cfg_if! {
                     if #[cfg(unix)] {
-                        unix::poll_read_packet_unix(self.clone().into(), bytes, fds)
+                        unix::poll_read_packet_unix(self.clone().into(), bytes, fds, cx)
                     } else {
                         let _ = fds;
                         while !bytes.is_empty() {

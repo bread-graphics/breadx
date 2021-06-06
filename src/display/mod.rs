@@ -672,11 +672,20 @@ pub struct PendingReply {
 ///
 /// Requests usually take time to resolve into replies. Therefore, the `Display::send_request` method returns
 /// the `RequestCookie`, which is later used to block (or await) for the request's eventual result.
-#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Default, Eq, Hash)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Default, Eq, Hash)]
 #[repr(transparent)]
 pub struct RequestCookie<R: Request> {
     sequence: u16,
     _phantom: PhantomData<Option<R::Reply>>,
+}
+
+impl<R: Request> fmt::Debug for RequestCookie<R> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RequestCookie")
+            .field("sequence", &self.sequence)
+            .finish()
+    }
 }
 
 impl<R: Request> RequestCookie<R> {

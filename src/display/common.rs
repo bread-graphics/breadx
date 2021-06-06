@@ -11,7 +11,7 @@ use crate::{
     util::difference,
     Fd,
 };
-use alloc::{string::String, vec::Vec};
+use alloc::{string::String, vec, vec::Vec};
 use core::{
     iter, mem,
     task::{Context, Poll},

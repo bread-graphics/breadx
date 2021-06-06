@@ -320,7 +320,7 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
         fn(crate::Result<GetGeometryReply>) -> crate::Result<Geometry>,
     > {
         MapFuture::run(
-            self.exchange_future_async(get_geometry_request(target.into())),
+            self.exchange_request_async(get_geometry_request(target.into())),
             |repl| repl.map(Geometry::from),
         )
     }
@@ -403,7 +403,7 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
             height,
             depth,
         );
-        self.exchange_xid_future(Box::new(move |pid| {
+        self.exchange_xid_async(Box::new(move |pid| {
             cpr.pid = pid;
             cpr
         }))

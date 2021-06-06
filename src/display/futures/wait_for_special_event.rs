@@ -13,7 +13,7 @@ pub type WaitForSpecialEventFuture<'a, D: ?Sized> =
 
 impl<'a, D: ?Sized> WaitForSpecialEventFuture<'a, D> {
     #[inline]
-    pub(crate) fn run(display: &mut D, xid: XID) -> Self {
+    pub(crate) fn run(display: &'a mut D, xid: XID) -> Self {
         Self::construct(display, WaitForSpecialEventHandler { xid })
     }
 }

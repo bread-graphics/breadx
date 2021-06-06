@@ -34,7 +34,9 @@ impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
         let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
         gifr.discard_reply = true;
 
-        SynchronizeFuture::Sending(SendRequestRawFuture::run(display, gifr))
+        SynchronizeFuture::Sending {
+            srrf: SendRequestRawFuture::run(display, gifr),
+        }
     }
 
     /// Returns the display we are currently synchronizing.
@@ -53,25 +55,19 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
         loop {
-            match &mut *self {
+            match mem::replace(self, SynchronizeFuture::Complete) {
                 SynchronizeFuture::Sending { srrf } => match srrf.poll(cx) {
                     Poll::Pending => break Poll::Pending,
                     Poll::Ready(Err(e)) => {
                         *self = SynchronizeFuture::Complete;
                         break Poll::Ready(Err(e));
                     }
-                    Poll::Ready(Ok(req)) => {
+                    Poll::Ready(Ok(seq)) => {
                         // it's time to begin the wait cycle
                         let display = srrf.display();
                         *self = SynchronizeFuture::Waiting {
                             wf: WaitFuture::run(display),
-                            seq: match output::finish_request(display, req) {
-                                Ok(seq) => seq,
-                                Err(e) => {
-                                    *self = SynchronizeFuture::Complete;
-                                    return Poll::Ready(Err(e));
-                                }
-                            },
+                            seq,
                         };
                     }
                 },
@@ -85,7 +81,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                     Poll::Ready(Ok(())) => {
                         // check if we contain any pending requests yet
                         let display = wf.display();
-                        if display.take_pending_request(*seq).is_some() {
+                        if display.take_pending_request(seq).is_some() {
                             *self = SynchronizeFuture::Complete;
                             break Poll::Ready(Ok(()));
                         }
@@ -93,7 +89,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                         // reset and start again
                         *self = SynchronizeFuture::Waiting {
                             wf: WaitFuture::run(display),
-                            seq: *seq,
+                            seq,
                         };
                     }
                 },

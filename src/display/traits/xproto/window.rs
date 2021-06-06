@@ -23,7 +23,7 @@ use alloc::{string::ToString, vec::Vec};
 use core::{iter, mem};
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::{AsyncDisplay, traits::AsyncDisplayDrawableExt};
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 
@@ -48,7 +48,7 @@ macro_rules! retrieve_atom {
 
 #[cfg(feature = "async")]
 macro_rules! retrieve_atom_async {
-    ($dpy: expr, $dfield: ident, $name: expr) => {{
+    ($dpy: expr, $dgetter: ident, $dsetter: ident, $name: expr) => {{
         match $dpy.$dgetter() {
             Some(wpa) => Atom::const_from_xid(wpa.get()),
             None => {
@@ -59,7 +59,7 @@ macro_rules! retrieve_atom_async {
                     log::error!("Unable to intern {} atom", $name);
                     return Ok(());
                 } else {
-                    $dpy.$dfield = core::num::NonZeroU32::new(wpa.xid());
+                    $dpy.$dsetter(core::num::NonZeroU32::new(wpa.xid()).unwrap());
                     wpa
                 }
             }

@@ -1,12 +1,18 @@
 // MIT/Apache2 License
 
 use super::{create_setup, AsyncConnection, AsyncConnectionExt};
-use crate::{auth_info::AuthInfo, auto::xproto::Setup, xid::XidGenerator, Fd};
-use alloc::vec::Vec;
+use crate::{
+    auth_info::AuthInfo,
+    auto::{xproto::Setup, AsByteSequence},
+    xid::XidGenerator,
+    Fd,
+};
+use alloc::{vec, vec::Vec};
+use core::iter;
 use tinyvec::TinyVec;
 
 #[inline]
-pub(crate) async fn establish_connection_async<C: AsyncConnection>(
+pub(crate) async fn establish_connection_async<C: AsyncConnection + Unpin + ?Sized>(
     conn: &mut C,
     auth_info: Option<AuthInfo>,
 ) -> crate::Result<(Setup, XidGenerator)> {

@@ -10,7 +10,7 @@ pin_project_lite::pin_project! {
     /// Run one future or the other.
     #[derive(Debug)]
     #[must_use = "futures do nothing unless polled or .awaited"]
-    #[project = "EitherFutureProj"]
+    #[project = EitherFutureProj]
     pub enum EitherFuture<A, B> {
         Left {
             #[pin]

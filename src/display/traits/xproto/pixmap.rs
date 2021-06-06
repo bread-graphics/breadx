@@ -25,7 +25,7 @@ impl Pixmap {
         self,
         dpy: &mut Dpy,
     ) -> ExchangeRequestFuture<'_, Dpy, FreePixmapRequest> {
-        self.exchange_request(FreePixmapRequest {
+        self.exchange_request_async(FreePixmapRequest {
             pixmap: self,
             ..Default::default()
         })

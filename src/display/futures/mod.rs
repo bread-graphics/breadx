@@ -2,11 +2,11 @@
 
 mod and_then;
 mod either;
+mod exchange_request;
 mod looping;
 mod map;
 mod put_image;
 mod read_packet;
-mod request_exchange;
 mod resolve_request;
 mod resolve_request_raw;
 mod send_packet;
@@ -19,11 +19,11 @@ mod wait_for_special_event;
 
 pub use and_then::ExchangeXidFuture;
 pub use either::EitherFuture;
+pub use exchange_request::ExchangeRequestFuture;
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
 pub use map::MapFuture;
 pub use put_image::PutImageFuture;
 pub use read_packet::ReadPacketFuture;
-pub use request_exchange::ExchangeRequestFuture;
 pub use resolve_request::ResolveRequestFuture;
 pub use resolve_request_raw::{ResolveRequestRawFuture, ResolveRequestRawHandler};
 pub use send_packet::SendPacketFuture;
@@ -32,4 +32,4 @@ pub use send_request_raw::SendRequestRawFuture;
 pub use synchronize::SynchronizeFuture;
 pub use wait::WaitFuture;
 pub use wait_for_event::{WaitForEventFuture, WaitForEventHandler};
-pub use wait_for_special_future::{WaitForSpecialEventFuture, WaitForSpecialEventHandler};
+pub use wait_for_special_event::{WaitForSpecialEventFuture, WaitForSpecialEventHandler};

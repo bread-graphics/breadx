@@ -15,7 +15,7 @@ use futures_lite::prelude::*;
 /// The future returned by the `AsyncDisplayExt::request_exchange_async` function.
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
-pub enum RequestExchangeFuture<'a, D: ?Sized, R: Request> {
+pub enum ExchangeRequestFuture<'a, D: ?Sized, R: Request> {
     /// Sending request...
     #[doc(hidden)]
     SendRequest(SendRequestFuture<'a, D, R>),
@@ -27,14 +27,14 @@ pub enum RequestExchangeFuture<'a, D: ?Sized, R: Request> {
     Complete,
 }
 
-impl<'a, D: ?Sized, R: Request> RequestExchangeFuture<'a, D, R> {
+impl<'a, D: AsyncDisplay + ?Sized, R: Request> ExchangeRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn new(display: &mut D, request: R) -> Self {
         Self::SendRequest(SendRequestFuture::run(display, request))
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, R: Request> Future for RequestExchangeFuture<'a, D, R>
+impl<'a, D: AsyncDisplay + ?Sized, R: Request> Future for ExchangeRequestFuture<'a, D, R>
 where
     R::Reply: Default,
 {
@@ -43,7 +43,7 @@ where
     #[inline]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
-            match self {
+            match &mut *self {
                 Self::SendRequest(srf) => match srf.poll(cx) {
                     Poll::Pending => return Poll::Pending,
                     Poll::Ready(Err(e)) => {

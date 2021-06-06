@@ -16,10 +16,15 @@ use hashbrown::HashMap;
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
     name::AsyncNameConnection,
-    AsyncConnection, AsyncDisplay,
+    AsyncConnection, AsyncDisplay, RequestWorkaround,
 };
 #[cfg(feature = "async")]
-use core::task::{Context, Poll};
+use alloc::{vec, vec::Vec};
+#[cfg(feature = "async")]
+use core::{
+    mem,
+    task::{Context, Poll},
+};
 
 /// An implementor of `Display` and `AsyncDisplay` that requires &mut access in order to use.
 #[derive(Debug)]
@@ -140,7 +145,7 @@ impl<Conn: AsyncConnection> BasicDisplay<Conn> {
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
-        let (setup, xid) = self.connection.as_mut().unwrap().establish().await?;
+        let (setup, xid) = this.connection.as_mut().unwrap().establish().await?;
         this.setup = setup;
         this.xid = xid;
         Ok(this)
@@ -306,11 +311,13 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
     #[inline]
     fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
         let pr_ref = &mut self.pending_requests;
-        let (bytes, fds) = match self
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = self
             .wait_buffer
             .get_or_insert_with(WaitBuffer::default)
-            .poll_wait(self.connection.as_mut().unwrap(), &self.workarounders, cx)
-        {
+            .poll_wait(self.connection.as_mut().unwrap(), &self.workarounders, cx);
+        self.connection = Some(conn);
+        let (bytes, fds) = match res {
             Poll::Ready(res) => {
                 self.wait_buffer.take();
                 match res {
@@ -333,8 +340,11 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
     #[inline]
     fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
         let mut send_buffer = mem::replace(&mut self.send_buffer, SendBuffer::OccupiedHole);
-        let res = send_buffer.poll_send_request(self, cx);
+        let mut conn = self.connection.take().expect("Poisoned!");
+        let res = send_buffer.poll_send_request(self, &mut conn, cx);
         self.send_buffer = send_buffer;
+        self.connection = Some(conn);
+
         if res.is_ready() {
             self.send_buffer.dig_hole();
         }
