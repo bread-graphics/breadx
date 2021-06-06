@@ -9,12 +9,11 @@ use crate::{
         },
         xproto::{Atom, Pixmap, Rectangle, SubwindowMode},
     },
-    display::{Connection, Display},
-    sr_request,
+    display::{Display, DisplayExt},
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::{AsyncDisplay, AsyncDisplayExt};
 
 crate::create_paramaterizer! {
     pub struct PictureParameters : (Cp, CreatePictureRequest) {
@@ -110,7 +109,7 @@ impl Picture {
         width: u16,
         height: u16,
     ) -> crate::Result {
-        self.exchange_request(CompositeRequest {
+        display.exchange_request(CompositeRequest {
             op,
             src: self,
             mask,

@@ -289,10 +289,7 @@ impl<Connect: Connection> Display for CellDisplay<Connect> {
     #[inline]
     fn wait(&mut self) -> crate::Result {
         self.lock_internal();
-        let mut connection = self
-            .connection
-            .take()
-            .expect("Poisoned!");
+        let mut connection = self.connection.take().expect("Poisoned!");
 
         let res = input::wait(self, &mut connection);
 
@@ -304,10 +301,7 @@ impl<Connect: Connection> Display for CellDisplay<Connect> {
     #[inline]
     fn send_request_raw(&mut self, req: RequestInfo) -> crate::Result<u16> {
         self.lock_internal();
-        let mut connection = self
-            .connection
-            .take()
-            .expect("Poisoned!");
+        let mut connection = self.connection.take().expect("Poisoned!");
 
         let res = output::send_request(self, &mut connection, req);
 
@@ -510,7 +504,8 @@ where
     fn send_request_raw(&mut self, req: RequestInfo) -> crate::Result<u16> {
         self.lock_internal_immutable();
 
-        let res = output::send_request(self, &mut self.connection.as_ref().expect("Poisoned!"), req);
+        let res =
+            output::send_request(self, &mut self.connection.as_ref().expect("Poisoned!"), req);
 
         self.io_lock.set(false);
         res
