@@ -194,10 +194,7 @@ impl SendBuffer {
                 // we are currently polling for requesting the extension opcode
                 SendBuffer::PollingForExt(req, mut sb) => match sb.poll_send_request(conn, cx) {
                     Poll::Ready(Ok(pereq)) => {
-                        let req_id = match output::finish_request(display, pereq) {
-                            Ok(req_id) => req_id,
-                            Err(e) => return Poll::Ready(Err(e)),
-                        };
+                        let req_id = output::finish_request(display, pereq);
                         *self = SendBuffer::WaitingForExt(req, req_id, None);
                     }
                     Poll::Ready(Err(e)) => {

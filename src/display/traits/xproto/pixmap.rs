@@ -2,7 +2,7 @@
 
 use crate::{
     auto::xproto::{FreePixmapRequest, Pixmap},
-    display::{prelude::*, Connection, Display},
+    display::{prelude::*, Display},
 };
 
 #[cfg(feature = "async")]

@@ -5,7 +5,7 @@
 use alloc::{borrow::Cow, string::String, sync::Arc};
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
-use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
+use std::{error::Error as StdError, io::Error as IoError};
 
 /// The common error type returned by `breadx` functions.
 #[derive(Debug, Clone)]

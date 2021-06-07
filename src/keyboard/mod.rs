@@ -14,7 +14,7 @@ both of the above.
 
 use crate::{
     auto::xproto::{KeyButMask, Keycode, Keysym},
-    display::{Connection, Display},
+    display::Display,
 };
 use gluten_keyboard::Key;
 

@@ -5,7 +5,7 @@
 use crate::{
     auto::xproto::{AllocColorReply, AllocColorRequest, Colormap},
     display::prelude::*,
-    Connection, Display, RequestCookie,
+    Display, RequestCookie,
 };
 
 #[cfg(feature = "async")]

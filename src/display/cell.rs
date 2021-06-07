@@ -2,26 +2,28 @@
 
 use super::{
     input, output, BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
+    RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{auto::xproto::Setup, BreadError, CellXidGenerator, Event, XID};
 use alloc::collections::VecDeque;
 use core::{
     cell::{Cell, RefCell},
-    mem,
-    num::{NonZeroU32, NonZeroUsize},
+    num::NonZeroU32,
 };
 use hashbrown::HashMap;
 
 #[cfg(feature = "async")]
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
-    AsyncConnection, AsyncDisplay,
+    AsyncConnection, AsyncDisplay, RequestWorkaround,
 };
 #[cfg(feature = "async")]
 use alloc::{vec, vec::Vec};
 #[cfg(feature = "async")]
-use core::task::{Context, Poll};
+use core::{
+    mem,
+    task::{Context, Poll},
+};
 
 /// An implementor of [`Display`] and [`AsyncDisplay`] that uses [`Cell`] and [`RefCell`] in order to allow
 /// for immutable use of the `Display`. The primary downside is that it is not [`Sync`].
@@ -151,22 +153,20 @@ impl<Conn> CellDisplay<Conn> {
     #[inline]
     fn lock_internal(&mut self) {
         let io_lock = self.io_lock.get_mut();
-        match *io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                *io_lock = true;
-            }
+        if *io_lock {
+            panic!("Attempted to re-entrantly use connection")
+        } else {
+            *io_lock = true;
         }
     }
 
     #[inline]
     fn lock_internal_immutable(&self) {
         let io_lock = self.io_lock.get();
-        match io_lock {
-            true => panic!("Attempted to re-entrantly use connection"),
-            false => {
-                self.io_lock.set(true);
-            }
+        if io_lock {
+            panic!("Attempted to re-entrantly use connection")
+        } else {
+            self.io_lock.set(true);
         }
     }
 }
@@ -195,7 +195,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn generate_xid(&mut self) -> Option<XID> {
-        self.xid.next()
+        self.xid.next_xid()
     }
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
@@ -207,7 +207,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     }
     #[inline]
     fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.inner.borrow().pending_requests.get(&req_id).cloned()
+        self.inner.borrow().pending_requests.get(&req_id).copied()
     }
     #[inline]
     fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
@@ -257,7 +257,7 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
             .get_mut()
             .special_event_queues
             .get_mut(&xid)
-            .and_then(move |queue| queue.pop_front())
+            .and_then(VecDeque::pop_front)
     }
     #[inline]
     fn delete_special_event_queue(&mut self, xid: XID) {
@@ -307,11 +307,11 @@ impl<Connect: Connection> Display for CellDisplay<Connect> {
         self.lock_internal();
         let mut connection = self.connection.take().expect("Poisoned!");
 
-        let res = output::send_request(self, &mut connection, req);
+        let result = output::send_request(self, &mut connection, req);
 
         self.connection = Some(connection);
         *self.io_lock.get_mut() = false;
-        res
+        result
     }
 }
 
@@ -368,7 +368,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
             *self.io_lock.get_mut() = false;
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready(Ok(output::finish_request(self, pr))),
             Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
             Poll::Pending => Poll::Pending,
         }
@@ -399,7 +399,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn generate_xid(&mut self) -> Option<XID> {
-        self.xid.next()
+        self.xid.next_xid()
     }
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
@@ -412,7 +412,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     }
     #[inline]
     fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.inner.borrow().pending_requests.get(&req_id).cloned()
+        self.inner.borrow().pending_requests.get(&req_id).copied()
     }
     #[inline]
     fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
@@ -466,7 +466,7 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
             .borrow_mut()
             .special_event_queues
             .get_mut(&xid)
-            .and_then(move |queue| queue.pop_front())
+            .and_then(VecDeque::pop_front)
     }
     #[inline]
     fn delete_special_event_queue(&mut self, xid: XID) {
@@ -516,11 +516,11 @@ where
     fn send_request_raw(&mut self, req: RequestInfo) -> crate::Result<u16> {
         self.lock_internal_immutable();
 
-        let res =
+        let result =
             output::send_request(self, &mut self.connection.as_ref().expect("Poisoned!"), req);
 
         self.io_lock.set(false);
-        res
+        result
     }
 }
 
@@ -580,7 +580,7 @@ where
             self.io_lock.set(false);
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready(Ok(output::finish_request(self, pr))),
             Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
             Poll::Pending => Poll::Pending,
         }

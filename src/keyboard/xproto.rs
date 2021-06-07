@@ -3,7 +3,7 @@
 use super::Keymap;
 use crate::{
     auto::xproto::{Keycode, Keysym},
-    display::{prelude::*, Connection, Display, DisplayBase, KeyboardMapping},
+    display::{prelude::*, Display, DisplayBase, KeyboardMapping},
 };
 use alloc::boxed::Box;
 

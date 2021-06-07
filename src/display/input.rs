@@ -1,11 +1,11 @@
 // MIT/Apache2 License
 
 use super::{
-    Connection, Display, DisplayBase, HasConnection, PendingReply, PendingRequest,
-    PendingRequestFlags, RequestWorkaround,
+    Connection, Display, DisplayBase, PendingReply, PendingRequest, PendingRequestFlags,
+    RequestWorkaround,
 };
-use crate::{event::Event, log_debug, log_trace, Fd, XID};
-use alloc::{boxed::Box, vec, vec::Vec};
+use crate::{event::Event, log_debug, log_trace, Fd};
+use alloc::{vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
@@ -19,7 +19,7 @@ const GE_MASK: u8 = 0x7f;
 #[inline]
 pub(crate) fn process_bytes<D: DisplayBase + ?Sized>(
     display: &mut D,
-    mut bytes: TinyVec<[u8; 32]>,
+    bytes: TinyVec<[u8; 32]>,
     fds: Vec<Fd>,
 ) -> crate::Result {
     // get the sequence number

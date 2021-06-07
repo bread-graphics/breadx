@@ -90,11 +90,6 @@ pub struct BasicDisplay<Conn> {
 
 impl<Conn> BasicDisplay<Conn> {
     #[inline]
-    fn connection(&mut self) -> &mut Conn {
-        self.connection.as_mut().expect("Connection was poisoned")
-    }
-
-    #[inline]
     fn from_connection_internal(connection: Conn, default_screen: usize) -> Self {
         Self {
             connection: Some(connection),
@@ -189,7 +184,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
 
     #[inline]
     fn generate_xid(&mut self) -> Option<XID> {
-        self.xid.next()
+        self.xid.next_xid()
     }
 
     #[inline]
@@ -203,7 +198,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
 
     #[inline]
     fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.pending_requests.get(&req_id).cloned()
+        self.pending_requests.get(&req_id).copied()
     }
 
     #[inline]
@@ -256,7 +251,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     fn pop_special_event(&mut self, xid: XID) -> Option<Event> {
         self.special_event_queues
             .get_mut(&xid)
-            .and_then(|queue| queue.pop_front())
+            .and_then(VecDeque::pop_front)
     }
 
     #[inline]
@@ -355,7 +350,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
             self.send_buffer.dig_hole();
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Ok(pr)) => Poll::Ready(Ok(output::finish_request(self, pr))),
             Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
             Poll::Pending => Poll::Pending,
         }

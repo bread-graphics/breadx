@@ -6,17 +6,18 @@
 use crate::{
     auto::xproto::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
-        GetGeometryRequest, Pixmap, PutImageRequest, Window,
+        GetGeometryRequest, Pixmap, Window,
     },
     display::{generate_xid, prelude::*},
     image::{put::put_image_req, Image},
-    Connection, Display, Gcontext, RequestCookie,
+    Display, Gcontext, RequestCookie,
 };
-use alloc::{boxed::Box, vec::Vec};
+use alloc::vec::Vec;
 use core::{convert::TryInto, ops::Deref};
 
 #[cfg(feature = "async")]
 use crate::{
+    auto::xproto::PutImageRequest,
     display::{
         futures::{
             ExchangeRequestFuture, ExchangeXidFuture, MapFuture, PutImageFuture, SendRequestFuture,
@@ -25,6 +26,8 @@ use crate::{
     },
     util::BoxedFnOnce,
 };
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]

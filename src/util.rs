@@ -2,9 +2,11 @@
 
 #![allow(clippy::unreadable_literal)]
 
-use alloc::boxed::Box;
-use core::{convert::TryInto, iter, mem};
+use core::iter;
 use tinyvec::{Array, TinyVec};
+
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
 #[cfg(all(unix, feature = "std"))]
 use nix::Error as NixError;
@@ -34,7 +36,7 @@ pub(crate) fn expand_or_truncate_to_length<A: Array<Item = u8>>(tv: &mut TinyVec
 }
 
 /// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.
-//#[cfg(feature = "async")]
+#[cfg(feature = "async")]
 pub(crate) type BoxedFnOnce<A, B> = Box<dyn FnOnce(A) -> B + Send + 'static>;
 
 /// Byte reversal table, copied from Xlib.

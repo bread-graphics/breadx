@@ -7,7 +7,7 @@ use crate::{
         PolySegmentRequest, PolyShape, Rectangle, Segment,
     },
     display::prelude::*,
-    Connection, Display, GcParameters,
+    Display, GcParameters,
 };
 
 #[cfg(feature = "async")]

@@ -1,17 +1,12 @@
 // MIT/Apache2 License
 
 use super::{
-    decode_reply, input, Connection, Display, DisplayBase, DisplayExt, PendingReply,
-    PendingRequest, PendingRequestFlags, RequestCookie, RequestInfo, RequestWorkaround,
-    EXT_KEY_SIZE,
+    decode_reply, input, Connection, Display, DisplayBase, PendingReply, PendingRequestFlags,
+    RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
 };
-use crate::{
-    auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
-    log_debug, log_trace, Fd, Request,
-};
-use alloc::{string::ToString, vec, vec::Vec};
-use core::{iter, mem};
-use tinyvec::TinyVec;
+use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace};
+use alloc::string::ToString;
+use core::mem;
 
 #[cfg(feature = "async")]
 use super::AsyncConnection;
@@ -31,10 +26,7 @@ pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
 }
 
 #[inline]
-pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
-    display: &mut D,
-    mut pr: RequestInfo,
-) -> crate::Result<u16> {
+pub(crate) fn finish_request<D: DisplayBase + ?Sized>(display: &mut D, mut pr: RequestInfo) -> u16 {
     log_trace!("Entering finish_request() with request info: {:?}", &pr);
 
     // data has already been sent over the bandwaves, make sure we acknowledge it
@@ -71,7 +63,7 @@ pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
         input::expect_reply(display, seq, flags);
     }
 
-    Ok(seq)
+    seq
 }
 
 #[inline]
@@ -104,13 +96,12 @@ pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
         None => None,
         Some(extension) => {
             let key = str_to_key(extension);
-            match display.get_extension_opcode(&key) {
-                Some(opcode) => Some(opcode),
-                None => {
-                    let opcode = get_ext_opcode(display, connection, extension)?;
-                    display.set_extension_opcode(key, opcode);
-                    Some(opcode)
-                }
+            if let Some(opcode) = display.get_extension_opcode(&key) {
+                Some(opcode)
+            } else {
+                let opcode = get_ext_opcode(display, connection, extension)?;
+                display.set_extension_opcode(key, opcode);
+                Some(opcode)
             }
         }
     };
@@ -128,7 +119,7 @@ pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
     connection.send_packet(&req.data, &mut fds)?;
     log_debug!("Finished send_packet()");
 
-    finish_request(display, req)
+    Ok(finish_request(display, req))
 }
 
 #[inline]
@@ -172,7 +163,7 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
 
 #[inline]
 pub(crate) fn str_to_key(s: &str) -> [u8; EXT_KEY_SIZE] {
-    let mut key = [0u8; EXT_KEY_SIZE];
+    let mut key = [0_u8; EXT_KEY_SIZE];
     let b = s.as_bytes();
 
     if b.len() > EXT_KEY_SIZE {

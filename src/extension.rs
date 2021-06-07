@@ -1,7 +1,6 @@
 // MIT/Apache2 License
 
 use super::auto::xproto::QueryExtensionReply;
-use alloc::borrow::Cow;
 
 /// Data related to an extension.
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]

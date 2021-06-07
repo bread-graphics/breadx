@@ -10,23 +10,25 @@ use crate::{
         ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
         CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
         ForceScreenSaverRequest, Gc, Gcontext, GetKeyboardMappingReply, GetKeyboardMappingRequest,
-        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomReply,
-        InternAtomRequest, JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap,
-        QueryExtensionReply, QueryExtensionRequest, ScreenSaver, SendEventRequest,
-        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp, Visualid,
-        Window, WindowClass,
+        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomRequest,
+        JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
+        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
+        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
     },
     display::{generate_xid, Display, RequestCookie},
-    util::BoxedFnOnce,
     Event, Extension,
 };
 use alloc::{boxed::Box, string::String};
 use cty::c_char;
 
 #[cfg(feature = "async")]
-use crate::display::{
-    futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
-    AsyncDisplay,
+use crate::{
+    auto::xproto::{InternAtomReply, QueryExtensionReply},
+    display::{
+        futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
+        AsyncDisplay,
+    },
+    util::BoxedFnOnce,
 };
 
 mod colormap;
@@ -415,7 +417,7 @@ pub trait DisplayXprotoExt: Display {
     #[inline]
     fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
         let qer = self.exchange_request(QueryExtensionRequest {
-            name: name.clone(),
+            name,
             ..Default::default()
         })?;
         Extension::from_reply(qer)

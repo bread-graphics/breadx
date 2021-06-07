@@ -8,8 +8,7 @@ use crate::{
 };
 
 /// The future returned by `AsyncDisplayExt::WaitForSpecialEvent`.
-pub type WaitForSpecialEventFuture<'a, D: ?Sized> =
-    WaitLoopFuture<'a, D, WaitForSpecialEventHandler>;
+pub type WaitForSpecialEventFuture<'a, D> = WaitLoopFuture<'a, D, WaitForSpecialEventHandler>;
 
 impl<'a, D: ?Sized> WaitForSpecialEventFuture<'a, D> {
     #[inline]

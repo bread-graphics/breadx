@@ -47,6 +47,7 @@ pub struct XidGenerator {
 }
 
 impl XidGenerator {
+    #[must_use]
     #[inline]
     pub const fn new(base: XID, mask: XID) -> Self {
         Self {
@@ -58,13 +59,14 @@ impl XidGenerator {
         }
     }
 
+    #[must_use]
     #[inline]
     pub const fn eval_in_place(&self) -> XID {
         self.last | self.base
     }
 
     #[inline]
-    pub fn next(&mut self) -> Option<XID> {
+    pub fn next_xid(&mut self) -> Option<XID> {
         if self.last >= self.max.wrapping_sub(self.inc).wrapping_add(1) {
             assert_eq!(self.last, self.max);
             if self.last == 0 {
@@ -112,6 +114,7 @@ impl From<XidGenerator> for CellXidGenerator {
 }
 
 impl CellXidGenerator {
+    #[must_use]
     #[inline]
     pub const fn new(base: XID, mask: XID) -> Self {
         Self {
@@ -129,7 +132,7 @@ impl CellXidGenerator {
     }
 
     #[inline]
-    pub fn next(&self) -> Option<XID> {
+    pub fn next_xid(&self) -> Option<XID> {
         if self.last.get() >= self.max.get().wrapping_sub(self.inc).wrapping_add(1) {
             assert_eq!(self.last.get(), self.max.get());
             if self.last.get() == 0 {

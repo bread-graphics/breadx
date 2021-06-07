@@ -5,23 +5,17 @@
 //! these objects for more information.
 
 use crate::{
-    auth_info::AuthInfo,
     auto::{
-        xproto::{
-            Colormap, GetInputFocusRequest, Screen, Setup, SetupRequest, Visualid, Visualtype,
-            Window,
-        },
+        xproto::{Colormap, GetInputFocusRequest, Screen, Setup, Visualid, Visualtype, Window},
         AsByteSequence,
     },
     error::BreadError,
     event::Event,
     util::expand_or_truncate_to_length,
-    xid::XidGenerator,
     Fd, Request, XID,
 };
-use alloc::{borrow::Cow, boxed::Box, collections::VecDeque, vec, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
-use hashbrown::HashMap;
 use tinyvec::TinyVec;
 
 #[cfg(feature = "async")]
@@ -77,7 +71,7 @@ pub(crate) const EXT_KEY_SIZE: usize = 24;
 /// to use any object implementing the `Connection` trait as a vehicle for the X11 protocol.
 ///
 /// Upon its instantiation, the `DisplayBase` should send bytes to the server requesting the setup information,
-/// and then stores it for later use. This can be done via the "create_setup" convenience method provided by the
+/// and then stores it for later use. This can be done via the `establish` convenience method provided by the
 /// `Connection` and `AsyncConnection` traits. Afterwards, it awaits commands from the programmer to send
 /// requests, receive replies or process events.
 ///
@@ -146,10 +140,10 @@ pub trait DisplayBase {
     /// Set the opcode for an extension.
     fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8);
 
-    /// Get the WM_PROTOCOLS atom, which we cache in the display.
+    /// Get the `WM_PROTOCOLS` atom, which we cache in the display.
     fn wm_protocols_atom(&self) -> Option<NonZeroU32>;
 
-    /// Set the WM_PROTOCOLS atom.
+    /// Set the `WM_PROTOCOLS` atom.
     fn set_wm_protocols_atom(&mut self, a: NonZeroU32);
 
     // -- Setup-based functions.
@@ -701,7 +695,7 @@ impl<R: Request> RequestCookie<R> {
     #[inline]
     pub(crate) fn from_sequence(sequence: u16) -> Self {
         Self {
-            sequence: sequence,
+            sequence,
             _phantom: PhantomData,
         }
     }
@@ -758,10 +752,4 @@ pub(crate) fn generate_xid<D: DisplayBase + ?Sized>(display: &mut D) -> crate::R
     display
         .generate_xid()
         .ok_or(crate::BreadError::StaticMsg("Ran out of XIDs"))
-}
-
-/// Internal use helper trait. The implementations for `input::wait` and `output::send_request` rely on
-/// `Display`s having `Connection`s. This allows those displays to be quantified.
-pub(crate) trait HasConnection<'a, C> {
-    fn connection(&'a mut self) -> C;
 }

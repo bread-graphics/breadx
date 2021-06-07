@@ -2,7 +2,7 @@
 
 use crate::{
     auto::xproto::{Cursor, FreeCursorRequest},
-    display::{prelude::*, Connection, Display},
+    display::{prelude::*, Display},
 };
 
 #[cfg(feature = "async")]

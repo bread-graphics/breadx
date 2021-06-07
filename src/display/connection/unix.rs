@@ -5,15 +5,11 @@
 
 use crate::{log_debug, log_trace, util::convert_nix_error, Fd};
 use alloc::{vec, vec::Vec};
-use core::mem;
 use nix::sys::{
     socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
     uio::IoVec,
 };
-use std::{
-    io::{self, Read, Write},
-    os::unix::io::{AsRawFd, RawFd},
-};
+use std::{io, os::unix::io::RawFd};
 
 #[cfg(feature = "async")]
 use alloc::sync::Arc;
@@ -21,6 +17,11 @@ use alloc::sync::Arc;
 use async_io::Async;
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
+#[cfg(feature = "async")]
+use std::{
+    io::{Read, Write},
+    os::unix::io::AsRawFd,
+};
 
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::Result<()>) {
@@ -129,9 +130,9 @@ fn read_msg_packet(
     fds: &mut Vec<Fd>,
     total_read: &mut usize,
 ) -> io::Result<()> {
-    log_trace!("Beginning read_msg_packet (*nix implementation of read_packet())");
-
     const MAX_FDS: usize = 16;
+
+    log_trace!("Beginning read_msg_packet (*nix implementation of read_packet())");
 
     if data.is_empty() {
         return Ok(());
