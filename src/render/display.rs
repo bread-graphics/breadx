@@ -12,8 +12,8 @@ use crate::{
         xproto::{Drawable, Setup, Visualtype},
     },
     display::{
-        generate_xid, Display, DisplayBase, DisplayExt, PendingReply, PendingRequest, RequestInfo,
-        EXT_KEY_SIZE,
+        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingReply, PendingRequest,
+        RequestInfo, EXT_KEY_SIZE,
     },
     event::Event,
     BreadError, XID,
@@ -23,6 +23,8 @@ use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
 use crate::display::AsyncDisplay;
+#[cfg(feature = "async")]
+use core::task::{Context, Poll};
 
 /// A wrapper around the `Display` that contains XRender-specific data.
 #[derive(Debug)]
@@ -674,59 +676,6 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
 }
 
 #[cfg(feature = "async")]
-impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
-    type Conn = Dpy::Conn;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        self.inner.connection()
-    }
-
-    #[inline]
-    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
-        self.inner.poll_wait(cx)
-    }
-
-    #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        self.inner.begin_send_request_raw(req)
-    }
-
-    #[inline]
-    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
-        self.inner.poll_send_request_raw(cx)
-    }
-}
-
-#[cfg(feature = "async")]
-impl<'a, Dpy> AsyncDisplay for RenderDisplay<Dpy>
-where
-    &'a Dpy: AsyncDisplay,
-{
-    type Conn = <&'a Dpy>::Conn;
-
-    #[inline]
-    fn connection(&mut self) -> &mut Self::Conn {
-        self.inner.connection()
-    }
-
-    #[inline]
-    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
-        self.inner.poll_wait(cx)
-    }
-
-    #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        self.inner.begin_send_request_raw(req);
-    }
-
-    #[inline]
-    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
-        self.inner.poll_send_request_raw(cx)
-    }
-}
-
-#[cfg(feature = "async")]
 impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information, async redox.
     #[inline]
@@ -767,9 +716,9 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
             Ok(XrenderInfo {
                 major_version,
                 minor_version,
-                formats,
-                screens,
-                subpixels,
+                formats: formats.into_boxed_slice(),
+                screens: screens.into_boxed_slice(),
+                subpixels: subpixels.into_boxed_slice(),
             })
         }
 

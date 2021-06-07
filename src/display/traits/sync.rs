@@ -2,12 +2,11 @@
 
 use crate::{
     auto::sync::{DestroyFenceRequest, Fence, TriggerFenceRequest},
-    display::{Connection, Display},
-    sr_request,
+    display::{prelude::*, Display},
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncDisplay;
+use crate::display::{futures::ExchangeRequestFuture, AsyncDisplay};
 
 pub trait DisplaySyncExt: Display {
     #[inline]

@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use super::{
-    input, name::NameConnection, output, Connection, Display, DisplayBase, PendingReply,
-    PendingRequest, RequestInfo, EXT_KEY_SIZE,
+    input, output, Connection, Display, DisplayBase, PendingReply, PendingRequest, RequestInfo,
+    EXT_KEY_SIZE,
 };
 use crate::{
     auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
@@ -10,6 +10,9 @@ use crate::{
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
+
+#[cfg(feature = "std")]
+use super::name::NameConnection;
 
 #[cfg(feature = "async")]
 use super::{

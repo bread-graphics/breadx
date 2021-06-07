@@ -14,15 +14,23 @@ use crate::{
         xproto::Drawable,
         AsByteSequence,
     },
-    display::{Connection, Display, RequestCookie},
+    display::{generate_xid, prelude::*, Display, RequestCookie},
     extension::ExtensionVersion,
-    send_request, sr_request, Fd, Pixmap, Window,
+    Fd, Pixmap, Window,
 };
 use alloc::{vec, vec::Vec};
 use cty::c_int;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncDisplay;
+use crate::{
+    display::{
+        futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
+        AsyncDisplay,
+    },
+    util::BoxedFnOnce,
+};
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Modifiers {
@@ -135,7 +143,7 @@ pub trait DisplayDri3Ext: Display {
         modifier: u64,
         mut fds: Vec<Fd>,
     ) -> crate::Result<Pixmap> {
-        let xid = Pixmap::const_from_xid(self.generate_xid()?);
+        let xid = Pixmap::const_from_xid(generate_xid(self)?);
         fds.retain(|fd| *fd != -1);
         self.exchange_request(PixmapFromBuffersRequest {
             pixmap: xid,
@@ -171,7 +179,7 @@ pub trait DisplayDri3Ext: Display {
         bpp: u8,
         fd: Fd,
     ) -> crate::Result<Pixmap> {
-        let xid = Pixmap::const_from_xid(self.generate_xid()?);
+        let xid = Pixmap::const_from_xid(generate_xid(self)?);
         self.exchange_request(PixmapFromBufferRequest {
             pixmap: xid,
             drawable,
@@ -194,7 +202,7 @@ pub trait DisplayDri3Ext: Display {
         initially_triggered: bool,
         fence_fd: Fd,
     ) -> crate::Result<Fence> {
-        let xid = Fence::const_from_xid(self.generate_xid()?);
+        let xid = Fence::const_from_xid(generate_xid(self)?);
         self.exchange_request(FenceFromFdRequest {
             drawable,
             initially_triggered,
@@ -270,7 +278,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
     > {
         MapFuture::run(
             self.exchange_request_async(open_dri3_request(drawable.into(), provider)),
-            |repl| repl.map(|reply| repl.file_descriptors().unwrap()[0]),
+            |repl| repl.map(|mut repl| repl.file_descriptors().unwrap()[0]),
         )
     }
 
@@ -317,7 +325,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
         window: u32,
         depth: u8,
         bpp: u8,
-    ) -> SendFuture<'_, Self, GetSupportedModifiersRequest> {
+    ) -> SendRequestFuture<'_, Self, GetSupportedModifiersRequest> {
         self.send_request_async(GetSupportedModifiersRequest {
             window,
             depth,
@@ -455,7 +463,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
         let mut fffr = FenceFromFdRequest {
             drawable,
             initially_triggered,
-            fence: xid.xid,
+            fence: 0,
             fence_fd: vec![fence_fd],
             ..Default::default()
         };
@@ -480,7 +488,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
     fn buffer_from_pixmap_immediate_async(
         &mut self,
         pixmap: Pixmap,
-    ) -> ExchangeRequestFuture<'_, Self, BufferFromPixmapReply> {
+    ) -> ExchangeRequestFuture<'_, Self, BufferFromPixmapRequest> {
         self.exchange_request_async(BufferFromPixmapRequest {
             pixmap,
             ..Default::default()

@@ -12,19 +12,27 @@ use crate::{
         },
         xproto,
     },
-    display::{Connection, Display, RequestCookie},
-    send_request, sr_request,
+    display::{generate_xid, prelude::*, Display, RequestCookie},
 };
 use alloc::vec::Vec;
 use core::convert::TryInto;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::{
+    auto::glx::{GetDrawableAttributesReply, QueryVersionReply},
+    display::{
+        futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
+        AsyncDisplay,
+    },
+    util::BoxedFnOnce,
+};
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
-impl<I: Into<xproto::Drawable>> From<I> for Drawable {
+impl From<xproto::Drawable> for Drawable {
     #[inline]
-    fn from(d: I) -> Drawable {
-        Drawable::const_from_xid(d.into().xid)
+    fn from(d: xproto::Drawable) -> Drawable {
+        Drawable::const_from_xid(d.xid)
     }
 }
 
@@ -172,7 +180,7 @@ pub trait DisplayGlxExt: Display {
         is_direct: bool,
         attribs: Vec<u32>,
     ) -> crate::Result<Context> {
-        let xid = Context::const_from_xid(self.generate_xid()?);
+        let xid = Context::const_from_xid(generate_xid(self)?);
         self.exchange_request(create_context_attribs_arb_request(
             xid, fbconfig, screen, share_list, is_direct, attribs,
         ))?;
@@ -197,7 +205,7 @@ pub trait DisplayGlxExt: Display {
 impl<D: Display + ?Sized> DisplayGlxExt for D {}
 
 #[cfg(feature = "async")]
-pub trait AsyncDisplayGlxEdit: AsyncDisplay {
+pub trait AsyncDisplayGlxExt: AsyncDisplay {
     /// Query GLX version, async redox.
     #[inline]
     fn query_glx_version_async(
@@ -310,7 +318,7 @@ pub trait AsyncDisplayGlxEdit: AsyncDisplay {
         drawable: Drawable,
     ) -> MapFuture<
         ExchangeRequestFuture<'_, Self, GetDrawableAttributesRequest>,
-        fn(crate::Result<GetDrawableAttributresReply>) -> crate::Result<Vec<u32>>,
+        fn(crate::Result<GetDrawableAttributesReply>) -> crate::Result<Vec<u32>>,
     > {
         MapFuture::run(
             self.exchange_request_async(GetDrawableAttributesRequest {
@@ -332,8 +340,8 @@ pub trait AsyncDisplayGlxEdit: AsyncDisplay {
     ) -> ExchangeXidFuture<
         '_,
         Self,
-        Context,
         CreateContextAttribsArbRequest,
+        Context,
         BoxedFnOnce<Context, CreateContextAttribsArbRequest>,
     > {
         let mut cccaar = create_context_attribs_arb_request(
@@ -357,7 +365,7 @@ pub trait AsyncDisplayGlxEdit: AsyncDisplay {
         context_tag: ContextTag,
         drawable: Target,
     ) -> ExchangeRequestFuture<'_, Self, SwapBuffersRequest> {
-        self.exchange_request_request(SwapBuffersRequest {
+        self.exchange_request_async(SwapBuffersRequest {
             context_tag,
             drawable: drawable.into(),
             ..Default::default()
@@ -365,4 +373,5 @@ pub trait AsyncDisplayGlxEdit: AsyncDisplay {
     }
 }
 
+#[cfg(feature = "async")]
 impl<D: AsyncDisplay + ?Sized> AsyncDisplayGlxExt for D {}

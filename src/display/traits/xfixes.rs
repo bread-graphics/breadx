@@ -5,78 +5,82 @@ use crate::{
         xfixes::{CreateRegionRequest, DestroyRegionRequest, Region},
         xproto::Rectangle,
     },
-    display::{Connection, Display},
-    sr_request,
+    display::{prelude::*, Display},
 };
 use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::{
+    display::{
+        futures::{ExchangeRequestFuture, ExchangeXidFuture},
+        generate_xid, AsyncDisplay,
+    },
+    util::BoxedFnOnce,
+};
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
 
-impl<Conn: Connection> Display<Conn> {
+pub trait DisplayXfixesExt: Display {
     #[inline]
-    pub fn create_region(&mut self, rectangles: Vec<Rectangle>) -> crate::Result<Region> {
-        let xid = Region::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            CreateRegionRequest {
-                region: xid,
-                rectangles,
-                ..Default::default()
-            }
-        )?;
+    fn create_region(&mut self, rectangles: Vec<Rectangle>) -> crate::Result<Region> {
+        let xid = Region::const_from_xid(generate_xid(self)?);
+        self.exchange_request(CreateRegionRequest {
+            region: xid,
+            rectangles,
+            ..Default::default()
+        })?;
         Ok(xid)
+    }
+}
+
+impl<D: Display + ?Sized> DisplayXfixesExt for D {}
+
+#[cfg(feature = "async")]
+pub trait AsyncDisplayXfixesExt: AsyncDisplay {
+    #[inline]
+    fn create_region_async(
+        &mut self,
+        rectangles: Vec<Rectangle>,
+    ) -> ExchangeXidFuture<
+        '_,
+        Self,
+        CreateRegionRequest,
+        Region,
+        BoxedFnOnce<Region, CreateRegionRequest>,
+    > {
+        let mut crr = CreateRegionRequest {
+            region: Region::const_from_xid(0),
+            rectangles,
+            ..Default::default()
+        };
+        self.exchange_xid_async(Box::new(move |rid| {
+            crr.region = rid;
+            crr
+        }))
     }
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> Display<Conn> {
-    #[inline]
-    pub async fn create_region_async(
-        &mut self,
-        rectangles: Vec<Rectangle>,
-    ) -> crate::Result<Region> {
-        let xid = Region::const_from_xid(self.generate_xid()?);
-        sr_request!(
-            self,
-            CreateRegionRequest {
-                region: xid,
-                rectangles,
-                ..Default::default()
-            },
-            async
-        )
-        .await?;
-        Ok(xid)
-    }
-}
+impl<D: AsyncDisplay + ?Sized> AsyncDisplayXfixesExt for D {}
 
 impl Region {
     #[inline]
-    pub fn destroy<Conn: Connection>(self, dpy: &mut Display<Conn>) -> crate::Result {
-        sr_request!(
-            dpy,
-            DestroyRegionRequest {
-                region: self,
-                ..Default::default()
-            }
-        )
+    pub fn destroy<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+        dpy.exchange_request(DestroyRegionRequest {
+            region: self,
+            ..Default::default()
+        })
     }
 
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn destroy_async<Conn: AsyncConnection + Send>(
+    pub fn destroy_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        dpy: &mut Display<Conn>,
-    ) -> crate::Result {
-        sr_request!(
-            dpy,
-            DestroyRegionRequest {
-                region: self,
-                ..Default::default()
-            },
-            async
-        )
-        .await
+        dpy: &mut Dpy,
+    ) -> ExchangeRequestFuture<'_, Dpy, DestroyRegionRequest> {
+        dpy.exchange_request_async(DestroyRegionRequest {
+            region: self,
+            ..Default::default()
+        })
     }
 }

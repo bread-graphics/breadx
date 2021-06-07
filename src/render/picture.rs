@@ -191,13 +191,15 @@ impl Picture {
         color: Color,
         rects: &[Rectangle],
     ) -> crate::Result {
-        display.exchange_request_async(FillRectanglesRequest {
-            dst: self,
-            op,
-            color,
-            rects: rects.to_vec(),
-            ..Default::default()
-        })
+        display
+            .exchange_request_async(FillRectanglesRequest {
+                dst: self,
+                op,
+                color,
+                rects: rects.to_vec(),
+                ..Default::default()
+            })
+            .await
     }
 
     /// Free this picture.

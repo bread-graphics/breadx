@@ -13,14 +13,20 @@ use crate::{
         xfixes::Region,
         xproto::Pixmap,
     },
-    display::{Connection, Display, RequestCookie},
+    display::{prelude::*, Display, RequestCookie},
     extension::ExtensionVersion,
-    send_request, sr_request, Drawable, Window, XID,
+    Drawable, Window, XID,
 };
 use alloc::vec::Vec;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncDisplay;
+use crate::{
+    auto::present::{QueryCapabilitiesReply, QueryVersionReply},
+    display::{
+        futures::{ExchangeRequestFuture, MapFuture, SendRequestFuture},
+        AsyncDisplay,
+    },
+};
 
 pub trait DisplayPresentExt: Display {
     #[inline]
