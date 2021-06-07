@@ -59,20 +59,20 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
         match mem::replace(self, ResolveRequestFuture::Complete { display: None }) {
             ResolveRequestFuture::FastPath { display } => display.expect("Already taken"),
             ResolveRequestFuture::Complete { display } => display.expect("Already taken"),
-            ResolveRequestFuture::Synchronizing { sf, .. } => sf.display(),
-            ResolveRequestFuture::Resolving { rrrf } => rrrf.display(),
+            ResolveRequestFuture::Synchronizing { mut sf, .. } => sf.display(),
+            ResolveRequestFuture::Resolving { mut rrrf } => rrrf.display(),
         }
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, R: Request> Future for ResolveRequestFuture<'a, D, R>
+impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin> Future for ResolveRequestFuture<'a, D, R>
 where
-    R::Reply: Default,
+    R::Reply: Default + Unpin,
 {
     type Output = crate::Result<R::Reply>;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<R::Reply>> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<R::Reply>> {
         macro_rules! std_try {
             ($e: expr) => {{
                 match ($e) {
@@ -82,9 +82,9 @@ where
             }};
         }
 
-        match mem::replace(&mut *self, ResolveRequestFuture::Complete(None)) {
+        match mem::replace(&mut *self, ResolveRequestFuture::Complete { display: None }) {
             ResolveRequestFuture::FastPath { .. } => Poll::Ready(Ok(R::Reply::default())),
-            ResolveRequestFuture::Synchronizing { sf, tok } => match sf.poll(cx) {
+            ResolveRequestFuture::Synchronizing { mut sf, tok } => match sf.poll(cx) {
                 Poll::Pending => {
                     *self = ResolveRequestFuture::Synchronizing { sf, tok };
                     Poll::Pending
@@ -102,7 +102,7 @@ where
                     Poll::Ready(Ok(R::Reply::default()))
                 }
             },
-            ResolveRequestFuture::Resolving { rrrf } => match rrrf.poll(cx) {
+            ResolveRequestFuture::Resolving { mut rrrf } => match rrrf.poll(cx) {
                 Poll::Pending => {
                     *self = ResolveRequestFuture::Resolving { rrrf };
                     Poll::Pending

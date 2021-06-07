@@ -37,7 +37,7 @@ impl<T: XidType> auto::AsByteSequence for T {
 }
 
 /// XID Generator
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct XidGenerator {
     pub last: XID,
     pub max: XID,

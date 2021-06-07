@@ -689,7 +689,7 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
                 name,
                 ..Default::default()
             }),
-            |repl| repl.map(Extension::from_reply),
+            |repl| repl.and_then(Extension::from_reply),
         )
     }
 
@@ -786,7 +786,7 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     > {
         let mut gcr = create_gc_request(Gcontext::const_from_xid(0), target.into(), props);
         self.exchange_xid_async(Box::new(move |gid| {
-            gcr.gid = gid;
+            gcr.cid = gid;
             gcr
         }))
     }
@@ -853,7 +853,7 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
         cursor: Cursor,
         time: Option<Timestamp>,
     ) -> ExchangeRequestFuture<'_, Self, ChangeActivePointerGrabRequest> {
-        self.exchange_request(change_active_pointer_grab_request(event_mask, cursor, time))
+        self.exchange_request_async(change_active_pointer_grab_request(event_mask, cursor, time))
     }
 
     #[inline]

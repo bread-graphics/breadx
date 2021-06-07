@@ -23,7 +23,7 @@ use alloc::{string::ToString, vec::Vec};
 use core::{iter, mem};
 
 #[cfg(feature = "async")]
-use crate::display::{AsyncDisplay, traits::AsyncDisplayDrawableExt};
+use crate::display::{traits::AsyncDisplayDrawableExt, AsyncDisplay};
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 

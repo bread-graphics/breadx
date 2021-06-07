@@ -4,6 +4,7 @@ use super::WaitFuture;
 use crate::display::{AsyncDisplay, PendingReply};
 use core::{
     future::Future,
+    mem,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -43,8 +44,8 @@ impl<'a, D: ?Sized, Handler> WaitLoopFuture<'a, D, Handler> {
     }
 
     #[inline]
-    pub(crate) fn display(&mut self) -> &mut D {
-        match self.inner {
+    pub(crate) fn display(&mut self) -> &'a mut D {
+        match &mut self.inner {
             Inner::Waiter(w) => w.display(),
             Inner::FirstTake(d) => d.take().expect("Display was already taken"),
             Inner::Complete(d) => d.take().expect("Display was already taken"),
@@ -58,11 +59,11 @@ impl<'a, D: AsyncDisplay + ?Sized, Handler: WaitLoopHandler + Unpin> Future
     type Output = crate::Result<Handler::Output>;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         loop {
             let display = match mem::replace(&mut self.inner, Inner::Complete(None)) {
                 Inner::FirstTake(display) => {
-                    let mut display = display.take().expect("Display was taken");
+                    let mut display = display.expect("Display was taken");
 
                     if let Some(output) = self.handler.handle(&mut display) {
                         self.inner = Inner::Complete(Some(display));
@@ -71,7 +72,7 @@ impl<'a, D: AsyncDisplay + ?Sized, Handler: WaitLoopHandler + Unpin> Future
 
                     display
                 }
-                Inner::Waiter(wf) => match wf.poll(cx) {
+                Inner::Waiter(mut wf) => match wf.poll(cx) {
                     Poll::Pending => break Poll::Pending,
                     Poll::Ready(Err(e)) => {
                         break Poll::Ready(Err(e));

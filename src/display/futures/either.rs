@@ -8,9 +8,9 @@ use core::{
 
 pin_project_lite::pin_project! {
     /// Run one future or the other.
+    #[project = EitherFutureProj]
     #[derive(Debug)]
     #[must_use = "futures do nothing unless polled or .awaited"]
-    #[project = EitherFutureProj]
     pub enum EitherFuture<A, B> {
         Left {
             #[pin]

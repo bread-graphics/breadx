@@ -48,11 +48,13 @@ impl<'a, D: ?Sized, I: IntoIterator> PutImageFuture<'a, D, I> {
 
 impl<'a, D: AsyncDisplay + ?Sized, I: IntoIterator<Item = PutImageRequest> + Unpin> Future
     for PutImageFuture<'a, D, I>
+where
+    I::IntoIter: Unpin,
 {
     type Output = crate::Result;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
         loop {
             match mem::replace(&mut *self, PutImageFuture::Complete) {
                 PutImageFuture::AwaitingPoll { display, requests } => {
@@ -102,7 +104,7 @@ impl<'a, D: AsyncDisplay + ?Sized, I: IntoIterator<Item = PutImageRequest> + Unp
                             };
                         }
                         None => {
-                            let mut tok = tokens.pop().expect("shouldn't happen");
+                            let tok = tokens.pop().expect("shouldn't happen");
                             *self = PutImageFuture::ResolvingRequests {
                                 tokens: tokens.into_iter(),
                                 inner: ResolveRequestFuture::run(display, tok),

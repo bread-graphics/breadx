@@ -6,7 +6,6 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use futures_lite::prelude::*;
 
 /// The future created by the `AsyncDisplayExt::wait_async` method; polls the `poll_wait` function until
 /// it returns `Ready`.
@@ -28,7 +27,7 @@ impl<'a, D: ?Sized> WaitFuture<'a, D> {
 
     /// Returns the display we are currently waiting on, but disables the future.
     #[inline]
-    pub(crate) fn display(&mut self) -> &mut D {
+    pub(crate) fn display(&mut self) -> &'a mut D {
         self.display.take().expect("Display was already taken")
     }
 }
@@ -37,7 +36,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for WaitFuture<'a, D> {
     type Output = crate::Result;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
         if self.finished {
             panic!("Attempted to poll future more than once");
         }

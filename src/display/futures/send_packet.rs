@@ -34,12 +34,16 @@ impl<'a, 'b, 'c, Conn: AsyncConnection + Unpin + ?Sized> Future
     type Output = crate::Result;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
         let mut fds = mem::take(self.fds);
-        let mut bytes = mem::replace(&mut self.bytes, &[]);
-        let res = self.connection.poll_send_packet(&mut bytes, &mut fds, cx);
+        let mut total_read = 0;
+        let bytes = self.bytes;
+
+        let res = self
+            .connection
+            .poll_send_packet(bytes, &mut fds, cx, &mut total_read);
         *self.fds = fds;
-        self.bytes = bytes;
+        self.bytes = &self.bytes[total_read..];
         res
     }
 }

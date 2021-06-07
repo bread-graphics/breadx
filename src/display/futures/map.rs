@@ -27,12 +27,12 @@ impl<Fut: Future, U, F: FnOnce(Fut::Output) -> U + Unpin> Future for MapFuture<F
     type Output = U;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<U> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<U> {
         let this = self.project();
         match this.fut.poll(cx) {
             Poll::Pending => Poll::Pending,
             Poll::Ready(res) => {
-                Poll::Ready((self.f.take().expect("Polled future after completion"))(
+                Poll::Ready((this.f.take().expect("Polled future after completion"))(
                     res,
                 ))
             }

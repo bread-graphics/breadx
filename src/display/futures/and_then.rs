@@ -12,6 +12,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+use futures_lite::prelude::*;
 
 /// An `ExchangeRequestFuture`, but it potentially returns an XID.
 #[derive(Debug)]
@@ -41,13 +42,20 @@ impl<'a, D: ?Sized, R: Request, U, F> ExchangeXidFuture<'a, D, R, U, F> {
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, R: Request, U: XidType + Unpin, F: FnOnce(U) -> R> Future
-    for ExchangeXidFuture<'a, D, R, U, F>
+impl<
+        'a,
+        D: AsyncDisplay + ?Sized,
+        R: Request + Unpin + 'a,
+        U: XidType + Unpin,
+        F: FnOnce(U) -> R + Unpin,
+    > Future for ExchangeXidFuture<'a, D, R, U, F>
+where
+    R::Reply: Default + Unpin,
 {
     type Output = crate::Result<U>;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<U>> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<U>> {
         loop {
             match mem::replace(&mut *self, ExchangeXidFuture::Complete) {
                 ExchangeXidFuture::Complete => panic!("Attempted to poll future past completion"),
@@ -55,15 +63,18 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request, U: XidType + Unpin, F: FnOnce(U) 
                     display,
                     to_request,
                 } => {
-                    let xid: U = match generate_xid(display) {
-                        Ok(xid) => U::from_xid(xid),
+                    let xid = match generate_xid(display) {
+                        Ok(xid) => xid,
                         Err(e) => return Poll::Ready(Err(e)),
                     };
-                    let request: R = to_request(xid);
+                    let request: R = to_request(U::from_xid(xid));
                     let exchange = ExchangeRequestFuture::run(display, request);
-                    *self = ExchangeXidFuture::Exchanging { exchange, xid };
+                    *self = ExchangeXidFuture::Exchanging {
+                        exchange,
+                        xid: U::from_xid(xid),
+                    };
                 }
-                ExchangeXidFuture::Exchanging { exchange, xid } => match exchange.poll(cx) {
+                ExchangeXidFuture::Exchanging { mut exchange, xid } => match exchange.poll(cx) {
                     Poll::Pending => {
                         *self = ExchangeXidFuture::Exchanging { exchange, xid };
                         return Poll::Pending;

@@ -77,16 +77,13 @@ impl WaitBuffer {
         }
 
         loop {
-            // the portion of the buffer we're reading into
-            let mut readme = &mut self.buffer[self.cursor..];
             // read into the buffer as much as we can
-            let res = conn.poll_read_packet(&mut readme, &mut self.fds, cx);
-            // whether or not the end result is pending, "readme" will be adjusted so that it
-            // represents the portion of the buffer that is not currently filled, so we adjust
-            // "cursor" to accomodate
-            let readme = &*readme;
-            let diff = difference(readme, &*self.buffer);
-            self.cursor = diff;
+            let res = conn.poll_read_packet(
+                &mut self.buffer[self.cursor..],
+                &mut self.fds,
+                cx,
+                &mut self.cursor,
+            );
 
             match res {
                 // if the result is pending, return that
@@ -182,7 +179,7 @@ impl SendBuffer {
         cx: &mut Context<'_>,
     ) -> Poll<crate::Result> {
         let (req, opcode) = loop {
-            match self {
+            match mem::replace(self, SendBuffer::Hole) {
                 // cannot pole an empty hole
                 SendBuffer::Hole => panic!(
                     "Attempted to call poll_send_request_raw before calling begin_send_request_raw"
@@ -191,27 +188,32 @@ impl SendBuffer {
                     panic!("Locking mechanism failed; attempted to poll an occupied hole")
                 }
                 // we are already initialized
-                SendBuffer::Init(sb) => return Poll::Ready(Ok(())),
+                SendBuffer::Init(sb) => {
+                    *self = SendBuffer::Init(sb);
+                    return Poll::Ready(Ok(()));
+                }
                 // we are currently polling for requesting the extension opcode
-                SendBuffer::PollingForExt(req, sb) => match sb.poll_send_request(conn, cx) {
+                SendBuffer::PollingForExt(req, mut sb) => match sb.poll_send_request(conn, cx) {
                     Poll::Ready(Ok(pereq)) => {
                         let req_id = match output::finish_request(display, pereq) {
                             Ok(req_id) => req_id,
                             Err(e) => return Poll::Ready(Err(e)),
                         };
-                        *self = SendBuffer::WaitingForExt(mem::take(req), req_id, None);
+                        *self = SendBuffer::WaitingForExt(req, req_id, None);
                     }
                     Poll::Ready(Err(e)) => {
                         self.dig_hole();
                         return Poll::Ready(Err(e));
                     }
-                    Poll::Pending => return Poll::Pending,
+                    Poll::Pending => {
+                        *self = SendBuffer::PollingForExt(req, sb);
+                        return Poll::Pending;
+                    }
                 },
                 // we are currently polling for receiving the extension opcode from the server
-                SendBuffer::WaitingForExt(req, req_id, wait_buffer) => {
+                SendBuffer::WaitingForExt(req, req_id, mut wait_buffer) => {
                     break loop {
-                        if let Some(PendingReply { data, fds }) =
-                            display.take_pending_reply(*req_id)
+                        if let Some(PendingReply { data, fds }) = display.take_pending_reply(req_id)
                         {
                             // decode the reply, which should be a QueryExtensionReply
                             let qer = match decode_reply::<QueryExtensionRequest>(&data, fds) {
@@ -234,7 +236,7 @@ impl SendBuffer {
                                 qer.major_opcode,
                             );
                             // TODO: first_event and first_error are probably important too
-                            break (mem::take(req), Some(qer.major_opcode));
+                            break (req, Some(qer.major_opcode));
                         }
 
                         // run a wait cycle before checking again
@@ -245,22 +247,30 @@ impl SendBuffer {
                         );
 
                         match res {
-                            Poll::Pending => return Poll::Pending,
+                            Poll::Pending => {
+                                *self = SendBuffer::WaitingForExt(req, req_id, wait_buffer);
+                                return Poll::Pending;
+                            }
                             Poll::Ready(Err(e)) => {
                                 self.dig_hole();
                                 return Poll::Ready(Err(e));
                             }
                             Poll::Ready(Ok(WaitBufferReturn { data, fds })) => {
-                                *wait_buffer = None;
+                                wait_buffer = None;
                                 // ensure that the bytes are processed
-                                match input::process_bytes(display, data, fds) {}
+                                match input::process_bytes(display, data, fds) {
+                                    Ok(()) => {}
+                                    Err(e) => {
+                                        self.dig_hole();
+                                        return Poll::Ready(Err(e));
+                                    }
+                                }
                             }
                         }
                     };
                 }
                 // we are not initialized at all
                 SendBuffer::Uninit(req) => {
-                    let req = mem::take(req);
                     match req.extension {
                         None => break (req, None),
                         Some(extension) => {
@@ -320,13 +330,17 @@ impl SendBuffer {
     ) -> Poll<crate::Result<RequestInfo>> {
         loop {
             // if we're already initialized, start polling to actually send the request
-            match self {
-                SendBuffer::Init(isb) => {
-                    return isb.poll_send_request(conn, context);
+            match mem::replace(self, Self::Hole) {
+                SendBuffer::Init(mut isb) => {
+                    let res = isb.poll_send_request(conn, context);
+                    *self = SendBuffer::Init(isb);
+                    return res;
                 }
-                this => {
+                mut this => {
                     // poll to initialize this send buffer
-                    match self.poll_init(display, conn, context) {
+                    let res = this.poll_init(display, conn, context);
+                    *self = this;
+                    match res {
                         Poll::Pending => return Poll::Pending,
                         Poll::Ready(Err(e)) => {
                             self.dig_hole();
@@ -342,7 +356,7 @@ impl SendBuffer {
 
 /// A buffer for holding values necessary for `poll_send_request_raw`.
 #[derive(Debug)]
-struct InnerSendBuffer {
+pub(crate) struct InnerSendBuffer {
     /// The request we are trying to send.
     request: RequestInfo,
     /// The original length of the request data. Used for checking for drop-while-running.
@@ -368,8 +382,8 @@ impl InnerSendBuffer {
     #[inline]
     fn new_internal(request: RequestInfo, opcode: Option<u8>) -> Self {
         Self {
-            request,
             original_length: request.data.len(),
+            request,
             complete: false,
             impl_opcode: Opcode::NotImplemented(opcode),
         }
@@ -401,13 +415,15 @@ impl InnerSendBuffer {
         }
 
         // begin polling for sending
-        let mut sendme = &*self.request.data;
-        let res = conn.poll_send_packet(&mut sendme, &mut self.request.fds, ctx);
+        let mut total_sent = 0;
+        let res = conn.poll_send_packet(
+            &mut self.request.data,
+            &mut self.request.fds,
+            ctx,
+            &mut total_sent,
+        );
 
-        // see above for explanation of what's happening here
-        let sendme = &*sendme;
-        let diff = difference(sendme, &*self.request.data);
-        self.request.data = self.request.data.split_off(diff);
+        self.request.data = self.request.data.split_off(total_sent);
 
         // next action depends on the poll result
         match res {

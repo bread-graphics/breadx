@@ -29,7 +29,7 @@ impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
 
     /// Returns the display we are currently sending a request to.
     #[inline]
-    pub(crate) fn display(&mut self) -> &mut D {
+    pub(crate) fn display(&mut self) -> &'a mut D {
         self.display.take().expect("Display was already taken")
     }
 }
@@ -38,7 +38,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SendRequestRawFuture<'a, D> {
     type Output = crate::Result<u16>;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
         if self.is_finished {
             panic!("Attempted to poll future after completion");
         }

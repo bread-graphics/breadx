@@ -319,17 +319,19 @@ impl<Connect: Connection> Display for CellDisplay<Connect> {
 impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
-        let data = self.inner.get_mut();
         let mut conn = self.connection.take().expect("Poisoned!");
-        let res = self
-            .wait_buffer
-            .get_mut()
-            .get_or_insert_with(|| {
-                // try to lock
+        let wait_buffer = match self.wait_buffer.get_mut() {
+            Some(wait_buffer) => wait_buffer,
+            None => {
                 self.lock_internal();
-                WaitBuffer::default()
-            })
-            .poll_wait(&mut conn, &data.workarounders, ctx);
+                let wait_buffer = Default::default();
+                *self.wait_buffer.get_mut() = Some(wait_buffer);
+                self.wait_buffer.get_mut().as_mut().unwrap()
+            }
+        };
+        let data = self.inner.get_mut();
+        let res = wait_buffer.poll_wait(&mut conn, &data.workarounders, ctx);
+
         self.connection = Some(conn);
 
         let (bytes, fds) = match res {
@@ -368,7 +370,8 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
         }
         match res {
             Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
-            res => res,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending,
         }
     }
 }
@@ -523,19 +526,25 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Connect> {
+impl<'a, Connect> AsyncDisplay for &'a CellDisplay<Connect>
+where
+    &'a Connect: AsyncConnection + Unpin,
+{
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let data = self.inner.borrow_mut();
-        let wait_buffer = self.wait_buffer.borrow_mut();
+        let mut wait_buffer = self.wait_buffer.borrow_mut();
         let (bytes, fds) = match wait_buffer
             .get_or_insert_with(|| {
                 // try to lock
                 self.lock_internal_immutable();
                 WaitBuffer::default()
             })
-            .poll_wait(self.connection.as_ref().unwrap(), &data.workarounders, ctx)
-        {
+            .poll_wait(
+                &mut self.connection.as_ref().unwrap(),
+                &data.workarounders,
+                ctx,
+            ) {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
                 drop(wait_buffer);
@@ -562,8 +571,11 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
     fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
         let mut sbslot = self.send_buffer.borrow_mut();
         let mut send_buffer = mem::replace(&mut *sbslot, SendBuffer::OccupiedHole);
-        let res =
-            send_buffer.poll_send_request(self, self.connection.as_ref().expect("Poisoned!"), cx);
+        let res = send_buffer.poll_send_request(
+            self,
+            &mut self.connection.as_ref().expect("Poisoned!"),
+            cx,
+        );
         *sbslot = send_buffer;
         if res.is_ready() {
             sbslot.dig_hole();
@@ -571,7 +583,8 @@ impl<'a, Connect: AsyncConnection + Unpin> AsyncDisplay for &'a CellDisplay<Conn
         }
         match res {
             Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
-            res => res,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending,
         }
     }
 }

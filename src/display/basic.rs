@@ -1,12 +1,11 @@
 // MIT/Apache2 License
 
 use super::{
-    input, name::NameConnection, output, Connection, Display, DisplayBase, HasConnection,
-    PendingReply, PendingRequest, RequestInfo, EXT_KEY_SIZE,
+    input, name::NameConnection, output, Connection, Display, DisplayBase, PendingReply,
+    PendingRequest, RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{
-    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, util::difference,
-    XidGenerator, XID,
+    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
 };
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
@@ -18,6 +17,8 @@ use super::{
     name::AsyncNameConnection,
     AsyncConnection, AsyncDisplay, RequestWorkaround,
 };
+#[cfg(feature = "async")]
+use crate::util::difference;
 #[cfg(feature = "async")]
 use alloc::{vec, vec::Vec};
 #[cfg(feature = "async")]
@@ -137,7 +138,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsyncConnection> BasicDisplay<Conn> {
+impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
     #[inline]
     pub async fn from_connection_async(
         connection: Conn,
@@ -145,7 +146,12 @@ impl<Conn: AsyncConnection> BasicDisplay<Conn> {
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
-        let (setup, xid) = this.connection.as_mut().unwrap().establish().await?;
+        let (setup, xid) = this
+            .connection
+            .as_mut()
+            .unwrap()
+            .establish_async(auth_info)
+            .await?;
         this.setup = setup;
         this.xid = xid;
         Ok(this)
@@ -349,8 +355,9 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
             self.send_buffer.dig_hole();
         }
         match res {
-            Poll::Ready(Ok(pr)) => Poll::Ready({ output::finish_request(self, pr) }),
-            res => res,
+            Poll::Ready(Ok(pr)) => Poll::Ready(output::finish_request(self, pr)),
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            Poll::Pending => Poll::Pending,
         }
     }
 }

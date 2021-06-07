@@ -477,3 +477,6 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
     }
     */
 }
+
+#[cfg(feature = "async")]
+impl<D: AsyncDisplay + ?Sized> AsyncDisplayDrawableExt for D {}

@@ -525,7 +525,7 @@ pub trait AsyncDisplayExt: AsyncDisplay {
     fn wait_for_event_async(&mut self) -> WaitForEventFuture<'_, Self>;
 
     /// Wait for a special event to be sent from the X server.
-    fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self>;
+    fn wait_for_special_event_async(&mut self, xid: XID) -> WaitForSpecialEventFuture<'_, Self>;
 
     /// Send a request and wait for a reply back
     fn exchange_request_async<R: Request>(
@@ -549,7 +549,7 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
 
     #[inline]
     fn send_request_raw_async(&mut self, req: RequestInfo) -> SendRequestRawFuture<'_, Self> {
-        SendRequestRawFuture::run(self, req, false)
+        SendRequestRawFuture::run(self, req)
     }
 
     #[inline]
@@ -584,8 +584,8 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplayExt for D {
     }
 
     #[inline]
-    fn wait_for_special_event_async(&mut self) -> WaitForSpecialEventFuture<'_, Self> {
-        WaitForSpecialEventFuture::run(self)
+    fn wait_for_special_event_async(&mut self, xid: XID) -> WaitForSpecialEventFuture<'_, Self> {
+        WaitForSpecialEventFuture::run(self, xid)
     }
 
     #[inline]

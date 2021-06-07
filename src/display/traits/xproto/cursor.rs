@@ -22,7 +22,7 @@ impl Cursor {
     pub async fn free_async<Dpy: AsyncDisplay + ?Sized>(
         self,
         dpy: &mut Dpy,
-    ) -> ExchangeRequestFuture<'_, Self, FreeCursorRequest> {
+    ) -> ExchangeRequestFuture<'_, Dpy, FreeCursorRequest> {
         dpy.exchange_request_async(FreeCursorRequest {
             cursor: self,
             ..Default::default()

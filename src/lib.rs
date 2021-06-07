@@ -184,5 +184,5 @@ pub use auto::xproto::{
     Segment, Setup, VisualClass, Visualid, Visualtype, Window, WindowClass,
 };
 
-#[path = "../tutorials/mod.rs"]
-pub mod tutorials;
+//#[path = "../tutorials/mod.rs"]
+//pub mod tutorials;

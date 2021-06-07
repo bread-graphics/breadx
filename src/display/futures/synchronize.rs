@@ -3,10 +3,11 @@
 use super::{SendRequestRawFuture, WaitFuture};
 use crate::{
     auto::xproto::GetInputFocusRequest,
-    display::{output, AsyncDisplay, DisplayBase, RequestInfo},
+    display::{output, AsyncDisplay, RequestInfo},
 };
 use core::{
     future::Future,
+    mem,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -25,7 +26,7 @@ pub enum SynchronizeFuture<'a, D: ?Sized> {
     Waiting { wf: WaitFuture<'a, D>, seq: u16 },
     /// The future has completed.
     #[doc(hidden)]
-    Complete,
+    Complete { display: Option<&'a mut D> },
 }
 
 impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
@@ -41,10 +42,11 @@ impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
 
     /// Returns the display we are currently synchronizing.
     #[inline]
-    pub(crate) fn display(&mut self) -> &mut D {
+    pub(crate) fn display(&mut self) -> &'a mut D {
         match self {
             SynchronizeFuture::Sending { srrf } => srrf.display(),
             SynchronizeFuture::Waiting { wf, .. } => wf.display(),
+            SynchronizeFuture::Complete { display } => display.take().expect("Display was taken"),
         }
     }
 }
@@ -55,11 +57,13 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
         loop {
-            match mem::replace(self, SynchronizeFuture::Complete) {
-                SynchronizeFuture::Sending { srrf } => match srrf.poll(cx) {
+            match mem::replace(&mut *self, SynchronizeFuture::Complete { display: None }) {
+                SynchronizeFuture::Sending { mut srrf } => match srrf.poll(cx) {
                     Poll::Pending => break Poll::Pending,
                     Poll::Ready(Err(e)) => {
-                        *self = SynchronizeFuture::Complete;
+                        *self = SynchronizeFuture::Complete {
+                            display: Some(srrf.display()),
+                        };
                         break Poll::Ready(Err(e));
                     }
                     Poll::Ready(Ok(seq)) => {
@@ -72,17 +76,21 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                     }
                 },
 
-                SynchronizeFuture::Waiting { wf, seq } => match wf.poll(cx) {
+                SynchronizeFuture::Waiting { mut wf, seq } => match wf.poll(cx) {
                     Poll::Pending => break Poll::Pending,
                     Poll::Ready(Err(e)) => {
-                        *self = SynchronizeFuture::Complete;
+                        *self = SynchronizeFuture::Complete {
+                            display: Some(wf.display()),
+                        };
                         break Poll::Ready(Err(e));
                     }
                     Poll::Ready(Ok(())) => {
                         // check if we contain any pending requests yet
                         let display = wf.display();
                         if display.take_pending_request(seq).is_some() {
-                            *self = SynchronizeFuture::Complete;
+                            *self = SynchronizeFuture::Complete {
+                                display: Some(display),
+                            };
                             break Poll::Ready(Ok(()));
                         }
 
@@ -93,7 +101,9 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                         };
                     }
                 },
-                SynchronizeFuture::Complete => panic!("Attempted to poll future after completion"),
+                SynchronizeFuture::Complete { .. } => {
+                    panic!("Attempted to poll future after completion")
+                }
             }
         }
     }
