@@ -1,6 +1,7 @@
 // MIT/Apache2 License
 
 use breadx::{
+    prelude::*,
     event::Event,
     render::{
         double_to_fixed, Color, Linefix, PictOp, Picture, Pointfix, RenderDisplay, StandardFormat,

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use breadx::{DisplayConnection, Event, EventMask, KeyboardState};
+use breadx::{prelude::*, DisplayConnection, Event, EventMask, KeyboardState};
 use std::env;
 
 fn main() -> breadx::Result {

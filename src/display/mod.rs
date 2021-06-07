@@ -38,7 +38,7 @@ mod connection;
 pub mod traits;
 
 // "traits" contains some important types.
-pub use traits::{GcParameters, KeyboardMapping, WindowParameters};
+pub use traits::{rgb, GcParameters, KeyboardMapping, WindowParameters};
 
 pub use basic::*;
 pub use cell::*;
@@ -163,6 +163,12 @@ pub trait DisplayBase {
     #[inline]
     fn default_screen(&self) -> &Screen {
         &self.setup().roots[self.default_screen_index()]
+    }
+
+    /// Get the default root for this display.
+    #[inline]
+    fn default_root(&self) -> Window {
+        self.default_screen().root
     }
 
     /// Get the default pixel used for the white color.
@@ -457,11 +463,13 @@ pub trait DisplayExt {
 
     /// Send a request to the server and immediately resolve for its reply.
     #[inline]
-    fn exchange_request<R: Request>(&mut self, request: R) -> crate::Result<R::Reply>
+    fn exchange_request<R: Request + 'static>(&mut self, request: R) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {
+        log::info!("Sending {} to server", core::any::type_name::<R>());
         let tok = self.send_request(request)?;
+        log::info!("Resolving request...");
         self.resolve_request(tok)
     }
 }
