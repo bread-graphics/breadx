@@ -9,9 +9,6 @@ use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
-#[cfg(feature = "async")]
-use super::AsyncConnection;
-
 const TYPE_ERROR: u8 = 0;
 const TYPE_REPLY: u8 = 1;
 const GENERIC_EVENT: u8 = 35;

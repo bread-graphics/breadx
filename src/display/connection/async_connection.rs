@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::establish_connection_async;
+use super::EstablishConnectionFuture;
 use crate::{
     auth_info::AuthInfo,
     auto::xproto::Setup,
@@ -56,14 +56,11 @@ pub trait AsyncConnection {
 
     /// Establish a connection to the server.
     #[inline]
-    fn establish_async<'future>(
-        &'future mut self,
+    fn establish_async(
+        &mut self,
         auth_info: Option<AuthInfo>,
-    ) -> GenericConnFuture<'future, (Setup, XidGenerator)>
-    where
-        Self: Unpin,
-    {
-        Box::pin(async move { establish_connection_async(self, auth_info).await })
+    ) -> EstablishConnectionFuture<'_, Self> {
+        EstablishConnectionFuture::run(self, auth_info)
     }
 }
 

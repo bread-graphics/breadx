@@ -1,10 +1,14 @@
 // MIT/Apache2 License
 
 use super::{
-    input, Connection, Display, DisplayBase, DisplayExt, PendingRequest, PendingRequestFlags,
-    RequestCookie, RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
+    decode_reply, input, Connection, Display, DisplayBase, DisplayExt, PendingReply,
+    PendingRequest, PendingRequestFlags, RequestCookie, RequestInfo, RequestWorkaround,
+    EXT_KEY_SIZE,
 };
-use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace, Fd, Request};
+use crate::{
+    auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
+    log_debug, log_trace, Fd, Request,
+};
 use alloc::{string::ToString, vec, vec::Vec};
 use core::{iter, mem};
 use tinyvec::TinyVec;
@@ -61,7 +65,7 @@ pub(crate) fn finish_request<D: DisplayBase + ?Sized>(
     log_debug!("Got sequence number {}", seq);
 
     if !pr.zero_sized_reply || display.checked() {
-        log_trace!(
+        log::trace!(
             "Request is neither zero-sized nor is the display not checked, so we expect a reply"
         );
         input::expect_reply(display, seq, flags);
@@ -95,22 +99,24 @@ pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
 ) -> crate::Result<u16> {
     log_trace!("Entering output::send_request()");
 
-    let mut req = preprocess_request(display, request_info);
     // figure out the extension opcode
-    let ext_opcode = match req.extension {
+    let ext_opcode = match request_info.extension {
         None => None,
         Some(extension) => {
             let key = str_to_key(extension);
             match display.get_extension_opcode(&key) {
                 Some(opcode) => Some(opcode),
                 None => {
-                    let opcode = get_ext_opcode(display, extension)?;
+                    let opcode = get_ext_opcode(display, connection, extension)?;
                     display.set_extension_opcode(key, opcode);
                     Some(opcode)
                 }
             }
         }
     };
+
+    // figure out sequence, et al
+    let mut req = preprocess_request(display, request_info);
 
     let request_opcode = req.opcode;
     modify_for_opcode(&mut req.data, request_opcode, ext_opcode);
@@ -126,8 +132,9 @@ pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
 }
 
 #[inline]
-pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
+pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
     display: &mut D,
+    conn: &mut C,
     extension: &'static str,
 ) -> crate::Result<u8> {
     log_trace!("Entering get_ext_opcode with extension: {}", extension);
@@ -141,9 +148,16 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
     };
 
     log_trace!("Sending QER..");
-    let tok = display.send_request(qer)?;
+    let tok = send_request(display, conn, RequestInfo::from_request(qer))?;
     log_trace!("Resolving QER...");
-    let repl = display.resolve_request(tok)?;
+    let repl = loop {
+        match display.take_pending_reply(tok) {
+            Some(PendingReply { data, fds }) => {
+                break decode_reply::<QueryExtensionRequest>(&data, fds)?;
+            }
+            None => input::wait(display, conn)?,
+        }
+    };
 
     if !repl.present {
         return Err(crate::BreadError::ExtensionNotPresent(extension.into()));
@@ -160,6 +174,12 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized>(
 pub(crate) fn str_to_key(s: &str) -> [u8; EXT_KEY_SIZE] {
     let mut key = [0u8; EXT_KEY_SIZE];
     let b = s.as_bytes();
-    key.copy_from_slice(&b[..EXT_KEY_SIZE]);
+
+    if b.len() > EXT_KEY_SIZE {
+        key.copy_from_slice(&b[..EXT_KEY_SIZE]);
+    } else {
+        (&mut key[..b.len()]).copy_from_slice(b);
+    }
+
     key
 }

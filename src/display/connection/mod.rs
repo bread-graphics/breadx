@@ -12,7 +12,7 @@ mod async_establish;
 mod establish;
 
 #[cfg(feature = "async")]
-pub(crate) use async_establish::establish_connection_async;
+pub use async_establish::EstablishConnectionFuture;
 #[cfg(feature = "async")]
 pub(crate) use establish::create_setup;
 pub(crate) use establish::establish_connection;

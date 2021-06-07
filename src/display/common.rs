@@ -8,7 +8,6 @@ use super::{
 };
 use crate::{
     auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
-    util::difference,
     Fd,
 };
 use alloc::{string::String, vec, vec::Vec};
@@ -311,6 +310,7 @@ impl SendBuffer {
             }
         };
 
+        let req = output::preprocess_request(display, req);
         *self = SendBuffer::Init(InnerSendBuffer::new_internal(req, opcode));
 
         Poll::Ready(Ok(()))
@@ -359,8 +359,6 @@ impl SendBuffer {
 pub(crate) struct InnerSendBuffer {
     /// The request we are trying to send.
     request: RequestInfo,
-    /// The original length of the request data. Used for checking for drop-while-running.
-    original_length: usize,
     /// Whether or not we've completed our task.
     complete: bool,
     /// Whether or not the data is modified to contain the opcode.
@@ -382,7 +380,6 @@ impl InnerSendBuffer {
     #[inline]
     fn new_internal(request: RequestInfo, opcode: Option<u8>) -> Self {
         Self {
-            original_length: request.data.len(),
             request,
             complete: false,
             impl_opcode: Opcode::NotImplemented(opcode),
@@ -443,7 +440,7 @@ impl InnerSendBuffer {
 impl Drop for InnerSendBuffer {
     #[inline]
     fn drop(&mut self) {
-        if self.request.data.len() != 0 || self.request.data.len() != self.original_length {
+        if self.request.data.len() != 0 {
             panic!("Interrupted send future while it was mid-transition!");
         }
     }

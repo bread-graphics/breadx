@@ -21,8 +21,6 @@ use super::{
     AsyncConnection, AsyncDisplay, RequestWorkaround,
 };
 #[cfg(feature = "async")]
-use crate::util::difference;
-#[cfg(feature = "async")]
 use alloc::{vec, vec::Vec};
 #[cfg(feature = "async")]
 use core::{
@@ -324,7 +322,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
         let res = self
             .wait_buffer
             .get_or_insert_with(WaitBuffer::default)
-            .poll_wait(self.connection.as_mut().unwrap(), &self.workarounders, cx);
+            .poll_wait(&mut conn, &self.workarounders, cx);
         self.connection = Some(conn);
         let (bytes, fds) = match res {
             Poll::Ready(res) => {
@@ -342,7 +340,6 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
 
     #[inline]
     fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        let req = output::preprocess_request(self, req);
         self.send_buffer.fill_hole(req);
     }
 

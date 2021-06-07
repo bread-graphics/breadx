@@ -377,7 +377,7 @@ pub trait Display: DisplayBase {
     fn resolve_request_raw(&mut self, req_id: u16) -> crate::Result<PendingReply> {
         loop {
             match self.take_pending_reply(req_id) {
-                Some(p) => break Ok(p),
+                Some(p) => return Ok(p),
                 None => self.wait()?,
             }
         }

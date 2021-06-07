@@ -352,7 +352,6 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     #[inline]
     fn begin_send_request_raw(&mut self, req: RequestInfo) {
         self.lock_internal();
-        let req = output::preprocess_request(self, req);
         self.send_buffer.get_mut().fill_hole(req);
     }
 
@@ -563,7 +562,6 @@ where
     #[inline]
     fn begin_send_request_raw(&mut self, req: RequestInfo) {
         self.lock_internal_immutable();
-        let req = output::preprocess_request(self, req);
         self.send_buffer.borrow_mut().fill_hole(req);
     }
 
