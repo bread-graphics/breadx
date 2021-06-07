@@ -4,6 +4,7 @@
 
 use alloc::boxed::Box;
 use core::{convert::TryInto, iter, mem};
+use tinyvec::{Array, TinyVec};
 
 #[cfg(all(unix, feature = "std"))]
 use nix::Error as NixError;
@@ -20,17 +21,16 @@ pub(crate) fn convert_nix_error(e: NixError) -> IoError {
     }
 }
 
+/// Expand or truncate a `TinyVec<[u8; N]>` so that its length becomes the given value.
 #[inline]
-#[cfg(feature = "async")]
-pub(crate) fn difference<T>(i1: &[T], i2: &[T]) -> usize {
-    let i1 = i1 as *const [T] as *const T as isize;
-    let i2 = i2 as *const [T] as *const T as isize;
-    let diff = i2
-        .checked_sub(i1)
-        .expect("Difference is too large to be measured");
-    // a non-negative isize will always fit in a usize
-    let diff: usize = diff.abs().try_into().unwrap();
-    diff.checked_div(mem::size_of::<T>()).unwrap_or(0)
+pub(crate) fn expand_or_truncate_to_length<A: Array<Item = u8>>(tv: &mut TinyVec<A>, len: usize) {
+    let num = len.saturating_sub(tv.len());
+    tv.extend(iter::repeat(0).take(num));
+
+    // TODO: nightly-only unlikely() hint
+    if tv.len() != len {
+        tv.truncate(len);
+    }
 }
 
 /// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.

@@ -4,7 +4,7 @@ use super::{
     Connection, Display, DisplayBase, HasConnection, PendingReply, PendingRequest,
     PendingRequestFlags, RequestWorkaround,
 };
-use crate::{event::Event, Fd, XID};
+use crate::{event::Event, log_debug, log_trace, Fd, XID};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
@@ -27,8 +27,7 @@ pub(crate) fn process_bytes<D: DisplayBase + ?Sized>(
 ) -> crate::Result {
     // get the sequence number
     let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
-    #[cfg(debug_assertions)]
-    log::trace!("Found response bytes: {}", &bytes);
+    log_trace!("Found response bytes: {:?}", &bytes);
 
     if bytes[0] == TYPE_REPLY {
         log::debug!("Received bytes of type REPLY");
@@ -39,7 +38,9 @@ pub(crate) fn process_bytes<D: DisplayBase + ?Sized>(
 
         // if we're discarding the reply, skip the conversion process
         if pereq.flags.discard_reply {
-            log::debug!("Discarding input for request");
+            log::debug!(
+                "Discarding reply as per the request's instructions (likely a synchronization)"
+            );
         } else {
             // convert to a PendingReply
             let reply = PendingReply {
@@ -164,11 +165,15 @@ pub(crate) fn wait<C: Connection + ?Sized, D: Display + ?Sized>(
     display: &mut D,
     connection: &mut C,
 ) -> crate::Result {
-    log::debug!("Running wait cycle");
+    log_trace!("Ran wait()");
+    log::debug!("Beginning wait cycle");
+
     // replies, errors, and events are all in units of 32 bytes
     let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(32).collect();
     let mut fds: Vec<Fd> = vec![];
+    log_trace!("Beginning read_packet()");
     connection.read_packet(&mut bytes, &mut fds)?;
+    log_trace!("Ending read_packet()");
 
     fix_glx_workaround(
         |seq| match display.get_pending_request(seq) {
@@ -181,10 +186,14 @@ pub(crate) fn wait<C: Connection + ?Sized, D: Display + ?Sized>(
     // in certain cases, we may have to read more bytes
     if let Some(ab) = additional_bytes(&bytes[..8]) {
         if ab != 0 {
+            log_debug!("We need to read {} additional bytes", ab);
             bytes.extend(iter::repeat(0).take(ab));
+            log_trace!("Beginning read_packet()");
             connection.read_packet(&mut bytes[32..], &mut fds)?;
+            log_trace!("Ending read_packet()");
         }
     }
 
+    log::debug!("Found {} bytes; now processing them...", bytes.len());
     process_bytes(display, bytes, fds)
 }

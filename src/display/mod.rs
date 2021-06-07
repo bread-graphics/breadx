@@ -15,6 +15,7 @@ use crate::{
     },
     error::BreadError,
     event::Event,
+    util::expand_or_truncate_to_length,
     xid::XidGenerator,
     Fd, Request, XID,
 };
@@ -636,9 +637,9 @@ impl RequestInfo {
             .collect::<TinyVec<[u8; 32]>>();
         let mut len = req.as_bytes(&mut data);
 
-        // pad to a multiple of 4 if we can
+        // make sure it's aligned to a multiple of 4
         len = (len + 3) & (!0x03);
-        data.truncate(len);
+        expand_or_truncate_to_length(&mut data, len);
 
         // Third and fourth bytes need to be length
         let x_len = len / 4;

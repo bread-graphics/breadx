@@ -3,7 +3,7 @@
 
 #![cfg(all(feature = "std", unix))]
 
-use crate::{util::convert_nix_error, Fd};
+use crate::{log_debug, log_trace, util::convert_nix_error, Fd};
 use alloc::{vec, vec::Vec};
 use core::mem;
 use nix::sys::{
@@ -30,13 +30,29 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
         mut data: &[u8],
         mut cmsgs: &[ControlMessage<'_>],
     ) -> (usize, io::Result<()>) {
+        let datalen = data.len();
         let mut datavec = [IoVec::from_slice(data)];
         let mut offset = 0;
         loop {
             match sendmsg(conn, &datavec, cmsgs, MsgFlags::empty(), None) {
-                Ok(0) => return (offset, Ok(())),
+                Ok(0) => {
+                    log_debug!("sendmsg sent 0 bytes; request is likely finished");
+                    return (offset, Ok(()));
+                }
+                Ok(m) if m == datalen => {
+                    log_debug!(
+                        "sendmsg sent {} bytes; this encompasses the entire buffer",
+                        m
+                    );
+                    offset += m;
+                    return (offset, Ok(()));
+                }
                 Ok(m) => {
-                    log::debug!("sendmsg: yet to send {} bytes", data.len() - m);
+                    log_debug!(
+                        "sendmsg: sent {} bytes, yet to send {} bytes",
+                        m,
+                        data.len() - m
+                    );
                     offset += m;
                     data = &data[m..];
                     datavec = [IoVec::from_slice(data)];
@@ -48,6 +64,8 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
             }
         }
     }
+
+    log_trace!("Beginning send_msg_packet (*nix implementation of send_packet())");
 
     let res = if fds.is_empty() {
         sendmsg_loop(conn, data, &[])
@@ -111,6 +129,8 @@ fn read_msg_packet(
     fds: &mut Vec<Fd>,
     total_read: &mut usize,
 ) -> io::Result<()> {
+    log_trace!("Beginning read_msg_packet (*nix implementation of read_packet())");
+
     const MAX_FDS: usize = 16;
 
     if data.is_empty() {
@@ -124,14 +144,24 @@ fn read_msg_packet(
     let msg = loop {
         log::debug!("Calling recvmsg with a data buffer of length {}", datalen);
         match recvmsg(conn, &datavec, Some(&mut cmsg), MsgFlags::empty()) {
-            Ok(m) if m.bytes == 0 => break m,
+            Ok(m) if m.bytes == 0 => {
+                log_debug!("recvmsg read 0 bytes; we've likely read everything");
+                break m;
+            }
             Ok(m) if m.bytes == datalen => {
+                log_debug!(
+                    "recvmsg read {} bytes; this fills our entire buffer",
+                    m.bytes
+                );
                 *total_read += m.bytes;
                 break m;
             }
             Ok(m) => {
-                //#[cfg(debug_assertions)]
-                //log::debug!("recvmsg: yet to receive {} bytes", data.len() - m.bytes);
+                log_debug!(
+                    "recvmsg read {} bytes, yet to receive {} bytes",
+                    m.bytes,
+                    data.len() - m.bytes
+                );
                 let bytes = m.bytes;
                 data = &mut data[bytes..];
                 *total_read += bytes;
@@ -140,7 +170,7 @@ fn read_msg_packet(
                 datavec = [IoVec::from_mut_slice(data)];
             }
             Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => {
-                log::info!("Interrupt occurred during read");
+                log::warn!("Interrupt occurred during read");
             }
             Err(e) => return Err(convert_nix_error(e)),
         }

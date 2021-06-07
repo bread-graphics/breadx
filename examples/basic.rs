@@ -7,7 +7,6 @@ use breadx::{
 use std::{env, process};
 
 fn main() {
-    env::set_var("RUST_LOG", "breadx=info");
     env_logger::init();
 
     let mut conn = DisplayConnection::create(None, None).unwrap();

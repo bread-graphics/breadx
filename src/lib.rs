@@ -186,3 +186,21 @@ pub use auto::xproto::{
 
 //#[path = "../tutorials/mod.rs"]
 //pub mod tutorials;
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! log_debug {
+    ($($tt: tt)*) => {{
+        #[cfg(debug_assertions)]
+        log::debug!($($tt)*)
+    }}
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! log_trace {
+    ($($tt: tt)*) => {{
+        #[cfg(debug_assertions)]
+        log::trace!($($tt)*)
+    }}
+}
