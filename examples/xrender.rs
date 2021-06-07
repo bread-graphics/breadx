@@ -7,7 +7,7 @@ use breadx::{
         double_to_fixed, Color, Linefix, PictOp, Picture, Pointfix, RenderDisplay, StandardFormat,
         Trapezoid,
     },
-    DisplayConnection, DisplayLike, EventMask, GcParameters, Rectangle, Result,
+    DisplayConnection, EventMask, GcParameters, Rectangle, Result,
 };
 use std::{env, process};
 
@@ -34,23 +34,23 @@ fn main() -> Result {
     window.set_event_mask(&mut conn, EventMask::EXPOSURE)?;
     let wdw = conn.intern_atom_immediate("WM_DELETE_WINDOW".to_owned(), false)?;
     window.set_wm_protocols(&mut conn, &[wdw])?;
-    let attrs = window.window_attributes_immediate(conn.display_mut())?;
+    let attrs = window.window_attributes_immediate(&mut conn)?;
 
     // create a pixmap to use as a mask
     let pixmap = conn.create_pixmap(window, width, height, 8)?;
 
-    let mut conn = RenderDisplay::new(conn, 0, 10)?;
+    let mut conn = RenderDisplay::new(conn, 0, 10).unwrap_or_else(|_| panic!("Could not unpack display"));
 
     // get the format for the window
     let visual = attrs.visual;
-    let visual = conn.display().visual_id_to_visual(visual).unwrap();
+    let visual = conn.visual_id_to_visual(visual).unwrap();
     let window_format = conn.find_visual_format(visual).unwrap();
 
     // create a picture on top of the window
     let pic = conn.create_picture(window, window_format, Default::default())?;
     let mask = conn.create_picture(window, window_format, Default::default())?;
     mask.fill_rectangles(
-        conn.display_mut(),
+        &mut conn,
         PictOp::Src,
         Color {
             red: 0,
@@ -125,7 +125,7 @@ fn main() -> Result {
     let conical_gradient = conn.create_conical_gradient(center, 0, &stops, &colors)?;
 
     loop {
-        let event = conn.display_mut().wait_for_event()?;
+        let event = conn.wait_for_event()?;
 
         match event {
             Event::ClientMessage(cme) => {
@@ -139,7 +139,7 @@ fn main() -> Result {
 
                 // composite the gradient onto this window
                 radial_gradient.composite(
-                    conn.display_mut(),
+                    &mut conn,
                     PictOp::Src,
                     Picture::const_from_xid(0),
                     pic,
@@ -157,9 +157,9 @@ fn main() -> Result {
         }
     }
 
-    linear_gradient.free(conn.display_mut())?;
-    radial_gradient.free(conn.display_mut())?;
-    conical_gradient.free(conn.display_mut())?;
+    linear_gradient.free(&mut conn)?;
+    radial_gradient.free(&mut conn)?;
+    conical_gradient.free(&mut conn)?;
 
     Ok(())
 }
