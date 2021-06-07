@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
-    Fd,
+    log_debug, log_trace, Fd,
 };
 use alloc::{string::String, vec, vec::Vec};
 use core::{
@@ -70,6 +70,8 @@ impl WaitBuffer {
         workarounders: &[u16],
         cx: &mut Context<'_>,
     ) -> Poll<crate::Result<WaitBufferReturn>> {
+        log_trace!("Entering poll_wait for WaitBuffer");
+
         // if this is already complete, panic
         if self.complete {
             panic!("Attempted to poll wait buffer past completion");
@@ -77,11 +79,16 @@ impl WaitBuffer {
 
         loop {
             // read into the buffer as much as we can
+            log_debug!("Running poll_read_packet()...");
             let res = conn.poll_read_packet(
                 &mut self.buffer[self.cursor..],
                 &mut self.fds,
                 cx,
                 &mut self.cursor,
+            );
+            log_debug!(
+                "Finished poll_read_packet(), result is{} ready",
+                if res.is_ready() { "" } else { " not" }
             );
 
             match res {
@@ -177,6 +184,8 @@ impl SendBuffer {
         conn: &mut C,
         cx: &mut Context<'_>,
     ) -> Poll<crate::Result> {
+        log_trace!("Entering poll_init()");
+
         let (req, opcode) = loop {
             match mem::replace(self, SendBuffer::Hole) {
                 // cannot pole an empty hole
@@ -325,6 +334,8 @@ impl SendBuffer {
         conn: &mut C,
         context: &mut Context<'_>,
     ) -> Poll<crate::Result<RequestInfo>> {
+        log_trace!("Entering poll_send_request() for SendBuffer");
+
         loop {
             // if we're already initialized, start polling to actually send the request
             match mem::replace(self, Self::Hole) {
@@ -383,12 +394,6 @@ impl InnerSendBuffer {
         }
     }
 
-    /// Complete this buffer, allowing us to panic if it's polled after completion. See above for rationale.
-    #[inline]
-    fn complete(&mut self) {
-        self.complete = true;
-    }
-
     /// Poll to see if we can complete the raw request.
     #[inline]
     fn poll_send_request<C: AsyncConnection + Unpin + ?Sized>(
@@ -396,6 +401,8 @@ impl InnerSendBuffer {
         conn: &mut C,
         ctx: &mut Context<'_>,
     ) -> Poll<crate::Result<RequestInfo>> {
+        log_trace!("Entering poll_send_request() for InnerSendBuffer");
+
         // if we are already completed, panick
         if self.complete {
             panic!("Attempted to poll buffer past completion");
@@ -403,6 +410,7 @@ impl InnerSendBuffer {
 
         // if the opcode is not yet implemented, implement it
         if let Opcode::NotImplemented(opcode) = self.impl_opcode {
+            log_trace!("Opcode is not yet inserted; inserting...");
             let request_opcode = self.request.opcode;
             output::modify_for_opcode(&mut self.request.data, request_opcode, opcode);
             self.impl_opcode = Opcode::Implemented;
@@ -410,11 +418,17 @@ impl InnerSendBuffer {
 
         // begin polling for sending
         let mut total_sent = 0;
+        log_debug!("Running poll_send_packet()...");
         let res = conn.poll_send_packet(
             &mut self.request.data,
             &mut self.request.fds,
             ctx,
             &mut total_sent,
+        );
+        log_debug!(
+            "Finished poll_send_packet(), polling is{} finished, sent {} bytes",
+            if res.is_ready() { "" } else { " not" },
+            total_sent
         );
 
         self.request.data = self.request.data.split_off(total_sent);

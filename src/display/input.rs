@@ -24,6 +24,7 @@ pub(crate) fn process_bytes<D: DisplayBase + ?Sized>(
 ) -> crate::Result {
     // get the sequence number
     let sequence = u16::from_ne_bytes([bytes[2], bytes[3]]);
+    log_trace!("Found sequence: {}", sequence);
     log_trace!("Found response bytes: {:?}", &bytes);
 
     if bytes[0] == TYPE_REPLY {

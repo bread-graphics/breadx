@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// The future returned by `AsyncDisplayExt::wait_for_event_async`.
-pub type WaitForEventFuture<'a, D: ?Sized> = WaitLoopFuture<'a, D, WaitForEventHandler>;
+pub type WaitForEventFuture<'a, D> = WaitLoopFuture<'a, D, WaitForEventHandler>;
 
 impl<'a, D: ?Sized> WaitForEventFuture<'a, D> {
     #[inline]

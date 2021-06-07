@@ -1,13 +1,12 @@
 // MIT/Apache2 License
 
-use super::{create_setup, AsyncConnection, AsyncConnectionExt};
+use super::{create_setup, AsyncConnection};
 use crate::{
     auth_info::AuthInfo,
     auto::{xproto::Setup, AsByteSequence},
     xid::XidGenerator,
-    Fd,
 };
-use alloc::{boxed::Box, vec, vec::Vec};
+use alloc::{boxed::Box, vec};
 use core::{
     future::Future,
     iter, mem,

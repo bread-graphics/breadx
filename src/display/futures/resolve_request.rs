@@ -40,6 +40,11 @@ pub enum ResolveRequestFuture<'a, D: ?Sized, R: Request> {
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn run(display: &'a mut D, tok: RequestCookie<R>) -> Self {
+        log::info!(
+            "Resolving for a {} from the server",
+            core::any::type_name::<R>()
+        );
+
         match (mem::size_of::<R::Reply>(), display.checked()) {
             (0, false) => ResolveRequestFuture::FastPath {
                 display: Some(display),

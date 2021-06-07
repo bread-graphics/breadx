@@ -4,6 +4,7 @@ use super::{SendRequestRawFuture, WaitFuture};
 use crate::{
     auto::xproto::GetInputFocusRequest,
     display::{output, AsyncDisplay, RequestInfo},
+    log_trace, log_debug,
 };
 use core::{
     future::Future,
@@ -32,6 +33,8 @@ pub enum SynchronizeFuture<'a, D: ?Sized> {
 impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
     #[inline]
     pub(crate) fn run(display: &'a mut D) -> Self {
+        log::debug!("Beginning synchronization process");
+
         let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
         gifr.discard_reply = true;
 
@@ -69,6 +72,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                     Poll::Ready(Ok(seq)) => {
                         // it's time to begin the wait cycle
                         let display = srrf.display();
+                        log_trace!("We are looking for a request of seq {}", seq);
                         *self = SynchronizeFuture::Waiting {
                             wf: WaitFuture::run(display),
                             seq,
@@ -85,14 +89,18 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
                         break Poll::Ready(Err(e));
                     }
                     Poll::Ready(Ok(())) => {
+                        log_debug!("Finished synchronization wait...");
+
                         // check if we contain any pending requests yet
                         let display = wf.display();
-                        if display.take_pending_request(seq).is_some() {
+                        if display.get_pending_request(seq).is_none() {
                             *self = SynchronizeFuture::Complete {
                                 display: Some(display),
                             };
                             break Poll::Ready(Ok(()));
                         }
+
+                        log_debug!("We have not synchronized yet, continue with another wait cycle.");
 
                         // reset and start again
                         *self = SynchronizeFuture::Waiting {

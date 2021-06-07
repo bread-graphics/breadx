@@ -3,7 +3,7 @@
 use super::SendRequestRawFuture;
 use crate::{
     display::{decode_reply, AsyncDisplay, PendingRequest, RequestCookie, RequestInfo},
-    Request,
+    log_trace, Request,
 };
 use core::{
     future::Future,
@@ -29,6 +29,8 @@ pin_project_lite::pin_project! {
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn run(display: &'a mut D, request: R) -> Self {
+        log::info!("Sending a {} to the server", core::any::type_name::<R>());
+
         Self {
             inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
             _phantom: PhantomData,

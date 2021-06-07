@@ -4,7 +4,7 @@ use super::{WaitLoopFuture, WaitLoopHandler};
 use crate::display::{AsyncDisplay, DisplayBase, PendingReply};
 
 /// The future returned by `AsyncDisplayExt::ResolveRequestRaw`.
-pub type ResolveRequestRawFuture<'a, D: ?Sized> = WaitLoopFuture<'a, D, ResolveRequestRawHandler>;
+pub type ResolveRequestRawFuture<'a, D> = WaitLoopFuture<'a, D, ResolveRequestRawHandler>;
 
 impl<'a, D: ?Sized> ResolveRequestRawFuture<'a, D> {
     #[inline]

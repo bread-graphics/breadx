@@ -3,9 +3,7 @@
 use super::EstablishConnectionFuture;
 use crate::{
     auth_info::AuthInfo,
-    auto::xproto::Setup,
     display::{ReadPacketFuture, SendPacketFuture},
-    XidGenerator,
 };
 use core::task::{Context, Poll};
 
@@ -18,11 +16,9 @@ use core::{future::Future, pin::Pin};
 #[cfg(feature = "std")]
 use async_io::Async;
 #[cfg(feature = "std")]
-use futures_lite::{AsyncRead, AsyncWrite};
+use std::net::TcpStream;
 #[cfg(all(feature = "std", unix))]
 use std::os::unix::net::UnixStream;
-#[cfg(feature = "std")]
-use std::{io, mem, net::TcpStream};
 
 #[cfg(not(unix))]
 use super::standard_fd_warning;
@@ -127,7 +123,7 @@ macro_rules! unix_aware_async_connection_impl {
             #[inline]
             fn poll_send_packet(
                 &mut self,
-                mut bytes: &[u8],
+                bytes: &[u8],
                 fds: &mut Vec<Fd>,
                 cx: &mut Context<'_>,
                 bytes_written: &mut usize,
@@ -160,7 +156,7 @@ macro_rules! unix_aware_async_connection_impl {
             #[inline]
             fn poll_read_packet(
                 &mut self,
-                mut bytes: &mut [u8],
+                bytes: &mut [u8],
                 fds: &mut Vec<Fd>,
                 cx: &mut Context<'_>,
                 bytes_read: &mut usize,

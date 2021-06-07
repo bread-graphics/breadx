@@ -12,8 +12,6 @@ use nix::sys::{
 use std::{io, os::unix::io::RawFd};
 
 #[cfg(feature = "async")]
-use alloc::sync::Arc;
-#[cfg(feature = "async")]
 use async_io::Async;
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};

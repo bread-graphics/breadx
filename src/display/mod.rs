@@ -21,11 +21,7 @@ use tinyvec::TinyVec;
 #[cfg(feature = "async")]
 use crate::xid::XidType;
 #[cfg(feature = "async")]
-use core::{
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
+use core::task::{Context, Poll};
 
 mod basic;
 mod cell;
