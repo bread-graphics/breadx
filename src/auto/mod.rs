@@ -337,7 +337,6 @@ impl AsByteSequence for String {
     }
 }
 
-#[cfg(feature = "bigreq")]
 pub mod bigreq;
 #[cfg(feature = "damage")]
 pub mod damage;

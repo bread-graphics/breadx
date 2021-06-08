@@ -15,7 +15,7 @@ use crate::{
     Fd, Request, XID,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{fmt, iter, marker::PhantomData, mem, num::NonZeroU32};
+use core::{fmt, iter, iter::FusedIterator, marker::PhantomData, mem, num::NonZeroU32};
 use tinyvec::TinyVec;
 
 #[cfg(feature = "async")]
@@ -24,6 +24,7 @@ use crate::xid::XidType;
 use core::task::{Context, Poll};
 
 mod basic;
+pub(crate) mod bigreq;
 mod cell;
 mod connection;
 pub mod traits;
@@ -129,6 +130,13 @@ pub trait DisplayBase {
 
     /// Set whether or not zero-length replies are checked.
     fn set_checked(&mut self, checked: bool);
+
+    /// Whether or not this display uses the `bigreq` extension, whereas requests consisting of over
+    /// 262140 bytes are allowed to be sent over the connection.
+    fn bigreq_enabled(&self) -> bool;
+
+    /// The current maximum request length.
+    fn max_request_len(&self) -> usize;
 
     /// Get the opcode for an extension.
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8>;
@@ -316,6 +324,16 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     }
 
     #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        (**self).bigreq_enabled()
+    }
+
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        (**self).max_request_len()
+    }
+
+    #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
         (**self).get_extension_opcode(key)
     }
@@ -348,7 +366,11 @@ pub trait Display: DisplayBase {
     #[inline]
     fn synchronize(&mut self) -> crate::Result {
         log::debug!("Synchronizing display");
-        let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
+        let mut gifr = RequestInfo::from_request(
+            GetInputFocusRequest::default(),
+            self.bigreq_enabled(),
+            self.max_request_len(),
+        );
         gifr.discard_reply = true;
         let sequence = self.send_request_raw(gifr)?;
         // essentially a do/while loop
@@ -468,7 +490,7 @@ pub trait DisplayExt {
 impl<D: Display + ?Sized> DisplayExt for D {
     #[inline]
     fn send_request<R: Request>(&mut self, request: R) -> crate::Result<RequestCookie<R>> {
-        let r = RequestInfo::from_request(request);
+        let r = RequestInfo::from_request(request, self.bigreq_enabled(), self.max_request_len());
         let req_id = self.send_request_raw(r)?;
         Ok(RequestCookie::from_sequence(req_id))
     }
@@ -620,7 +642,10 @@ pub struct RequestInfo {
 impl RequestInfo {
     /// Generate a `RequestInfo` given a specific `Request` to generate from.
     #[inline]
-    pub fn from_request<R: Request>(mut req: R) -> Self {
+    pub fn from_request<R: Request>(mut req: R, use_bigreq: bool, max_request_len: usize) -> Self {
+        const SHORT_REQUEST_LIMIT: usize = (u16::MAX as usize) * 4;
+        debug_assert!(use_bigreq || max_request_len <= SHORT_REQUEST_LIMIT);
+
         // TODO: somehow write using uninitialzied data
         let mut data = iter::repeat(0)
             .take(req.size())
@@ -631,12 +656,36 @@ impl RequestInfo {
         len = (len + 3) & (!0x03);
         expand_or_truncate_to_length(&mut data, len);
 
-        // Third and fourth bytes need to be length
+        // note: we assume max_request_len is already normalized
+        assert!(
+            max_request_len >= len,
+            "Request's size was larger than the maximum request length"
+        );
+
+        // If we fit in the short request limit, third and fourth bytes need to be length
         let x_len = len / 4;
         log::trace!("xlen is {}", x_len);
-        let len_bytes = x_len.to_ne_bytes();
-        data[2] = len_bytes[0];
-        data[3] = len_bytes[1];
+        if max_request_len <= SHORT_REQUEST_LIMIT {
+            let len_bytes = (x_len as u16).to_ne_bytes();
+            data[2] = len_bytes[0];
+            data[3] = len_bytes[1];
+        } else {
+            let length_bytes = (x_len as u32).to_ne_bytes();
+            data = match data {
+                TinyVec::Inline(data) => BigreqIterator {
+                    inner: data.into_iter(),
+                    length_bytes,
+                    cursor: 0,
+                }
+                .collect(),
+                TinyVec::Heap(data) => BigreqIterator {
+                    inner: data.into_iter(),
+                    length_bytes,
+                    cursor: 0,
+                }
+                .collect(),
+            };
+        }
 
         RequestInfo {
             data,
@@ -659,6 +708,43 @@ impl RequestInfo {
         self.sequence = Some(seq);
     }
 }
+
+struct BigreqIterator<I> {
+    inner: I,
+    cursor: usize,
+    length_bytes: [u8; 4],
+}
+
+impl<I: Iterator<Item = u8>> Iterator for BigreqIterator<I> {
+    type Item = u8;
+
+    #[inline]
+    fn next(&mut self) -> Option<u8> {
+        let res = match self.cursor {
+            // 2..4
+            2..=3 => {
+                self.inner.next();
+                Some(0)
+            }
+            // 4..8
+            4..=7 => Some(self.length_bytes[self.cursor - 4]),
+            _ => self.inner.next(),
+        };
+
+        self.cursor += 1;
+        res
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (lo, hi) = self.inner.size_hint();
+        (lo + 4, hi.map(|hi| hi + 4))
+    }
+}
+
+impl<I: Iterator<Item = u8> + FusedIterator> FusedIterator for BigreqIterator<I> {}
+
+impl<I: Iterator<Item = u8> + ExactSizeIterator> ExactSizeIterator for BigreqIterator<I> {}
 
 /// A reply, pending returning from the display.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
