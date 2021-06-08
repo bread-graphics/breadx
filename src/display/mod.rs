@@ -665,11 +665,7 @@ impl RequestInfo {
         // If we fit in the short request limit, third and fourth bytes need to be length
         let x_len = len / 4;
         log::trace!("xlen is {}", x_len);
-        if !use_bigreq {
-            let len_bytes = (x_len as u16).to_ne_bytes();
-            data[2] = len_bytes[0];
-            data[3] = len_bytes[1];
-        } else {
+        if use_bigreq {
             let length_bytes = ((x_len + 1) as u32).to_ne_bytes();
             data = match data {
                 TinyVec::Inline(data) => BigreqIterator {
@@ -685,6 +681,10 @@ impl RequestInfo {
                 }
                 .collect(),
             };
+        } else {
+            let len_bytes = (x_len as u16).to_ne_bytes();
+            data[2] = len_bytes[0];
+            data[3] = len_bytes[1];
         }
 
         RequestInfo {
