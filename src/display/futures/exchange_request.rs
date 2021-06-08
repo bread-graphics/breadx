@@ -47,7 +47,8 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ExchangeRequestFuture<'a, D, R> {
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin + 'a> Future for ExchangeRequestFuture<'a, D, R>
+impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin + 'a> Future
+    for ExchangeRequestFuture<'a, D, R>
 where
     R::Reply: Default + Unpin,
 {

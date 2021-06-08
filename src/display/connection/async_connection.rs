@@ -13,6 +13,11 @@ use crate::Fd;
 use alloc::{boxed::Box, vec::Vec};
 use core::{future::Future, pin::Pin};
 
+#[cfg(all(feature = "std", not(unix)))]
+use futures_lite::{AsyncRead, AsyncWrite};
+#[cfg(all(feature = "std", not(unix)))]
+use std::io;
+
 #[cfg(feature = "std")]
 use async_io::Async;
 #[cfg(feature = "std")]
@@ -133,6 +138,7 @@ macro_rules! unix_aware_async_connection_impl {
                         unix::poll_send_packet_unix(self, bytes, fds, cx, bytes_written)
                     } else {
                         standard_fd_warning(fds);
+                        let mut bytes = bytes;
                         while !bytes.is_empty() {
                             match Pin::new(&mut *self).poll_write(cx, bytes) {
                                 Poll::Pending => return Poll::Pending,
@@ -166,6 +172,7 @@ macro_rules! unix_aware_async_connection_impl {
                         unix::poll_read_packet_unix(self, bytes, fds, cx, bytes_read)
                     } else {
                         let _ = fds;
+                        let mut bytes = bytes;
                         while !bytes.is_empty() {
                             match Pin::new(&mut *self).poll_read(cx, bytes) {
                                 Poll::Pending => return Poll::Pending,

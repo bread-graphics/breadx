@@ -43,7 +43,10 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin> Future for SendRequestFut
     type Output = crate::Result<RequestCookie<R>>;
 
     #[inline]
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<RequestCookie<R>>> {
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<crate::Result<RequestCookie<R>>> {
         self.inner.poll(cx).map_ok(RequestCookie::from_sequence)
     }
 }

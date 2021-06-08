@@ -93,6 +93,7 @@ pub(crate) const fn roundup(dividend: usize, divisor: usize) -> usize {
 }
 
 /// Take a value, run some kind of operation on it, and then restore that value.
+#[cfg(feature = "async")]
 #[inline]
 pub(crate) fn take_mut<T: Default, F: FnOnce(T) -> T>(r: &mut T, f: F) {
     // TODO: consider the take_mut crate

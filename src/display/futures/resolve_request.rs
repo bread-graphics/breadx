@@ -57,9 +57,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ResolveRequestFuture<'a, D, R> {
         );
 
         match (mem::size_of::<R::Reply>(), display.checked()) {
-            (0, false) => ResolveRequestFuture::FastPath {
-                display,
-            },
+            (0, false) => ResolveRequestFuture::FastPath { display },
             (0, true) => ResolveRequestFuture::Synchronizing {
                 sf: SynchronizeFuture::run(display),
                 tok,

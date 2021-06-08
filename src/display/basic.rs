@@ -5,8 +5,7 @@ use super::{
     EXT_KEY_SIZE,
 };
 use crate::{
-    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, log_trace,
-    XidGenerator, XID,
+    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
 };
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
@@ -329,11 +328,6 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
             }
             Poll::Pending => return Poll::Pending,
         };
-
-        log_trace!(
-            "Current window into pending_requests: {:?}",
-            &self.pending_requests
-        );
 
         Poll::Ready(input::process_bytes(self, bytes, fds))
     }
