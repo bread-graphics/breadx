@@ -35,7 +35,7 @@ impl<'a, 'b, 'c, Conn: AsyncConnection + Unpin + ?Sized> Future
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
-        let mut fds = mem::take(self.fds);
+        let mut fds = mem::take((&mut *self).fds);
         let mut total_read = 0;
         let bytes = self.bytes;
 

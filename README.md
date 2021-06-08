@@ -4,6 +4,8 @@
 
 An implementation of the X Window System Protocol in Rust. 100% safe and mutex-free. Currently a work in progress; however, it should be usable in its current state for most X11-related applications.
 
+MSRV is currently 1.44.0. Pull requests that make this MSRV lower are welcome.
+
 ## Reasons you should use this over Xlib/XCB Bindings
 
 * No Mutexes
