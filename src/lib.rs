@@ -33,7 +33,7 @@
 //! This example opens a connection to the X server, then creates a basic window titled "Hello World!".
 //!
 //! ```rust,no_run
-//! use breadx::{DisplayConnection, Event, WindowClass};
+//! use breadx::{prelude::*, DisplayConnection, Event, WindowClass};
 //! use std::{boxed::Box, error::Error};
 //!
 //! fn main() -> Result<(), Box<dyn Error>> {
