@@ -42,7 +42,6 @@ image-support = ["image", "std"]
 std = ["memchr/std"]
 
 # Extensions
-bigreq = []
 damage = ["fixes"]
 dpms = []
 dri2 = []
@@ -70,7 +69,7 @@ xkb = []
 xtest = []
 xvmc = ["xv"]
 xv = ["shm"]
-all-extensions = ["bigreq", "damage", "dpms", "dri2", "dri3", "fixes", "ge", "glx", "input", "present", "print", "randr", "record", "render", "res", "screensaver", "selinux", "shape", "shm", "sync", "xevie", "xf86dri", "xf86vidmode", "xinerama", "xkb", "xtest", "xvmc", "xv"]
+all-extensions = ["damage", "dpms", "dri2", "dri3", "fixes", "ge", "glx", "input", "present", "print", "randr", "record", "render", "res", "screensaver", "selinux", "shape", "shm", "sync", "xevie", "xf86dri", "xf86vidmode", "xinerama", "xkb", "xtest", "xvmc", "xv"]
 
 [package.metadata.docs.rs]
 features = ["async", "all-extensions"]

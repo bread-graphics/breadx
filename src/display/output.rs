@@ -139,7 +139,11 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
     };
 
     log_trace!("Sending QER..");
-    let tok = send_request(display, conn, RequestInfo::from_request(qer))?;
+    let tok = send_request(
+        display,
+        conn,
+        RequestInfo::from_request(qer, display.bigreq_enabled(), display.max_request_len()),
+    )?;
     log_trace!("Resolving QER...");
     let repl = loop {
         match display.take_pending_reply(tok) {

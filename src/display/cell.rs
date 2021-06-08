@@ -63,6 +63,12 @@ pub struct CellDisplay<Conn> {
     // xid generator
     xid: CellXidGenerator,
 
+    // whether or not bigreq is enabled
+    bigreq_enabled: bool,
+
+    // maximum request length
+    max_request_len: usize,
+
     // the screen to be used by default
     default_screen: usize,
 
@@ -107,6 +113,8 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             connection,
             setup,
             xid,
+            bigreq_enabled,
+            max_request_len,
             default_screen,
             event_queue,
             pending_requests,
@@ -125,6 +133,8 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             io_lock: Cell::new(false),
             setup,
             xid: xid.into(),
+            bigreq_enabled,
+            max_request_len,
             default_screen,
             inner: RefCell::new(Data {
                 event_queue,
@@ -270,6 +280,14 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     #[inline]
     fn set_checked(&mut self, checked: bool) {
         *self.checked.get_mut() = checked;
+    }
+    #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        self.bigreq_enabled
+    }
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        self.max_request_len
     }
     #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
@@ -479,6 +497,14 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     #[inline]
     fn set_checked(&mut self, checked: bool) {
         self.checked.set(checked);
+    }
+    #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        self.bigreq_enabled
+    }
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        self.max_request_len
     }
     #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {

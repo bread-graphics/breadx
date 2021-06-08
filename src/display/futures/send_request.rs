@@ -27,8 +27,10 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     pub(crate) fn run(display: &'a mut D, request: R) -> Self {
         log::info!("Sending a {} to the server", core::any::type_name::<R>());
 
+        let req =
+            RequestInfo::from_request(request, display.bigreq_enabled(), display.max_request_len());
         Self {
-            inner: SendRequestRawFuture::run(display, RequestInfo::from_request(request)),
+            inner: SendRequestRawFuture::run(display, req),
             _phantom: PhantomData,
         }
     }

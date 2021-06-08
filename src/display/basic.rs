@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use super::{
-    input, output, Connection, Display, DisplayBase, PendingReply, PendingRequest, RequestInfo,
-    EXT_KEY_SIZE,
+    bigreq, input, output, Connection, Display, DisplayBase, PendingReply, PendingRequest,
+    RequestInfo, EXT_KEY_SIZE,
 };
 use crate::{
     auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
@@ -39,6 +39,15 @@ pub struct BasicDisplay<Conn> {
 
     /// The setup received from the server.
     pub(crate) setup: Setup,
+
+    /// Whether or not the "bigreq" system has been enabled, which expands the number of permitted bytes to send
+    /// across the request. For more information, see the following webpage.
+    ///
+    /// https://www.x.org/releases/X11R7.7/doc/bigreqsproto/bigreq.html
+    pub(crate) bigreq_enabled: bool,
+
+    /// The current maximum number of bytes we can send across the connection.
+    pub(crate) max_request_len: usize,
 
     /// XID generator.
     pub(crate) xid: XidGenerator,
@@ -97,6 +106,8 @@ impl<Conn> BasicDisplay<Conn> {
             xid: Default::default(),
             default_screen,
             event_queue: VecDeque::with_capacity(8),
+            bigreq_enabled: false,
+            max_request_len: 0,
             // setting this to 1 because breadglx with DRI3 will always append one entry to this map,
             // and expanding this map is considered to be a cold operation
             special_event_queues: HashMap::with_capacity(1),
@@ -127,6 +138,13 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
         let (setup, xid) = this.connection.as_mut().unwrap().establish(auth_info)?;
+
+        this.max_request_len = (setup.maximum_request_length as usize).saturating_mul(4);
+
+        if let Some(max_request_len) = bigreq::try_bigreq(&mut this)? {
+            this.bigreq_enabled = true;
+            this.max_request_len = (max_request_len as usize).saturating_mul(4);
+        }
         this.setup = setup;
         this.xid = xid;
         Ok(this)
@@ -148,6 +166,12 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
             .unwrap()
             .establish_async(auth_info)
             .await?;
+        this.max_request_len = (setup.maximum_request_length as usize).saturating_mul(4);
+
+        if let Some(max_request_len) = bigreq::try_bigreq_async(&mut this).await? {
+            this.bigreq_enabled = true;
+            this.max_request_len = (max_request_len as usize).saturating_mul(4);
+        }
         this.setup = setup;
         this.xid = xid;
         Ok(this)
@@ -267,6 +291,16 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     #[inline]
     fn set_checked(&mut self, checked: bool) {
         self.checked = checked;
+    }
+
+    #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        self.bigreq_enabled
+    }
+
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        self.max_request_len
     }
 
     #[inline]

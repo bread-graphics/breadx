@@ -289,15 +289,17 @@ impl SendBuffer {
                                         req,
                                         InnerSendBuffer::new_internal(
                                             {
-                                                let mut qer = output::preprocess_request(
-                                                    display,
-                                                    RequestInfo::from_request(
-                                                        QueryExtensionRequest {
-                                                            name: String::from(extension),
-                                                            ..Default::default()
-                                                        },
-                                                    ),
+                                                let qer = RequestInfo::from_request(
+                                                    QueryExtensionRequest {
+                                                        name: String::from(extension),
+                                                        ..Default::default()
+                                                    },
+                                                    display.bigreq_enabled(),
+                                                    display.max_request_len(),
                                                 );
+
+                                                let mut qer =
+                                                    output::preprocess_request(display, qer);
                                                 output::modify_for_opcode(
                                                     &mut qer.data,
                                                     qer.opcode,

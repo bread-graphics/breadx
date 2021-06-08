@@ -47,7 +47,11 @@ impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
     pub(crate) fn run(display: &'a mut D) -> Self {
         log::debug!("Beginning synchronization process");
 
-        let mut gifr = RequestInfo::from_request(GetInputFocusRequest::default());
+        let mut gifr = RequestInfo::from_request(
+            GetInputFocusRequest::default(),
+            display.bigreq_enabled(),
+            display.max_request_len(),
+        );
         gifr.discard_reply = true;
 
         SynchronizeFuture::Sending {
