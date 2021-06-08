@@ -9,39 +9,32 @@ use crate::{
             Picture, Pictvisual, Pointfix, QueryPictFormatsReply, QueryPictFormatsRequest,
             QueryVersionReply, QueryVersionRequest,
         },
-        xproto::{Drawable, Visualtype},
+        xproto::{Drawable, Setup, Visualtype},
     },
-    display::{Connection, Display, DisplayLike},
-    send_request, sr_request,
+    display::{
+        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingReply, PendingRequest,
+        RequestInfo, EXT_KEY_SIZE,
+    },
+    event::Event,
+    BreadError, XID,
 };
-use alloc::vec::Vec;
+use alloc::boxed::Box;
+use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::AsyncDisplay;
+#[cfg(feature = "async")]
+use core::task::{Context, Poll};
 
 /// A wrapper around the `Display` that contains XRender-specific data.
 #[derive(Debug)]
-pub struct RenderDisplay<Dpy> {
-    inner: Dpy,
-    formats: Vec<Pictforminfo>,
-    screens: Vec<Pictscreen>,
-    subpixels: Vec<u32>,
+pub struct RenderDisplay<Dpy: ?Sized> {
+    formats: Box<[Pictforminfo]>,
+    screens: Box<[Pictscreen]>,
+    subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
-}
-
-impl<Dpy: DisplayLike> DisplayLike for RenderDisplay<Dpy> {
-    type Connection = Dpy::Connection;
-
-    #[inline]
-    fn display(&self) -> &Display<Dpy::Connection> {
-        self.inner.display()
-    }
-
-    #[inline]
-    fn display_mut(&mut self) -> &mut Display<Dpy::Connection> {
-        self.inner.display_mut()
-    }
+    inner: Dpy,
 }
 
 impl<Dpy> RenderDisplay<Dpy> {
@@ -239,17 +232,317 @@ pub enum StandardFormat {
 }
 
 struct XrenderInfo {
-    formats: Vec<Pictforminfo>,
-    screens: Vec<Pictscreen>,
-    subpixels: Vec<u32>,
+    formats: Box<[Pictforminfo]>,
+    screens: Box<[Pictscreen]>,
+    subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
 }
 
-impl<Dpy: DisplayLike> RenderDisplay<Dpy>
+impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
+    #[inline]
+    fn setup(&self) -> &Setup {
+        self.inner.setup()
+    }
+
+    #[inline]
+    fn default_screen_index(&self) -> usize {
+        self.inner.default_screen_index()
+    }
+
+    #[inline]
+    fn next_request_number(&mut self) -> u64 {
+        self.inner.next_request_number()
+    }
+
+    #[inline]
+    fn push_event(&mut self, event: Event) {
+        self.inner.push_event(event)
+    }
+
+    #[inline]
+    fn pop_event(&mut self) -> Option<Event> {
+        self.inner.pop_event()
+    }
+
+    #[inline]
+    fn generate_xid(&mut self) -> Option<XID> {
+        self.inner.generate_xid()
+    }
+
+    #[inline]
+    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+        self.inner.add_pending_request(req_id, pereq)
+    }
+
+    #[inline]
+    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
+        self.inner.get_pending_request(req_id)
+    }
+
+    #[inline]
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        self.inner.take_pending_request(req_id)
+    }
+
+    #[inline]
+    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
+        self.inner.add_pending_error(req_id, error);
+    }
+
+    #[inline]
+    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
+        self.inner.check_for_pending_error(req_id)
+    }
+
+    #[inline]
+    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
+        self.inner.add_pending_reply(req_id, reply);
+    }
+
+    #[inline]
+    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
+        self.inner.take_pending_reply(req_id)
+    }
+
+    #[inline]
+    fn create_special_event_queue(&mut self, xid: XID) {
+        self.inner.create_special_event_queue(xid);
+    }
+
+    #[inline]
+    fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
+        self.inner.push_special_event(xid, event)
+    }
+
+    #[inline]
+    fn pop_special_event(&mut self, xid: XID) -> Option<Event> {
+        self.inner.pop_special_event(xid)
+    }
+
+    #[inline]
+    fn delete_special_event_queue(&mut self, xid: XID) {
+        self.inner.delete_special_event_queue(xid);
+    }
+
+    #[inline]
+    fn checked(&self) -> bool {
+        self.inner.checked()
+    }
+
+    #[inline]
+    fn set_checked(&mut self, checked: bool) {
+        self.inner.set_checked(checked);
+    }
+
+    #[inline]
+    fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
+        self.inner.get_extension_opcode(key)
+    }
+
+    #[inline]
+    fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
+        self.inner.set_extension_opcode(key, opcode);
+    }
+
+    #[inline]
+    fn wm_protocols_atom(&self) -> Option<NonZeroU32> {
+        self.inner.wm_protocols_atom()
+    }
+
+    #[inline]
+    fn set_wm_protocols_atom(&mut self, a: NonZeroU32) {
+        self.inner.set_wm_protocols_atom(a)
+    }
+}
+
+impl<'a, Dpy: DisplayBase> DisplayBase for &'a RenderDisplay<Dpy>
 where
-    Dpy::Connection: Connection,
+    &'a Dpy: DisplayBase,
 {
+    #[inline]
+    fn setup(&self) -> &Setup {
+        self.inner.setup()
+    }
+
+    #[inline]
+    fn default_screen_index(&self) -> usize {
+        self.inner().default_screen_index()
+    }
+
+    #[inline]
+    fn next_request_number(&mut self) -> u64 {
+        self.inner().next_request_number()
+    }
+
+    #[inline]
+    fn push_event(&mut self, event: Event) {
+        self.inner().push_event(event)
+    }
+
+    #[inline]
+    fn pop_event(&mut self) -> Option<Event> {
+        self.inner().pop_event()
+    }
+
+    #[inline]
+    fn generate_xid(&mut self) -> Option<XID> {
+        self.inner().generate_xid()
+    }
+
+    #[inline]
+    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+        self.inner().add_pending_request(req_id, pereq)
+    }
+
+    #[inline]
+    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
+        self.inner().get_pending_request(req_id)
+    }
+
+    #[inline]
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        self.inner().take_pending_request(req_id)
+    }
+
+    #[inline]
+    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
+        self.inner().add_pending_error(req_id, error);
+    }
+
+    #[inline]
+    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
+        self.inner().check_for_pending_error(req_id)
+    }
+
+    #[inline]
+    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
+        self.inner().add_pending_reply(req_id, reply);
+    }
+
+    #[inline]
+    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
+        self.inner().take_pending_reply(req_id)
+    }
+
+    #[inline]
+    fn create_special_event_queue(&mut self, xid: XID) {
+        self.inner().create_special_event_queue(xid);
+    }
+
+    #[inline]
+    fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
+        self.inner().push_special_event(xid, event)
+    }
+
+    #[inline]
+    fn pop_special_event(&mut self, xid: XID) -> Option<Event> {
+        self.inner().pop_special_event(xid)
+    }
+
+    #[inline]
+    fn delete_special_event_queue(&mut self, xid: XID) {
+        self.inner().delete_special_event_queue(xid);
+    }
+
+    #[inline]
+    fn checked(&self) -> bool {
+        self.inner().checked()
+    }
+
+    #[inline]
+    fn set_checked(&mut self, checked: bool) {
+        self.inner().set_checked(checked);
+    }
+
+    #[inline]
+    fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
+        self.inner().get_extension_opcode(key)
+    }
+
+    #[inline]
+    fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
+        self.inner().set_extension_opcode(key, opcode);
+    }
+
+    #[inline]
+    fn wm_protocols_atom(&self) -> Option<NonZeroU32> {
+        self.inner().wm_protocols_atom()
+    }
+
+    #[inline]
+    fn set_wm_protocols_atom(&mut self, a: NonZeroU32) {
+        self.inner().set_wm_protocols_atom(a)
+    }
+}
+
+impl<Dpy: Display> Display for RenderDisplay<Dpy> {
+    #[inline]
+    fn wait(&mut self) -> crate::Result {
+        self.inner.wait()
+    }
+
+    #[inline]
+    fn send_request_raw(&mut self, request: RequestInfo) -> crate::Result<u16> {
+        self.inner.send_request_raw(request)
+    }
+}
+
+impl<'a, Dpy: DisplayBase> Display for &'a RenderDisplay<Dpy>
+where
+    &'a Dpy: Display,
+{
+    #[inline]
+    fn wait(&mut self) -> crate::Result {
+        self.inner().wait()
+    }
+
+    #[inline]
+    fn send_request_raw(&mut self, request: RequestInfo) -> crate::Result<u16> {
+        self.inner().send_request_raw(request)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner.poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner.begin_send_request_raw(req)
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        self.inner.poll_send_request_raw(cx)
+    }
+}
+
+#[cfg(feature = "async")]
+impl<'a, Dpy: DisplayBase> AsyncDisplay for &'a RenderDisplay<Dpy>
+where
+    &'a Dpy: AsyncDisplay,
+{
+    #[inline]
+    fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        self.inner().poll_wait(cx)
+    }
+
+    #[inline]
+    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+        self.inner().begin_send_request_raw(req)
+    }
+
+    #[inline]
+    fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>> {
+        self.inner().poll_send_request_raw(cx)
+    }
+}
+
+impl<Dpy: Display> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information.
     #[inline]
     pub fn new(
@@ -258,21 +551,18 @@ where
         client_minor_version: u32,
     ) -> Result<Self, (Dpy, crate::BreadError)> {
         #[inline]
-        fn xrender_info<Conn: Connection>(
-            dpy: &mut Display<Conn>,
+        fn xrender_info<Dpy: Display>(
+            dpy: &mut Dpy,
             client_major_version: u32,
             client_minor_version: u32,
         ) -> crate::Result<XrenderInfo> {
             // run QueryVersion and QueryPictFormats simultaneously
-            let qvtok = send_request!(
-                dpy,
-                QueryVersionRequest {
-                    client_major_version,
-                    client_minor_version,
-                    ..Default::default()
-                }
-            )?;
-            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default())?;
+            let qvtok = dpy.send_request(QueryVersionRequest {
+                client_major_version,
+                client_minor_version,
+                ..Default::default()
+            })?;
+            let qpftok = dpy.send_request(QueryPictFormatsRequest::default())?;
 
             let QueryVersionReply {
                 major_version,
@@ -289,9 +579,9 @@ where
             Ok(XrenderInfo {
                 major_version,
                 minor_version,
-                formats,
-                screens,
-                subpixels,
+                formats: formats.into_boxed_slice(),
+                screens: screens.into_boxed_slice(),
+                subpixels: subpixels.into_boxed_slice(),
             })
         }
 
@@ -301,11 +591,7 @@ where
             subpixels,
             major_version,
             minor_version,
-        } = match xrender_info(
-            dpy.display_mut(),
-            client_major_version,
-            client_minor_version,
-        ) {
+        } = match xrender_info(&mut dpy, client_major_version, client_minor_version) {
             Ok(x) => x,
             Err(e) => return Err((dpy, e)),
         };
@@ -328,9 +614,9 @@ where
         format: Pictformat,
         properties: PictureParameters,
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
-        sr_request!(self.display_mut(), cpr)?;
+        self.send_request(cpr)?;
         Ok(pic)
     }
 
@@ -343,9 +629,9 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
-        sr_request!(self.display_mut(), clgr)?;
+        self.exchange_request(clgr)?;
         Ok(pic)
     }
 
@@ -360,7 +646,7 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let crgr = Self::create_radial_gradient_request(
             pic,
             inner,
@@ -370,7 +656,7 @@ where
             stops,
             colors,
         );
-        sr_request!(self.display_mut(), crgr)?;
+        self.exchange_request(crgr)?;
         Ok(pic)
     }
 
@@ -382,18 +668,15 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
-        sr_request!(self.display_mut(), ccgr)?;
+        self.exchange_request(ccgr)?;
         Ok(pic)
     }
 }
 
 #[cfg(feature = "async")]
-impl<Dpy: DisplayLike> RenderDisplay<Dpy>
-where
-    Dpy::Connection: AsyncConnection + Send,
-{
+impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
     /// Initialize a RenderDisplay with the appropriate information, async redox.
     #[inline]
     pub async fn new_async(
@@ -402,22 +685,21 @@ where
         client_minor_version: u32,
     ) -> Result<Self, (Dpy, crate::BreadError)> {
         #[inline]
-        async fn xrender_info<Conn: AsyncConnection + Send>(
-            dpy: &mut Display<Conn>,
+        async fn xrender_info<Dpy: AsyncDisplay>(
+            dpy: &mut Dpy,
             client_major_version: u32,
             client_minor_version: u32,
         ) -> crate::Result<XrenderInfo> {
-            let qvtok = send_request!(
-                dpy,
-                QueryVersionRequest {
+            let qvtok = dpy
+                .send_request_async(QueryVersionRequest {
                     client_major_version,
                     client_minor_version,
                     ..Default::default()
-                },
-                async
-            )
-            .await?;
-            let qpftok = send_request!(dpy, QueryPictFormatsRequest::default(), async).await?;
+                })
+                .await?;
+            let qpftok = dpy
+                .send_request_async(QueryPictFormatsRequest::default())
+                .await?;
 
             let QueryVersionReply {
                 major_version,
@@ -434,9 +716,9 @@ where
             Ok(XrenderInfo {
                 major_version,
                 minor_version,
-                formats,
-                screens,
-                subpixels,
+                formats: formats.into_boxed_slice(),
+                screens: screens.into_boxed_slice(),
+                subpixels: subpixels.into_boxed_slice(),
             })
         }
 
@@ -446,13 +728,7 @@ where
             formats,
             screens,
             subpixels,
-        } = match xrender_info(
-            dpy.display_mut(),
-            client_major_version,
-            client_minor_version,
-        )
-        .await
-        {
+        } = match xrender_info(&mut dpy, client_major_version, client_minor_version).await {
             Ok(x) => x,
             Err(e) => return Err((dpy, e)),
         };
@@ -475,9 +751,9 @@ where
         format: Pictformat,
         properties: PictureParameters,
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
-        sr_request!(self.display_mut(), cpr, async).await?;
+        self.exchange_request_async(cpr).await?;
         Ok(pic)
     }
 
@@ -490,9 +766,9 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
-        sr_request!(self.display_mut(), clgr, async).await?;
+        self.exchange_request_async(clgr).await?;
         Ok(pic)
     }
 
@@ -507,7 +783,7 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let crgr = Self::create_radial_gradient_request(
             pic,
             inner,
@@ -517,7 +793,7 @@ where
             stops,
             colors,
         );
-        sr_request!(self.display_mut(), crgr, async).await?;
+        self.exchange_request_async(crgr).await?;
         Ok(pic)
     }
 
@@ -529,9 +805,9 @@ where
         stops: &[Fixed],
         colors: &[Color],
     ) -> crate::Result<Picture> {
-        let pic = Picture::const_from_xid(self.display_mut().generate_xid()?);
+        let pic = Picture::const_from_xid(generate_xid(self)?);
         let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
-        sr_request!(self.display_mut(), ccgr, async).await?;
+        self.exchange_request_async(ccgr).await?;
         Ok(pic)
     }
 }

@@ -33,7 +33,7 @@
 //! This example opens a connection to the X server, then creates a basic window titled "Hello World!".
 //!
 //! ```rust,no_run
-//! use breadx::{DisplayConnection, Event, WindowClass};
+//! use breadx::{prelude::*, DisplayConnection, Event, WindowClass};
 //! use std::{boxed::Box, error::Error};
 //!
 //! fn main() -> Result<(), Box<dyn Error>> {
@@ -184,5 +184,23 @@ pub use auto::xproto::{
     Segment, Setup, VisualClass, Visualid, Visualtype, Window, WindowClass,
 };
 
-#[path = "../tutorials/mod.rs"]
-pub mod tutorials;
+//#[path = "../tutorials/mod.rs"]
+//pub mod tutorials;
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! log_debug {
+    ($($tt: tt)*) => {{
+        #[cfg(debug_assertions)]
+        log::debug!($($tt)*)
+    }}
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! log_trace {
+    ($($tt: tt)*) => {{
+        #[cfg(debug_assertions)]
+        log::trace!($($tt)*)
+    }}
+}

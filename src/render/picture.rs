@@ -9,12 +9,11 @@ use crate::{
         },
         xproto::{Atom, Pixmap, Rectangle, SubwindowMode},
     },
-    display::{Connection, Display},
-    sr_request,
+    display::{Display, DisplayExt},
 };
 
 #[cfg(feature = "async")]
-use crate::display::AsyncConnection;
+use crate::display::{AsyncDisplay, AsyncDisplayExt};
 
 crate::create_paramaterizer! {
     pub struct PictureParameters : (Cp, CreatePictureRequest) {
@@ -72,30 +71,32 @@ impl Picture {
 
     /// Change an attribute of this picture.
     #[inline]
-    pub fn change<Conn: Connection>(
+    pub fn change<Dpy: Display + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         params: PictureParameters,
     ) -> crate::Result {
-        sr_request!(display, self.change_request(params))
+        display.exchange_request(self.change_request(params))
     }
 
     /// Change an attribute of this picture, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn change_async<Conn: AsyncConnection + Send>(
+    pub async fn change_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         params: PictureParameters,
     ) -> crate::Result {
-        sr_request!(display, self.change_request(params), async).await
+        display
+            .exchange_request_async(self.change_request(params))
+            .await
     }
 
     /// Composite this picture with another.
     #[inline]
-    pub fn composite<Conn: Connection>(
+    pub fn composite<Dpy: Display + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         mask: Picture,
         dst: Picture,
@@ -108,32 +109,29 @@ impl Picture {
         width: u16,
         height: u16,
     ) -> crate::Result {
-        sr_request!(
-            display,
-            CompositeRequest {
-                op,
-                src: self,
-                mask,
-                dst,
-                src_x: srcx,
-                src_y: srcy,
-                mask_x: maskx,
-                mask_y: masky,
-                dst_x: dstx,
-                dst_y: dsty,
-                width,
-                height,
-                ..Default::default()
-            }
-        )
+        display.exchange_request(CompositeRequest {
+            op,
+            src: self,
+            mask,
+            dst,
+            src_x: srcx,
+            src_y: srcy,
+            mask_x: maskx,
+            mask_y: masky,
+            dst_x: dstx,
+            dst_y: dsty,
+            width,
+            height,
+            ..Default::default()
+        })
     }
 
     /// Composite this picture with another, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn composite_async<Conn: AsyncConnection + Send>(
+    pub async fn composite_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         mask: Picture,
         dst: Picture,
@@ -146,9 +144,8 @@ impl Picture {
         width: u16,
         height: u16,
     ) -> crate::Result {
-        sr_request!(
-            display,
-            CompositeRequest {
+        display
+            .exchange_request_async(CompositeRequest {
                 op,
                 src: self,
                 mask,
@@ -162,92 +159,75 @@ impl Picture {
                 width,
                 height,
                 ..Default::default()
-            },
-            async
-        )
-        .await
+            })
+            .await
     }
 
     /// Fill a series of solid color rectangles on this surface.
     #[inline]
-    pub fn fill_rectangles<Conn: Connection>(
+    pub fn fill_rectangles<Dpy: Display + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         color: Color,
         rects: &[Rectangle],
     ) -> crate::Result {
-        sr_request!(
-            display,
-            FillRectanglesRequest {
-                dst: self,
-                op,
-                color,
-                rects: rects.to_vec(),
-                ..Default::default()
-            }
-        )
+        display.exchange_request(FillRectanglesRequest {
+            dst: self,
+            op,
+            color,
+            rects: rects.to_vec(),
+            ..Default::default()
+        })
     }
 
     /// Fill a series of solid color rectangles on this surface, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangles_async<Conn: AsyncConnection + Send>(
+    pub async fn fill_rectangles_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         color: Color,
         rects: &[Rectangle],
     ) -> crate::Result {
-        sr_request!(
-            display,
-            FillRectanglesRequest {
+        display
+            .exchange_request_async(FillRectanglesRequest {
                 dst: self,
                 op,
                 color,
                 rects: rects.to_vec(),
                 ..Default::default()
-            },
-            async
-        )
-        .await
+            })
+            .await
     }
 
     /// Free this picture.
     #[inline]
-    pub fn free<Conn: Connection>(self, display: &mut Display<Conn>) -> crate::Result {
-        sr_request!(
-            display,
-            FreePictureRequest {
-                picture: self,
-                ..Default::default()
-            }
-        )
+    pub fn free<Dpy: Display + ?Sized>(self, display: &mut Dpy) -> crate::Result {
+        display.exchange_request(FreePictureRequest {
+            picture: self,
+            ..Default::default()
+        })
     }
 
     /// Free this picture, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn free_async<Conn: AsyncConnection + Send>(
-        self,
-        display: &mut Display<Conn>,
-    ) -> crate::Result {
-        sr_request!(
-            display,
-            FreePictureRequest {
+    pub async fn free_async<Dpy: AsyncDisplay + ?Sized>(self, display: &mut Dpy) -> crate::Result {
+        display
+            .exchange_request_async(FreePictureRequest {
                 picture: self,
                 ..Default::default()
-            },
-            async
-        )
-        .await
+            })
+            .await
     }
 
     /// Draw a set of trapezoids.
     #[inline]
-    pub fn trapezoids<Conn: Connection>(
+    pub fn trapezoids<Dpy: Display + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         src: Picture,
         mask_format: Pictformat,
@@ -255,27 +235,24 @@ impl Picture {
         srcy: i16,
         trapezoids: &[Trapezoid],
     ) -> crate::Result {
-        sr_request!(
-            display,
-            TrapezoidsRequest {
-                src,
-                dst: self,
-                op,
-                mask_format,
-                src_x: srcx,
-                src_y: srcy,
-                traps: trapezoids.to_vec(),
-                ..Default::default()
-            }
-        )
+        display.exchange_request(TrapezoidsRequest {
+            src,
+            dst: self,
+            op,
+            mask_format,
+            src_x: srcx,
+            src_y: srcy,
+            traps: trapezoids.to_vec(),
+            ..Default::default()
+        })
     }
 
     /// Draw a set of trapezoids, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn trapezoids_async<Conn: AsyncConnection + Send>(
+    pub async fn trapezoids_async<Dpy: AsyncDisplay + ?Sized>(
         self,
-        display: &mut Display<Conn>,
+        display: &mut Dpy,
         op: PictOp,
         src: Picture,
         mask_format: Pictformat,
@@ -283,9 +260,8 @@ impl Picture {
         srcy: i16,
         trapezoids: &[Trapezoid],
     ) -> crate::Result {
-        sr_request!(
-            display,
-            TrapezoidsRequest {
+        display
+            .exchange_request_async(TrapezoidsRequest {
                 src,
                 dst: self,
                 op,
@@ -294,9 +270,7 @@ impl Picture {
                 src_y: srcy,
                 traps: trapezoids.to_vec(),
                 ..Default::default()
-            },
-            async
-        )
-        .await
+            })
+            .await
     }
 }

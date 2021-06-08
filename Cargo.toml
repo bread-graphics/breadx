@@ -21,6 +21,7 @@ hashbrown = "0.9.1"
 image = { version = "0.23.12", default-features = false, optional = true }
 log = "0.4"
 memchr = { version = "2.3.3", default-features = false }
+pin-project-lite = { version = "0.2", optional = true }
 tinyvec = { version = "1.1.0", features = ["alloc"] }
 
 [target.'cfg(unix)'.dependencies]
@@ -36,7 +37,7 @@ smol = "1.2.5"
 [features]
 # Optimizations and features
 default = ["std"]
-async = ["std", "async-io", "async-net", "blocking", "futures-lite"]
+async = ["std", "async-io", "async-net", "blocking", "futures-lite", "pin-project-lite"]
 image-support = ["image", "std"]
 std = ["memchr/std"]
 
@@ -45,7 +46,7 @@ bigreq = []
 damage = ["fixes"]
 dpms = []
 dri2 = []
-dri3 = []
+dri3 = ["sync"]
 fixes = ["render", "shape"]
 ge = []
 glx = []

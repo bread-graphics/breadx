@@ -1,13 +1,12 @@
 // MIT/Apache2 License
 
 use breadx::{
-    event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
+    prelude::*, event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
     WindowClass, WindowParameters,
 };
 use std::{env, process};
 
 fn main() {
-    env::set_var("RUST_LOG", "breadx=info");
     env_logger::init();
 
     let mut conn = DisplayConnection::create(None, None).unwrap();

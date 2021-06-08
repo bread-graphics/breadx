@@ -2,10 +2,10 @@
 
 //! This module provides structures used in error handling of `breadx` functions.
 
-use alloc::{borrow::Cow, string::String};
+use alloc::{borrow::Cow, string::String, sync::Arc};
 use core::{fmt, ops::Deref};
 #[cfg(feature = "std")]
-use std::{boxed::Box, error::Error as StdError, format, io::Error as IoError};
+use std::{error::Error as StdError, io::Error as IoError};
 
 /// The common error type returned by `breadx` functions.
 #[derive(Debug, Clone)]
@@ -19,7 +19,7 @@ pub enum BreadError {
     UnableToOpenConnection,
     /// IO Error
     #[cfg(feature = "std")]
-    Io(Box<str>),
+    Io(Arc<IoError>),
     /// Unable to open connection to the X11 server.
     FailedToConnect,
     /// X11 server rejected our authorization.
@@ -70,7 +70,7 @@ impl BreadError {
 impl From<IoError> for BreadError {
     #[inline]
     fn from(io: IoError) -> Self {
-        Self::Io(format!("{:?}", io).into_boxed_str())
+        Self::Io(Arc::new(io))
     }
 }
 
@@ -107,7 +107,7 @@ impl fmt::Display for BreadError {
             Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
             Self::WouldBlock => f.write_str("Operation would block an async function"),
             #[cfg(feature = "std")]
-            Self::Io(i) => write!(f, "{}", i),
+            Self::Io(i) => fmt::Display::fmt(&*i, f),
         }
     }
 }

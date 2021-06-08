@@ -6,7 +6,7 @@
 //       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
 //       use tokio, async-std, or an executor-less system here as well without much headache.
 use breadx::{
-    auto::xproto::ExposeEvent, rgb, AsyncDisplayConnection, Event, EventMask, GcParameters, Rectangle,
+    prelude::*, auto::xproto::ExposeEvent, rgb, AsyncDisplayConnection, Event, EventMask, GcParameters, Rectangle,
 };
 use easy_parallel::Parallel;
 use futures_lite::{future, FutureExt, StreamExt};

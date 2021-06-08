@@ -1,6 +1,7 @@
 // MIT/Apache2 License
 
-use super::auto;
+use crate::auto;
+use core::cell::Cell;
 
 /// An X11 ID.
 #[allow(clippy::upper_case_acronyms)]
@@ -36,8 +37,8 @@ impl<T: XidType> auto::AsByteSequence for T {
 }
 
 /// XID Generator
-#[derive(Debug, Default)]
-pub(crate) struct XidGenerator {
+#[derive(Debug, Default, Clone, Copy)]
+pub struct XidGenerator {
     pub last: XID,
     pub max: XID,
     pub inc: XID,
@@ -46,6 +47,7 @@ pub(crate) struct XidGenerator {
 }
 
 impl XidGenerator {
+    #[must_use]
     #[inline]
     pub const fn new(base: XID, mask: XID) -> Self {
         Self {
@@ -57,13 +59,14 @@ impl XidGenerator {
         }
     }
 
+    #[must_use]
     #[inline]
     pub const fn eval_in_place(&self) -> XID {
         self.last | self.base
     }
 
     #[inline]
-    pub fn next(&mut self) -> Option<XID> {
+    pub fn next_xid(&mut self) -> Option<XID> {
         if self.last >= self.max.wrapping_sub(self.inc).wrapping_add(1) {
             assert_eq!(self.last, self.max);
             if self.last == 0 {
@@ -74,6 +77,72 @@ impl XidGenerator {
             }
         } else {
             self.last = self.last.wrapping_add(self.inc);
+        }
+
+        Some(self.eval_in_place())
+    }
+}
+
+/// XID Generator, but implemented using `Cell`
+#[derive(Debug, Default)]
+pub struct CellXidGenerator {
+    pub last: Cell<XID>,
+    pub max: Cell<XID>,
+    pub inc: XID,
+    pub base: XID,
+    mask: XID,
+}
+
+impl From<XidGenerator> for CellXidGenerator {
+    #[inline]
+    fn from(x: XidGenerator) -> Self {
+        let XidGenerator {
+            last,
+            max,
+            inc,
+            base,
+            mask,
+        } = x;
+        Self {
+            last: Cell::new(last),
+            max: Cell::new(max),
+            inc,
+            base,
+            mask,
+        }
+    }
+}
+
+impl CellXidGenerator {
+    #[must_use]
+    #[inline]
+    pub const fn new(base: XID, mask: XID) -> Self {
+        Self {
+            last: Cell::new(0),
+            max: Cell::new(0),
+            base,
+            inc: mask & mask.wrapping_neg(),
+            mask,
+        }
+    }
+
+    #[inline]
+    pub fn eval_in_place(&self) -> XID {
+        self.last.get() | self.base
+    }
+
+    #[inline]
+    pub fn next_xid(&self) -> Option<XID> {
+        if self.last.get() >= self.max.get().wrapping_sub(self.inc).wrapping_add(1) {
+            assert_eq!(self.last.get(), self.max.get());
+            if self.last.get() == 0 {
+                self.max.set(self.mask);
+                self.last.set(self.inc);
+            } else {
+                return None;
+            }
+        } else {
+            self.last.set(self.last.get().wrapping_add(self.inc));
         }
 
         Some(self.eval_in_place())

@@ -3,7 +3,7 @@
 // source of eisenhower image:
 // https://commons.wikimedia.org/wiki/File:Dwight_D._Eisenhower,_official_photo_portrait,_May_29,_1959.jpg
 
-use breadx::{rgb, BreadError, DisplayConnection, Event, EventMask, Image, ImageFormat};
+use breadx::{prelude::*, rgb, BreadError, DisplayConnection, Event, EventMask, Image, ImageFormat};
 use image::{io::Reader, GenericImageView};
 use std::{io::Cursor, iter};
 
@@ -19,6 +19,8 @@ fn create_heap_memory(width: u32, height: u32) -> Box<[u8]> {
 }
 
 fn main() -> Result<(), BreadError> {
+    env_logger::init();
+
     // load the image from the disc
     //    let reader = Reader::with_format(Cursor::new(EISENHOWER), Jpeg);
     let reader = Reader::new(Cursor::new(EISENHOWER))

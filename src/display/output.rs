@@ -1,224 +1,176 @@
 // MIT/Apache2 License
 
-use super::{Connection, PendingRequestFlags, RequestCookie, RequestWorkaround, EXT_KEY_SIZE};
-use crate::{util::cycled_zeroes, Fd, Request};
-use alloc::{string::ToString, vec, vec::Vec};
-use core::{iter, mem};
-use tinyvec::TinyVec;
+use super::{
+    decode_reply, input, Connection, Display, DisplayBase, PendingReply, PendingRequestFlags,
+    RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
+};
+use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace};
+use alloc::string::ToString;
+use core::mem;
 
 #[cfg(feature = "async")]
 use super::AsyncConnection;
 
 #[inline]
-fn string_as_array_bytes(s: &str) -> [u8; EXT_KEY_SIZE] {
-    let mut bytes: [u8; EXT_KEY_SIZE] = [0; EXT_KEY_SIZE];
-    if s.len() > EXT_KEY_SIZE {
-        bytes.copy_from_slice(&s.as_bytes()[..24]);
+pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
+    display: &mut D,
+    mut pr: RequestInfo,
+) -> RequestInfo {
+    log_trace!("Entering preprocess_request()");
+    let sequence = display.next_request_number();
+    // truncate to u16
+    let sequence = sequence as u16;
+
+    pr.set_sequence(sequence);
+    pr
+}
+
+#[inline]
+pub(crate) fn finish_request<D: DisplayBase + ?Sized>(display: &mut D, mut pr: RequestInfo) -> u16 {
+    log_trace!("Entering finish_request() with request info: {:?}", &pr);
+
+    // data has already been sent over the bandwaves, make sure we acknowledge it
+    let mut flags = PendingRequestFlags {
+        expects_fds: pr.expects_fds,
+        discard_reply: pr.discard_reply,
+        checked: pr.zero_sized_reply && display.checked(),
+        ..Default::default()
+    };
+
+    match (
+        pr.extension,
+        pr.opcode,
+        pr.data.get(32..36).map(|a| {
+            let mut arr: [u8; 4] = [0; 4];
+            arr.copy_from_slice(a);
+            u32::from_ne_bytes(arr)
+        }),
+    ) {
+        (Some("GLX"), 17, Some(0x10004)) | (Some("GLX"), 21, _) => {
+            log_debug!("Applying GLX FbConfig workaround to request");
+            flags.workaround = RequestWorkaround::GlxFbconfigBug;
+        }
+        _ => (),
+    }
+
+    let seq = pr.sequence.take().expect("Failed to set sequence number");
+    log_debug!("Got sequence number {}", seq);
+
+    if !pr.zero_sized_reply || display.checked() {
+        log::trace!(
+            "Request is neither zero-sized nor is the display not checked, so we expect a reply"
+        );
+        input::expect_reply(display, seq, flags);
+    }
+
+    seq
+}
+
+#[inline]
+pub(crate) fn modify_for_opcode(bytes: &mut [u8], request_opcode: u8, ext_opcode: Option<u8>) {
+    match ext_opcode {
+        None => {
+            // First byte is opcode
+            // Second byte is minor opcode (ignored for now)
+            bytes[0] = request_opcode;
+        }
+        Some(extension) => {
+            // First byte is extension opcode
+            // Second byte is regular opcode
+            bytes[0] = extension;
+            bytes[1] = request_opcode;
+        }
+    }
+}
+
+#[inline]
+pub(crate) fn send_request<D: Display + ?Sized, C: Connection + ?Sized>(
+    display: &mut D,
+    connection: &mut C,
+    request_info: RequestInfo,
+) -> crate::Result<u16> {
+    log_trace!("Entering output::send_request()");
+
+    // figure out the extension opcode
+    let ext_opcode = match request_info.extension {
+        None => None,
+        Some(extension) => {
+            let key = str_to_key(extension);
+            if let Some(opcode) = display.get_extension_opcode(&key) {
+                Some(opcode)
+            } else {
+                let opcode = get_ext_opcode(display, connection, extension)?;
+                display.set_extension_opcode(key, opcode);
+                Some(opcode)
+            }
+        }
+    };
+
+    // figure out sequence, et al
+    let mut req = preprocess_request(display, request_info);
+
+    let request_opcode = req.opcode;
+    modify_for_opcode(&mut req.data, request_opcode, ext_opcode);
+    log_trace!("We are sending the following request: {:?}", &req);
+
+    // send the packet
+    log_debug!("Request is ready to send, beginning send_packet()");
+    let mut fds = mem::take(&mut req.fds);
+    connection.send_packet(&req.data, &mut fds)?;
+    log_debug!("Finished send_packet()");
+
+    Ok(finish_request(display, req))
+}
+
+#[inline]
+pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
+    display: &mut D,
+    conn: &mut C,
+    extension: &'static str,
+) -> crate::Result<u8> {
+    log_trace!("Entering get_ext_opcode with extension: {}", extension);
+    log_debug!(
+        "Could not find extension opcode in display's database; sending request to server..."
+    );
+
+    let qer = QueryExtensionRequest {
+        name: extension.to_string(),
+        ..Default::default()
+    };
+
+    log_trace!("Sending QER..");
+    let tok = send_request(display, conn, RequestInfo::from_request(qer))?;
+    log_trace!("Resolving QER...");
+    let repl = loop {
+        match display.take_pending_reply(tok) {
+            Some(PendingReply { data, fds }) => {
+                break decode_reply::<QueryExtensionRequest>(&data, fds)?;
+            }
+            None => input::wait(display, conn)?,
+        }
+    };
+
+    if !repl.present {
+        return Err(crate::BreadError::ExtensionNotPresent(extension.into()));
+    }
+
+    log_debug!("Found opcode for extension: {}", &repl.major_opcode);
+    let key = str_to_key(extension);
+    display.set_extension_opcode(key, repl.major_opcode);
+    // TODO: first_event, first_error
+    Ok(repl.major_opcode)
+}
+
+#[inline]
+pub(crate) fn str_to_key(s: &str) -> [u8; EXT_KEY_SIZE] {
+    let mut key = [0_u8; EXT_KEY_SIZE];
+    let b = s.as_bytes();
+
+    if b.len() > EXT_KEY_SIZE {
+        key.copy_from_slice(&b[..EXT_KEY_SIZE]);
     } else {
-        (&mut bytes[..s.len()]).copy_from_slice(s.as_bytes());
-    }
-    bytes
-}
-
-impl<Conn> super::Display<Conn> {
-    #[inline]
-    fn encode_request<R: Request>(
-        &mut self,
-        req: &R,
-        ext_opcode: Option<u8>,
-        discard_reply: bool,
-    ) -> (u64, TinyVec<[u8; 32]>) {
-        let sequence = self.request_number;
-        self.request_number += 1;
-
-        // write to bytes
-        let mut bytes: TinyVec<[u8; 32]> = cycled_zeroes(req.size());
-
-        let mut len = req.as_bytes(&mut bytes);
-        log::debug!("Request is given sequence number {}", sequence);
-
-        // pad to a multiple of four bytes if we can
-        let remainder = len % 4;
-        if remainder != 0 {
-            let extend_by = 4 - remainder;
-            bytes.extend(iter::once(0).cycle().take(extend_by));
-            len += extend_by;
-            debug_assert_eq!(len % 4, 0);
-            log::trace!("Extended length is now {}", len);
-        }
-
-        match ext_opcode {
-            None => {
-                // First byte is opcode
-                // Second byte is minor opcode (ignored for now)
-                log::debug!("Request has opcode {}", R::OPCODE);
-                bytes[0] = R::OPCODE;
-            }
-            Some(extension) => {
-                // First byte is extension opcode
-                // Second byte is regular opcode
-                bytes[0] = extension;
-                bytes[1] = R::OPCODE;
-            }
-        }
-
-        // Third and fourth are length
-        let x_len = len / 4;
-        log::trace!("xlen is {}", x_len);
-        let len_bytes = x_len.to_ne_bytes();
-        bytes[2] = len_bytes[0];
-        bytes[3] = len_bytes[1];
-
-        bytes.truncate(len);
-
-        log::trace!("Request has bytes {:?}", &bytes);
-
-        let mut flags = PendingRequestFlags {
-            expects_fds: R::REPLY_EXPECTS_FDS,
-            discard_reply,
-            checked: mem::size_of::<R::Reply>() == 0 && self.checked,
-            ..Default::default()
-        };
-
-        // there exists a very enraging bug in the X server, where certain GLX requests have the wrong size
-        // attached to them. this bug has become so widespread that we have to assume that it exists in all
-        // versions of the X server.
-        //
-        // to summarize, the X server makes an arithmatic error when calculating the length of the reply of
-        // requests GetFBConfigs and VendorPrivate. in these replies, they forget to multiply the length value
-        // by two. therefore, on the input end, we have to multiply it by two ourselves.
-        match (
-            R::EXTENSION,
-            R::OPCODE,
-            bytes.get(32..36).map(|a| {
-                let mut arr: [u8; 4] = [0; 4];
-                arr.copy_from_slice(a);
-                u32::from_ne_bytes(arr)
-            }),
-        ) {
-            (Some("GLX"), 17, Some(0x10004)) | (Some("GLX"), 21, _) => {
-                log::debug!("Applying GLX FbConfig workaround to request");
-                flags.workaround = RequestWorkaround::GlxFbconfigBug;
-            }
-            _ => (),
-        }
-
-        if mem::size_of::<R::Reply>() != 0 || self.checked {
-            self.expect_reply(sequence, flags);
-        }
-
-        (sequence, bytes)
-    }
-}
-
-impl<Conn: Connection> super::Display<Conn> {
-    #[inline]
-    pub fn send_request_internal<R: Request>(
-        &mut self,
-        mut req: R,
-        discard_reply: bool,
-    ) -> crate::Result<RequestCookie<R>> {
-        let ext_opcode = match R::EXTENSION {
-            None => None,
-            Some(ext) => Some(self.get_ext_opcode(ext)?),
-        };
-        let (sequence, bytes): (u64, TinyVec<[u8; 32]>) =
-            self.encode_request(&req, ext_opcode, discard_reply);
-
-        let mut _dummy: Vec<Fd> = vec![];
-        let fds = match req.file_descriptors() {
-            Some(fds) => fds,
-            None => &mut _dummy,
-        };
-
-        self.connection()?.send_packet(&bytes, fds)?;
-        Ok(RequestCookie::from_sequence(sequence))
+        (&mut key[..b.len()]).copy_from_slice(b);
     }
 
-    #[allow(clippy::single_match_else)]
-    #[inline]
-    fn get_ext_opcode(&mut self, extname: &'static str) -> crate::Result<u8> {
-        let sarr = string_as_array_bytes(extname);
-        match self.extensions.get(&sarr) {
-            Some(code) => Ok(*code),
-            None => {
-                let code = self
-                    .query_extension_immediate(extname.to_string())
-                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
-                    .major_opcode;
-                self.extensions.insert(sarr, code);
-                Ok(code)
-            }
-        }
-    }
-}
-
-#[cfg(feature = "async")]
-impl<Conn: AsyncConnection + Send> super::Display<Conn> {
-    #[inline]
-    pub async fn send_request_internal_async<R: Request>(
-        &mut self,
-        mut req: R,
-        discard_reply: bool,
-    ) -> crate::Result<RequestCookie<R>> {
-        let ext_opcode = match R::EXTENSION {
-            None => None,
-            Some(ext) => Some(self.get_ext_opcode_async(ext).await?),
-        };
-        let (sequence, bytes) = self.encode_request(&req, ext_opcode, discard_reply);
-
-        let mut _dummy: Vec<Fd> = vec![];
-        let fds = match req.file_descriptors() {
-            Some(fds) => fds,
-            None => &mut _dummy,
-        };
-
-        /*
-
-        This is a very ugly solution to issue #20
-
-        Consider, for a moment, if the future responsible for sending a large amount of memory to the
-        X server is dropped before it completes. This means the X server now has a portion of the bytes
-        it needs but expects more. This means that any future requests sent to the X server are now
-        "tainted" the fact that it's expecting an entirely different set of data from what our client
-        thinks it's expecting.
-
-        We'll take a page out of XCB's book here, which is "if the connection goes kaput, set an error
-        state in the connection that prevents bytes from being read or written across it." In Rust,
-        we accomplish this by setting up our connection in the Display as an Option<Connection> which,
-        in an untainted Display, should always be Some(..). In this function (and in the equivalent
-        wait_async function that handles reading), we run take() on this Option to get the connection.
-        Once send_packet_async is done, even if it finished with an error, we return the Connection
-        to its place in the display. If it isn't there, we can assume it's tainted and we can throw
-        an error.
-
-        As a side effect, the connection becomes tainted if send_packet panics. This might be desirable
-        behavior.
-
-        */
-
-        let mut connection = self.connection.take().ok_or(crate::BreadError::Tainted)?;
-        let res = connection.send_packet(&bytes, fds).await;
-        self.connection = Some(connection);
-        res?;
-
-        Ok(RequestCookie::from_sequence(sequence))
-    }
-
-    #[inline]
-    async fn get_ext_opcode_async(&mut self, extname: &'static str) -> crate::Result<u8> {
-        let sarr = string_as_array_bytes(extname);
-        match self.extensions.get(&sarr) {
-            Some(code) => Ok(*code),
-            None => {
-                let code = self
-                    .query_extension_immediate_async(extname.to_string())
-                    .await
-                    .map_err(|_| crate::BreadError::ExtensionNotPresent(extname.into()))?
-                    .major_opcode;
-                self.extensions.insert(sarr, code);
-                Ok(code)
-            }
-        }
-    }
+    key
 }

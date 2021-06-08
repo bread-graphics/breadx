@@ -5,6 +5,9 @@
 use core::iter;
 use tinyvec::{Array, TinyVec};
 
+#[cfg(feature = "async")]
+use alloc::boxed::Box;
+
 #[cfg(all(unix, feature = "std"))]
 use nix::Error as NixError;
 #[cfg(all(unix, feature = "std"))]
@@ -20,10 +23,21 @@ pub(crate) fn convert_nix_error(e: NixError) -> IoError {
     }
 }
 
+/// Expand or truncate a `TinyVec<[u8; N]>` so that its length becomes the given value.
 #[inline]
-pub(crate) fn cycled_zeroes<A: Array<Item = u8>>(len: usize) -> TinyVec<A> {
-    iter::repeat(0).take(len).collect()
+pub(crate) fn expand_or_truncate_to_length<A: Array<Item = u8>>(tv: &mut TinyVec<A>, len: usize) {
+    let num = len.saturating_sub(tv.len());
+    tv.extend(iter::repeat(0).take(num));
+
+    // TODO: nightly-only unlikely() hint
+    if tv.len() != len {
+        tv.truncate(len);
+    }
 }
+
+/// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.
+#[cfg(feature = "async")]
+pub(crate) type BoxedFnOnce<A, B> = Box<dyn FnOnce(A) -> B + Send + 'static>;
 
 /// Byte reversal table, copied from Xlib.
 pub const REVERSE_BYTES: [u8; 0x100] = [
@@ -76,6 +90,16 @@ pub(crate) fn reverse_bytes(bytes: &mut [u8]) {
 #[inline]
 pub(crate) const fn roundup(dividend: usize, divisor: usize) -> usize {
     dividend.wrapping_add(divisor.wrapping_sub(1)) / divisor * divisor
+}
+
+/// Take a value, run some kind of operation on it, and then restore that value.
+#[cfg(feature = "async")]
+#[inline]
+pub(crate) fn take_mut<T: Default, F: FnOnce(T) -> T>(r: &mut T, f: F) {
+    // TODO: consider the take_mut crate
+    let value = core::mem::take(r);
+    let value = f(value);
+    *r = value;
 }
 
 #[test]
