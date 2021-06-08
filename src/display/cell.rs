@@ -210,8 +210,10 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
         #[cfg(feature = "async")]
-        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-            self.inner.get_mut().workarounders.push(req_id);
+        {
+            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                self.inner.get_mut().workarounders.push(req_id);
+            }
         }
         self.inner.get_mut().pending_requests.insert(req_id, pereq);
     }
@@ -423,8 +425,10 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
         let mut inner = self.inner.borrow_mut();
         #[cfg(feature = "async")]
-        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-            inner.workarounders.push(req_id);
+        {
+            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                inner.workarounders.push(req_id);
+            }
         }
         inner.pending_requests.insert(req_id, pereq);
     }

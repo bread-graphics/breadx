@@ -214,8 +214,10 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     #[inline]
     fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
         #[cfg(feature = "async")]
-        if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-            self.workarounders.push(req_id);
+        {
+            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                self.workarounders.push(req_id);
+            }
         }
         self.pending_requests.insert(req_id, pereq);
     }

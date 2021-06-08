@@ -507,7 +507,7 @@ pub(crate) use swap_function::{HALF_ORDER_TABLE, HALF_WORD_TABLE, SWAP_FUNCTION_
 /// Given a set of properties, create a value that can index into the swap function table
 /// above.
 #[inline]
-pub(crate) const fn swap_function_table_index(
+pub(crate) fn swap_function_table_index(
     quantum: u32,
     bit_order: ImageOrder,
     byte_order: ImageOrder,
