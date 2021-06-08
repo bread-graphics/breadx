@@ -12,9 +12,11 @@ use core::{
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct SendRequestRawFuture<'a, D: ?Sized> {
-    display: Option<&'a mut D>,
+    display: &'a mut D,
     is_finished: bool,
 }
+
+impl<'a, D: ?Sized> Unpin for SendRequestRawFuture<'a, D> {}
 
 impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
     #[inline]
@@ -22,15 +24,15 @@ impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
         // begin the send request process
         display.begin_send_request_raw(request);
         Self {
-            display: Some(display),
+            display,
             is_finished: false,
         }
     }
 
-    /// Returns the display we are currently sending a request to.
+    /// Consumes this future and returns the display we are currently sending a request to.
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
-        self.display.take().expect("Display was already taken")
+    pub(crate) fn cannibalize(self) -> &'a mut D {
+        self.display
     }
 }
 
@@ -42,11 +44,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SendRequestRawFuture<'a, D> {
         if self.is_finished {
             panic!("Attempted to poll future after completion");
         }
-        let res = self
-            .display
-            .as_mut()
-            .expect("Display was taken")
-            .poll_send_request_raw(cx);
+        let res = self.display.poll_send_request_raw(cx);
         if res.is_ready() {
             self.is_finished = true;
         }

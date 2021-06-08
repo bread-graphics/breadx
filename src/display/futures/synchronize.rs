@@ -4,7 +4,8 @@ use super::{SendRequestRawFuture, WaitFuture};
 use crate::{
     auto::xproto::GetInputFocusRequest,
     display::{output, AsyncDisplay, RequestInfo},
-    log_trace, log_debug,
+    log_debug, log_trace,
+    util::take_mut,
 };
 use core::{
     future::Future,
@@ -27,8 +28,19 @@ pub enum SynchronizeFuture<'a, D: ?Sized> {
     Waiting { wf: WaitFuture<'a, D>, seq: u16 },
     /// The future has completed.
     #[doc(hidden)]
-    Complete { display: Option<&'a mut D> },
+    Complete { display: &'a mut D },
+    /// An empty hole.
+    #[doc(hidden)]
+    Hole,
 }
+
+impl<'a, D: ?Sized> Default for SynchronizeFuture<'a, D> {
+    #[inline]
+    fn default() -> Self {
+        Self::Hole
+    }
+}
+impl<'a, D: ?Sized> Unpin for SynchronizeFuture<'a, D> {}
 
 impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
     #[inline]
@@ -43,13 +55,14 @@ impl<'a, D: AsyncDisplay + ?Sized> SynchronizeFuture<'a, D> {
         }
     }
 
-    /// Returns the display we are currently synchronizing.
+    /// Consumes this future and returns the display we are currently synchronizing.
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
+    pub(crate) fn cannibalize(self) -> &'a mut D {
         match self {
-            SynchronizeFuture::Sending { srrf } => srrf.display(),
-            SynchronizeFuture::Waiting { wf, .. } => wf.display(),
-            SynchronizeFuture::Complete { display } => display.take().expect("Display was taken"),
+            SynchronizeFuture::Sending { srrf } => srrf.cannibalize(),
+            SynchronizeFuture::Waiting { wf, .. } => wf.cannibalize(),
+            SynchronizeFuture::Complete { display } => display,
+            SynchronizeFuture::Hole => panic!("Cannot cannibalize an empty hole"),
         }
     }
 }
@@ -59,59 +72,65 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SynchronizeFuture<'a, D> {
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result> {
+        let mut result = None;
         loop {
-            match mem::replace(&mut *self, SynchronizeFuture::Complete { display: None }) {
+            take_mut(&mut *self, |this| match this {
                 SynchronizeFuture::Sending { mut srrf } => match srrf.poll(cx) {
-                    Poll::Pending => break Poll::Pending,
+                    Poll::Pending => {
+                        result = Some(Poll::Pending);
+                        SynchronizeFuture::Sending { srrf }
+                    }
                     Poll::Ready(Err(e)) => {
-                        *self = SynchronizeFuture::Complete {
-                            display: Some(srrf.display()),
-                        };
-                        break Poll::Ready(Err(e));
+                        result = Some(Poll::Ready(Err(e)));
+                        SynchronizeFuture::Complete {
+                            display: srrf.cannibalize(),
+                        }
                     }
                     Poll::Ready(Ok(seq)) => {
                         // it's time to begin the wait cycle
-                        let display = srrf.display();
+                        let display = srrf.cannibalize();
                         log_trace!("We are looking for a request of seq {}", seq);
-                        *self = SynchronizeFuture::Waiting {
+                        SynchronizeFuture::Waiting {
                             wf: WaitFuture::run(display),
                             seq,
-                        };
+                        }
                     }
                 },
-
                 SynchronizeFuture::Waiting { mut wf, seq } => match wf.poll(cx) {
-                    Poll::Pending => break Poll::Pending,
+                    Poll::Pending => {
+                        result = Some(Poll::Pending);
+                        SynchronizeFuture::Waiting { wf, seq }
+                    }
                     Poll::Ready(Err(e)) => {
-                        *self = SynchronizeFuture::Complete {
-                            display: Some(wf.display()),
-                        };
-                        break Poll::Ready(Err(e));
+                        result = Some(Poll::Ready(Err(e)));
+                        SynchronizeFuture::Complete {
+                            display: wf.cannibalize(),
+                        }
                     }
                     Poll::Ready(Ok(())) => {
                         log_debug!("Finished synchronization wait...");
 
                         // check if we contain any pending requests yet
-                        let display = wf.display();
+                        let display = wf.cannibalize();
                         if display.get_pending_request(seq).is_none() {
-                            *self = SynchronizeFuture::Complete {
-                                display: Some(display),
-                            };
-                            break Poll::Ready(Ok(()));
+                            result = Some(Poll::Ready(Ok(())));
+                            return SynchronizeFuture::Complete { display };
                         }
 
-                        log_debug!("We have not synchronized yet, continue with another wait cycle.");
-
                         // reset and start again
-                        *self = SynchronizeFuture::Waiting {
+                        SynchronizeFuture::Waiting {
                             wf: WaitFuture::run(display),
                             seq,
-                        };
+                        }
                     }
                 },
                 SynchronizeFuture::Complete { .. } => {
-                    panic!("Attempted to poll future after completion")
+                    panic!("Attempted to poll future past completion")
                 }
+                SynchronizeFuture::Hole => panic!("Cannot pole an empty hole"),
+            });
+            if let Some(result) = result.take() {
+                return result;
             }
         }
     }

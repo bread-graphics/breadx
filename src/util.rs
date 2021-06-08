@@ -92,6 +92,15 @@ pub(crate) const fn roundup(dividend: usize, divisor: usize) -> usize {
     dividend.wrapping_add(divisor.wrapping_sub(1)) / divisor * divisor
 }
 
+/// Take a value, run some kind of operation on it, and then restore that value.
+#[inline]
+pub(crate) fn take_mut<T: Default, F: FnOnce(T) -> T>(r: &mut T, f: F) {
+    // TODO: consider the take_mut crate
+    let value = core::mem::take(r);
+    let value = f(value);
+    *r = value;
+}
+
 #[test]
 pub fn roundup_test() {
     assert_eq!(roundup(3, 4) % 4, 0);

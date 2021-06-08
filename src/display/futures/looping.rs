@@ -1,7 +1,10 @@
 // MIT/Apache2 License
 
 use super::WaitFuture;
-use crate::display::{AsyncDisplay, PendingReply};
+use crate::{
+    display::{AsyncDisplay, PendingReply},
+    util::take_mut,
+};
 use core::{
     future::Future,
     mem,
@@ -30,67 +33,92 @@ pub struct WaitLoopFuture<'a, D: ?Sized, Handler> {
 #[derive(Debug)]
 enum Inner<'a, D: ?Sized> {
     Waiter(WaitFuture<'a, D>),
-    FirstTake(Option<&'a mut D>),
-    Complete(Option<&'a mut D>),
+    FirstTake(&'a mut D),
+    Complete(&'a mut D),
+    Hole,
 }
+
+impl<'a, D: ?Sized> Default for Inner<'a, D> {
+    #[inline]
+    fn default() -> Self {
+        Self::Hole
+    }
+}
+impl<'a, D: ?Sized> Unpin for Inner<'a, D> {}
+impl<'a, D: ?Sized, Handler: Unpin> Unpin for WaitLoopFuture<'a, D, Handler> {}
 
 impl<'a, D: ?Sized, Handler> WaitLoopFuture<'a, D, Handler> {
     #[inline]
     pub(crate) fn construct(display: &'a mut D, handler: Handler) -> Self {
         Self {
-            inner: Inner::FirstTake(Some(display)),
+            inner: Inner::FirstTake(display),
             handler,
         }
     }
 
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
-        match &mut self.inner {
-            Inner::Waiter(w) => w.display(),
-            Inner::FirstTake(d) => d.take().expect("Display was already taken"),
-            Inner::Complete(d) => d.take().expect("Display was already taken"),
+    pub(crate) fn cannibalize(self) -> &'a mut D {
+        match self.inner {
+            Inner::Waiter(w) => w.cannibalize(),
+            Inner::FirstTake(d) => d,
+            Inner::Complete(d) => d,
+            Inner::Hole => panic!("Attempted to cannibalize an empty hole"),
         }
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, Handler: WaitLoopHandler + Unpin> Future
+// every WaitLoopHandler we define is Clone and Unpin
+impl<'a, D: AsyncDisplay + ?Sized, Handler: WaitLoopHandler + Clone + Unpin> Future
     for WaitLoopFuture<'a, D, Handler>
 {
     type Output = crate::Result<Handler::Output>;
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let handler = self.handler.clone();
+        let mut result = None;
         loop {
-            let display = match mem::replace(&mut self.inner, Inner::Complete(None)) {
-                Inner::FirstTake(display) => {
-                    let mut display = display.expect("Display was taken");
-
-                    if let Some(output) = self.handler.handle(&mut display) {
-                        self.inner = Inner::Complete(Some(display));
-                        break Poll::Ready(Ok(output));
-                    }
-
-                    display
+            take_mut(&mut self.inner, |inner| {
+                macro_rules! check_for_handler {
+                    ($display: expr, $handler: expr, $result: ident) => {{
+                        if let Some(output) = ($handler).handle(&mut $display) {
+                            $result = Some(Poll::Ready(Ok(output)));
+                            return Inner::Complete($display);
+                        };
+                    }};
                 }
-                Inner::Waiter(mut wf) => match wf.poll(cx) {
-                    Poll::Pending => break Poll::Pending,
-                    Poll::Ready(Err(e)) => {
-                        break Poll::Ready(Err(e));
-                    }
-                    Poll::Ready(Ok(())) => {
-                        let mut display = wf.display();
-                        if let Some(output) = self.handler.handle(&mut display) {
-                            self.inner = Inner::Complete(Some(display));
-                            break Poll::Ready(Ok(output));
-                        }
+
+                // check for the condition or wait until we can
+                let display = match inner {
+                    Inner::FirstTake(mut display) => {
+                        check_for_handler!(display, handler, result);
                         display
                     }
-                },
-                Inner::Complete(..) => panic!("Attempted to poll future past completion"),
-            };
+                    Inner::Waiter(mut wf) => match wf.poll(cx) {
+                        Poll::Pending => {
+                            result = Some(Poll::Pending);
+                            return Inner::Waiter(wf);
+                        }
+                        Poll::Ready(Err(e)) => {
+                            result = Some(Poll::Ready(Err(e)));
+                            return Inner::Complete(wf.cannibalize());
+                        }
+                        Poll::Ready(Ok(())) => {
+                            let mut display = wf.cannibalize();
+                            check_for_handler!(display, handler, result);
+                            display
+                        }
+                    },
+                    Inner::Complete(..) => panic!("Attempted to poll future past completion"),
+                    Inner::Hole => panic!("Cannot pole an empty hole"),
+                };
 
-            // begin waiting if we haven't already
-            self.inner = Inner::Waiter(WaitFuture::run(display));
+                Inner::Waiter(WaitFuture::run(display))
+            });
+
+            if let Some(result) = result.take() {
+                return result;
+            }
         }
     }
 }

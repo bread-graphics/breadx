@@ -94,7 +94,7 @@ where
                     }
 
                     // if we've finished with the current request, pull another request and poll it
-                    let display = inner.display();
+                    let display = inner.cannibalize();
                     match remaining.next() {
                         Some(request) => {
                             *self = PutImageFuture::PollingRequests {
@@ -126,7 +126,7 @@ where
                         Poll::Ready(Ok(())) => {}
                     }
 
-                    let display = inner.display();
+                    let display = inner.cannibalize();
                     match tokens.next() {
                         Some(tok) => {
                             *self = PutImageFuture::ResolvingRequests {

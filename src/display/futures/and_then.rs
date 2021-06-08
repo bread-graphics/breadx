@@ -3,6 +3,7 @@
 use super::ExchangeRequestFuture;
 use crate::{
     display::{generate_xid, AsyncDisplay},
+    util::take_mut,
     xid::XidType,
     Request,
 };
@@ -30,6 +31,15 @@ pub enum ExchangeXidFuture<'a, D: ?Sized, R: Request, U, F> {
     /// The future has been completed.
     #[doc(hidden)]
     Complete,
+    #[doc(hidden)]
+    Hole,
+}
+
+impl<'a, D: ?Sized, R: Request, U, F> Default for ExchangeXidFuture<'a, D, R, U, F> {
+    #[inline]
+    fn default() -> Self {
+        Self::Hole
+    }
 }
 
 impl<'a, D: ?Sized, R: Request, U, F> ExchangeXidFuture<'a, D, R, U, F> {
@@ -56,32 +66,47 @@ where
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<U>> {
+        let mut result = None;
         loop {
-            match mem::replace(&mut *self, ExchangeXidFuture::Complete) {
+            take_mut(&mut *self, |this| match this {
                 ExchangeXidFuture::Complete => panic!("Attempted to poll future past completion"),
+                ExchangeXidFuture::Hole => panic!("Cannot pole an empty hole"),
                 ExchangeXidFuture::GeneratingXid {
                     display,
                     to_request,
                 } => {
                     let xid = match generate_xid(display) {
                         Ok(xid) => xid,
-                        Err(e) => return Poll::Ready(Err(e)),
+                        Err(e) => {
+                            result = Some(Poll::Ready(Err(e)));
+                            return ExchangeXidFuture::Complete;
+                        }
                     };
                     let request: R = to_request(U::from_xid(xid));
                     let exchange = ExchangeRequestFuture::run(display, request);
-                    *self = ExchangeXidFuture::Exchanging {
+                    ExchangeXidFuture::Exchanging {
                         exchange,
                         xid: U::from_xid(xid),
-                    };
+                    }
                 }
                 ExchangeXidFuture::Exchanging { mut exchange, xid } => match exchange.poll(cx) {
                     Poll::Pending => {
-                        *self = ExchangeXidFuture::Exchanging { exchange, xid };
-                        return Poll::Pending;
+                        result = Some(Poll::Pending);
+                        ExchangeXidFuture::Exchanging { exchange, xid }
                     }
-                    Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
-                    Poll::Ready(Ok(..)) => return Poll::Ready(Ok(xid)),
+                    Poll::Ready(Err(e)) => {
+                        result = Some(Poll::Ready(Err(e)));
+                        ExchangeXidFuture::Complete
+                    }
+                    Poll::Ready(Ok(..)) => {
+                        result = Some(Poll::Ready(Ok(xid)));
+                        ExchangeXidFuture::Complete
+                    }
                 },
+            });
+
+            if let Some(result) = result.take() {
+                return result;
             }
         }
     }

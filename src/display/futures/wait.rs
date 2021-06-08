@@ -7,28 +7,31 @@ use core::{
     task::{Context, Poll},
 };
 
-/// The future created by the `AsyncDisplayExt::wait_async` method; polls the `poll_wait` function until
+/// The future created by the `AsyncDisplayExt::wait_async` method; runs the `poll_wait` function until
 /// it returns `Ready`.
 #[derive(Debug)]
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct WaitFuture<'a, D: ?Sized> {
-    display: Option<&'a mut D>,
+    display: &'a mut D,
     finished: bool,
 }
+
+// both &mut _ and bool are Inpin
+impl<'a, D: ?Sized> Unpin for WaitFuture<'a, D> {}
 
 impl<'a, D: ?Sized> WaitFuture<'a, D> {
     #[inline]
     pub(crate) fn run(display: &'a mut D) -> Self {
         Self {
-            display: Some(display),
+            display,
             finished: false,
         }
     }
 
-    /// Returns the display we are currently waiting on, but disables the future.
+    /// Consumes the future and returns the display we are currently waiting on.
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
-        self.display.take().expect("Display was already taken")
+    pub(crate) fn cannibalize(self) -> &'a mut D {
+        self.display
     }
 }
 
@@ -40,11 +43,7 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for WaitFuture<'a, D> {
         if self.finished {
             panic!("Attempted to poll future more than once");
         }
-        let res = self
-            .display
-            .as_mut()
-            .expect("Display was taken")
-            .poll_wait(cx);
+        let res = self.display.poll_wait(cx);
         if res.is_ready() {
             self.finished = true;
         }

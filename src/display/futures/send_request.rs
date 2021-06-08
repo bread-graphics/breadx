@@ -13,17 +13,13 @@ use core::{
 };
 use futures_lite::prelude::*;
 
-pin_project_lite::pin_project! {
-    /// The future returned by the `AsyncDisplayExt::send_request_async` method. It is a basic wrapper around
-    /// sending the raw request.
-    #[derive(Debug)]
-    #[must_use = "futures do nothing unless polled or .awaited"]
-    pub struct SendRequestFuture<'a, D: ?Sized, R> {
-        #[pin]
-        inner: SendRequestRawFuture<'a, D>,
-        #[pin]
-        _phantom: PhantomData<Option<R>>,
-    }
+/// The future returned by the `AsyncDisplayExt::send_request_async` method. It is a basic wrapper around
+/// sending the raw request.
+#[derive(Debug)]
+#[must_use = "futures do nothing unless polled or .awaited"]
+pub struct SendRequestFuture<'a, D: ?Sized, R> {
+    inner: SendRequestRawFuture<'a, D>,
+    _phantom: PhantomData<Option<R>>,
 }
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
@@ -38,8 +34,8 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> SendRequestFuture<'a, D, R> {
     }
 
     #[inline]
-    pub(crate) fn display(&mut self) -> &'a mut D {
-        self.inner.display()
+    pub(crate) fn cannibalize(self) -> &'a mut D {
+        self.inner.cannibalize()
     }
 }
 
@@ -47,10 +43,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin> Future for SendRequestFut
     type Output = crate::Result<RequestCookie<R>>;
 
     #[inline]
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<RequestCookie<R>>> {
-        self.project()
-            .inner
-            .poll(cx)
-            .map_ok(RequestCookie::from_sequence)
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<crate::Result<RequestCookie<R>>> {
+        self.inner.poll(cx).map_ok(RequestCookie::from_sequence)
     }
 }

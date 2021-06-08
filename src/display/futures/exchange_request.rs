@@ -3,6 +3,7 @@
 use super::{ResolveRequestFuture, SendRequestFuture};
 use crate::{
     display::{AsyncDisplay, RequestCookie},
+    util::take_mut,
     Request,
 };
 use core::{
@@ -26,7 +27,18 @@ pub enum ExchangeRequestFuture<'a, D: ?Sized, R: Request> {
     /// Request is complete.
     #[doc(hidden)]
     Complete,
+    /// Request has been dug out and replaced with a hole.
+    #[doc(hidden)]
+    Hole,
 }
+
+impl<'a, D: ?Sized, R: Request> Default for ExchangeRequestFuture<'a, D, R> {
+    #[inline]
+    fn default() -> Self {
+        Self::Hole
+    }
+}
+impl<'a, D: ?Sized, R: Request> Unpin for ExchangeRequestFuture<'a, D, R> {}
 
 impl<'a, D: AsyncDisplay + ?Sized, R: Request> ExchangeRequestFuture<'a, D, R> {
     #[inline]
@@ -35,8 +47,7 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ExchangeRequestFuture<'a, D, R> {
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin + 'a> Future
-    for ExchangeRequestFuture<'a, D, R>
+impl<'a, D: AsyncDisplay + ?Sized, R: Request + Unpin + 'a> Future for ExchangeRequestFuture<'a, D, R>
 where
     R::Reply: Default + Unpin,
 {
@@ -44,31 +55,40 @@ where
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut result = None;
         loop {
-            match mem::replace(&mut *self, Self::Complete) {
-                Self::SendRequest(mut srf) => match srf.poll(cx) {
+            take_mut(&mut *self, |this| match this {
+                ExchangeRequestFuture::SendRequest(mut srf) => match srf.poll(cx) {
                     Poll::Pending => {
-                        *self = Self::SendRequest(srf);
-                        return Poll::Pending;
+                        result = Some(Poll::Pending);
+                        ExchangeRequestFuture::SendRequest(srf)
                     }
                     Poll::Ready(Err(e)) => {
-                        return Poll::Ready(Err(e));
+                        result = Some(Poll::Ready(Err(e)));
+                        ExchangeRequestFuture::Complete
                     }
-                    Poll::Ready(Ok(tok)) => {
-                        let disp = srf.display();
-                        *self = Self::ResolveRequest(ResolveRequestFuture::run(disp, tok));
-                    }
+                    Poll::Ready(Ok(tok)) => ExchangeRequestFuture::ResolveRequest(
+                        ResolveRequestFuture::run(srf.cannibalize(), tok),
+                    ),
                 },
-                Self::ResolveRequest(mut rrf) => match rrf.poll(cx) {
+                ExchangeRequestFuture::ResolveRequest(mut rrf) => match rrf.poll(cx) {
                     Poll::Pending => {
-                        *self = Self::ResolveRequest(rrf);
-                        return Poll::Pending;
+                        result = Some(Poll::Pending);
+                        ExchangeRequestFuture::ResolveRequest(rrf)
                     }
                     Poll::Ready(res) => {
-                        return Poll::Ready(res);
+                        result = Some(Poll::Ready(res));
+                        ExchangeRequestFuture::Complete
                     }
                 },
-                Self::Complete => panic!("Attempted to poll future after completion"),
+                ExchangeRequestFuture::Complete => {
+                    panic!("Attempted to poll future after completion")
+                }
+                ExchangeRequestFuture::Hole => panic!("Cannot pole an empty hole"),
+            });
+
+            if let Some(result) = result.take() {
+                return result;
             }
         }
     }
