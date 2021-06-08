@@ -336,6 +336,15 @@ impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
     }
 
     #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        self.inner.bigreq_enabled()
+    }
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        self.inner.max_request_len()
+    }
+
+    #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
         self.inner.get_extension_opcode(key)
     }
@@ -453,6 +462,15 @@ where
     #[inline]
     fn set_checked(&mut self, checked: bool) {
         self.inner().set_checked(checked);
+    }
+
+    #[inline]
+    fn bigreq_enabled(&self) -> bool {
+        self.inner.bigreq_enabled()
+    }
+    #[inline]
+    fn max_request_len(&self) -> usize {
+        self.inner.max_request_len()
     }
 
     #[inline]
