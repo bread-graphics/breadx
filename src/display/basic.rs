@@ -59,7 +59,6 @@ pub struct BasicDisplay<Conn> {
     pub(crate) event_queue: VecDeque<Event>,
     /// Map associating request numbers to pending requests, that have not been replied to by
     /// the server yet.
-    /// TODO: maybe combine into one HashMap that uses an enum?
     pub(crate) pending_requests: HashMap<u16, PendingRequest>,
     /// Map associating request numbers to requests that have error'd out. This map is unlikely
     /// to ever hold many entries; it might be worth reconsidering its type.

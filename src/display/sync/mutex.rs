@@ -8,18 +8,29 @@ use std::thread;
 use core::task::{Context, Poll, Waker};
 
 /// A simple implementation of a mutex.
+#[derive(Debug)]
 pub struct Mutex {
     locked: AtomicBool,
     wakers: ConcurrentQueue<ThreadOrWaker>,
 }
 
 impl Mutex {
+    /// Create a new mutex.
+    #[inline]
+    pub fn new() -> Self { Self { locked: AtomicBool::new(false), wakers: ConcurrentQueue::unbounded() } }
+
     /// Try to lock the mutex. If it is locked, lock it a thread.
     #[inline]
     pub fn lock(&self) {
-        while self.locked.compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel).is_err() {
+        while self
+            .locked
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel)
+            .is_err()
+        {
             let t = thread::current();
-            self.wakers.push(ThreadOrWaker::Thread(t)).expect("Concurrent queue could not be pushed onto");
+            self.wakers
+                .push(ThreadOrWaker::Thread(t))
+                .expect("Concurrent queue could not be pushed onto");
             thread::park();
         }
     }
@@ -28,16 +39,26 @@ impl Mutex {
     #[cfg(feature = "async")]
     #[inline]
     pub fn poll_lock(&self, cx: &mut Context<'_>) -> Poll<()> {
-        match self.locked.compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel) {
+        match self
+            .locked
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel)
+        {
             Ok(_) => Poll::Ready(()),
-            Err(_) => { self.wakers.push(ThreadOrWaker::Waker(cx.waker().clone())); Poll::Pending }
+            Err(_) => {
+                self.wakers.push(ThreadOrWaker::Waker(cx.waker().clone()));
+                Poll::Pending
+            }
         }
     }
 
     /// Unlock the mutex.
     #[inline]
     pub fn unlock(&self) {
-        if self.locked.compare_exchange(true, false, Ordering::AcqRel, Ordering::AcqRel).is_ok() {
+        if self
+            .locked
+            .compare_exchange(true, false, Ordering::AcqRel, Ordering::AcqRel)
+            .is_ok()
+        {
             while self.locked.load(Ordering::Acquire) {
                 match self.wakers.pop() {
                     Ok(waker) => waker.wake(),

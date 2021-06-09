@@ -27,8 +27,8 @@ mod basic;
 pub(crate) mod bigreq;
 mod cell;
 mod connection;
-pub mod traits;
 
+pub mod traits;
 // "traits" contains some important types.
 pub use traits::{rgb, GcParameters, KeyboardMapping, WindowParameters};
 
@@ -40,6 +40,11 @@ pub use connection::*;
 pub(crate) mod futures;
 #[cfg(feature = "async")]
 pub use futures::*;
+
+#[cfg(feature = "sync")]
+mod sync;
+#[cfg(feature = "sync")]
+pub use sync::*;
 
 pub(crate) mod input;
 pub(crate) mod output;
