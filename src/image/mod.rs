@@ -18,6 +18,11 @@ use core::{
     slice,
 };
 
+#[cfg(feature = "image-support")]
+use core::iter;
+#[cfg(feature = "image-support")]
+use image::Pixel;
+
 /// An image. This acts as a wrapper around data that represents an image.
 #[derive(Clone, Debug)]
 pub struct Image<Data> {
@@ -412,6 +417,69 @@ where
             bytes_per_line: self.bytes_per_line,
             data: self.data().into(),
         }
+    }
+}
+
+#[cfg(feature = "image-support")]
+impl Image<Box<[u8]>> {
+    /// Create an empty `Image` that could fit an `image::GenericImageView`.
+    #[inline]
+    fn from_image_empty<Dpy: DisplayBase + ?Sized, Img: image::GenericImageView>(
+        dpy: &mut Dpy,
+        visual: Option<&Visualtype>,
+        depth: u8,
+        format: ImageFormat,
+        img: &Img,
+    ) -> crate::Result<Self> {
+        let (width, height) = img.dimensions();
+        let (width, height) = (width as usize, height as usize);
+
+        // create the heap space necessary for the image
+        let heapspace: Box<[u8]> = iter::repeat(0)
+            .take(width * height * Img::Pixel::CHANNEL_COUNT as usize)
+            .collect();
+
+        // use the heap space to create the new image
+        Image::new(
+            &dpy,
+            visual,
+            depth,
+            format,
+            0,
+            heapspace,
+            width,
+            height,
+            (Img::Pixel::CHANNEL_COUNT * 8).into(),
+            None,
+        )
+        .ok_or(crate::BreadError::StaticMsg("Failed to create base image"))
+    }
+
+    /// Create a new `Image` based off of an `image::GenericImageView`.
+    #[inline]
+    pub fn from_image<Dpy: DisplayBase + ?Sized, Img: image::GenericImageView>(
+        dpy: &mut Dpy,
+        visual: Option<&Visualtype>,
+        depth: u8,
+        format: ImageFormat,
+        img: &Img,
+    ) -> crate::Result<Self>
+    where
+        <<Img as image::GenericImageView>::Pixel as image::Pixel>::Subpixel: Into<u8>,
+    {
+        let mut image = Self::from_image_empty(dpy, visual, depth, format, img)?;
+
+        // fill the image
+        for (x, y, pixel) in img.pixels() {
+            let mut xpixel: u32 = 0;
+            for (i, channel) in pixel.channels().iter().copied().enumerate() {
+                let channel: u8 = channel.into();
+                xpixel |= (channel as u32) << (i * 8);
+            }
+            image.set_pixel(x as usize, y as usize, xpixel);
+        }
+
+        Ok(image)
     }
 }
 

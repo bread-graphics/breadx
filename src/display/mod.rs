@@ -27,8 +27,8 @@ mod basic;
 pub(crate) mod bigreq;
 mod cell;
 mod connection;
-pub mod traits;
 
+pub mod traits;
 // "traits" contains some important types.
 pub use traits::{rgb, GcParameters, KeyboardMapping, WindowParameters};
 
@@ -40,6 +40,11 @@ pub use connection::*;
 pub(crate) mod futures;
 #[cfg(feature = "async")]
 pub use futures::*;
+
+#[cfg(feature = "sync-display")]
+mod sync;
+#[cfg(feature = "sync-display")]
+pub use sync::*;
 
 pub(crate) mod input;
 pub(crate) mod output;
@@ -83,35 +88,23 @@ pub trait DisplayBase {
     /// Generate the next request number to be used to define a request.
     fn next_request_number(&mut self) -> u64;
 
+    /// Generate an XID within appropriate bounds. Returns `None` if our XIDs are exhausted.
+    fn generate_xid(&mut self) -> Option<XID>;
+
+    /// Add a `PendingItem` to this display's map.
+    fn add_pending_item(&mut self, req_id: u16, item: PendingItem);
+
+    /// Clone a `PendingItem` from this display's map and return it.
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem>;
+
+    /// Remove a `PendingItem` from this display's map.
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem>;
+
     /// Push an event into this display's event queue.
     fn push_event(&mut self, event: Event);
 
     /// Pop an event from this display's event queue.
     fn pop_event(&mut self) -> Option<Event>;
-
-    /// Generate an XID within appropriate bounds. Returns `None` if our XIDs are exhausted.
-    fn generate_xid(&mut self) -> Option<XID>;
-
-    /// Add a pending request to this display.
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest);
-
-    /// Get a pending request from this display.
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest>;
-
-    /// Remove a pending request from this display.
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest>;
-
-    /// Add a pending error to this display.
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError);
-
-    /// Remove a pending error, if it exists.
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()>;
-
-    /// Add a pending reply.
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply);
-
-    /// Remove the pending reply.
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply>;
 
     /// Create a new special event queue.
     fn create_special_event_queue(&mut self, xid: XID);
@@ -149,6 +142,54 @@ pub trait DisplayBase {
 
     /// Set the `WM_PROTOCOLS` atom.
     fn set_wm_protocols_atom(&mut self, a: NonZeroU32);
+
+    // -- Item-based functions.
+
+    /// Insert a pending request into this display.
+    #[inline]
+    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+        self.add_pending_item(req_id, PendingItem::Request(pereq));
+    }
+
+    /// Get a pending request from this display.
+    #[inline]
+    fn get_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        self.get_pending_item(req_id).and_then(PendingItem::request)
+    }
+
+    /// Take a pending request from this display.
+    #[inline]
+    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+        self.take_pending_item(req_id)
+            .and_then(PendingItem::request)
+    }
+
+    /// Insert a pending reply into this display.
+    #[inline]
+    fn add_pending_reply(&mut self, req_id: u16, perep: PendingReply) {
+        self.add_pending_item(req_id, PendingItem::Reply(perep));
+    }
+
+    /// Take a pending reply from this display.
+    #[inline]
+    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
+        self.take_pending_item(req_id).and_then(PendingItem::reply)
+    }
+
+    /// Insert a pending error into this display.
+    #[inline]
+    fn add_pending_error(&mut self, req_id: u16, err: BreadError) {
+        self.add_pending_item(req_id, PendingItem::Error(err));
+    }
+
+    /// Check this display for the pending error.
+    #[inline]
+    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result {
+        match self.take_pending_item(req_id) {
+            Some(PendingItem::Error(err)) => Err(err),
+            _ => Ok(()),
+        }
+    }
 
     // -- Setup-based functions.
 
@@ -259,38 +300,18 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     }
 
     #[inline]
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
-        (**self).add_pending_request(req_id, pereq)
+    fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
+        (**self).add_pending_item(req_id, item)
     }
 
     #[inline]
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        (**self).get_pending_request(req_id)
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        (**self).get_pending_item(req_id)
     }
 
     #[inline]
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
-        (**self).take_pending_request(req_id)
-    }
-
-    #[inline]
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        (**self).add_pending_error(req_id, error)
-    }
-
-    #[inline]
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
-        (**self).check_for_pending_error(req_id)
-    }
-
-    #[inline]
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
-        (**self).add_pending_reply(req_id, reply)
-    }
-
-    #[inline]
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        (**self).take_pending_reply(req_id)
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        (**self).take_pending_item(req_id)
     }
 
     #[inline]
@@ -440,7 +461,11 @@ pub trait AsyncDisplay: DisplayBase {
 
     /// Begin sending a raw request to the server. In order to poll the status of this operation, use the
     /// `poll_send_request_raw` function, or just use the `send_request_raw`/`send_request` function.
-    fn begin_send_request_raw(&mut self, req: RequestInfo);
+    fn begin_send_request_raw(
+        &mut self,
+        req: RequestInfo,
+        cx: &mut Context<'_>,
+    ) -> PollOr<(), RequestInfo>;
 
     /// Poll an ongoing raw request operation.
     fn poll_send_request_raw(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result<u16>>;
@@ -454,8 +479,12 @@ impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        (**self).begin_send_request_raw(req)
+    fn begin_send_request_raw(
+        &mut self,
+        req: RequestInfo,
+        cx: &mut Context<'_>,
+    ) -> PollOr<(), RequestInfo> {
+        (**self).begin_send_request_raw(req, cx)
     }
 
     #[inline]
@@ -814,6 +843,53 @@ impl Default for RequestWorkaround {
     fn default() -> Self {
         Self::NoWorkaround
     }
+}
+
+/// Combines `PendingRequest`, `PendingReply`, and `BreadError` into one type, to simplify some of the APIs.
+#[derive(Debug, Clone)]
+pub enum PendingItem {
+    /// A pending request.
+    Request(PendingRequest),
+    /// A pending reply.
+    Reply(PendingReply),
+    /// A pending error.
+    Error(BreadError),
+}
+
+impl PendingItem {
+    /// Convert this into either a `PendingRequest` or `None`.
+    #[inline]
+    pub fn request(self) -> Option<PendingRequest> {
+        match self {
+            PendingItem::Request(pr) => Some(pr),
+            _ => None,
+        }
+    }
+
+    /// Convert this into either a `PendingReply` or `None`.
+    #[inline]
+    pub fn reply(self) -> Option<PendingReply> {
+        match self {
+            PendingItem::Reply(pr) => Some(pr),
+            _ => None,
+        }
+    }
+
+    /// Convert this into either a `BreadError` or `None`.
+    #[inline]
+    pub fn error(self) -> Option<BreadError> {
+        match self {
+            PendingItem::Error(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+/// Utility type to represent a polling result that returns another object if it fails.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PollOr<T, D> {
+    Ready(T),
+    Pending(D),
 }
 
 #[inline]

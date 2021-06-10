@@ -3,6 +3,9 @@
 use crate::auto;
 use core::cell::Cell;
 
+#[cfg(feature = "sync-display")]
+use core::sync::atomic::{AtomicU32, Ordering};
+
 /// An X11 ID.
 #[allow(clippy::upper_case_acronyms)]
 pub type XID = u32;
@@ -146,5 +149,82 @@ impl CellXidGenerator {
         }
 
         Some(self.eval_in_place())
+    }
+}
+
+/// XID Generator, but implemented using atomics.
+#[cfg(feature = "sync-display")]
+#[derive(Debug)]
+pub struct AtomicXidGenerator {
+    pub last: AtomicU32,
+    pub max: AtomicU32,
+    pub inc: XID,
+    pub base: XID,
+    mask: XID,
+}
+
+#[cfg(feature = "sync-display")]
+impl From<XidGenerator> for AtomicXidGenerator {
+    #[inline]
+    fn from(x: XidGenerator) -> Self {
+        let XidGenerator {
+            last,
+            max,
+            inc,
+            base,
+            mask,
+        } = x;
+        Self {
+            last: AtomicU32::new(last),
+            max: AtomicU32::new(max),
+            inc,
+            base,
+            mask,
+        }
+    }
+}
+
+#[cfg(feature = "sync-display")]
+impl AtomicXidGenerator {
+    #[must_use]
+    #[inline]
+    pub const fn new(base: XID, mask: XID) -> Self {
+        Self {
+            last: AtomicU32::new(0),
+            max: AtomicU32::new(0),
+            base,
+            inc: mask & mask.wrapping_neg(),
+            mask,
+        }
+    }
+
+    #[inline]
+    pub fn eval_in_place(&self) -> XID {
+        self.last.load(Ordering::SeqCst) | self.base
+    }
+
+    #[inline]
+    pub fn next_xid(&self) -> Option<XID> {
+        let mut last = self.last.load(Ordering::SeqCst);
+        if last
+            >= self
+                .max
+                .load(Ordering::SeqCst)
+                .wrapping_sub(self.inc)
+                .wrapping_add(1)
+        {
+            assert_eq!(last, self.max.load(Ordering::Relaxed));
+            if last == 0 {
+                self.max.store(self.mask, Ordering::SeqCst);
+                self.last.store(self.inc, Ordering::SeqCst);
+            } else {
+                return None;
+            }
+        } else {
+            last = last.wrapping_add(self.inc);
+            self.last.store(last, Ordering::SeqCst);
+        }
+
+        Some(last | self.base)
     }
 }
