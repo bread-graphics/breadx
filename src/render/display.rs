@@ -12,7 +12,8 @@ use crate::{
         xproto::{Drawable, Setup, Visualtype},
     },
     display::{
-        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem,  RequestInfo, EXT_KEY_SIZE,
+        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem, RequestInfo,
+        EXT_KEY_SIZE,
     },
     event::Event,
     BreadError, XID,
@@ -21,7 +22,7 @@ use alloc::boxed::Box;
 use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
-use crate::display::{PollOr, AsyncDisplay};
+use crate::display::{AsyncDisplay, PollOr};
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 
