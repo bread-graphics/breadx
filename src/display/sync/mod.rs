@@ -4,7 +4,8 @@ mod mutex;
 use mutex::Mutex;
 
 use super::{
-    input, output, Display, DisplayBase, PendingItem, PendingReply, PendingRequest, EXT_KEY_SIZE,
+    input, output, BasicDisplay, Connection, Display, DisplayBase, PendingItem, RequestInfo,
+    EXT_KEY_SIZE,
 };
 use crate::{
     auto::xproto::Setup,
@@ -13,14 +14,26 @@ use crate::{
 };
 use alloc::{collections::VecDeque, sync::Arc};
 use concurrent_queue::ConcurrentQueue;
-use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU64};
+use core::{
+    num::NonZeroU32,
+    sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+};
 use dashmap::DashMap;
-use spinning_top::Spinlock;
 
 #[cfg(feature = "async")]
-use super::{common, AsyncDisplay};
+use super::{
+    common::{SendBuffer, WaitBuffer, WaitBufferReturn},
+    AsyncConnection, AsyncDisplay, PollOr, RequestWorkaround,
+};
+#[cfg(feature = "async")]
+use core::{
+    mem,
+    task::{Context, Poll},
+};
 #[cfg(feature = "async")]
 use futures_lite::ready;
+#[cfg(feature = "async")]
+use spinning_top::Spinlock;
 
 /// A display that uses concurrent primitives in order to allow for thread-safe immutable access to the X
 /// connection.
@@ -136,7 +149,7 @@ impl<Conn> From<BasicDisplay<Conn>> for SyncDisplay<Conn> {
             default_screen,
             event_queue: into_concurrent_queue(event_queue),
             pending_items: Arc::new(pending_items.into_iter().collect()),
-            special_event_queues: into_concurrent_queue(special_event_queues),
+            special_event_queues: special_event_queues.into_iter().collect(),
             extensions: extensions.into_iter().collect(),
             request_number: AtomicU64::new(request_number),
             wm_protocols_atom: AtomicU32::new(match wm_protocols_atom {
@@ -173,7 +186,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
 
     #[inline]
     fn push_event(&mut self, event: Event) {
-        self.event_queue.push(event)
+        self.event_queue.push(event).ok();
     }
 
     #[inline]
@@ -192,13 +205,13 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
     }
 
     #[inline]
-    fn get_pending_item(&self, req_id: u16) -> Option<PendingItem> {
-        self.pending_items.get(&req_id).cloned()
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.pending_items.get(&req_id).as_deref().cloned()
     }
 
     #[inline]
     fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
-        self.pending_items.remove(&req_id)
+        self.pending_items.remove(&req_id).map(|(_, v)| v)
     }
 
     #[inline]
@@ -209,7 +222,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
     #[inline]
     fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
         match self.special_event_queues.get_mut(&xid) {
-            Some(queue) => {
+            Some(mut queue) => {
                 queue.push_back(event);
                 Ok(())
             }
@@ -221,7 +234,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
     fn pop_special_event(&mut self, xid: XID) -> Option<Event> {
         self.special_event_queues
             .get_mut(&xid)
-            .and_then(VecDeque::pop_front)
+            .and_then(|mut v| v.pop_front())
     }
 
     #[inline]
@@ -251,7 +264,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
 
     #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
-        self.extensions.get(key).copied()
+        self.extensions.get(key).as_deref().copied()
     }
 
     #[inline]
@@ -261,7 +274,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
 
     #[inline]
     fn wm_protocols_atom(&self) -> Option<NonZeroU32> {
-        NonZeroU32::new(*self.wm_protocols_atom.get_mut())
+        NonZeroU32::new(self.wm_protocols_atom.load(Ordering::Relaxed))
     }
 
     #[inline]
@@ -270,7 +283,7 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
     }
 }
 
-impl<Conn> Display for SyncDisplay<Conn> {
+impl<Conn: Connection> Display for SyncDisplay<Conn> {
     #[inline]
     fn wait(&mut self) -> crate::Result {
         self.io_lock.lock();
@@ -297,14 +310,14 @@ impl<Conn> Display for SyncDisplay<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn> AsyncDisplay for SyncDisplay<Conn> {
+impl<Conn: AsyncConnection + Unpin> AsyncDisplay for SyncDisplay<Conn> {
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
-        let mut conn = self.connection.take().expect();
+        let mut conn = self.connection.take().expect("Poisoned!");
         let wait_buffer = match self.wait_buffer.get_mut() {
             Some(wait_buffer) => wait_buffer,
             None => {
-                if let Poll::Pending = self.io_lock.poll_lock() {
+                if let Poll::Pending = self.io_lock.poll_lock(ctx) {
                     self.connection = Some(conn);
                     return Poll::Pending;
                 }
@@ -318,9 +331,9 @@ impl<Conn> AsyncDisplay for SyncDisplay<Conn> {
         let pending_items = self.pending_items.clone();
         let res = wait_buffer.poll_wait(
             &mut conn,
-            move |seq| match pending_items.get(&seq) {
+            move |seq| match pending_items.get(&seq).as_deref() {
                 Some(PendingItem::Request(pereq)) => {
-                    matches!(pereq.flags.workaround, RequestWorkaround::GlxFbConfigBug)
+                    matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug)
                 }
                 _ => false,
             },
@@ -398,7 +411,7 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
 
     #[inline]
     fn push_event(&mut self, event: Event) {
-        self.event_queue.push(event)
+        self.event_queue.push(event).ok();
     }
 
     #[inline]
@@ -417,13 +430,13 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     }
 
     #[inline]
-    fn get_pending_item(&self, req_id: u16) -> Option<PendingItem> {
-        self.pending_items.get(&req_id).cloned()
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.pending_items.get(&req_id).as_deref().cloned()
     }
 
     #[inline]
     fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
-        self.pending_items.remove(&req_id)
+        self.pending_items.remove(&req_id).map(|(_, v)| v)
     }
 
     #[inline]
@@ -434,7 +447,7 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     #[inline]
     fn push_special_event(&mut self, xid: XID, event: Event) -> Result<(), Event> {
         match self.special_event_queues.get_mut(&xid) {
-            Some(queue) => {
+            Some(mut queue) => {
                 queue.push_back(event);
                 Ok(())
             }
@@ -446,7 +459,7 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     fn pop_special_event(&mut self, xid: XID) -> Option<Event> {
         self.special_event_queues
             .get_mut(&xid)
-            .and_then(VecDeque::pop_front)
+            .and_then(|mut v| v.pop_front())
     }
 
     #[inline]
@@ -476,7 +489,7 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
 
     #[inline]
     fn get_extension_opcode(&mut self, key: &[u8; EXT_KEY_SIZE]) -> Option<u8> {
-        self.extensions.get(key).copied()
+        self.extensions.get(key).as_deref().copied()
     }
 
     #[inline]
@@ -495,7 +508,10 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     }
 }
 
-impl<'a, Conn> Display for &'a SyncDisplay<Conn> {
+impl<'a, Conn> Display for &'a SyncDisplay<Conn>
+where
+    &'a Conn: Connection,
+{
     #[inline]
     fn wait(&mut self) -> crate::Result {
         self.io_lock.lock();
@@ -516,7 +532,10 @@ impl<'a, Conn> Display for &'a SyncDisplay<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn> {
+impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn>
+where
+    &'a Conn: AsyncConnection,
+{
     #[inline]
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let mut conn = self.connection.as_ref().expect("Poisoned");
@@ -528,7 +547,7 @@ impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn> {
         let wait_buffer = match &mut *wbslot {
             Some(wait_buffer) => wait_buffer,
             None => {
-                ready!(self.io_lock.poll_lock());
+                ready!(self.io_lock.poll_lock(ctx));
                 let wait_buffer = Default::default();
                 *wbslot = Some(wait_buffer);
                 wbslot.as_mut().unwrap()
@@ -539,9 +558,9 @@ impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn> {
         let pending_items = self.pending_items.clone();
         let res = wait_buffer.poll_wait(
             &mut conn,
-            move |seq| match pending_items.get(&seq) {
+            move |seq| match pending_items.get(&seq).as_deref() {
                 Some(PendingItem::Request(pereq)) => {
-                    matches!(pereq.flags.workaround, RequestWorkaround::GlxFbConfigBug)
+                    matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug)
                 }
                 _ => false,
             },
@@ -551,7 +570,7 @@ impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn> {
         let (bytes, fds) = match res {
             Poll::Pending => return Poll::Pending,
             Poll::Ready(res) => {
-                wbslot.dig_hole();
+                wbslot.take();
                 self.io_lock.unlock();
                 match res {
                     Ok(WaitBufferReturn { data, fds }) => (data, fds),
@@ -611,7 +630,7 @@ impl<'a, Conn> AsyncDisplay for &'a SyncDisplay<Conn> {
 fn into_concurrent_queue<I: IntoIterator>(i: I) -> ConcurrentQueue<I::Item> {
     let c = ConcurrentQueue::unbounded();
     for item in i {
-        c.push(item);
+        c.push(item).ok();
     }
     c
 }

@@ -3,7 +3,7 @@
 use crate::auto;
 use core::cell::Cell;
 
-#[cfg(feature = "sync_display")]
+#[cfg(feature = "sync-display")]
 use core::sync::atomic::{AtomicU32, Ordering};
 
 /// An X11 ID.

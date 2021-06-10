@@ -47,7 +47,7 @@ impl Mutex {
             // push an unparker into the wakers queue
             self.wakers
                 .push(ThreadOrWaker::Thread(t))
-                .expect("Concurrent queue could not be pushed onto");
+                .unwrap_or_else(|_| panic!("Concurrent queue could not be pushed onto"));
             // note: this loop does defeat spurious wakeups
             thread::park();
         }
@@ -67,7 +67,9 @@ impl Mutex {
             Err(_) => {
                 // if we don't, push the context's waker into the mutex list and wake it when the mutex is
                 // open
-                self.wakers.push(ThreadOrWaker::Waker(cx.waker().clone()));
+                self.wakers
+                    .push(ThreadOrWaker::Waker(cx.waker().clone()))
+                    .unwrap_or_else(|_| panic!("Concurrent queue could not be pushed onto"));
                 Poll::Pending
             }
         }
@@ -100,7 +102,7 @@ impl Mutex {
 /// a (hopefully) no-op wrapper around the unparker.
 enum ThreadOrWaker {
     /// A thread handle, used to unpark a given thread.
-    Thread(Thread),
+    Thread(thread::Thread),
     /// A waker, used to wake a given async task.
     #[cfg(feature = "async")]
     Waker(Waker),
