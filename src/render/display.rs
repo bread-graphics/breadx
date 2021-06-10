@@ -12,8 +12,7 @@ use crate::{
         xproto::{Drawable, Setup, Visualtype},
     },
     display::{
-        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem, PendingReply,
-        PendingRequest, PollOr, RequestInfo, EXT_KEY_SIZE,
+        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem,  RequestInfo, EXT_KEY_SIZE,
     },
     event::Event,
     BreadError, XID,
@@ -22,7 +21,7 @@ use alloc::boxed::Box;
 use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
-use crate::display::AsyncDisplay;
+use crate::display::{PollOr, AsyncDisplay};
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 
@@ -276,7 +275,7 @@ impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
     }
 
     #[inline]
-    fn get_pending_item(&self, req_id: u16) -> Option<PendingItem> {
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
         self.inner.get_pending_item(req_id)
     }
 
@@ -380,38 +379,18 @@ where
     }
 
     #[inline]
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
-        self.inner().add_pending_request(req_id, pereq)
+    fn add_pending_item(&mut self, req_id: u16, pereq: PendingItem) {
+        self.inner().add_pending_item(req_id, pereq)
     }
 
     #[inline]
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.inner().get_pending_request(req_id)
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.inner().get_pending_item(req_id)
     }
 
     #[inline]
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
-        self.inner().take_pending_request(req_id)
-    }
-
-    #[inline]
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.inner().add_pending_error(req_id, error);
-    }
-
-    #[inline]
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
-        self.inner().check_for_pending_error(req_id)
-    }
-
-    #[inline]
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
-        self.inner().add_pending_reply(req_id, reply);
-    }
-
-    #[inline]
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        self.inner().take_pending_reply(req_id)
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.inner().take_pending_item(req_id)
     }
 
     #[inline]
@@ -555,7 +534,7 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
         mut dpy: Dpy,
         client_major_version: u32,
         client_minor_version: u32,
-    ) -> Result<Self, (Dpy, crate::BreadError)> {
+    ) -> Result<Self, (Dpy, BreadError)> {
         #[inline]
         fn xrender_info<Dpy: Display>(
             dpy: &mut Dpy,
