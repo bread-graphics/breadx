@@ -94,12 +94,14 @@
 //!           than building a connection itself.
 //! * `async` - Enables the `_async` suffix family of functions. These functions and methods are similar
 //!             to their blocking variants, but they use non-blocking variants of network calls. This uses
-//!             the [`async_net`](https://crates.io/crates/async-net) crate to provide non-blocking calls.
+//!             the [`async-io`](https://crates.io/crates/async-io) crate to provide non-blocking calls.
 //!             However, it nearly triples the size of this package's dependency tree.
-//! * `image-support` - Coming soon.
-//! * `nightly-min-specialization` - Coming soon.
-//! * `parallel` - Uses the [`rayon`](https://crates.io/crates/rayon) crate to parallelize computationally
-//!                expensive operations.
+//! * `image-support` - Adds the `from_image` method to the `Image` class, allowing one to convert a struct of
+//!                     type `image::Image` from the [`image`](https://crates.io/crates/image) crate into this
+//!                     image.
+//! * `sync-display` - Enables the `SyncDisplay` struct, which allows usage of the display in thread-safe
+//!                    contexts. However, it does require importing more dependencies (although some of these
+//!                    dependencies overlap with those of the `async` feature).
 
 #![deny(deprecated)]
 #![forbid(unsafe_code)]

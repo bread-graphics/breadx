@@ -1,12 +1,9 @@
 // MIT/Apache2 License
 
 use super::{
-    bigreq, input, output, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo, EXT_KEY_SIZE,
+    bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, EXT_KEY_SIZE,
 };
-use crate::{
-    auth_info::AuthInfo, auto::xproto::Setup, error::BreadError, event::Event, XidGenerator, XID,
-};
+use crate::{auth_info::AuthInfo, auto::xproto::Setup, event::Event, XidGenerator, XID};
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
@@ -18,7 +15,7 @@ use super::name::NameConnection;
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
     name::AsyncNameConnection,
-    AsyncConnection, AsyncDisplay, RequestWorkaround,
+    AsyncConnection, AsyncDisplay, PollOr, RequestWorkaround,
 };
 #[cfg(feature = "async")]
 use alloc::{vec, vec::Vec};
@@ -57,24 +54,20 @@ pub struct BasicDisplay<Conn> {
 
     /// Queue for events; more recent events are at the front.
     pub(crate) event_queue: VecDeque<Event>,
-    /// Map associating request numbers to pending requests, that have not been replied to by
-    /// the server yet.
-    pub(crate) pending_requests: HashMap<u16, PendingRequest>,
-    /// Map associating request numbers to requests that have error'd out. This map is unlikely
-    /// to ever hold many entries; it might be worth reconsidering its type.
-    pub(crate) pending_errors: HashMap<u16, BreadError>,
-    /// Map associating request numbers with replies sent by the server.
-    pub(crate) pending_replies: HashMap<u16, PendingReply>,
-
-    // special events queue
+    /// Map associating request numbers to pending requests, pending replies, and pending errors.
+    pub(crate) pending_items: HashMap<u16, PendingItem>,
+    /// Map associating XID's to special event queues. For some extensions, they produce events that need to be
+    /// put into their own species queues.
     pub(crate) special_event_queues: HashMap<XID, VecDeque<Event>>,
 
+    /// The running sequence number for the requests in the display.
     pub(crate) request_number: u64,
 
-    // store the interned atoms
+    /// Caches the "WM_PROTOCOLS" atom, which tends to be commonly used.
     pub(crate) wm_protocols_atom: Option<NonZeroU32>,
 
-    // tell whether or not we care about the output of zero-sized replies
+    /// If this is true, we store zero-sized replies as pending requests and check for their synchronization.
+    /// If false, this discards their replies. It is much faster than checked mode.
     pub(crate) checked: bool,
 
     // hashmap linking extension names to major opcodes
@@ -110,9 +103,7 @@ impl<Conn> BasicDisplay<Conn> {
             // setting this to 1 because breadglx with DRI3 will always append one entry to this map,
             // and expanding this map is considered to be a cold operation
             special_event_queues: HashMap::with_capacity(1),
-            pending_requests: HashMap::with_capacity(4),
-            pending_replies: HashMap::with_capacity(4),
-            pending_errors: HashMap::with_capacity(4),
+            pending_items: HashMap::with_capacity(4),
             request_number: 1,
             wm_protocols_atom: None,
             checked: cfg!(debug_assertions),
@@ -211,49 +202,28 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     }
 
     #[inline]
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+    fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
         #[cfg(feature = "async")]
         {
-            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-                self.workarounders.push(req_id);
+            if let PendingItem::Request(ref pereq) = item {
+                if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                    self.workarounders.push(req_id);
+                }
             }
         }
-        self.pending_requests.insert(req_id, pereq);
+        self.pending_items.insert(req_id, item);
     }
 
     #[inline]
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.pending_requests.get(&req_id).copied()
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.pending_items.get(&req_id).cloned()
     }
 
     #[inline]
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
         #[cfg(feature = "async")]
         self.workarounders.retain(|&r| r != req_id);
-        self.pending_requests.remove(&req_id)
-    }
-
-    #[inline]
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.pending_errors.insert(req_id, error);
-    }
-
-    #[inline]
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
-        match self.pending_errors.remove(&req_id) {
-            Some(err) => Err(err),
-            None => Ok(()),
-        }
-    }
-
-    #[inline]
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
-        self.pending_replies.insert(req_id, reply);
-    }
-
-    #[inline]
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        self.pending_replies.remove(&req_id)
+        self.pending_items.remove(&req_id)
     }
 
     #[inline]
@@ -348,10 +318,11 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
     #[inline]
     fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
         let mut conn = self.connection.take().expect("Poisoned!");
+        let workarounders = &self.workarounders;
         let res = self
             .wait_buffer
             .get_or_insert_with(WaitBuffer::default)
-            .poll_wait(&mut conn, &self.workarounders, cx);
+            .poll_wait(&mut conn, move |seq| workarounders.contains(&seq), cx);
         self.connection = Some(conn);
         let (bytes, fds) = match res {
             Poll::Ready(res) => {
@@ -368,8 +339,13 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for BasicDisplay<Connect> {
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
+    fn begin_send_request_raw(
+        &mut self,
+        req: RequestInfo,
+        _cx: &mut Context<'_>,
+    ) -> PollOr<(), RequestInfo> {
         self.send_buffer.fill_hole(req);
+        PollOr::Ready(())
     }
 
     #[inline]

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::display::{AsyncDisplay, PendingReply, PendingRequest, RequestInfo};
+use crate::display::{AsyncDisplay, PendingReply, PendingRequest, PollOr, RequestInfo};
 use core::{
     future::Future,
     pin::Pin,
@@ -13,6 +13,7 @@ use core::{
 #[must_use = "futures do nothing unless you poll or .await them"]
 pub struct SendRequestRawFuture<'a, D: ?Sized> {
     display: &'a mut D,
+    request_info: Option<RequestInfo>,
     is_finished: bool,
 }
 
@@ -22,9 +23,9 @@ impl<'a, D: AsyncDisplay + ?Sized> SendRequestRawFuture<'a, D> {
     #[inline]
     pub(crate) fn run(display: &'a mut D, request: RequestInfo) -> Self {
         // begin the send request process
-        display.begin_send_request_raw(request);
         Self {
             display,
+            request_info: Some(request),
             is_finished: false,
         }
     }
@@ -44,7 +45,23 @@ impl<'a, D: AsyncDisplay + ?Sized> Future for SendRequestRawFuture<'a, D> {
         if self.is_finished {
             panic!("Attempted to poll future after completion");
         }
-        let res = self.display.poll_send_request_raw(cx);
+
+        // begin the send request process; once we've done that,
+        let res = loop {
+            match self.request_info.take() {
+                Some(request_info) => {
+                    match self.display.begin_send_request_raw(request_info, cx) {
+                        PollOr::Pending(req) => {
+                            self.request_info = Some(req);
+                            break Poll::Pending;
+                        }
+                        PollOr::Ready(()) => { /* request_info is already set to None */ }
+                    }
+                }
+                None => break self.display.poll_send_request_raw(cx),
+            }
+        };
+
         if res.is_ready() {
             self.is_finished = true;
         }

@@ -43,7 +43,7 @@ default = ["std"]
 async = ["std", "async-io", "async-net", "blocking", "futures-lite", "pin-project-lite"]
 image-support = ["image", "std"]
 std = ["memchr/std"]
-sync = ["concurrent-queue", "dashmap", "spinning_top", "std"]
+sync-display = ["concurrent-queue", "dashmap", "spinning_top", "std"]
 
 # Extensions
 damage = ["fixes"]

@@ -64,10 +64,10 @@ impl WaitBuffer {
 
     /// Poll a connection with this `WaitBuffer`, possibly returning a result.
     #[inline]
-    pub(crate) fn poll_wait<C: AsyncConnection + Unpin + ?Sized>(
+    pub(crate) fn poll_wait<C: AsyncConnection + Unpin + ?Sized, F: FnMut(u16) -> bool>(
         &mut self,
         conn: &mut C,
-        workarounders: &[u16],
+        mut workarounder_finder: F,
         cx: &mut Context<'_>,
     ) -> Poll<crate::Result<WaitBufferReturn>> {
         log_trace!("Entering poll_wait for WaitBuffer");
@@ -111,7 +111,7 @@ impl WaitBuffer {
 
                 // fix the GLX bug
                 let mut buf = mem::take(&mut self.buffer);
-                input::fix_glx_workaround(|seq| workarounders.contains(&seq), &mut buf);
+                input::fix_glx_workaround(|seq| workarounder_finder(seq), &mut buf);
 
                 // check if we need additional bytes
                 if let Some(ab) = input::additional_bytes(&buf[..8]) {
@@ -247,7 +247,7 @@ impl SendBuffer {
                         // run a wait cycle before checking again
                         let res = wait_buffer.get_or_insert_with(Default::default).poll_wait(
                             conn,
-                            &[], // we don't have any GLX workarounds here we need to check
+                            |_| false, // we don't have any GLX workarounds here we need to check
                             cx,
                         );
 

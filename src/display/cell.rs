@@ -1,10 +1,10 @@
 // MIT/Apache2 License
 
 use super::{
-    input, output, BasicDisplay, Connection, Display, DisplayBase, PendingReply, PendingRequest,
-    RequestInfo, EXT_KEY_SIZE,
+    input, output, BasicDisplay, Connection, Display, DisplayBase, PendingItem, RequestInfo,
+    EXT_KEY_SIZE,
 };
-use crate::{auto::xproto::Setup, BreadError, CellXidGenerator, Event, XID};
+use crate::{auto::xproto::Setup, CellXidGenerator, Event, XID};
 use alloc::collections::VecDeque;
 use core::{
     cell::{Cell, RefCell},
@@ -15,7 +15,7 @@ use hashbrown::HashMap;
 #[cfg(feature = "async")]
 use super::{
     common::{SendBuffer, WaitBuffer, WaitBufferReturn},
-    AsyncConnection, AsyncDisplay, RequestWorkaround,
+    AsyncConnection, AsyncDisplay, PollOr, RequestWorkaround,
 };
 #[cfg(feature = "async")]
 use alloc::{vec, vec::Vec};
@@ -88,17 +88,13 @@ pub struct CellDisplay<Conn> {
     wait_buffer: RefCell<Option<WaitBuffer>>,
     #[cfg(feature = "async")]
     send_buffer: RefCell<SendBuffer>,
-    #[cfg(feature = "async")]
-    discard_reply: Cell<Option<bool>>,
 }
 
 /// Collection types for `CellDisplay` that need to be put behind an interior mutability lock.
 #[derive(Debug)]
 struct Data {
     event_queue: VecDeque<Event>,
-    pending_requests: HashMap<u16, PendingRequest>,
-    pending_errors: HashMap<u16, BreadError>,
-    pending_replies: HashMap<u16, PendingReply>,
+    pending_items: HashMap<u16, PendingItem>,
     special_event_queues: HashMap<XID, VecDeque<Event>>,
     extensions: HashMap<[u8; EXT_KEY_SIZE], u8>,
     #[cfg(feature = "async")]
@@ -117,9 +113,7 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             max_request_len,
             default_screen,
             event_queue,
-            pending_requests,
-            pending_errors,
-            pending_replies,
+            pending_items,
             special_event_queues,
             request_number,
             wm_protocols_atom,
@@ -138,9 +132,7 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             default_screen,
             inner: RefCell::new(Data {
                 event_queue,
-                pending_requests,
-                pending_errors,
-                pending_replies,
+                pending_items,
                 special_event_queues,
                 extensions,
                 #[cfg(feature = "async")]
@@ -153,30 +145,44 @@ impl<Conn> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
             wait_buffer: RefCell::new(None),
             #[cfg(feature = "async")]
             send_buffer: Default::default(),
-            #[cfg(feature = "async")]
-            discard_reply: Cell::new(None),
         }
     }
 }
 
 impl<Conn> CellDisplay<Conn> {
     #[inline]
-    fn lock_internal(&mut self) {
+    fn try_lock_internal(&mut self) -> bool {
         let io_lock = self.io_lock.get_mut();
         if *io_lock {
-            panic!("Attempted to re-entrantly use connection")
+            false
         } else {
             *io_lock = true;
+            true
+        }
+    }
+
+    #[inline]
+    fn lock_internal(&mut self) {
+        if !self.try_lock_internal() {
+            panic!("Attempted to re-entrantly use connection")
+        }
+    }
+
+    #[inline]
+    fn try_lock_internal_immutable(&self) -> bool {
+        let io_lock = self.io_lock.get();
+        if io_lock {
+            false
+        } else {
+            self.io_lock.set(true);
+            true
         }
     }
 
     #[inline]
     fn lock_internal_immutable(&self) {
-        let io_lock = self.io_lock.get();
-        if io_lock {
-            panic!("Attempted to re-entrantly use connection")
-        } else {
-            self.io_lock.set(true);
+        if !self.try_lock_internal_immutable() {
+            panic!("Attempted to re-entrantly use connection");
         }
     }
 }
@@ -208,43 +214,26 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
         self.xid.next_xid()
     }
     #[inline]
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+    fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
         #[cfg(feature = "async")]
         {
-            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-                self.inner.get_mut().workarounders.push(req_id);
+            if let PendingItem::Request(ref pereq) = item {
+                if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                    self.inner.get_mut().workarounders.push(req_id);
+                }
             }
         }
-        self.inner.get_mut().pending_requests.insert(req_id, pereq);
+        self.inner.get_mut().pending_items.insert(req_id, item);
     }
     #[inline]
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.inner.borrow().pending_requests.get(&req_id).copied()
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.inner.borrow().pending_items.get(&req_id).cloned()
     }
     #[inline]
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
         #[cfg(feature = "async")]
         self.inner.get_mut().workarounders.retain(|&r| r != req_id);
-        self.inner.get_mut().pending_requests.remove(&req_id)
-    }
-    #[inline]
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.inner.get_mut().pending_errors.insert(req_id, error);
-    }
-    #[inline]
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
-        match self.inner.get_mut().pending_errors.remove(&req_id) {
-            Some(pe) => Err(pe),
-            None => Ok(()),
-        }
-    }
-    #[inline]
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
-        self.inner.get_mut().pending_replies.insert(req_id, reply);
-    }
-    #[inline]
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        self.inner.get_mut().pending_replies.remove(&req_id)
+        self.inner.get_mut().pending_items.remove(&req_id)
     }
     #[inline]
     fn create_special_event_queue(&mut self, xid: XID) {
@@ -343,14 +332,18 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
         let wait_buffer = match self.wait_buffer.get_mut() {
             Some(wait_buffer) => wait_buffer,
             None => {
-                self.lock_internal();
+                if !self.try_lock_internal() {
+                    self.connection = Some(conn);
+                    return Poll::Pending;
+                }
                 let wait_buffer = Default::default();
                 *self.wait_buffer.get_mut() = Some(wait_buffer);
                 self.wait_buffer.get_mut().as_mut().unwrap()
             }
         };
         let data = self.inner.get_mut();
-        let res = wait_buffer.poll_wait(&mut conn, &data.workarounders, ctx);
+        let workarounders = &data.workarounders;
+        let res = wait_buffer.poll_wait(&mut conn, move |seq| workarounders.contains(&seq), ctx);
 
         self.connection = Some(conn);
 
@@ -370,9 +363,17 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        self.lock_internal();
-        self.send_buffer.get_mut().fill_hole(req);
+    fn begin_send_request_raw(
+        &mut self,
+        req: RequestInfo,
+        _cx: &mut Context<'_>,
+    ) -> PollOr<(), RequestInfo> {
+        if self.try_lock_internal() {
+            self.send_buffer.get_mut().fill_hole(req);
+            PollOr::Ready(())
+        } else {
+            PollOr::Pending(req)
+        }
     }
 
     #[inline]
@@ -422,48 +423,28 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
         self.xid.next_xid()
     }
     #[inline]
-    fn add_pending_request(&mut self, req_id: u16, pereq: PendingRequest) {
+    fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
         let mut inner = self.inner.borrow_mut();
         #[cfg(feature = "async")]
         {
-            if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
-                inner.workarounders.push(req_id);
+            if let PendingItem::Request(ref pereq) = item {
+                if matches!(pereq.flags.workaround, RequestWorkaround::GlxFbconfigBug) {
+                    inner.workarounders.push(req_id);
+                }
             }
         }
-        inner.pending_requests.insert(req_id, pereq);
+        inner.pending_items.insert(req_id, item);
     }
     #[inline]
-    fn get_pending_request(&self, req_id: u16) -> Option<PendingRequest> {
-        self.inner.borrow().pending_requests.get(&req_id).copied()
+    fn get_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        self.inner.borrow().pending_items.get(&req_id).cloned()
     }
     #[inline]
-    fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
+    fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
         let mut inner = self.inner.borrow_mut();
         #[cfg(feature = "async")]
         inner.workarounders.retain(|&r| r != req_id);
-        inner.pending_requests.remove(&req_id)
-    }
-    #[inline]
-    fn add_pending_error(&mut self, req_id: u16, error: BreadError) {
-        self.inner.borrow_mut().pending_errors.insert(req_id, error);
-    }
-    #[inline]
-    fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result<()> {
-        match self.inner.borrow_mut().pending_errors.remove(&req_id) {
-            Some(pe) => Err(pe),
-            None => Ok(()),
-        }
-    }
-    #[inline]
-    fn add_pending_reply(&mut self, req_id: u16, reply: PendingReply) {
-        self.inner
-            .borrow_mut()
-            .pending_replies
-            .insert(req_id, reply);
-    }
-    #[inline]
-    fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        self.inner.borrow_mut().pending_replies.remove(&req_id)
+        inner.pending_items.remove(&req_id)
     }
     #[inline]
     fn create_special_event_queue(&mut self, xid: XID) {
@@ -563,6 +544,7 @@ where
     fn poll_wait(&mut self, ctx: &mut Context<'_>) -> Poll<crate::Result> {
         let data = self.inner.borrow_mut();
         let mut wait_buffer = self.wait_buffer.borrow_mut();
+        let workarounders = &data.workarounders;
         let (bytes, fds) = match wait_buffer
             .get_or_insert_with(|| {
                 // try to lock
@@ -571,7 +553,7 @@ where
             })
             .poll_wait(
                 &mut self.connection.as_ref().unwrap(),
-                &data.workarounders,
+                move |seq| workarounders.contains(&seq),
                 ctx,
             ) {
             Poll::Pending => return Poll::Pending,
@@ -590,9 +572,17 @@ where
     }
 
     #[inline]
-    fn begin_send_request_raw(&mut self, req: RequestInfo) {
-        self.lock_internal_immutable();
-        self.send_buffer.borrow_mut().fill_hole(req);
+    fn begin_send_request_raw(
+        &mut self,
+        req: RequestInfo,
+        _cx: &mut Context<'_>,
+    ) -> PollOr<(), RequestInfo> {
+        if self.try_lock_internal_immutable() {
+            self.send_buffer.borrow_mut().fill_hole(req);
+            PollOr::Ready(())
+        } else {
+            PollOr::Pending(req)
+        }
     }
 
     #[inline]

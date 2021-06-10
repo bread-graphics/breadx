@@ -3,7 +3,7 @@
 //! This module provides structures used in error handling of `breadx` functions.
 
 use alloc::{borrow::Cow, string::String, sync::Arc};
-use core::{fmt, ops::Deref};
+use core::{convert::Infallible, fmt, ops::Deref};
 #[cfg(feature = "std")]
 use std::{error::Error as StdError, io::Error as IoError};
 
@@ -71,6 +71,13 @@ impl From<IoError> for BreadError {
     #[inline]
     fn from(io: IoError) -> Self {
         Self::Io(Arc::new(io))
+    }
+}
+
+impl From<Infallible> for BreadError {
+    #[inline]
+    fn from(_i: Infallible) -> Self {
+        panic!("Infallible")
     }
 }
 
