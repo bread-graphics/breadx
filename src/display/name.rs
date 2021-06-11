@@ -27,9 +27,6 @@ use std::borrow::ToOwned;
 #[cfg(unix)]
 use std::os::unix::net as unet;
 
-#[cfg(all(feature = "async", unix))]
-use async_net::unix as async_unet;
-
 /// This is a wrapper around the connection created by `DisplayConnection::create()`. It implements
 /// `Connection` for a variety of connections that X11 usually transmits itself over.
 pub enum NameConnection {
