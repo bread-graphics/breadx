@@ -10,10 +10,11 @@ use crate::{
         ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
         CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
         ForceScreenSaverRequest, Gc, Gcontext, GetKeyboardMappingReply, GetKeyboardMappingRequest,
-        GetModifierMappingReply, GetModifierMappingRequest, Gravity, Gx, InternAtomRequest,
-        JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap, QueryExtensionRequest,
-        ScreenSaver, SendEventRequest, SetAccessControlRequest, SetCloseDownModeRequest,
-        SubwindowMode, Timestamp, Visualid, Window, WindowClass,
+        GetModifierMappingReply, GetModifierMappingRequest, GrabServerRequest, Gravity, Gx,
+        InternAtomRequest, JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap,
+        QueryExtensionRequest, ScreenSaver, SendEventRequest, SetAccessControlRequest,
+        SetCloseDownModeRequest, SubwindowMode, Timestamp, UngrabServerRequest, Visualid, Window,
+        WindowClass,
     },
     display::{generate_xid, Display, RequestCookie},
     Event, Extension,
@@ -658,6 +659,18 @@ pub trait DisplayXprotoExt: Display {
         let repl = self.resolve_request(tok)?;
         Ok(repl.into())
     }
+
+    /// Grab the server.
+    #[inline]
+    fn grab_server(&mut self) -> crate::Result {
+        self.exchange_request(GrabServerRequest::default())
+    }
+
+    /// Ungrab the server.
+    #[inline]
+    fn ungrab_server(&mut self) -> crate::Result {
+        self.exchange_request(UngrabServerRequest::default())
+    }
 }
 
 impl<D: Display + ?Sized> DisplayXprotoExt for D {}
@@ -1020,6 +1033,18 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
             self.exchange_request_async(GetModifierMappingRequest::default()),
             |repl| repl.map(ModifierMapping::from),
         )
+    }
+
+    /// Grab the server, async redox.
+    #[inline]
+    fn grab_server_async(&mut self) -> ExchangeRequestFuture<'_, Self, GrabServerRequest> {
+        self.exchange_request_async(GrabServerRequest::default())
+    }
+
+    /// Ungrab the server.
+    #[inline]
+    fn ungrab_server_async(&mut self) -> ExchangeRequestFuture<'_, Self, UngrabServerRequest> {
+        self.exchange_request_async(UngrabServerRequest::default())
     }
 }
 
