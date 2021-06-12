@@ -75,7 +75,7 @@ pub struct Systemcounter<'a> {
     pub resolution: Int64,
     pub name: Cow<'a, str>,
 }
-impl<'a> Systemcounter {}
+impl<'a> Systemcounter<'a> {}
 impl<'a> AsByteSequence for Systemcounter<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -98,7 +98,7 @@ impl<'a> AsByteSequence for Systemcounter<'a> {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (Cow<'static, str>, usize) =
+        let (name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -424,7 +424,7 @@ impl Request for ListSystemCountersRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("SYNC");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListSystemCountersReply;
+    type Reply = ListSystemCountersReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSystemCountersReply<'c, 'b> {
@@ -433,7 +433,7 @@ pub struct ListSystemCountersReply<'c, 'b> {
     pub length: u32,
     pub counters: Cow<'c, [Systemcounter<'b>]>,
 }
-impl<'c, 'b> ListSystemCountersReply {}
+impl<'c, 'b> ListSystemCountersReply<'c, 'b> {}
 impl<'c, 'b> AsByteSequence for ListSystemCountersReply<'c, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -463,7 +463,7 @@ impl<'c, 'b> AsByteSequence for ListSystemCountersReply<'c, 'b> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (counters, block_len): (Cow<'static, [Systemcounter<'b>]>, usize) =
+        let (counters, block_len): (Cow<'_, [Systemcounter<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Systemcounter<'b>>());
@@ -699,7 +699,7 @@ pub struct AwaitRequest<'d> {
     pub length: u16,
     pub wait_list: Cow<'d, [Waitcondition]>,
 }
-impl<'d> AwaitRequest {}
+impl<'d> AwaitRequest<'d> {}
 impl<'d> AsByteSequence for AwaitRequest<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -721,7 +721,7 @@ impl<'d> AsByteSequence for AwaitRequest<'d> {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (wait_list, block_len): (Cow<'static, [Waitcondition]>, usize) =
+        let (wait_list, block_len): (Cow<'_, [Waitcondition]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
@@ -743,7 +743,7 @@ impl<'d> AsByteSequence for AwaitRequest<'d> {
         }
     }
 }
-impl Request for AwaitRequest {
+impl<'d> Request for AwaitRequest<'d> {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("SYNC");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1972,7 +1972,7 @@ pub struct AwaitFenceRequest<'e> {
     pub length: u16,
     pub fence_list: Cow<'e, [Fence]>,
 }
-impl<'e> AwaitFenceRequest {}
+impl<'e> AwaitFenceRequest<'e> {}
 impl<'e> AsByteSequence for AwaitFenceRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1994,7 +1994,7 @@ impl<'e> AsByteSequence for AwaitFenceRequest<'e> {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence_list, block_len): (Cow<'static, [Fence]>, usize) =
+        let (fence_list, block_len): (Cow<'_, [Fence]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fence>());
@@ -2016,7 +2016,7 @@ impl<'e> AsByteSequence for AwaitFenceRequest<'e> {
         }
     }
 }
-impl Request for AwaitFenceRequest {
+impl<'e> Request for AwaitFenceRequest<'e> {
     const OPCODE: u8 = 19;
     const EXTENSION: Option<&'static str> = Some("SYNC");
     const REPLY_EXPECTS_FDS: bool = false;

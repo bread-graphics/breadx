@@ -35,7 +35,7 @@ const fn endian_byte() -> u8 {
 }
 
 #[inline]
-pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest {
+pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest<'static, 'static> {
     let AuthInfo { name, data, .. } = auth;
     SetupRequest {
         byte_order: endian_byte(),

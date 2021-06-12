@@ -216,7 +216,7 @@ pub struct ClientInfo<'a> {
     pub client_resource: ClientSpec,
     pub ranges: Cow<'a, [Range]>,
 }
-impl<'a> ClientInfo {}
+impl<'a> ClientInfo<'a> {}
 impl<'a> AsByteSequence for ClientInfo<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -236,7 +236,7 @@ impl<'a> AsByteSequence for ClientInfo<'a> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (ranges, block_len): (Cow<'static, [Range]>, usize) =
+        let (ranges, block_len): (Cow<'_, [Range]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Range>());
@@ -380,7 +380,7 @@ pub struct CreateContextRequest<'b, 'c> {
     pub client_specs: Cow<'b, [ClientSpec]>,
     pub ranges: Cow<'c, [Range]>,
 }
-impl<'b, 'c> CreateContextRequest {}
+impl<'b, 'c> CreateContextRequest<'b, 'c> {}
 impl<'b, 'c> AsByteSequence for CreateContextRequest<'b, 'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -421,11 +421,11 @@ impl<'b, 'c> AsByteSequence for CreateContextRequest<'b, 'c> {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_specs, block_len): (Cow<'static, [ClientSpec]>, usize) =
+        let (client_specs, block_len): (Cow<'_, [ClientSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientSpec>());
-        let (ranges, block_len): (Cow<'static, [Range]>, usize) =
+        let (ranges, block_len): (Cow<'_, [Range]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Range>());
@@ -463,7 +463,7 @@ impl<'b, 'c> AsByteSequence for CreateContextRequest<'b, 'c> {
             }
     }
 }
-impl Request for CreateContextRequest {
+impl<'b, 'c> Request for CreateContextRequest<'b, 'c> {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -478,7 +478,7 @@ pub struct RegisterClientsRequest<'d, 'e> {
     pub client_specs: Cow<'d, [ClientSpec]>,
     pub ranges: Cow<'e, [Range]>,
 }
-impl<'d, 'e> RegisterClientsRequest {}
+impl<'d, 'e> RegisterClientsRequest<'d, 'e> {}
 impl<'d, 'e> AsByteSequence for RegisterClientsRequest<'d, 'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -519,11 +519,11 @@ impl<'d, 'e> AsByteSequence for RegisterClientsRequest<'d, 'e> {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_specs, block_len): (Cow<'static, [ClientSpec]>, usize) =
+        let (client_specs, block_len): (Cow<'_, [ClientSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientSpec>());
-        let (ranges, block_len): (Cow<'static, [Range]>, usize) =
+        let (ranges, block_len): (Cow<'_, [Range]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Range>());
@@ -561,7 +561,7 @@ impl<'d, 'e> AsByteSequence for RegisterClientsRequest<'d, 'e> {
             }
     }
 }
-impl Request for RegisterClientsRequest {
+impl<'d, 'e> Request for RegisterClientsRequest<'d, 'e> {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -574,7 +574,7 @@ pub struct UnregisterClientsRequest<'f> {
     pub context: super::record::Context,
     pub client_specs: Cow<'f, [ClientSpec]>,
 }
-impl<'f> UnregisterClientsRequest {}
+impl<'f> UnregisterClientsRequest<'f> {}
 impl<'f> AsByteSequence for UnregisterClientsRequest<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -603,7 +603,7 @@ impl<'f> AsByteSequence for UnregisterClientsRequest<'f> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (client_specs, block_len): (Cow<'static, [ClientSpec]>, usize) =
+        let (client_specs, block_len): (Cow<'_, [ClientSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientSpec>());
@@ -631,7 +631,7 @@ impl<'f> AsByteSequence for UnregisterClientsRequest<'f> {
             }
     }
 }
-impl Request for UnregisterClientsRequest {
+impl<'f> Request for UnregisterClientsRequest<'f> {
     const OPCODE: u8 = 3;
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -684,7 +684,7 @@ impl Request for GetContextRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetContextReply;
+    type Reply = GetContextReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetContextReply<'h, 'g> {
@@ -695,7 +695,7 @@ pub struct GetContextReply<'h, 'g> {
     pub element_header: ElementHeader,
     pub intercepted_clients: Cow<'h, [ClientInfo<'g>]>,
 }
-impl<'h, 'g> GetContextReply {}
+impl<'h, 'g> GetContextReply<'h, 'g> {}
 impl<'h, 'g> AsByteSequence for GetContextReply<'h, 'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -732,7 +732,7 @@ impl<'h, 'g> AsByteSequence for GetContextReply<'h, 'g> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (intercepted_clients, block_len): (Cow<'static, [ClientInfo<'g>]>, usize) =
+        let (intercepted_clients, block_len): (Cow<'_, [ClientInfo<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientInfo<'g>>());
@@ -812,7 +812,7 @@ impl Request for EnableContextRequest {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("RECORD");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = EnableContextReply;
+    type Reply = EnableContextReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct EnableContextReply<'i> {
@@ -827,7 +827,7 @@ pub struct EnableContextReply<'i> {
     pub rec_sequence_num: Card32,
     pub data: Cow<'i, [Byte]>,
 }
-impl<'i> EnableContextReply {}
+impl<'i> EnableContextReply<'i> {}
 impl<'i> AsByteSequence for EnableContextReply<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -873,7 +873,7 @@ impl<'i> AsByteSequence for EnableContextReply<'i> {
         let (rec_sequence_num, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());

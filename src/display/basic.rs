@@ -1,9 +1,10 @@
 // MIT/Apache2 License
 
 use super::{
-    bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, EXT_KEY_SIZE,
+    bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, StaticSetup,
+    EXT_KEY_SIZE,
 };
-use crate::{auth_info::AuthInfo, auto::xproto::Setup, event::Event, XidGenerator, XID};
+use crate::{auth_info::AuthInfo, event::Event, XidGenerator, XID};
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
@@ -35,7 +36,7 @@ pub struct BasicDisplay<Conn> {
     pub(crate) connection: Option<Conn>,
 
     /// The setup received from the server.
-    pub(crate) setup: Setup,
+    pub(crate) setup: StaticSetup,
 
     /// Whether or not the "bigreq" system has been enabled, which expands the number of permitted bytes to send
     /// across the request. For more information, see the following webpage.
@@ -119,7 +120,7 @@ impl<Conn> BasicDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> BasicDisplay<Conn> {
+impl<Conn: Connection + 'static> BasicDisplay<Conn> {
     #[inline]
     pub fn from_connection(
         connection: Conn,
@@ -170,7 +171,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
 
 impl<Conn> DisplayBase for BasicDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
 

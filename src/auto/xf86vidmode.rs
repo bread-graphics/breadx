@@ -559,7 +559,7 @@ impl Request for GetModeLineRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetModeLineReply;
+    type Reply = GetModeLineReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetModeLineReply<'a> {
@@ -579,7 +579,7 @@ pub struct GetModeLineReply<'a> {
     pub flags: ModeFlag,
     pub private: Cow<'a, [Card8]>,
 }
-impl<'a> GetModeLineReply {}
+impl<'a> GetModeLineReply<'a> {}
 impl<'a> AsByteSequence for GetModeLineReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -644,7 +644,7 @@ impl<'a> AsByteSequence for GetModeLineReply<'a> {
         index += 12;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -713,7 +713,7 @@ pub struct ModModeLineRequest<'b> {
     pub flags: ModeFlag,
     pub private: Cow<'b, [Card8]>,
 }
-impl<'b> ModModeLineRequest {}
+impl<'b> ModModeLineRequest<'b> {}
 impl<'b> AsByteSequence for ModModeLineRequest<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -775,7 +775,7 @@ impl<'b> AsByteSequence for ModModeLineRequest<'b> {
         index += 12;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -825,7 +825,7 @@ impl<'b> AsByteSequence for ModModeLineRequest<'b> {
             }
     }
 }
-impl Request for ModModeLineRequest {
+impl<'b> Request for ModModeLineRequest<'b> {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -932,7 +932,7 @@ impl Request for GetMonitorRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMonitorReply;
+    type Reply = GetMonitorReply<'static, 'static, 'static, 'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMonitorReply<'c, 'd, 'e, 'f, 'g> {
@@ -946,7 +946,7 @@ pub struct GetMonitorReply<'c, 'd, 'e, 'f, 'g> {
     pub alignment_pad: Cow<'f, [Void]>,
     pub model: Cow<'g, str>,
 }
-impl<'c, 'd, 'e, 'f, 'g> GetMonitorReply {}
+impl<'c, 'd, 'e, 'f, 'g> GetMonitorReply<'c, 'd, 'e, 'f, 'g> {}
 impl<'c, 'd, 'e, 'f, 'g> AsByteSequence for GetMonitorReply<'c, 'd, 'e, 'f, 'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -997,25 +997,25 @@ impl<'c, 'd, 'e, 'f, 'g> AsByteSequence for GetMonitorReply<'c, 'd, 'e, 'f, 'g> 
         let (len2, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (hsync, block_len): (Cow<'static, [Syncrange]>, usize) =
+        let (hsync, block_len): (Cow<'_, [Syncrange]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Syncrange>());
-        let (vsync, block_len): (Cow<'static, [Syncrange]>, usize) =
+        let (vsync, block_len): (Cow<'_, [Syncrange]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Syncrange>());
-        let (vendor, block_len): (Cow<'static, str>, usize) =
+        let (vendor, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], (vendor_length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        let (alignment_pad, block_len): (Cow<'static, [Void]>, usize) = vector_from_bytes(
+        let (alignment_pad, block_len): (Cow<'_, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((((vendor_length as usize) + (3)) & (!(3))) - (vendor_length as usize)) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Void>());
-        let (model, block_len): (Cow<'static, str>, usize) =
+        let (model, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1173,7 +1173,7 @@ impl Request for GetAllModeLinesRequest {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetAllModeLinesReply;
+    type Reply = GetAllModeLinesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetAllModeLinesReply<'h> {
@@ -1182,7 +1182,7 @@ pub struct GetAllModeLinesReply<'h> {
     pub length: u32,
     pub modeinfo: Cow<'h, [ModeInfo]>,
 }
-impl<'h> GetAllModeLinesReply {}
+impl<'h> GetAllModeLinesReply<'h> {}
 impl<'h> AsByteSequence for GetAllModeLinesReply<'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1212,7 +1212,7 @@ impl<'h> AsByteSequence for GetAllModeLinesReply<'h> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (modeinfo, block_len): (Cow<'static, [ModeInfo]>, usize) =
+        let (modeinfo, block_len): (Cow<'_, [ModeInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModeInfo>());
@@ -1270,7 +1270,7 @@ pub struct AddModeLineRequest<'i> {
     pub after_flags: ModeFlag,
     pub private: Cow<'i, [Card8]>,
 }
-impl<'i> AddModeLineRequest {}
+impl<'i> AddModeLineRequest<'i> {}
 impl<'i> AsByteSequence for AddModeLineRequest<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1368,7 +1368,7 @@ impl<'i> AsByteSequence for AddModeLineRequest<'i> {
         index += sz;
         let (after_flags, sz): (ModeFlag, usize) = <ModeFlag>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -1442,7 +1442,7 @@ impl<'i> AsByteSequence for AddModeLineRequest<'i> {
             }
     }
 }
-impl Request for AddModeLineRequest {
+impl<'i> Request for AddModeLineRequest<'i> {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1466,7 +1466,7 @@ pub struct DeleteModeLineRequest<'j> {
     pub flags: ModeFlag,
     pub private: Cow<'j, [Card8]>,
 }
-impl<'j> DeleteModeLineRequest {}
+impl<'j> DeleteModeLineRequest<'j> {}
 impl<'j> AsByteSequence for DeleteModeLineRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1531,7 +1531,7 @@ impl<'j> AsByteSequence for DeleteModeLineRequest<'j> {
         index += 12;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -1583,7 +1583,7 @@ impl<'j> AsByteSequence for DeleteModeLineRequest<'j> {
             }
     }
 }
-impl Request for DeleteModeLineRequest {
+impl<'j> Request for DeleteModeLineRequest<'j> {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1607,7 +1607,7 @@ pub struct ValidateModeLineRequest<'k> {
     pub flags: ModeFlag,
     pub private: Cow<'k, [Card8]>,
 }
-impl<'k> ValidateModeLineRequest {}
+impl<'k> ValidateModeLineRequest<'k> {}
 impl<'k> AsByteSequence for ValidateModeLineRequest<'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1672,7 +1672,7 @@ impl<'k> AsByteSequence for ValidateModeLineRequest<'k> {
         index += 12;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -1724,7 +1724,7 @@ impl<'k> AsByteSequence for ValidateModeLineRequest<'k> {
             }
     }
 }
-impl Request for ValidateModeLineRequest {
+impl<'k> Request for ValidateModeLineRequest<'k> {
     const OPCODE: u8 = 9;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1802,7 +1802,7 @@ pub struct SwitchToModeRequest<'l> {
     pub flags: ModeFlag,
     pub private: Cow<'l, [Card8]>,
 }
-impl<'l> SwitchToModeRequest {}
+impl<'l> SwitchToModeRequest<'l> {}
 impl<'l> AsByteSequence for SwitchToModeRequest<'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1867,7 +1867,7 @@ impl<'l> AsByteSequence for SwitchToModeRequest<'l> {
         index += 12;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (private, block_len): (Cow<'static, [Card8]>, usize) =
+        let (private, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -1919,7 +1919,7 @@ impl<'l> AsByteSequence for SwitchToModeRequest<'l> {
             }
     }
 }
-impl Request for SwitchToModeRequest {
+impl<'l> Request for SwitchToModeRequest<'l> {
     const OPCODE: u8 = 10;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2149,7 +2149,7 @@ impl Request for GetDotClocksRequest {
     const OPCODE: u8 = 13;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetDotClocksReply;
+    type Reply = GetDotClocksReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDotClocksReply<'m> {
@@ -2161,7 +2161,7 @@ pub struct GetDotClocksReply<'m> {
     pub maxclocks: Card32,
     pub clock: Cow<'m, [Card32]>,
 }
-impl<'m> GetDotClocksReply {}
+impl<'m> GetDotClocksReply<'m> {}
 impl<'m> AsByteSequence for GetDotClocksReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2197,7 +2197,7 @@ impl<'m> AsByteSequence for GetDotClocksReply<'m> {
         let (maxclocks, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (clock, block_len): (Cow<'static, [Card32]>, usize) = vector_from_bytes(
+        let (clock, block_len): (Cow<'_, [Card32]>, usize) = vector_from_bytes(
             &bytes[index..],
             (((1) - ((flags as usize) & (1))) * (clocks as usize)) as usize,
         )?;
@@ -2529,7 +2529,7 @@ impl Request for GetGammaRampRequest {
     const OPCODE: u8 = 17;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetGammaRampReply;
+    type Reply = GetGammaRampReply<'static, 'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetGammaRampReply<'n, 'o, 'p> {
@@ -2541,7 +2541,7 @@ pub struct GetGammaRampReply<'n, 'o, 'p> {
     pub green: Cow<'o, [Card16]>,
     pub blue: Cow<'p, [Card16]>,
 }
-impl<'n, 'o, 'p> GetGammaRampReply {}
+impl<'n, 'o, 'p> GetGammaRampReply<'n, 'o, 'p> {}
 impl<'n, 'o, 'p> AsByteSequence for GetGammaRampReply<'n, 'o, 'p> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2577,15 +2577,15 @@ impl<'n, 'o, 'p> AsByteSequence for GetGammaRampReply<'n, 'o, 'p> {
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (red, block_len): (Cow<'static, [Card16]>, usize) =
+        let (red, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (green, block_len): (Cow<'static, [Card16]>, usize) =
+        let (green, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (blue, block_len): (Cow<'static, [Card16]>, usize) =
+        let (blue, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -2637,7 +2637,7 @@ pub struct SetGammaRampRequest<'q, 'r, 's> {
     pub green: Cow<'r, [Card16]>,
     pub blue: Cow<'s, [Card16]>,
 }
-impl<'q, 'r, 's> SetGammaRampRequest {}
+impl<'q, 'r, 's> SetGammaRampRequest<'q, 'r, 's> {}
 impl<'q, 'r, 's> AsByteSequence for SetGammaRampRequest<'q, 'r, 's> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2671,15 +2671,15 @@ impl<'q, 'r, 's> AsByteSequence for SetGammaRampRequest<'q, 'r, 's> {
         index += sz;
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (red, block_len): (Cow<'static, [Card16]>, usize) =
+        let (red, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (green, block_len): (Cow<'static, [Card16]>, usize) =
+        let (green, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (blue, block_len): (Cow<'static, [Card16]>, usize) =
+        let (blue, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (((size as usize) + (1)) & (!(1))) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -2720,7 +2720,7 @@ impl<'q, 'r, 's> AsByteSequence for SetGammaRampRequest<'q, 'r, 's> {
             }
     }
 }
-impl Request for SetGammaRampRequest {
+impl<'q, 'r, 's> Request for SetGammaRampRequest<'q, 'r, 's> {
     const OPCODE: u8 = 18;
     const EXTENSION: Option<&'static str> = Some("XFree86-VidModeExtension");
     const REPLY_EXPECTS_FDS: bool = false;

@@ -167,7 +167,7 @@ pub struct RenderRequest<'a> {
     pub context_tag: ContextTag,
     pub data: Cow<'a, [Byte]>,
 }
-impl<'a> RenderRequest {}
+impl<'a> RenderRequest<'a> {}
 impl<'a> AsByteSequence for RenderRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -192,7 +192,7 @@ impl<'a> AsByteSequence for RenderRequest<'a> {
         index += sz;
         let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -215,7 +215,7 @@ impl<'a> AsByteSequence for RenderRequest<'a> {
         }
     }
 }
-impl Request for RenderRequest {
+impl<'a> Request for RenderRequest<'a> {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -230,7 +230,7 @@ pub struct RenderLargeRequest<'b> {
     pub request_total: Card16,
     pub data: Cow<'b, [Byte]>,
 }
-impl<'b> RenderLargeRequest {}
+impl<'b> RenderLargeRequest<'b> {}
 impl<'b> AsByteSequence for RenderLargeRequest<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -264,7 +264,7 @@ impl<'b> AsByteSequence for RenderLargeRequest<'b> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -296,7 +296,7 @@ impl<'b> AsByteSequence for RenderLargeRequest<'b> {
             }
     }
 }
-impl Request for RenderLargeRequest {
+impl<'b> Request for RenderLargeRequest<'b> {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1187,7 +1187,7 @@ impl Request for GetVisualConfigsRequest {
     const OPCODE: u8 = 14;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetVisualConfigsReply;
+    type Reply = GetVisualConfigsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetVisualConfigsReply<'c> {
@@ -1198,7 +1198,7 @@ pub struct GetVisualConfigsReply<'c> {
     pub num_properties: Card32,
     pub property_list: Cow<'c, [Card32]>,
 }
-impl<'c> GetVisualConfigsReply {}
+impl<'c> GetVisualConfigsReply<'c> {}
 impl<'c> AsByteSequence for GetVisualConfigsReply<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1231,7 +1231,7 @@ impl<'c> AsByteSequence for GetVisualConfigsReply<'c> {
         let (num_properties, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (property_list, block_len): (Cow<'static, [Card32]>, usize) =
+        let (property_list, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -1320,7 +1320,7 @@ pub struct VendorPrivateRequest<'d> {
     pub context_tag: ContextTag,
     pub data: Cow<'d, [Byte]>,
 }
-impl<'d> VendorPrivateRequest {}
+impl<'d> VendorPrivateRequest<'d> {}
 impl<'d> AsByteSequence for VendorPrivateRequest<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1348,7 +1348,7 @@ impl<'d> AsByteSequence for VendorPrivateRequest<'d> {
         index += sz;
         let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -1377,22 +1377,22 @@ impl<'d> AsByteSequence for VendorPrivateRequest<'d> {
             }
     }
 }
-impl Request for VendorPrivateRequest {
+impl<'d> Request for VendorPrivateRequest<'d> {
     const OPCODE: u8 = 16;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct VendorPrivateWithReplyRequest<'f> {
+pub struct VendorPrivateWithReplyRequest<'e> {
     pub req_type: u8,
     pub length: u16,
     pub vendor_code: Card32,
     pub context_tag: ContextTag,
-    pub data: Cow<'f, [Byte]>,
+    pub data: Cow<'e, [Byte]>,
 }
-impl<'f> VendorPrivateWithReplyRequest {}
-impl<'f> AsByteSequence for VendorPrivateWithReplyRequest<'f> {
+impl<'e> VendorPrivateWithReplyRequest<'e> {}
+impl<'e> AsByteSequence for VendorPrivateWithReplyRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1419,7 +1419,7 @@ impl<'f> AsByteSequence for VendorPrivateWithReplyRequest<'f> {
         index += sz;
         let (context_tag, sz): (ContextTag, usize) = <ContextTag>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -1448,23 +1448,23 @@ impl<'f> AsByteSequence for VendorPrivateWithReplyRequest<'f> {
             }
     }
 }
-impl Request for VendorPrivateWithReplyRequest {
+impl<'e> Request for VendorPrivateWithReplyRequest<'e> {
     const OPCODE: u8 = 17;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = VendorPrivateWithReplyReply;
+    type Reply = VendorPrivateWithReplyReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct VendorPrivateWithReplyReply<'e> {
+pub struct VendorPrivateWithReplyReply<'f> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub retval: Card32,
     pub data1: [Byte; 24],
-    pub data2: Cow<'e, [Byte]>,
+    pub data2: Cow<'f, [Byte]>,
 }
-impl<'e> VendorPrivateWithReplyReply {}
-impl<'e> AsByteSequence for VendorPrivateWithReplyReply<'e> {
+impl<'f> VendorPrivateWithReplyReply<'f> {}
+impl<'f> AsByteSequence for VendorPrivateWithReplyReply<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1494,7 +1494,7 @@ impl<'e> AsByteSequence for VendorPrivateWithReplyReply<'e> {
         index += sz;
         let (data1, sz): ([Byte; 24], usize) = <[Byte; 24]>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data2, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data2, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -1681,7 +1681,7 @@ impl Request for QueryServerStringRequest {
     const OPCODE: u8 = 19;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryServerStringReply;
+    type Reply = QueryServerStringReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryServerStringReply<'g> {
@@ -1690,7 +1690,7 @@ pub struct QueryServerStringReply<'g> {
     pub length: u32,
     pub string: Cow<'g, str>,
 }
-impl<'g> QueryServerStringReply {}
+impl<'g> QueryServerStringReply<'g> {}
 impl<'g> AsByteSequence for QueryServerStringReply<'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1722,7 +1722,7 @@ impl<'g> AsByteSequence for QueryServerStringReply<'g> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (string, block_len): (Cow<'static, str>, usize) =
+        let (string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1760,7 +1760,7 @@ pub struct ClientInfoRequest<'h> {
     pub minor_version: Card32,
     pub string: Cow<'h, str>,
 }
-impl<'h> ClientInfoRequest {}
+impl<'h> ClientInfoRequest<'h> {}
 impl<'h> AsByteSequence for ClientInfoRequest<'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1791,7 +1791,7 @@ impl<'h> AsByteSequence for ClientInfoRequest<'h> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (Cow<'static, str>, usize) =
+        let (string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1821,7 +1821,7 @@ impl<'h> AsByteSequence for ClientInfoRequest<'h> {
             }
     }
 }
-impl Request for ClientInfoRequest {
+impl<'h> Request for ClientInfoRequest<'h> {
     const OPCODE: u8 = 20;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1873,7 +1873,7 @@ impl Request for GetFbConfigsRequest {
     const OPCODE: u8 = 21;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetFbConfigsReply;
+    type Reply = GetFbConfigsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetFbConfigsReply<'i> {
@@ -1884,7 +1884,7 @@ pub struct GetFbConfigsReply<'i> {
     pub num_properties: Card32,
     pub property_list: Cow<'i, [Card32]>,
 }
-impl<'i> GetFbConfigsReply {}
+impl<'i> GetFbConfigsReply<'i> {}
 impl<'i> AsByteSequence for GetFbConfigsReply<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1917,7 +1917,7 @@ impl<'i> AsByteSequence for GetFbConfigsReply<'i> {
         let (num_properties, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (property_list, block_len): (Cow<'static, [Card32]>, usize) =
+        let (property_list, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -1960,7 +1960,7 @@ pub struct CreatePixmapRequest<'j> {
     pub num_attribs: Card32,
     pub attribs: Cow<'j, [Card32]>,
 }
-impl<'j> CreatePixmapRequest {}
+impl<'j> CreatePixmapRequest<'j> {}
 impl<'j> AsByteSequence for CreatePixmapRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1999,7 +1999,7 @@ impl<'j> AsByteSequence for CreatePixmapRequest<'j> {
         index += sz;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2034,7 +2034,7 @@ impl<'j> AsByteSequence for CreatePixmapRequest<'j> {
             }
     }
 }
-impl Request for CreatePixmapRequest {
+impl<'j> Request for CreatePixmapRequest<'j> {
     const OPCODE: u8 = 22;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2222,7 +2222,7 @@ impl Request for QueryContextRequest {
     const OPCODE: u8 = 25;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryContextReply;
+    type Reply = QueryContextReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryContextReply<'k> {
@@ -2232,7 +2232,7 @@ pub struct QueryContextReply<'k> {
     pub num_attribs: Card32,
     pub attribs: Cow<'k, [Card32]>,
 }
-impl<'k> QueryContextReply {}
+impl<'k> QueryContextReply<'k> {}
 impl<'k> AsByteSequence for QueryContextReply<'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2262,7 +2262,7 @@ impl<'k> AsByteSequence for QueryContextReply<'k> {
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2428,7 +2428,7 @@ pub struct CreatePbufferRequest<'l> {
     pub num_attribs: Card32,
     pub attribs: Cow<'l, [Card32]>,
 }
-impl<'l> CreatePbufferRequest {}
+impl<'l> CreatePbufferRequest<'l> {}
 impl<'l> AsByteSequence for CreatePbufferRequest<'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2462,7 +2462,7 @@ impl<'l> AsByteSequence for CreatePbufferRequest<'l> {
         index += sz;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2495,7 +2495,7 @@ impl<'l> AsByteSequence for CreatePbufferRequest<'l> {
             }
     }
 }
-impl Request for CreatePbufferRequest {
+impl<'l> Request for CreatePbufferRequest<'l> {
     const OPCODE: u8 = 27;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2596,7 +2596,7 @@ impl Request for GetDrawableAttributesRequest {
     const OPCODE: u8 = 29;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetDrawableAttributesReply;
+    type Reply = GetDrawableAttributesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDrawableAttributesReply<'m> {
@@ -2606,7 +2606,7 @@ pub struct GetDrawableAttributesReply<'m> {
     pub num_attribs: Card32,
     pub attribs: Cow<'m, [Card32]>,
 }
-impl<'m> GetDrawableAttributesReply {}
+impl<'m> GetDrawableAttributesReply<'m> {}
 impl<'m> AsByteSequence for GetDrawableAttributesReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2636,7 +2636,7 @@ impl<'m> AsByteSequence for GetDrawableAttributesReply<'m> {
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2674,7 +2674,7 @@ pub struct ChangeDrawableAttributesRequest<'n> {
     pub num_attribs: Card32,
     pub attribs: Cow<'n, [Card32]>,
 }
-impl<'n> ChangeDrawableAttributesRequest {}
+impl<'n> ChangeDrawableAttributesRequest<'n> {}
 impl<'n> AsByteSequence for ChangeDrawableAttributesRequest<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2703,7 +2703,7 @@ impl<'n> AsByteSequence for ChangeDrawableAttributesRequest<'n> {
         index += sz;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2732,7 +2732,7 @@ impl<'n> AsByteSequence for ChangeDrawableAttributesRequest<'n> {
             }
     }
 }
-impl Request for ChangeDrawableAttributesRequest {
+impl<'n> Request for ChangeDrawableAttributesRequest<'n> {
     const OPCODE: u8 = 30;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2749,7 +2749,7 @@ pub struct CreateWindowRequest<'o> {
     pub num_attribs: Card32,
     pub attribs: Cow<'o, [Card32]>,
 }
-impl<'o> CreateWindowRequest {}
+impl<'o> CreateWindowRequest<'o> {}
 impl<'o> AsByteSequence for CreateWindowRequest<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2788,7 +2788,7 @@ impl<'o> AsByteSequence for CreateWindowRequest<'o> {
         index += sz;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2823,7 +2823,7 @@ impl<'o> AsByteSequence for CreateWindowRequest<'o> {
             }
     }
 }
-impl Request for CreateWindowRequest {
+impl<'o> Request for CreateWindowRequest<'o> {
     const OPCODE: u8 = 31;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2889,7 +2889,7 @@ pub struct SetClientInfoArbRequest<'p, 'q, 'r> {
     pub gl_extension_string: Cow<'q, str>,
     pub glx_extension_string: Cow<'r, str>,
 }
-impl<'p, 'q, 'r> SetClientInfoArbRequest {}
+impl<'p, 'q, 'r> SetClientInfoArbRequest<'p, 'q, 'r> {}
 impl<'p, 'q, 'r> AsByteSequence for SetClientInfoArbRequest<'p, 'q, 'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -2932,15 +2932,15 @@ impl<'p, 'q, 'r> AsByteSequence for SetClientInfoArbRequest<'p, 'q, 'r> {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (gl_versions, block_len): (Cow<'static, [Card32]>, usize) =
+        let (gl_versions, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_versions as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (gl_extension_string, block_len): (Cow<'static, str>, usize) =
+        let (gl_extension_string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        let (glx_extension_string, block_len): (Cow<'static, str>, usize) =
+        let (glx_extension_string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -2985,7 +2985,7 @@ impl<'p, 'q, 'r> AsByteSequence for SetClientInfoArbRequest<'p, 'q, 'r> {
             }
     }
 }
-impl Request for SetClientInfoArbRequest {
+impl<'p, 'q, 'r> Request for SetClientInfoArbRequest<'p, 'q, 'r> {
     const OPCODE: u8 = 33;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3003,7 +3003,7 @@ pub struct CreateContextAttribsArbRequest<'s> {
     pub num_attribs: Card32,
     pub attribs: Cow<'s, [Card32]>,
 }
-impl<'s> CreateContextAttribsArbRequest {}
+impl<'s> CreateContextAttribsArbRequest<'s> {}
 impl<'s> AsByteSequence for CreateContextAttribsArbRequest<'s> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -3047,7 +3047,7 @@ impl<'s> AsByteSequence for CreateContextAttribsArbRequest<'s> {
         index += 3;
         let (num_attribs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attribs, block_len): (Cow<'static, [Card32]>, usize) =
+        let (attribs, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_attribs as usize) * (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -3085,7 +3085,7 @@ impl<'s> AsByteSequence for CreateContextAttribsArbRequest<'s> {
             }
     }
 }
-impl Request for CreateContextAttribsArbRequest {
+impl<'s> Request for CreateContextAttribsArbRequest<'s> {
     const OPCODE: u8 = 34;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3102,7 +3102,7 @@ pub struct SetClientInfo2ArbRequest<'t, 'u, 'v> {
     pub gl_extension_string: Cow<'u, str>,
     pub glx_extension_string: Cow<'v, str>,
 }
-impl<'t, 'u, 'v> SetClientInfo2ArbRequest {}
+impl<'t, 'u, 'v> SetClientInfo2ArbRequest<'t, 'u, 'v> {}
 impl<'t, 'u, 'v> AsByteSequence for SetClientInfo2ArbRequest<'t, 'u, 'v> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -3145,15 +3145,15 @@ impl<'t, 'u, 'v> AsByteSequence for SetClientInfo2ArbRequest<'t, 'u, 'v> {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (gl_versions, block_len): (Cow<'static, [Card32]>, usize) =
+        let (gl_versions, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((num_versions as usize) * (3)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (gl_extension_string, block_len): (Cow<'static, str>, usize) =
+        let (gl_extension_string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        let (glx_extension_string, block_len): (Cow<'static, str>, usize) =
+        let (glx_extension_string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -3198,7 +3198,7 @@ impl<'t, 'u, 'v> AsByteSequence for SetClientInfo2ArbRequest<'t, 'u, 'v> {
             }
     }
 }
-impl Request for SetClientInfo2ArbRequest {
+impl<'t, 'u, 'v> Request for SetClientInfo2ArbRequest<'t, 'u, 'v> {
     const OPCODE: u8 = 35;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3645,7 +3645,7 @@ impl Request for RenderModeRequest {
     const OPCODE: u8 = 107;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = RenderModeReply;
+    type Reply = RenderModeReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct RenderModeReply<'w> {
@@ -3656,7 +3656,7 @@ pub struct RenderModeReply<'w> {
     pub new_mode: Card32,
     pub data: Cow<'w, [Card32]>,
 }
-impl<'w> RenderModeReply {}
+impl<'w> RenderModeReply<'w> {}
 impl<'w> AsByteSequence for RenderModeReply<'w> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -3692,7 +3692,7 @@ impl<'w> AsByteSequence for RenderModeReply<'w> {
         let (new_mode, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -4038,7 +4038,7 @@ impl Request for ReadPixelsRequest {
     const OPCODE: u8 = 111;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ReadPixelsReply;
+    type Reply = ReadPixelsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ReadPixelsReply<'x> {
@@ -4047,7 +4047,7 @@ pub struct ReadPixelsReply<'x> {
     pub length: u32,
     pub data: Cow<'x, [Byte]>,
 }
-impl<'x> ReadPixelsReply {}
+impl<'x> ReadPixelsReply<'x> {}
 impl<'x> AsByteSequence for ReadPixelsReply<'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4074,7 +4074,7 @@ impl<'x> AsByteSequence for ReadPixelsReply<'x> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -4148,7 +4148,7 @@ impl Request for GetBooleanvRequest {
     const OPCODE: u8 = 112;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetBooleanvReply;
+    type Reply = GetBooleanvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetBooleanvReply<'y> {
@@ -4158,7 +4158,7 @@ pub struct GetBooleanvReply<'y> {
     pub datum: bool,
     pub data: Cow<'y, [bool]>,
 }
-impl<'y> GetBooleanvReply {}
+impl<'y> GetBooleanvReply<'y> {}
 impl<'y> AsByteSequence for GetBooleanvReply<'y> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4193,7 +4193,7 @@ impl<'y> AsByteSequence for GetBooleanvReply<'y> {
         let (datum, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 15;
-        let (data, block_len): (Cow<'static, [bool]>, usize) =
+        let (data, block_len): (Cow<'_, [bool]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<bool>());
@@ -4276,7 +4276,7 @@ impl Request for GetClipPlaneRequest {
     const OPCODE: u8 = 113;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetClipPlaneReply;
+    type Reply = GetClipPlaneReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetClipPlaneReply<'z> {
@@ -4285,7 +4285,7 @@ pub struct GetClipPlaneReply<'z> {
     pub length: u32,
     pub data: Cow<'z, [Float64]>,
 }
-impl<'z> GetClipPlaneReply {}
+impl<'z> GetClipPlaneReply<'z> {}
 impl<'z> AsByteSequence for GetClipPlaneReply<'z> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4312,7 +4312,7 @@ impl<'z> AsByteSequence for GetClipPlaneReply<'z> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Float64]>, usize) =
+        let (data, block_len): (Cow<'_, [Float64]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) / (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float64>());
@@ -4386,7 +4386,7 @@ impl Request for GetDoublevRequest {
     const OPCODE: u8 = 114;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetDoublevReply;
+    type Reply = GetDoublevReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDoublevReply<'ab> {
@@ -4396,7 +4396,7 @@ pub struct GetDoublevReply<'ab> {
     pub datum: Float64,
     pub data: Cow<'ab, [Float64]>,
 }
-impl<'ab> GetDoublevReply {}
+impl<'ab> GetDoublevReply<'ab> {}
 impl<'ab> AsByteSequence for GetDoublevReply<'ab> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4431,7 +4431,7 @@ impl<'ab> AsByteSequence for GetDoublevReply<'ab> {
         let (datum, sz): (Float64, usize) = <Float64>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (data, block_len): (Cow<'static, [Float64]>, usize) =
+        let (data, block_len): (Cow<'_, [Float64]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float64>());
@@ -4609,7 +4609,7 @@ impl Request for GetFloatvRequest {
     const OPCODE: u8 = 116;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetFloatvReply;
+    type Reply = GetFloatvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetFloatvReply<'bb> {
@@ -4619,7 +4619,7 @@ pub struct GetFloatvReply<'bb> {
     pub datum: Float32,
     pub data: Cow<'bb, [Float32]>,
 }
-impl<'bb> GetFloatvReply {}
+impl<'bb> GetFloatvReply<'bb> {}
 impl<'bb> AsByteSequence for GetFloatvReply<'bb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4654,7 +4654,7 @@ impl<'bb> AsByteSequence for GetFloatvReply<'bb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -4737,7 +4737,7 @@ impl Request for GetIntegervRequest {
     const OPCODE: u8 = 117;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetIntegervReply;
+    type Reply = GetIntegervReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetIntegervReply<'cb> {
@@ -4747,7 +4747,7 @@ pub struct GetIntegervReply<'cb> {
     pub datum: Int32,
     pub data: Cow<'cb, [Int32]>,
 }
-impl<'cb> GetIntegervReply {}
+impl<'cb> GetIntegervReply<'cb> {}
 impl<'cb> AsByteSequence for GetIntegervReply<'cb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4782,7 +4782,7 @@ impl<'cb> AsByteSequence for GetIntegervReply<'cb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -4875,7 +4875,7 @@ impl Request for GetLightfvRequest {
     const OPCODE: u8 = 118;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetLightfvReply;
+    type Reply = GetLightfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetLightfvReply<'db> {
@@ -4885,7 +4885,7 @@ pub struct GetLightfvReply<'db> {
     pub datum: Float32,
     pub data: Cow<'db, [Float32]>,
 }
-impl<'db> GetLightfvReply {}
+impl<'db> GetLightfvReply<'db> {}
 impl<'db> AsByteSequence for GetLightfvReply<'db> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -4920,7 +4920,7 @@ impl<'db> AsByteSequence for GetLightfvReply<'db> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -5013,7 +5013,7 @@ impl Request for GetLightivRequest {
     const OPCODE: u8 = 119;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetLightivReply;
+    type Reply = GetLightivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetLightivReply<'eb> {
@@ -5023,7 +5023,7 @@ pub struct GetLightivReply<'eb> {
     pub datum: Int32,
     pub data: Cow<'eb, [Int32]>,
 }
-impl<'eb> GetLightivReply {}
+impl<'eb> GetLightivReply<'eb> {}
 impl<'eb> AsByteSequence for GetLightivReply<'eb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5058,7 +5058,7 @@ impl<'eb> AsByteSequence for GetLightivReply<'eb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5151,7 +5151,7 @@ impl Request for GetMapdvRequest {
     const OPCODE: u8 = 120;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMapdvReply;
+    type Reply = GetMapdvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMapdvReply<'fb> {
@@ -5161,7 +5161,7 @@ pub struct GetMapdvReply<'fb> {
     pub datum: Float64,
     pub data: Cow<'fb, [Float64]>,
 }
-impl<'fb> GetMapdvReply {}
+impl<'fb> GetMapdvReply<'fb> {}
 impl<'fb> AsByteSequence for GetMapdvReply<'fb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5196,7 +5196,7 @@ impl<'fb> AsByteSequence for GetMapdvReply<'fb> {
         let (datum, sz): (Float64, usize) = <Float64>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (data, block_len): (Cow<'static, [Float64]>, usize) =
+        let (data, block_len): (Cow<'_, [Float64]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float64>());
@@ -5289,7 +5289,7 @@ impl Request for GetMapfvRequest {
     const OPCODE: u8 = 121;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMapfvReply;
+    type Reply = GetMapfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMapfvReply<'gb> {
@@ -5299,7 +5299,7 @@ pub struct GetMapfvReply<'gb> {
     pub datum: Float32,
     pub data: Cow<'gb, [Float32]>,
 }
-impl<'gb> GetMapfvReply {}
+impl<'gb> GetMapfvReply<'gb> {}
 impl<'gb> AsByteSequence for GetMapfvReply<'gb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5334,7 +5334,7 @@ impl<'gb> AsByteSequence for GetMapfvReply<'gb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -5427,7 +5427,7 @@ impl Request for GetMapivRequest {
     const OPCODE: u8 = 122;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMapivReply;
+    type Reply = GetMapivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMapivReply<'hb> {
@@ -5437,7 +5437,7 @@ pub struct GetMapivReply<'hb> {
     pub datum: Int32,
     pub data: Cow<'hb, [Int32]>,
 }
-impl<'hb> GetMapivReply {}
+impl<'hb> GetMapivReply<'hb> {}
 impl<'hb> AsByteSequence for GetMapivReply<'hb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5472,7 +5472,7 @@ impl<'hb> AsByteSequence for GetMapivReply<'hb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5565,7 +5565,7 @@ impl Request for GetMaterialfvRequest {
     const OPCODE: u8 = 123;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMaterialfvReply;
+    type Reply = GetMaterialfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMaterialfvReply<'ib> {
@@ -5575,7 +5575,7 @@ pub struct GetMaterialfvReply<'ib> {
     pub datum: Float32,
     pub data: Cow<'ib, [Float32]>,
 }
-impl<'ib> GetMaterialfvReply {}
+impl<'ib> GetMaterialfvReply<'ib> {}
 impl<'ib> AsByteSequence for GetMaterialfvReply<'ib> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5610,7 +5610,7 @@ impl<'ib> AsByteSequence for GetMaterialfvReply<'ib> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -5703,7 +5703,7 @@ impl Request for GetMaterialivRequest {
     const OPCODE: u8 = 124;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMaterialivReply;
+    type Reply = GetMaterialivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMaterialivReply<'jb> {
@@ -5713,7 +5713,7 @@ pub struct GetMaterialivReply<'jb> {
     pub datum: Int32,
     pub data: Cow<'jb, [Int32]>,
 }
-impl<'jb> GetMaterialivReply {}
+impl<'jb> GetMaterialivReply<'jb> {}
 impl<'jb> AsByteSequence for GetMaterialivReply<'jb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5748,7 +5748,7 @@ impl<'jb> AsByteSequence for GetMaterialivReply<'jb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5831,7 +5831,7 @@ impl Request for GetPixelMapfvRequest {
     const OPCODE: u8 = 125;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPixelMapfvReply;
+    type Reply = GetPixelMapfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPixelMapfvReply<'kb> {
@@ -5841,7 +5841,7 @@ pub struct GetPixelMapfvReply<'kb> {
     pub datum: Float32,
     pub data: Cow<'kb, [Float32]>,
 }
-impl<'kb> GetPixelMapfvReply {}
+impl<'kb> GetPixelMapfvReply<'kb> {}
 impl<'kb> AsByteSequence for GetPixelMapfvReply<'kb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -5876,7 +5876,7 @@ impl<'kb> AsByteSequence for GetPixelMapfvReply<'kb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -5959,7 +5959,7 @@ impl Request for GetPixelMapuivRequest {
     const OPCODE: u8 = 126;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPixelMapuivReply;
+    type Reply = GetPixelMapuivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPixelMapuivReply<'lb> {
@@ -5969,7 +5969,7 @@ pub struct GetPixelMapuivReply<'lb> {
     pub datum: Card32,
     pub data: Cow<'lb, [Card32]>,
 }
-impl<'lb> GetPixelMapuivReply {}
+impl<'lb> GetPixelMapuivReply<'lb> {}
 impl<'lb> AsByteSequence for GetPixelMapuivReply<'lb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6004,7 +6004,7 @@ impl<'lb> AsByteSequence for GetPixelMapuivReply<'lb> {
         let (datum, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -6087,7 +6087,7 @@ impl Request for GetPixelMapusvRequest {
     const OPCODE: u8 = 127;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPixelMapusvReply;
+    type Reply = GetPixelMapusvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPixelMapusvReply<'mb> {
@@ -6097,7 +6097,7 @@ pub struct GetPixelMapusvReply<'mb> {
     pub datum: Card16,
     pub data: Cow<'mb, [Card16]>,
 }
-impl<'mb> GetPixelMapusvReply {}
+impl<'mb> GetPixelMapusvReply<'mb> {}
 impl<'mb> AsByteSequence for GetPixelMapusvReply<'mb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6132,7 +6132,7 @@ impl<'mb> AsByteSequence for GetPixelMapusvReply<'mb> {
         let (datum, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (data, block_len): (Cow<'static, [Card16]>, usize) =
+        let (data, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -6219,7 +6219,7 @@ impl Request for GetPolygonStippleRequest {
     const OPCODE: u8 = 128;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPolygonStippleReply;
+    type Reply = GetPolygonStippleReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetPolygonStippleReply<'nb> {
@@ -6228,7 +6228,7 @@ pub struct GetPolygonStippleReply<'nb> {
     pub length: u32,
     pub data: Cow<'nb, [Byte]>,
 }
-impl<'nb> GetPolygonStippleReply {}
+impl<'nb> GetPolygonStippleReply<'nb> {}
 impl<'nb> AsByteSequence for GetPolygonStippleReply<'nb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6255,7 +6255,7 @@ impl<'nb> AsByteSequence for GetPolygonStippleReply<'nb> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -6329,7 +6329,7 @@ impl Request for GetStringRequest {
     const OPCODE: u8 = 129;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetStringReply;
+    type Reply = GetStringReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetStringReply<'ob> {
@@ -6338,7 +6338,7 @@ pub struct GetStringReply<'ob> {
     pub length: u32,
     pub string: Cow<'ob, str>,
 }
-impl<'ob> GetStringReply {}
+impl<'ob> GetStringReply<'ob> {}
 impl<'ob> AsByteSequence for GetStringReply<'ob> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6370,7 +6370,7 @@ impl<'ob> AsByteSequence for GetStringReply<'ob> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (string, block_len): (Cow<'static, str>, usize) =
+        let (string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -6461,7 +6461,7 @@ impl Request for GetTexEnvfvRequest {
     const OPCODE: u8 = 130;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexEnvfvReply;
+    type Reply = GetTexEnvfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexEnvfvReply<'pb> {
@@ -6471,7 +6471,7 @@ pub struct GetTexEnvfvReply<'pb> {
     pub datum: Float32,
     pub data: Cow<'pb, [Float32]>,
 }
-impl<'pb> GetTexEnvfvReply {}
+impl<'pb> GetTexEnvfvReply<'pb> {}
 impl<'pb> AsByteSequence for GetTexEnvfvReply<'pb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6506,7 +6506,7 @@ impl<'pb> AsByteSequence for GetTexEnvfvReply<'pb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -6599,7 +6599,7 @@ impl Request for GetTexEnvivRequest {
     const OPCODE: u8 = 131;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexEnvivReply;
+    type Reply = GetTexEnvivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexEnvivReply<'qb> {
@@ -6609,7 +6609,7 @@ pub struct GetTexEnvivReply<'qb> {
     pub datum: Int32,
     pub data: Cow<'qb, [Int32]>,
 }
-impl<'qb> GetTexEnvivReply {}
+impl<'qb> GetTexEnvivReply<'qb> {}
 impl<'qb> AsByteSequence for GetTexEnvivReply<'qb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6644,7 +6644,7 @@ impl<'qb> AsByteSequence for GetTexEnvivReply<'qb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -6737,7 +6737,7 @@ impl Request for GetTexGendvRequest {
     const OPCODE: u8 = 132;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexGendvReply;
+    type Reply = GetTexGendvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexGendvReply<'rb> {
@@ -6747,7 +6747,7 @@ pub struct GetTexGendvReply<'rb> {
     pub datum: Float64,
     pub data: Cow<'rb, [Float64]>,
 }
-impl<'rb> GetTexGendvReply {}
+impl<'rb> GetTexGendvReply<'rb> {}
 impl<'rb> AsByteSequence for GetTexGendvReply<'rb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6782,7 +6782,7 @@ impl<'rb> AsByteSequence for GetTexGendvReply<'rb> {
         let (datum, sz): (Float64, usize) = <Float64>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (data, block_len): (Cow<'static, [Float64]>, usize) =
+        let (data, block_len): (Cow<'_, [Float64]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float64>());
@@ -6875,7 +6875,7 @@ impl Request for GetTexGenfvRequest {
     const OPCODE: u8 = 133;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexGenfvReply;
+    type Reply = GetTexGenfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexGenfvReply<'sb> {
@@ -6885,7 +6885,7 @@ pub struct GetTexGenfvReply<'sb> {
     pub datum: Float32,
     pub data: Cow<'sb, [Float32]>,
 }
-impl<'sb> GetTexGenfvReply {}
+impl<'sb> GetTexGenfvReply<'sb> {}
 impl<'sb> AsByteSequence for GetTexGenfvReply<'sb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -6920,7 +6920,7 @@ impl<'sb> AsByteSequence for GetTexGenfvReply<'sb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -7013,7 +7013,7 @@ impl Request for GetTexGenivRequest {
     const OPCODE: u8 = 134;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexGenivReply;
+    type Reply = GetTexGenivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexGenivReply<'tb> {
@@ -7023,7 +7023,7 @@ pub struct GetTexGenivReply<'tb> {
     pub datum: Int32,
     pub data: Cow<'tb, [Int32]>,
 }
-impl<'tb> GetTexGenivReply {}
+impl<'tb> GetTexGenivReply<'tb> {}
 impl<'tb> AsByteSequence for GetTexGenivReply<'tb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7058,7 +7058,7 @@ impl<'tb> AsByteSequence for GetTexGenivReply<'tb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -7169,7 +7169,7 @@ impl Request for GetTexImageRequest {
     const OPCODE: u8 = 135;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexImageReply;
+    type Reply = GetTexImageReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexImageReply<'ub> {
@@ -7181,7 +7181,7 @@ pub struct GetTexImageReply<'ub> {
     pub depth: Int32,
     pub data: Cow<'ub, [Byte]>,
 }
-impl<'ub> GetTexImageReply {}
+impl<'ub> GetTexImageReply<'ub> {}
 impl<'ub> AsByteSequence for GetTexImageReply<'ub> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7219,7 +7219,7 @@ impl<'ub> AsByteSequence for GetTexImageReply<'ub> {
         let (depth, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -7315,7 +7315,7 @@ impl Request for GetTexParameterfvRequest {
     const OPCODE: u8 = 136;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexParameterfvReply;
+    type Reply = GetTexParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexParameterfvReply<'vb> {
@@ -7325,7 +7325,7 @@ pub struct GetTexParameterfvReply<'vb> {
     pub datum: Float32,
     pub data: Cow<'vb, [Float32]>,
 }
-impl<'vb> GetTexParameterfvReply {}
+impl<'vb> GetTexParameterfvReply<'vb> {}
 impl<'vb> AsByteSequence for GetTexParameterfvReply<'vb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7360,7 +7360,7 @@ impl<'vb> AsByteSequence for GetTexParameterfvReply<'vb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -7453,7 +7453,7 @@ impl Request for GetTexParameterivRequest {
     const OPCODE: u8 = 137;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexParameterivReply;
+    type Reply = GetTexParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexParameterivReply<'wb> {
@@ -7463,7 +7463,7 @@ pub struct GetTexParameterivReply<'wb> {
     pub datum: Int32,
     pub data: Cow<'wb, [Int32]>,
 }
-impl<'wb> GetTexParameterivReply {}
+impl<'wb> GetTexParameterivReply<'wb> {}
 impl<'wb> AsByteSequence for GetTexParameterivReply<'wb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7498,7 +7498,7 @@ impl<'wb> AsByteSequence for GetTexParameterivReply<'wb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -7597,7 +7597,7 @@ impl Request for GetTexLevelParameterfvRequest {
     const OPCODE: u8 = 138;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexLevelParameterfvReply;
+    type Reply = GetTexLevelParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexLevelParameterfvReply<'xb> {
@@ -7607,7 +7607,7 @@ pub struct GetTexLevelParameterfvReply<'xb> {
     pub datum: Float32,
     pub data: Cow<'xb, [Float32]>,
 }
-impl<'xb> GetTexLevelParameterfvReply {}
+impl<'xb> GetTexLevelParameterfvReply<'xb> {}
 impl<'xb> AsByteSequence for GetTexLevelParameterfvReply<'xb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7642,7 +7642,7 @@ impl<'xb> AsByteSequence for GetTexLevelParameterfvReply<'xb> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -7741,7 +7741,7 @@ impl Request for GetTexLevelParameterivRequest {
     const OPCODE: u8 = 139;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetTexLevelParameterivReply;
+    type Reply = GetTexLevelParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetTexLevelParameterivReply<'yb> {
@@ -7751,7 +7751,7 @@ pub struct GetTexLevelParameterivReply<'yb> {
     pub datum: Int32,
     pub data: Cow<'yb, [Int32]>,
 }
-impl<'yb> GetTexLevelParameterivReply {}
+impl<'yb> GetTexLevelParameterivReply<'yb> {}
 impl<'yb> AsByteSequence for GetTexLevelParameterivReply<'yb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -7786,7 +7786,7 @@ impl<'yb> AsByteSequence for GetTexLevelParameterivReply<'yb> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -8071,14 +8071,14 @@ impl Request for FlushRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AreTexturesResidentRequest<'ac> {
+pub struct AreTexturesResidentRequest<'zb> {
     pub req_type: u8,
     pub length: u16,
     pub context_tag: ContextTag,
-    pub textures: Cow<'ac, [Card32]>,
+    pub textures: Cow<'zb, [Card32]>,
 }
-impl<'ac> AreTexturesResidentRequest {}
-impl<'ac> AsByteSequence for AreTexturesResidentRequest<'ac> {
+impl<'zb> AreTexturesResidentRequest<'zb> {}
+impl<'zb> AsByteSequence for AreTexturesResidentRequest<'zb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8105,7 +8105,7 @@ impl<'ac> AsByteSequence for AreTexturesResidentRequest<'ac> {
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (textures, block_len): (Cow<'static, [Card32]>, usize) =
+        let (textures, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -8133,22 +8133,22 @@ impl<'ac> AsByteSequence for AreTexturesResidentRequest<'ac> {
             }
     }
 }
-impl Request for AreTexturesResidentRequest {
+impl<'zb> Request for AreTexturesResidentRequest<'zb> {
     const OPCODE: u8 = 143;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = AreTexturesResidentReply;
+    type Reply = AreTexturesResidentReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AreTexturesResidentReply<'zb> {
+pub struct AreTexturesResidentReply<'ac> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub ret_val: Bool32,
-    pub data: Cow<'zb, [bool]>,
+    pub data: Cow<'ac, [bool]>,
 }
-impl<'zb> AreTexturesResidentReply {}
-impl<'zb> AsByteSequence for AreTexturesResidentReply<'zb> {
+impl<'ac> AreTexturesResidentReply<'ac> {}
+impl<'ac> AsByteSequence for AreTexturesResidentReply<'ac> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8177,7 +8177,7 @@ impl<'zb> AsByteSequence for AreTexturesResidentReply<'zb> {
         let (ret_val, sz): (Bool32, usize) = <Bool32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (data, block_len): (Cow<'static, [bool]>, usize) =
+        let (data, block_len): (Cow<'_, [bool]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<bool>());
@@ -8214,7 +8214,7 @@ pub struct DeleteTexturesRequest<'bc> {
     pub context_tag: ContextTag,
     pub textures: Cow<'bc, [Card32]>,
 }
-impl<'bc> DeleteTexturesRequest {}
+impl<'bc> DeleteTexturesRequest<'bc> {}
 impl<'bc> AsByteSequence for DeleteTexturesRequest<'bc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -8242,7 +8242,7 @@ impl<'bc> AsByteSequence for DeleteTexturesRequest<'bc> {
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (textures, block_len): (Cow<'static, [Card32]>, usize) =
+        let (textures, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -8270,7 +8270,7 @@ impl<'bc> AsByteSequence for DeleteTexturesRequest<'bc> {
             }
     }
 }
-impl Request for DeleteTexturesRequest {
+impl<'bc> Request for DeleteTexturesRequest<'bc> {
     const OPCODE: u8 = 144;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -8327,7 +8327,7 @@ impl Request for GenTexturesRequest {
     const OPCODE: u8 = 145;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GenTexturesReply;
+    type Reply = GenTexturesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GenTexturesReply<'cc> {
@@ -8336,7 +8336,7 @@ pub struct GenTexturesReply<'cc> {
     pub length: u32,
     pub data: Cow<'cc, [Card32]>,
 }
-impl<'cc> GenTexturesReply {}
+impl<'cc> GenTexturesReply<'cc> {}
 impl<'cc> AsByteSequence for GenTexturesReply<'cc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -8363,7 +8363,7 @@ impl<'cc> AsByteSequence for GenTexturesReply<'cc> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -8563,7 +8563,7 @@ impl Request for GetColorTableRequest {
     const OPCODE: u8 = 147;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetColorTableReply;
+    type Reply = GetColorTableReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetColorTableReply<'dc> {
@@ -8573,7 +8573,7 @@ pub struct GetColorTableReply<'dc> {
     pub width: Int32,
     pub data: Cow<'dc, [Byte]>,
 }
-impl<'dc> GetColorTableReply {}
+impl<'dc> GetColorTableReply<'dc> {}
 impl<'dc> AsByteSequence for GetColorTableReply<'dc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -8605,7 +8605,7 @@ impl<'dc> AsByteSequence for GetColorTableReply<'dc> {
         let (width, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -8697,7 +8697,7 @@ impl Request for GetColorTableParameterfvRequest {
     const OPCODE: u8 = 148;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetColorTableParameterfvReply;
+    type Reply = GetColorTableParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetColorTableParameterfvReply<'ec> {
@@ -8707,7 +8707,7 @@ pub struct GetColorTableParameterfvReply<'ec> {
     pub datum: Float32,
     pub data: Cow<'ec, [Float32]>,
 }
-impl<'ec> GetColorTableParameterfvReply {}
+impl<'ec> GetColorTableParameterfvReply<'ec> {}
 impl<'ec> AsByteSequence for GetColorTableParameterfvReply<'ec> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -8742,7 +8742,7 @@ impl<'ec> AsByteSequence for GetColorTableParameterfvReply<'ec> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -8835,7 +8835,7 @@ impl Request for GetColorTableParameterivRequest {
     const OPCODE: u8 = 149;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetColorTableParameterivReply;
+    type Reply = GetColorTableParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetColorTableParameterivReply<'fc> {
@@ -8845,7 +8845,7 @@ pub struct GetColorTableParameterivReply<'fc> {
     pub datum: Int32,
     pub data: Cow<'fc, [Int32]>,
 }
-impl<'fc> GetColorTableParameterivReply {}
+impl<'fc> GetColorTableParameterivReply<'fc> {}
 impl<'fc> AsByteSequence for GetColorTableParameterivReply<'fc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -8880,7 +8880,7 @@ impl<'fc> AsByteSequence for GetColorTableParameterivReply<'fc> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -8985,7 +8985,7 @@ impl Request for GetConvolutionFilterRequest {
     const OPCODE: u8 = 150;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetConvolutionFilterReply;
+    type Reply = GetConvolutionFilterReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetConvolutionFilterReply<'gc> {
@@ -8996,7 +8996,7 @@ pub struct GetConvolutionFilterReply<'gc> {
     pub height: Int32,
     pub data: Cow<'gc, [Byte]>,
 }
-impl<'gc> GetConvolutionFilterReply {}
+impl<'gc> GetConvolutionFilterReply<'gc> {}
 impl<'gc> AsByteSequence for GetConvolutionFilterReply<'gc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9029,7 +9029,7 @@ impl<'gc> AsByteSequence for GetConvolutionFilterReply<'gc> {
         index += sz;
         let (height, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -9122,7 +9122,7 @@ impl Request for GetConvolutionParameterfvRequest {
     const OPCODE: u8 = 151;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetConvolutionParameterfvReply;
+    type Reply = GetConvolutionParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetConvolutionParameterfvReply<'hc> {
@@ -9132,7 +9132,7 @@ pub struct GetConvolutionParameterfvReply<'hc> {
     pub datum: Float32,
     pub data: Cow<'hc, [Float32]>,
 }
-impl<'hc> GetConvolutionParameterfvReply {}
+impl<'hc> GetConvolutionParameterfvReply<'hc> {}
 impl<'hc> AsByteSequence for GetConvolutionParameterfvReply<'hc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9167,7 +9167,7 @@ impl<'hc> AsByteSequence for GetConvolutionParameterfvReply<'hc> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -9260,7 +9260,7 @@ impl Request for GetConvolutionParameterivRequest {
     const OPCODE: u8 = 152;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetConvolutionParameterivReply;
+    type Reply = GetConvolutionParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetConvolutionParameterivReply<'ic> {
@@ -9270,7 +9270,7 @@ pub struct GetConvolutionParameterivReply<'ic> {
     pub datum: Int32,
     pub data: Cow<'ic, [Int32]>,
 }
-impl<'ic> GetConvolutionParameterivReply {}
+impl<'ic> GetConvolutionParameterivReply<'ic> {}
 impl<'ic> AsByteSequence for GetConvolutionParameterivReply<'ic> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9305,7 +9305,7 @@ impl<'ic> AsByteSequence for GetConvolutionParameterivReply<'ic> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -9410,7 +9410,7 @@ impl Request for GetSeparableFilterRequest {
     const OPCODE: u8 = 153;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetSeparableFilterReply;
+    type Reply = GetSeparableFilterReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetSeparableFilterReply<'jc> {
@@ -9421,7 +9421,7 @@ pub struct GetSeparableFilterReply<'jc> {
     pub col_h: Int32,
     pub rows_and_cols: Cow<'jc, [Byte]>,
 }
-impl<'jc> GetSeparableFilterReply {}
+impl<'jc> GetSeparableFilterReply<'jc> {}
 impl<'jc> AsByteSequence for GetSeparableFilterReply<'jc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9454,7 +9454,7 @@ impl<'jc> AsByteSequence for GetSeparableFilterReply<'jc> {
         index += sz;
         let (col_h, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rows_and_cols, block_len): (Cow<'static, [Byte]>, usize) =
+        let (rows_and_cols, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -9565,7 +9565,7 @@ impl Request for GetHistogramRequest {
     const OPCODE: u8 = 154;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetHistogramReply;
+    type Reply = GetHistogramReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetHistogramReply<'kc> {
@@ -9575,7 +9575,7 @@ pub struct GetHistogramReply<'kc> {
     pub width: Int32,
     pub data: Cow<'kc, [Byte]>,
 }
-impl<'kc> GetHistogramReply {}
+impl<'kc> GetHistogramReply<'kc> {}
 impl<'kc> AsByteSequence for GetHistogramReply<'kc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9607,7 +9607,7 @@ impl<'kc> AsByteSequence for GetHistogramReply<'kc> {
         let (width, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -9699,7 +9699,7 @@ impl Request for GetHistogramParameterfvRequest {
     const OPCODE: u8 = 155;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetHistogramParameterfvReply;
+    type Reply = GetHistogramParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetHistogramParameterfvReply<'lc> {
@@ -9709,7 +9709,7 @@ pub struct GetHistogramParameterfvReply<'lc> {
     pub datum: Float32,
     pub data: Cow<'lc, [Float32]>,
 }
-impl<'lc> GetHistogramParameterfvReply {}
+impl<'lc> GetHistogramParameterfvReply<'lc> {}
 impl<'lc> AsByteSequence for GetHistogramParameterfvReply<'lc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9744,7 +9744,7 @@ impl<'lc> AsByteSequence for GetHistogramParameterfvReply<'lc> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -9837,7 +9837,7 @@ impl Request for GetHistogramParameterivRequest {
     const OPCODE: u8 = 156;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetHistogramParameterivReply;
+    type Reply = GetHistogramParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetHistogramParameterivReply<'mc> {
@@ -9847,7 +9847,7 @@ pub struct GetHistogramParameterivReply<'mc> {
     pub datum: Int32,
     pub data: Cow<'mc, [Int32]>,
 }
-impl<'mc> GetHistogramParameterivReply {}
+impl<'mc> GetHistogramParameterivReply<'mc> {}
 impl<'mc> AsByteSequence for GetHistogramParameterivReply<'mc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -9882,7 +9882,7 @@ impl<'mc> AsByteSequence for GetHistogramParameterivReply<'mc> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -9993,7 +9993,7 @@ impl Request for GetMinmaxRequest {
     const OPCODE: u8 = 157;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMinmaxReply;
+    type Reply = GetMinmaxReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMinmaxReply<'nc> {
@@ -10002,7 +10002,7 @@ pub struct GetMinmaxReply<'nc> {
     pub length: u32,
     pub data: Cow<'nc, [Byte]>,
 }
-impl<'nc> GetMinmaxReply {}
+impl<'nc> GetMinmaxReply<'nc> {}
 impl<'nc> AsByteSequence for GetMinmaxReply<'nc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10029,7 +10029,7 @@ impl<'nc> AsByteSequence for GetMinmaxReply<'nc> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -10113,7 +10113,7 @@ impl Request for GetMinmaxParameterfvRequest {
     const OPCODE: u8 = 158;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMinmaxParameterfvReply;
+    type Reply = GetMinmaxParameterfvReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMinmaxParameterfvReply<'oc> {
@@ -10123,7 +10123,7 @@ pub struct GetMinmaxParameterfvReply<'oc> {
     pub datum: Float32,
     pub data: Cow<'oc, [Float32]>,
 }
-impl<'oc> GetMinmaxParameterfvReply {}
+impl<'oc> GetMinmaxParameterfvReply<'oc> {}
 impl<'oc> AsByteSequence for GetMinmaxParameterfvReply<'oc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10158,7 +10158,7 @@ impl<'oc> AsByteSequence for GetMinmaxParameterfvReply<'oc> {
         let (datum, sz): (Float32, usize) = <Float32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Float32]>, usize) =
+        let (data, block_len): (Cow<'_, [Float32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Float32>());
@@ -10251,7 +10251,7 @@ impl Request for GetMinmaxParameterivRequest {
     const OPCODE: u8 = 159;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMinmaxParameterivReply;
+    type Reply = GetMinmaxParameterivReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetMinmaxParameterivReply<'pc> {
@@ -10261,7 +10261,7 @@ pub struct GetMinmaxParameterivReply<'pc> {
     pub datum: Int32,
     pub data: Cow<'pc, [Int32]>,
 }
-impl<'pc> GetMinmaxParameterivReply {}
+impl<'pc> GetMinmaxParameterivReply<'pc> {}
 impl<'pc> AsByteSequence for GetMinmaxParameterivReply<'pc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10296,7 +10296,7 @@ impl<'pc> AsByteSequence for GetMinmaxParameterivReply<'pc> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -10389,7 +10389,7 @@ impl Request for GetCompressedTexImageArbRequest {
     const OPCODE: u8 = 160;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetCompressedTexImageArbReply;
+    type Reply = GetCompressedTexImageArbReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetCompressedTexImageArbReply<'qc> {
@@ -10399,7 +10399,7 @@ pub struct GetCompressedTexImageArbReply<'qc> {
     pub size: Int32,
     pub data: Cow<'qc, [Byte]>,
 }
-impl<'qc> GetCompressedTexImageArbReply {}
+impl<'qc> GetCompressedTexImageArbReply<'qc> {}
 impl<'qc> AsByteSequence for GetCompressedTexImageArbReply<'qc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10431,7 +10431,7 @@ impl<'qc> AsByteSequence for GetCompressedTexImageArbReply<'qc> {
         let (size, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Byte]>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -10469,7 +10469,7 @@ pub struct DeleteQueriesArbRequest<'rc> {
     pub context_tag: ContextTag,
     pub ids: Cow<'rc, [Card32]>,
 }
-impl<'rc> DeleteQueriesArbRequest {}
+impl<'rc> DeleteQueriesArbRequest<'rc> {}
 impl<'rc> AsByteSequence for DeleteQueriesArbRequest<'rc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10497,7 +10497,7 @@ impl<'rc> AsByteSequence for DeleteQueriesArbRequest<'rc> {
         index += sz;
         let (len0, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (ids, block_len): (Cow<'static, [Card32]>, usize) =
+        let (ids, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -10525,7 +10525,7 @@ impl<'rc> AsByteSequence for DeleteQueriesArbRequest<'rc> {
             }
     }
 }
-impl Request for DeleteQueriesArbRequest {
+impl<'rc> Request for DeleteQueriesArbRequest<'rc> {
     const OPCODE: u8 = 161;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -10582,7 +10582,7 @@ impl Request for GenQueriesArbRequest {
     const OPCODE: u8 = 162;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GenQueriesArbReply;
+    type Reply = GenQueriesArbReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GenQueriesArbReply<'sc> {
@@ -10591,7 +10591,7 @@ pub struct GenQueriesArbReply<'sc> {
     pub length: u32,
     pub data: Cow<'sc, [Card32]>,
 }
-impl<'sc> GenQueriesArbReply {}
+impl<'sc> GenQueriesArbReply<'sc> {}
 impl<'sc> AsByteSequence for GenQueriesArbReply<'sc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10618,7 +10618,7 @@ impl<'sc> AsByteSequence for GenQueriesArbReply<'sc> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -10802,7 +10802,7 @@ impl Request for GetQueryivArbRequest {
     const OPCODE: u8 = 164;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetQueryivArbReply;
+    type Reply = GetQueryivArbReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetQueryivArbReply<'tc> {
@@ -10812,7 +10812,7 @@ pub struct GetQueryivArbReply<'tc> {
     pub datum: Int32,
     pub data: Cow<'tc, [Int32]>,
 }
-impl<'tc> GetQueryivArbReply {}
+impl<'tc> GetQueryivArbReply<'tc> {}
 impl<'tc> AsByteSequence for GetQueryivArbReply<'tc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10847,7 +10847,7 @@ impl<'tc> AsByteSequence for GetQueryivArbReply<'tc> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -10940,7 +10940,7 @@ impl Request for GetQueryObjectivArbRequest {
     const OPCODE: u8 = 165;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetQueryObjectivArbReply;
+    type Reply = GetQueryObjectivArbReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetQueryObjectivArbReply<'uc> {
@@ -10950,7 +10950,7 @@ pub struct GetQueryObjectivArbReply<'uc> {
     pub datum: Int32,
     pub data: Cow<'uc, [Int32]>,
 }
-impl<'uc> GetQueryObjectivArbReply {}
+impl<'uc> GetQueryObjectivArbReply<'uc> {}
 impl<'uc> AsByteSequence for GetQueryObjectivArbReply<'uc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -10985,7 +10985,7 @@ impl<'uc> AsByteSequence for GetQueryObjectivArbReply<'uc> {
         let (datum, sz): (Int32, usize) = <Int32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Int32]>, usize) =
+        let (data, block_len): (Cow<'_, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -11078,7 +11078,7 @@ impl Request for GetQueryObjectuivArbRequest {
     const OPCODE: u8 = 166;
     const EXTENSION: Option<&'static str> = Some("GLX");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetQueryObjectuivArbReply;
+    type Reply = GetQueryObjectuivArbReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetQueryObjectuivArbReply<'vc> {
@@ -11088,7 +11088,7 @@ pub struct GetQueryObjectuivArbReply<'vc> {
     pub datum: Card32,
     pub data: Cow<'vc, [Card32]>,
 }
-impl<'vc> GetQueryObjectuivArbReply {}
+impl<'vc> GetQueryObjectuivArbReply<'vc> {}
 impl<'vc> AsByteSequence for GetQueryObjectuivArbReply<'vc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -11123,7 +11123,7 @@ impl<'vc> AsByteSequence for GetQueryObjectuivArbReply<'vc> {
         let (datum, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());

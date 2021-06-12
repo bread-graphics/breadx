@@ -217,7 +217,7 @@ pub struct ClientIdValue<'a> {
     pub length: Card32,
     pub value: Cow<'a, [Card32]>,
 }
-impl<'a> ClientIdValue {}
+impl<'a> ClientIdValue<'a> {}
 impl<'a> AsByteSequence for ClientIdValue<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -237,7 +237,7 @@ impl<'a> AsByteSequence for ClientIdValue<'a> {
         index += sz;
         let (length, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (value, block_len): (Cow<'static, [Card32]>, usize) =
+        let (value, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) / (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -344,7 +344,7 @@ pub struct ResourceSizeValue<'b> {
     pub size: ResourceSizeSpec,
     pub cross_references: Cow<'b, [ResourceSizeSpec]>,
 }
-impl<'b> ResourceSizeValue {}
+impl<'b> ResourceSizeValue<'b> {}
 impl<'b> AsByteSequence for ResourceSizeValue<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -365,7 +365,7 @@ impl<'b> AsByteSequence for ResourceSizeValue<'b> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cross_references, block_len): (Cow<'static, [ResourceSizeSpec]>, usize) =
+        let (cross_references, block_len): (Cow<'_, [ResourceSizeSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeSpec>());
@@ -541,7 +541,7 @@ impl Request for QueryClientsRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("X-Resource");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryClientsReply;
+    type Reply = QueryClientsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientsReply<'c> {
@@ -550,7 +550,7 @@ pub struct QueryClientsReply<'c> {
     pub length: u32,
     pub clients: Cow<'c, [Client]>,
 }
-impl<'c> QueryClientsReply {}
+impl<'c> QueryClientsReply<'c> {}
 impl<'c> AsByteSequence for QueryClientsReply<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -580,7 +580,7 @@ impl<'c> AsByteSequence for QueryClientsReply<'c> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (clients, block_len): (Cow<'static, [Client]>, usize) =
+        let (clients, block_len): (Cow<'_, [Client]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Client>());
@@ -655,7 +655,7 @@ impl Request for QueryClientResourcesRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("X-Resource");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryClientResourcesReply;
+    type Reply = QueryClientResourcesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct QueryClientResourcesReply<'d> {
@@ -664,7 +664,7 @@ pub struct QueryClientResourcesReply<'d> {
     pub length: u32,
     pub types: Cow<'d, [Type]>,
 }
-impl<'d> QueryClientResourcesReply {}
+impl<'d> QueryClientResourcesReply<'d> {}
 impl<'d> AsByteSequence for QueryClientResourcesReply<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -694,7 +694,7 @@ impl<'d> AsByteSequence for QueryClientResourcesReply<'d> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (types, block_len): (Cow<'static, [Type]>, usize) =
+        let (types, block_len): (Cow<'_, [Type]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Type>());
@@ -829,13 +829,13 @@ impl AsByteSequence for QueryClientPixmapBytesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryClientIdsRequest<'g> {
+pub struct QueryClientIdsRequest<'e> {
     pub req_type: u8,
     pub length: u16,
-    pub specs: Cow<'g, [ClientIdSpec]>,
+    pub specs: Cow<'e, [ClientIdSpec]>,
 }
-impl<'g> QueryClientIdsRequest {}
-impl<'g> AsByteSequence for QueryClientIdsRequest<'g> {
+impl<'e> QueryClientIdsRequest<'e> {}
+impl<'e> AsByteSequence for QueryClientIdsRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -859,7 +859,7 @@ impl<'g> AsByteSequence for QueryClientIdsRequest<'g> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (specs, block_len): (Cow<'static, [ClientIdSpec]>, usize) =
+        let (specs, block_len): (Cow<'_, [ClientIdSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdSpec>());
@@ -881,21 +881,21 @@ impl<'g> AsByteSequence for QueryClientIdsRequest<'g> {
         }
     }
 }
-impl Request for QueryClientIdsRequest {
+impl<'e> Request for QueryClientIdsRequest<'e> {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("X-Resource");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryClientIdsReply;
+    type Reply = QueryClientIdsReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryClientIdsReply<'f, 'e> {
+pub struct QueryClientIdsReply<'g, 'f> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub ids: Cow<'f, [ClientIdValue<'e>]>,
+    pub ids: Cow<'g, [ClientIdValue<'f>]>,
 }
-impl<'f, 'e> QueryClientIdsReply {}
-impl<'f, 'e> AsByteSequence for QueryClientIdsReply<'f, 'e> {
+impl<'g, 'f> QueryClientIdsReply<'g, 'f> {}
+impl<'g, 'f> AsByteSequence for QueryClientIdsReply<'g, 'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -907,7 +907,7 @@ impl<'f, 'e> AsByteSequence for QueryClientIdsReply<'f, 'e> {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.ids, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'e>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'f>>());
         index
     }
     #[inline]
@@ -924,10 +924,10 @@ impl<'f, 'e> AsByteSequence for QueryClientIdsReply<'f, 'e> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (ids, block_len): (Cow<'static, [ClientIdValue<'e>]>, usize) =
+        let (ids, block_len): (Cow<'_, [ClientIdValue<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'e>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'f>>());
         Some((
             QueryClientIdsReply {
                 reply_type: reply_type,
@@ -949,20 +949,20 @@ impl<'f, 'e> AsByteSequence for QueryClientIdsReply<'f, 'e> {
             + {
                 let block_len: usize = self.ids.iter().map(|i| i.size()).sum();
                 let pad: usize =
-                    buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'e>>());
+                    buffer_pad(block_len, ::core::mem::align_of::<ClientIdValue<'f>>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryResourceBytesRequest<'j> {
+pub struct QueryResourceBytesRequest<'h> {
     pub req_type: u8,
     pub length: u16,
     pub client: Card32,
-    pub specs: Cow<'j, [ResourceIdSpec]>,
+    pub specs: Cow<'h, [ResourceIdSpec]>,
 }
-impl<'j> QueryResourceBytesRequest {}
-impl<'j> AsByteSequence for QueryResourceBytesRequest<'j> {
+impl<'h> QueryResourceBytesRequest<'h> {}
+impl<'h> AsByteSequence for QueryResourceBytesRequest<'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -989,7 +989,7 @@ impl<'j> AsByteSequence for QueryResourceBytesRequest<'j> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (specs, block_len): (Cow<'static, [ResourceIdSpec]>, usize) =
+        let (specs, block_len): (Cow<'_, [ResourceIdSpec]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ResourceIdSpec>());
@@ -1017,21 +1017,21 @@ impl<'j> AsByteSequence for QueryResourceBytesRequest<'j> {
             }
     }
 }
-impl Request for QueryResourceBytesRequest {
+impl<'h> Request for QueryResourceBytesRequest<'h> {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("X-Resource");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryResourceBytesReply;
+    type Reply = QueryResourceBytesReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryResourceBytesReply<'i, 'h> {
+pub struct QueryResourceBytesReply<'j, 'i> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub sizes: Cow<'i, [ResourceSizeValue<'h>]>,
+    pub sizes: Cow<'j, [ResourceSizeValue<'i>]>,
 }
-impl<'i, 'h> QueryResourceBytesReply {}
-impl<'i, 'h> AsByteSequence for QueryResourceBytesReply<'i, 'h> {
+impl<'j, 'i> QueryResourceBytesReply<'j, 'i> {}
+impl<'j, 'i> AsByteSequence for QueryResourceBytesReply<'j, 'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1043,7 +1043,7 @@ impl<'i, 'h> AsByteSequence for QueryResourceBytesReply<'i, 'h> {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.sizes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'h>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'i>>());
         index
     }
     #[inline]
@@ -1060,10 +1060,10 @@ impl<'i, 'h> AsByteSequence for QueryResourceBytesReply<'i, 'h> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (sizes, block_len): (Cow<'static, [ResourceSizeValue<'h>]>, usize) =
+        let (sizes, block_len): (Cow<'_, [ResourceSizeValue<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'h>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'i>>());
         Some((
             QueryResourceBytesReply {
                 reply_type: reply_type,
@@ -1085,7 +1085,7 @@ impl<'i, 'h> AsByteSequence for QueryResourceBytesReply<'i, 'h> {
             + {
                 let block_len: usize = self.sizes.iter().map(|i| i.size()).sum();
                 let pad: usize =
-                    buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'h>>());
+                    buffer_pad(block_len, ::core::mem::align_of::<ResourceSizeValue<'i>>());
                 block_len + pad
             }
     }

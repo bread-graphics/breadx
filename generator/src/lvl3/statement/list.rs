@@ -137,12 +137,20 @@ impl Statement for FromBytesList {
                         elems: vec![
                             match self.ty {
                                 MaybeString::IsAString => {
-                                    Type::Cow(Box::new(Type::Basic("str".into())), "static".into())
+                                    Type::Cow(Box::new(Type::Basic("str".into())), "_".into())
                                         .to_syn_ty()
                                 }
                                 MaybeString::NotAString(ref ty) => Type::Cow(
-                                    Box::new(Type::Slice(Box::new(ty.clone()))),
-                                    "static".into(),
+                                    Box::new(Type::Slice(Box::new(match ty.clone() {
+                                        Type::HasLifetime(name, lifetimes) => Type::HasLifetime(
+                                            name,
+                                            iter::repeat("_".to_string())
+                                                .take(lifetimes.len())
+                                                .collect(),
+                                        ),
+                                        ty => ty,
+                                    }))),
+                                    "_".into(),
                                 )
                                 .to_syn_ty(),
                             },

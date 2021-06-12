@@ -3,7 +3,7 @@
 use super::{
     syn_util::{item_field, str_to_exprpath},
     Asb, ExprWrapper, InputParameter, Method, ParameterUsage, RStruct, StructureItem, Trait,
-    Type as Lvl3Type,
+    TraitSpecifics, Type as Lvl3Type,
 };
 use crate::lvl2::{Field, StructureItem as Lvl2StructureItem, Type, XidType};
 
@@ -55,9 +55,12 @@ impl From<XidType> for RStruct {
         method.statements = vec![super::CreateXidTypeStatement.into()];
         rstr.methods.push(method);
 
-        rstr.traits.push(Trait::Xid);
-        rstr.traits
-            .extend(from_impls.into_iter().map(|f| Trait::FromXid(f.unwrap())));
+        rstr.traits.push(TraitSpecifics::Xid.into());
+        rstr.traits.extend(
+            from_impls
+                .into_iter()
+                .map(|f| TraitSpecifics::FromXid(f.unwrap()).into()),
+        );
 
         rstr
     }

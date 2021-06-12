@@ -9,6 +9,7 @@ use crate::{
     display::prelude::*,
     Display, GcParameters,
 };
+use alloc::borrow::Cow;
 
 #[cfg(feature = "async")]
 use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendRequestFuture};
@@ -415,7 +416,7 @@ impl Gcontext {
         PolyFillArcRequest {
             drawable,
             gc: self,
-            arcs: arcs.to_vec(),
+            arcs: Cow::Borrowed(arcs),
             ..Default::default()
         }
     }

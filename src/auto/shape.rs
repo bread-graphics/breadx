@@ -153,7 +153,7 @@ pub struct RectanglesRequest<'a> {
     pub y_offset: Int16,
     pub rectangles: Cow<'a, [Rectangle]>,
 }
-impl<'a> RectanglesRequest {}
+impl<'a> RectanglesRequest<'a> {}
 impl<'a> AsByteSequence for RectanglesRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -195,7 +195,7 @@ impl<'a> AsByteSequence for RectanglesRequest<'a> {
         index += sz;
         let (y_offset, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Cow<'static, [Rectangle]>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -233,7 +233,7 @@ impl<'a> AsByteSequence for RectanglesRequest<'a> {
             }
     }
 }
-impl Request for RectanglesRequest {
+impl<'a> Request for RectanglesRequest<'a> {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("SHAPE");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -897,7 +897,7 @@ impl Request for GetRectanglesRequest {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("SHAPE");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetRectanglesReply;
+    type Reply = GetRectanglesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetRectanglesReply<'b> {
@@ -907,7 +907,7 @@ pub struct GetRectanglesReply<'b> {
     pub length: u32,
     pub rectangles: Cow<'b, [Rectangle]>,
 }
-impl<'b> GetRectanglesReply {}
+impl<'b> GetRectanglesReply<'b> {}
 impl<'b> AsByteSequence for GetRectanglesReply<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -938,7 +938,7 @@ impl<'b> AsByteSequence for GetRectanglesReply<'b> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (rectangles, block_len): (Cow<'static, [Rectangle]>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());

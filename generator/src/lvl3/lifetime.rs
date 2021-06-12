@@ -5,24 +5,35 @@ use std::{collections::HashMap, sync::Mutex};
 
 #[inline]
 pub fn get_mapped_lifetime(name: &str) -> usize {
-    LIFETIME_MAP.lock().unwrap().map.get(name).copied().unwrap_or(0)
+    LIFETIME_MAP
+        .lock()
+        .unwrap()
+        .map
+        .get(name)
+        .copied()
+        .unwrap_or(0)
 }
 
 #[inline]
 pub fn set_mapped_lifetime(name: &str, lifetimes: usize) {
     if let Some(_) = LIFETIME_MAP
         .lock()
-        .unwrap().map
+        .unwrap()
+        .map
         .insert(name.to_string(), lifetimes)
     {
         panic!()
     }
 }
 
-static LIFETIME_MAP: Lazy<Mutex<MapWrapper>> = Lazy::new(|| Mutex::new(MapWrapper { map: HashMap::new() }));
+static LIFETIME_MAP: Lazy<Mutex<MapWrapper>> = Lazy::new(|| {
+    Mutex::new(MapWrapper {
+        map: HashMap::new(),
+    })
+});
 
 struct MapWrapper {
-    map: HashMap<String, usize>, 
+    map: HashMap<String, usize>,
 }
 
 impl Drop for MapWrapper {

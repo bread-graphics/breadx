@@ -265,7 +265,7 @@ impl Request for GetXidListRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XC-MISC");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetXidListReply;
+    type Reply = GetXidListReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetXidListReply<'a> {
@@ -274,7 +274,7 @@ pub struct GetXidListReply<'a> {
     pub length: u32,
     pub ids: Cow<'a, [Card32]>,
 }
-impl<'a> GetXidListReply {}
+impl<'a> GetXidListReply<'a> {}
 impl<'a> AsByteSequence for GetXidListReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -304,7 +304,7 @@ impl<'a> AsByteSequence for GetXidListReply<'a> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (ids, block_len): (Cow<'static, [Card32]>, usize) =
+        let (ids, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());

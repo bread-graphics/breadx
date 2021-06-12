@@ -173,12 +173,12 @@ pub struct KeyboardMapping {
     pub keysyms: Box<[Keysym]>,
 }
 
-impl From<GetKeyboardMappingReply> for KeyboardMapping {
+impl<'a> From<GetKeyboardMappingReply<'a>> for KeyboardMapping {
     #[inline]
-    fn from(gkmr: GetKeyboardMappingReply) -> Self {
+    fn from(gkmr: GetKeyboardMappingReply<'a>) -> Self {
         Self {
             keysyms_per_keycode: gkmr.keysyms_per_keycode,
-            keysyms: gkmr.keysyms.into_boxed_slice(),
+            keysyms: gkmr.keysyms.into_owned().into_boxed_slice(),
         }
     }
 }
@@ -189,12 +189,12 @@ pub struct ModifierMapping {
     pub keycodes: Box<[Keycode]>,
 }
 
-impl From<GetModifierMappingReply> for ModifierMapping {
+impl<'a> From<GetModifierMappingReply<'a>> for ModifierMapping {
     #[inline]
-    fn from(gmmr: GetModifierMappingReply) -> Self {
+    fn from(gmmr: GetModifierMappingReply<'a>) -> Self {
         Self {
             keycodes_per_modifier: gmmr.keycodes_per_modifier,
-            keycodes: gmmr.keycodes.into_boxed_slice(),
+            keycodes: gmmr.keycodes.into_owned().into_boxed_slice(),
         }
     }
 }
@@ -288,10 +288,10 @@ fn create_gc_request(cid: Gcontext, drawable: Drawable, props: GcParameters) -> 
 
 /// Create an `InternAtomRequest` for our use.
 #[inline]
-fn intern_atom_request(name: String, exists: bool) -> InternAtomRequest {
+fn intern_atom_request(name: &str, exists: bool) -> InternAtomRequest<'_> {
     InternAtomRequest {
         only_if_exists: exists,
-        name,
+        name: name.into(),
         ..Default::default()
     }
 }

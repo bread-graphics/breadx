@@ -178,7 +178,7 @@ pub struct PixmapRequest<'a> {
     pub remainder: Card64,
     pub notifies: Cow<'a, [Notify]>,
 }
-impl<'a> PixmapRequest {}
+impl<'a> PixmapRequest<'a> {}
 impl<'a> AsByteSequence for PixmapRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -244,7 +244,7 @@ impl<'a> AsByteSequence for PixmapRequest<'a> {
         index += sz;
         let (remainder, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (notifies, block_len): (Cow<'static, [Notify]>, usize) =
+        let (notifies, block_len): (Cow<'_, [Notify]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Notify>());
@@ -298,7 +298,7 @@ impl<'a> AsByteSequence for PixmapRequest<'a> {
             }
     }
 }
-impl Request for PixmapRequest {
+impl<'a> Request for PixmapRequest<'a> {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("Present");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1281,17 +1281,17 @@ impl crate::auto::Event for GenericEvent {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct IdleNotifyEvent {
+pub struct IdleNotifyEvent<'b> {
     pub event_type: u8,
     pub sequence: u16,
     pub event: Event,
     pub window: Window,
     pub serial: Card32,
-    pub pixmap: Pixmap,
+    pub pixmap: Pixmap<'b>,
     pub idle_fence: Fence,
 }
-impl IdleNotifyEvent {}
-impl AsByteSequence for IdleNotifyEvent {
+impl<'b> IdleNotifyEvent<'b> {}
+impl<'b> AsByteSequence for IdleNotifyEvent<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1320,7 +1320,7 @@ impl AsByteSequence for IdleNotifyEvent {
         index += sz;
         let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
+        let (pixmap, sz): (Pixmap<'b>, usize) = <Pixmap<'b>>::from_bytes(&bytes[index..])?;
         index += sz;
         let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
         index += sz;
@@ -1349,6 +1349,6 @@ impl AsByteSequence for IdleNotifyEvent {
             + self.idle_fence.size()
     }
 }
-impl crate::auto::Event for IdleNotifyEvent {
+impl<'b> crate::auto::Event for IdleNotifyEvent<'b> {
     const OPCODE: u8 = 2;
 }

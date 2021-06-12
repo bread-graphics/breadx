@@ -293,7 +293,7 @@ impl Request for ListSurfaceTypesRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListSurfaceTypesReply;
+    type Reply = ListSurfaceTypesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSurfaceTypesReply<'a> {
@@ -302,7 +302,7 @@ pub struct ListSurfaceTypesReply<'a> {
     pub length: u32,
     pub surfaces: Cow<'a, [SurfaceInfo]>,
 }
-impl<'a> ListSurfaceTypesReply {}
+impl<'a> ListSurfaceTypesReply<'a> {}
 impl<'a> AsByteSequence for ListSurfaceTypesReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -332,7 +332,7 @@ impl<'a> AsByteSequence for ListSurfaceTypesReply<'a> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (surfaces, block_len): (Cow<'static, [SurfaceInfo]>, usize) =
+        let (surfaces, block_len): (Cow<'_, [SurfaceInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SurfaceInfo>());
@@ -440,7 +440,7 @@ impl Request for CreateContextRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateContextReply;
+    type Reply = CreateContextReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateContextReply<'b> {
@@ -452,7 +452,7 @@ pub struct CreateContextReply<'b> {
     pub flags_return: Card32,
     pub priv_data: Cow<'b, [Card32]>,
 }
-impl<'b> CreateContextReply {}
+impl<'b> CreateContextReply<'b> {}
 impl<'b> AsByteSequence for CreateContextReply<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -488,7 +488,7 @@ impl<'b> AsByteSequence for CreateContextReply<'b> {
         let (flags_return, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (priv_data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -625,7 +625,7 @@ impl Request for CreateSurfaceRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateSurfaceReply;
+    type Reply = CreateSurfaceReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSurfaceReply<'c> {
@@ -634,7 +634,7 @@ pub struct CreateSurfaceReply<'c> {
     pub length: u32,
     pub priv_data: Cow<'c, [Card32]>,
 }
-impl<'c> CreateSurfaceReply {}
+impl<'c> CreateSurfaceReply<'c> {}
 impl<'c> AsByteSequence for CreateSurfaceReply<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -661,7 +661,7 @@ impl<'c> AsByteSequence for CreateSurfaceReply<'c> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (priv_data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -805,7 +805,7 @@ impl Request for CreateSubpictureRequest {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateSubpictureReply;
+    type Reply = CreateSubpictureReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct CreateSubpictureReply<'d> {
@@ -819,7 +819,7 @@ pub struct CreateSubpictureReply<'d> {
     pub component_order: [Card8; 4],
     pub priv_data: Cow<'d, [Card32]>,
 }
-impl<'d> CreateSubpictureReply {}
+impl<'d> CreateSubpictureReply<'d> {}
 impl<'d> AsByteSequence for CreateSubpictureReply<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -861,7 +861,7 @@ impl<'d> AsByteSequence for CreateSubpictureReply<'d> {
         let (component_order, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (priv_data, block_len): (Cow<'static, [Card32]>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -998,7 +998,7 @@ impl Request for ListSubpictureTypesRequest {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListSubpictureTypesReply;
+    type Reply = ListSubpictureTypesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct ListSubpictureTypesReply<'e> {
@@ -1007,7 +1007,7 @@ pub struct ListSubpictureTypesReply<'e> {
     pub length: u32,
     pub types: Cow<'e, [ImageFormatInfo]>,
 }
-impl<'e> ListSubpictureTypesReply {}
+impl<'e> ListSubpictureTypesReply<'e> {}
 impl<'e> AsByteSequence for ListSubpictureTypesReply<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1037,7 +1037,7 @@ impl<'e> AsByteSequence for ListSubpictureTypesReply<'e> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (types, block_len): (Cow<'static, [ImageFormatInfo]>, usize) =
+        let (types, block_len): (Cow<'_, [ImageFormatInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ImageFormatInfo>());

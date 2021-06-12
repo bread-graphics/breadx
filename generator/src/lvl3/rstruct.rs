@@ -4,7 +4,7 @@ use super::{
     get_mapped_lifetime, lifetime, set_mapped_lifetime,
     syn_util::{derive_attrs, pub_vis, repr_transparent, str_to_exprpath, str_to_ty},
     Asb, Field, List, MaybeString, Method, SizeSumPart, Statement, StructureItem, SumOfSizes,
-    SumStatement, ToSyn, Trait, Type,
+    SumStatement, ToSyn, Trait, TraitSpecifics, Type,
 };
 use crate::lvl2::{
     safe_name, Expression, Field as Lvl2Field, Struct as Lvl2Struct, StructSpecial,
@@ -338,7 +338,33 @@ impl ToSyn for RStruct {
             impl_token: Default::default(),
             generics,
             trait_: None,
-            self_ty: Box::new(str_to_ty(&self.name)),
+            self_ty: Box::new(syn::Type::Path(syn::TypePath {
+                qself: None,
+                path: syn::Path {
+                    leading_colon: None,
+                    segments: iter::once(syn::PathSegment {
+                        ident: syn::Ident::new(&self.name, Span::call_site()),
+                        arguments: syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments {
+                                colon2_token: None,
+                                lt_token: Default::default(),
+                                args: self
+                                    .lifetimes
+                                    .iter()
+                                    .map(|lifetime| {
+                                        syn::GenericArgument::Lifetime(syn::Lifetime {
+                                            apostrophe: Span::call_site(),
+                                            ident: syn::Ident::new(&lifetime, Span::call_site()),
+                                        })
+                                    })
+                                    .collect(),
+                                gt_token: Default::default(),
+                            },
+                        ),
+                    })
+                    .collect(),
+                },
+            })),
             brace_token: Default::default(),
             items: self
                 .methods
@@ -373,10 +399,18 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
     } = s;
     let mut traits = vec![];
 
+    // figure out lifetime stuff
+    let fields: Vec<StructureItem> = fields
+        .into_iter()
+        .map(|field| StructureItem::from_lvl2(field))
+        .collect();
+    let lifetimes: Vec<String> = fields.iter().flat_map(|field| field.lifetimes()).collect();
+    set_mapped_lifetime(&name, lifetimes.len());
+
     // special-dependent stuff
     let other: Option<RStruct> = if is_reply {
         if !fields.iter().any(|f| {
-            if let Lvl2StructureItem::Field(Lvl2Field { name, .. }) = f {
+            if let StructureItem::Field(Field { name, .. }) = f {
                 name == "length"
             } else {
                 false
@@ -393,49 +427,51 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         match special {
             StructSpecial::Regular => None,
             StructSpecial::Event(opcode, _) => {
-                traits.push(Trait::Event(opcode));
+                traits.push(Trait {
+                    specifics: TraitSpecifics::Event(opcode),
+                    lifetimes: lifetimes.clone(),
+                });
                 name = format!("{}Event", name).into_boxed_str();
                 None
             }
             StructSpecial::Error(opcode) => {
-                traits.push(Trait::Error(opcode));
+                traits.push(Trait {
+                    specifics: TraitSpecifics::Error(opcode),
+                    lifetimes: lifetimes.clone(),
+                });
                 name = format!("{}Error", name).into_boxed_str();
                 None
             }
-            StructSpecial::Request(opcode, reply) => {
+            StructSpecial::Request(opcode, mut reply) => {
                 let reply_name = format!("{}Reply", &name);
-                traits.push(Trait::Request(
-                    opcode,
-                    match reply {
-                        Some(ref reply) => Type::from_name(reply_name.clone().into()),
-                        None => Type::Tuple(vec![]),
-                    },
-                    ext_name.map(|s| s.to_string()),
-                    match reply {
-                        Some(ref reply) => !reply.fds.is_empty(),
-                        None => false,
-                    },
-                ));
                 name = format!("{}Request", name).into_boxed_str();
-                match reply {
-                    Some(mut reply) => {
-                        reply.name = reply_name.into_boxed_str();
-                        let (reply, _) = from_lvl2(*reply, true, ext_name);
+                let repl = match reply {
+                    Some(ref mut reply) => {
+                        reply.name = reply_name.clone().into_boxed_str();
+                        let (reply, _) = from_lvl2(*reply.clone(), true, ext_name);
                         Some(reply)
                     }
                     None => None,
-                }
+                };
+                traits.push(Trait {
+                    specifics: TraitSpecifics::Request(
+                        opcode,
+                        match reply {
+                            Some(ref reply) => Type::from_name(reply_name.clone().into()),
+                            None => Type::Tuple(vec![]),
+                        },
+                        ext_name.map(|s| s.to_string()),
+                        match reply {
+                            Some(ref reply) => !reply.fds.is_empty(),
+                            None => false,
+                        },
+                    ),
+                    lifetimes: lifetimes.clone(),
+                });
+                repl
             }
         }
     };
-
-    // figure out lifetime stuff
-    let fields: Vec<StructureItem> = fields
-        .into_iter()
-        .map(|field| StructureItem::from_lvl2(field))
-        .collect();
-    let lifetimes: Vec<String> = fields.iter().flat_map(|field| field.lifetimes()).collect();
-    set_mapped_lifetime(&name, lifetimes.len());
 
     let res = RStruct {
         name,

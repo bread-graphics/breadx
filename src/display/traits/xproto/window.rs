@@ -19,7 +19,7 @@ pub use crate::{
     display::{prelude::*, Connection, Display, DisplayExt, RequestCookie, WindowParameters},
     xid::XidType,
 };
-use alloc::{string::ToString, vec::Vec};
+use alloc::{borrow::Cow, string::ToString, vec::Vec};
 use core::{iter, mem};
 
 #[cfg(feature = "async")]
@@ -168,7 +168,7 @@ impl Window {
         format: PropertyFormat,
         mode: PropMode,
         data: &[T],
-    ) -> ChangePropertyRequest {
+    ) -> ChangePropertyRequest<'static> {
         // convert to a u8 collection
         let mut data_bytes: Vec<u8> = iter::repeat(0)
             .take(mem::size_of::<T>() * data.len())
@@ -187,7 +187,7 @@ impl Window {
             ty: Atom::const_from_xid(property_type as u32),
             format,
             data_len: data.len() as u32,
-            data: data_bytes,
+            data: Cow::Owned(data_bytes),
             ..Default::default()
         }
     }

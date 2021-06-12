@@ -9,7 +9,7 @@
 
 use super::Fd;
 use alloc::{
-    borrow::Cow,
+    borrow::{Cow, ToOwned},
     string::{String, ToString},
     vec::Vec,
 };
@@ -22,7 +22,7 @@ pub(crate) mod prelude {
         AsByteSequence,
     };
     pub use crate::{client_message_data::ClientMessageData, Fd, Request, XidType, XID};
-    pub use alloc::{string::String, vec, vec::Vec};
+    pub use alloc::{borrow::Cow, string::String, vec, vec::Vec};
     pub use core::convert::TryInto;
     pub use cty::c_char;
     pub type Card8 = u8;
@@ -79,10 +79,13 @@ pub trait Event: AsByteSequence {
 /// desired length.
 /// TODO: specialize this somewhat
 #[inline]
-pub(crate) fn vector_from_bytes<T: AsByteSequence>(
+pub(crate) fn vector_from_bytes<'a, T: AsByteSequence>(
     bytes: &[u8],
     len: usize,
-) -> Option<(Cow<'static, [T]>, usize)> {
+) -> Option<(Cow<'a, [T]>, usize)>
+where
+    T: Clone,
+{
     #[cfg(debug_assertions)]
     log::trace!("Deserializing vector of byte length {} from bytes", len);
 
@@ -109,7 +112,7 @@ pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(Cow<'static
 
     // convert bytes into a real string
     match String::from_utf8(chars) {
-        Ok(s) => Some((s, len)),
+        Ok(s) => Some((Cow::Owned(s), len)),
         Err(estr) => {
             log::warn!("Encountered invalid UTF-8, redoing with substitution.");
             let mut bytes = estr.into_bytes();

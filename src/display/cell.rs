@@ -2,9 +2,9 @@
 
 use super::{
     input, output, BasicDisplay, Connection, Display, DisplayBase, PendingItem, RequestInfo,
-    EXT_KEY_SIZE,
+    StaticSetup, EXT_KEY_SIZE,
 };
-use crate::{auto::xproto::Setup, CellXidGenerator, Event, XID};
+use crate::{CellXidGenerator, Event, XID};
 use alloc::collections::VecDeque;
 use core::{
     cell::{Cell, RefCell},
@@ -58,7 +58,7 @@ pub struct CellDisplay<Conn> {
     io_lock: Cell<bool>,
 
     // the setup received from the server
-    setup: Setup,
+    setup: StaticSetup,
 
     // xid generator
     xid: CellXidGenerator,
@@ -189,7 +189,7 @@ impl<Conn> CellDisplay<Conn> {
 
 impl<Conn> DisplayBase for CellDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
     #[inline]
@@ -398,7 +398,7 @@ impl<Connect: AsyncConnection + Unpin> AsyncDisplay for CellDisplay<Connect> {
 
 impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
     #[inline]

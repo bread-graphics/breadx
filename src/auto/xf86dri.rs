@@ -301,7 +301,7 @@ impl Request for OpenConnectionRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XFree86-DRI");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = OpenConnectionReply;
+    type Reply = OpenConnectionReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct OpenConnectionReply<'a> {
@@ -312,7 +312,7 @@ pub struct OpenConnectionReply<'a> {
     pub sarea_handle_high: Card32,
     pub bus_id: Cow<'a, str>,
 }
-impl<'a> OpenConnectionReply {}
+impl<'a> OpenConnectionReply<'a> {}
 impl<'a> AsByteSequence for OpenConnectionReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -348,7 +348,7 @@ impl<'a> AsByteSequence for OpenConnectionReply<'a> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (bus_id, block_len): (Cow<'static, str>, usize) =
+        let (bus_id, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -475,7 +475,7 @@ impl Request for GetClientDriverNameRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("XFree86-DRI");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetClientDriverNameReply;
+    type Reply = GetClientDriverNameReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetClientDriverNameReply<'b> {
@@ -487,7 +487,7 @@ pub struct GetClientDriverNameReply<'b> {
     pub client_driver_patch_version: Card32,
     pub client_driver_name: Cow<'b, str>,
 }
-impl<'b> GetClientDriverNameReply {}
+impl<'b> GetClientDriverNameReply<'b> {}
 impl<'b> AsByteSequence for GetClientDriverNameReply<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -535,7 +535,7 @@ impl<'b> AsByteSequence for GetClientDriverNameReply<'b> {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (client_driver_name, block_len): (Cow<'static, str>, usize) =
+        let (client_driver_name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -945,7 +945,7 @@ impl Request for GetDrawableInfoRequest {
     const OPCODE: u8 = 9;
     const EXTENSION: Option<&'static str> = Some("XFree86-DRI");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetDrawableInfoReply;
+    type Reply = GetDrawableInfoReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDrawableInfoReply<'c, 'd> {
@@ -963,7 +963,7 @@ pub struct GetDrawableInfoReply<'c, 'd> {
     pub clip_rects: Cow<'c, [DrmClipRect]>,
     pub back_clip_rects: Cow<'d, [DrmClipRect]>,
 }
-impl<'c, 'd> GetDrawableInfoReply {}
+impl<'c, 'd> GetDrawableInfoReply<'c, 'd> {}
 impl<'c, 'd> AsByteSequence for GetDrawableInfoReply<'c, 'd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1021,11 +1021,11 @@ impl<'c, 'd> AsByteSequence for GetDrawableInfoReply<'c, 'd> {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (clip_rects, block_len): (Cow<'static, [DrmClipRect]>, usize) =
+        let (clip_rects, block_len): (Cow<'_, [DrmClipRect]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<DrmClipRect>());
-        let (back_clip_rects, block_len): (Cow<'static, [DrmClipRect]>, usize) =
+        let (back_clip_rects, block_len): (Cow<'_, [DrmClipRect]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<DrmClipRect>());
@@ -1122,7 +1122,7 @@ impl Request for GetDeviceInfoRequest {
     const OPCODE: u8 = 10;
     const EXTENSION: Option<&'static str> = Some("XFree86-DRI");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetDeviceInfoReply;
+    type Reply = GetDeviceInfoReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct GetDeviceInfoReply<'e> {
@@ -1136,7 +1136,7 @@ pub struct GetDeviceInfoReply<'e> {
     pub framebuffer_stride: Card32,
     pub device_private: Cow<'e, [Card32]>,
 }
-impl<'e> GetDeviceInfoReply {}
+impl<'e> GetDeviceInfoReply<'e> {}
 impl<'e> AsByteSequence for GetDeviceInfoReply<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
@@ -1180,7 +1180,7 @@ impl<'e> AsByteSequence for GetDeviceInfoReply<'e> {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (device_private, block_len): (Cow<'static, [Card32]>, usize) =
+        let (device_private, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
