@@ -18370,7 +18370,7 @@ impl<'ff, 'gf, 'hf> crate::auto::Event for RawTouchBeginEvent<'ff, 'gf, 'hf> {
     const OPCODE: u8 = 22;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawTouchEndEvent<'if, 'jf, 'kf> {
+pub struct RawTouchEndEvent<'jf, 'kf, 'lf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18378,12 +18378,12 @@ pub struct RawTouchEndEvent<'if, 'jf, 'kf> {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: TouchEventFlags,
-    pub valuator_mask: Cow<'if, [Card32]>,
-    pub axisvalues: Cow<'jf, [Fp3232]>,
-    pub axisvalues_raw: Cow<'kf, [Fp3232]>,
+    pub valuator_mask: Cow<'jf, [Card32]>,
+    pub axisvalues: Cow<'kf, [Fp3232]>,
+    pub axisvalues_raw: Cow<'lf, [Fp3232]>,
 }
-impl<'if, 'jf, 'kf> RawTouchEndEvent<'if, 'jf, 'kf> {}
-impl<'if, 'jf, 'kf> AsByteSequence for RawTouchEndEvent<'if, 'jf, 'kf> {
+impl<'jf, 'kf, 'lf> RawTouchEndEvent<'jf, 'kf, 'lf> {}
+impl<'jf, 'kf, 'lf> AsByteSequence for RawTouchEndEvent<'jf, 'kf, 'lf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18500,11 +18500,11 @@ impl<'if, 'jf, 'kf> AsByteSequence for RawTouchEndEvent<'if, 'jf, 'kf> {
             }
     }
 }
-impl<'if, 'jf, 'kf> crate::auto::Event for RawTouchEndEvent<'if, 'jf, 'kf> {
+impl<'jf, 'kf, 'lf> crate::auto::Event for RawTouchEndEvent<'jf, 'kf, 'lf> {
     const OPCODE: u8 = 24;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawTouchUpdateEvent<'lf, 'mf, 'nf> {
+pub struct RawTouchUpdateEvent<'mf, 'nf, 'of> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18512,12 +18512,12 @@ pub struct RawTouchUpdateEvent<'lf, 'mf, 'nf> {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: TouchEventFlags,
-    pub valuator_mask: Cow<'lf, [Card32]>,
-    pub axisvalues: Cow<'mf, [Fp3232]>,
-    pub axisvalues_raw: Cow<'nf, [Fp3232]>,
+    pub valuator_mask: Cow<'mf, [Card32]>,
+    pub axisvalues: Cow<'nf, [Fp3232]>,
+    pub axisvalues_raw: Cow<'of, [Fp3232]>,
 }
-impl<'lf, 'mf, 'nf> RawTouchUpdateEvent<'lf, 'mf, 'nf> {}
-impl<'lf, 'mf, 'nf> AsByteSequence for RawTouchUpdateEvent<'lf, 'mf, 'nf> {
+impl<'mf, 'nf, 'of> RawTouchUpdateEvent<'mf, 'nf, 'of> {}
+impl<'mf, 'nf, 'of> AsByteSequence for RawTouchUpdateEvent<'mf, 'nf, 'of> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18634,11 +18634,11 @@ impl<'lf, 'mf, 'nf> AsByteSequence for RawTouchUpdateEvent<'lf, 'mf, 'nf> {
             }
     }
 }
-impl<'lf, 'mf, 'nf> crate::auto::Event for RawTouchUpdateEvent<'lf, 'mf, 'nf> {
+impl<'mf, 'nf, 'of> crate::auto::Event for RawTouchUpdateEvent<'mf, 'nf, 'of> {
     const OPCODE: u8 = 23;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchBeginEvent<'of, 'pf, 'qf> {
+pub struct TouchBeginEvent<'pf, 'qf, 'rf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18655,12 +18655,12 @@ pub struct TouchBeginEvent<'of, 'pf, 'qf> {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Cow<'of, [Card32]>,
-    pub valuator_mask: Cow<'pf, [Card32]>,
-    pub axisvalues: Cow<'qf, [Fp3232]>,
+    pub button_mask: Cow<'pf, [Card32]>,
+    pub valuator_mask: Cow<'qf, [Card32]>,
+    pub axisvalues: Cow<'rf, [Fp3232]>,
 }
-impl<'of, 'pf, 'qf> TouchBeginEvent<'of, 'pf, 'qf> {}
-impl<'of, 'pf, 'qf> AsByteSequence for TouchBeginEvent<'of, 'pf, 'qf> {
+impl<'pf, 'qf, 'rf> TouchBeginEvent<'pf, 'qf, 'rf> {}
+impl<'pf, 'qf, 'rf> AsByteSequence for TouchBeginEvent<'pf, 'qf, 'rf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18818,11 +18818,11 @@ impl<'of, 'pf, 'qf> AsByteSequence for TouchBeginEvent<'of, 'pf, 'qf> {
             }
     }
 }
-impl<'of, 'pf, 'qf> crate::auto::Event for TouchBeginEvent<'of, 'pf, 'qf> {
+impl<'pf, 'qf, 'rf> crate::auto::Event for TouchBeginEvent<'pf, 'qf, 'rf> {
     const OPCODE: u8 = 18;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchEndEvent<'rf, 'sf, 'tf> {
+pub struct TouchEndEvent<'sf, 'tf, 'uf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18839,12 +18839,12 @@ pub struct TouchEndEvent<'rf, 'sf, 'tf> {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Cow<'rf, [Card32]>,
-    pub valuator_mask: Cow<'sf, [Card32]>,
-    pub axisvalues: Cow<'tf, [Fp3232]>,
+    pub button_mask: Cow<'sf, [Card32]>,
+    pub valuator_mask: Cow<'tf, [Card32]>,
+    pub axisvalues: Cow<'uf, [Fp3232]>,
 }
-impl<'rf, 'sf, 'tf> TouchEndEvent<'rf, 'sf, 'tf> {}
-impl<'rf, 'sf, 'tf> AsByteSequence for TouchEndEvent<'rf, 'sf, 'tf> {
+impl<'sf, 'tf, 'uf> TouchEndEvent<'sf, 'tf, 'uf> {}
+impl<'sf, 'tf, 'uf> AsByteSequence for TouchEndEvent<'sf, 'tf, 'uf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -19002,7 +19002,7 @@ impl<'rf, 'sf, 'tf> AsByteSequence for TouchEndEvent<'rf, 'sf, 'tf> {
             }
     }
 }
-impl<'rf, 'sf, 'tf> crate::auto::Event for TouchEndEvent<'rf, 'sf, 'tf> {
+impl<'sf, 'tf, 'uf> crate::auto::Event for TouchEndEvent<'sf, 'tf, 'uf> {
     const OPCODE: u8 = 20;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
@@ -19100,7 +19100,7 @@ impl crate::auto::Event for TouchOwnershipEvent {
     const OPCODE: u8 = 21;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchUpdateEvent<'uf, 'vf, 'wf> {
+pub struct TouchUpdateEvent<'vf, 'wf, 'xf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -19117,12 +19117,12 @@ pub struct TouchUpdateEvent<'uf, 'vf, 'wf> {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Cow<'uf, [Card32]>,
-    pub valuator_mask: Cow<'vf, [Card32]>,
-    pub axisvalues: Cow<'wf, [Fp3232]>,
+    pub button_mask: Cow<'vf, [Card32]>,
+    pub valuator_mask: Cow<'wf, [Card32]>,
+    pub axisvalues: Cow<'xf, [Fp3232]>,
 }
-impl<'uf, 'vf, 'wf> TouchUpdateEvent<'uf, 'vf, 'wf> {}
-impl<'uf, 'vf, 'wf> AsByteSequence for TouchUpdateEvent<'uf, 'vf, 'wf> {
+impl<'vf, 'wf, 'xf> TouchUpdateEvent<'vf, 'wf, 'xf> {}
+impl<'vf, 'wf, 'xf> AsByteSequence for TouchUpdateEvent<'vf, 'wf, 'xf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -19280,6 +19280,6 @@ impl<'uf, 'vf, 'wf> AsByteSequence for TouchUpdateEvent<'uf, 'vf, 'wf> {
             }
     }
 }
-impl<'uf, 'vf, 'wf> crate::auto::Event for TouchUpdateEvent<'uf, 'vf, 'wf> {
+impl<'vf, 'wf, 'xf> crate::auto::Event for TouchUpdateEvent<'vf, 'wf, 'xf> {
     const OPCODE: u8 = 19;
 }

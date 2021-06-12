@@ -59,20 +59,25 @@ impl Iterator for LifetimeIter {
 
     #[inline]
     fn next(&mut self) -> Option<String> {
-        let mut next = self.inner;
-        self.inner += 1;
-
-        let mut result = String::new();
         loop {
-            let modulo = next % 26;
-            result.push_str(ALPHABET[modulo]);
-            next /= 26;
+            let mut next = self.inner;
+            self.inner += 1;
 
-            if next == 0 {
-                break;
+            let mut result = String::new();
+            loop {
+                let modulo = next % 26;
+                result.push_str(ALPHABET[modulo]);
+                next /= 26;
+
+                if next == 0 {
+                    break;
+                }
             }
+            if result == "if" {
+                continue;
+            }
+            return Some(result);
         }
-        Some(result)
     }
 }
 

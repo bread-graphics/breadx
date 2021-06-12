@@ -88,8 +88,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Stage 5: Convert to string and save to file
     let tokens = lvl4_file.into_token_stream();
     let output_pre_regex = format!("{}", tokens);
+
+    // last minute modifications
     let re = Regex::new(r"\bBool\b").unwrap();
-    let output = re.replace_all(&output_pre_regex, "bool");
+    let output_pr2 = re.replace_all(&output_pre_regex, "bool");
+
+    let re = Regex::new(r"\bStr<(.*)>").unwrap();
+    //let output_pr3 = re.replace_all(&output_pr2, 
+
     write!(
         outfile,
         "// This file was automatically generated.
