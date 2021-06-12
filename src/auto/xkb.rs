@@ -1405,13 +1405,13 @@ impl AsByteSequence for KeyAlias {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CountedString16 {
+pub struct CountedString16<'a, 'b> {
     pub length: Card16,
-    pub string: String,
-    pub alignment_pad: Vec<Void>,
+    pub string: Cow<'a, str>,
+    pub alignment_pad: Cow<'b, [Void]>,
 }
-impl CountedString16 {}
-impl AsByteSequence for CountedString16 {
+impl<'a, 'b> CountedString16 {}
+impl<'a, 'b> AsByteSequence for CountedString16<'a, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1430,11 +1430,11 @@ impl AsByteSequence for CountedString16 {
         log::trace!("Deserializing CountedString16 from byte buffer");
         let (length, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (String, usize) =
+        let (string, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        let (alignment_pad, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (alignment_pad, block_len): (Cow<'static, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((((length as usize) + (5)) & (!(3))) - ((length as usize) + (2))) as usize,
         )?;
@@ -1522,18 +1522,18 @@ impl AsByteSequence for KtMapEntry {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct KeyType {
+pub struct KeyType<'c, 'd> {
     pub mods_mask: ModMask,
     pub mods_mods: ModMask,
     pub mods_vmods: VMod,
     pub num_levels: Card8,
     pub n_map_entries: Card8,
     pub has_preserve: bool,
-    pub map: Vec<KtMapEntry>,
-    pub preserve: Vec<ModDef>,
+    pub map: Cow<'c, [KtMapEntry]>,
+    pub preserve: Cow<'d, [ModDef]>,
 }
-impl KeyType {}
-impl AsByteSequence for KeyType {
+impl<'c, 'd> KeyType {}
+impl<'c, 'd> AsByteSequence for KeyType<'c, 'd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1569,11 +1569,11 @@ impl AsByteSequence for KeyType {
         let (has_preserve, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (map, block_len): (Vec<KtMapEntry>, usize) =
+        let (map, block_len): (Cow<'static, [KtMapEntry]>, usize) =
             vector_from_bytes(&bytes[index..], (n_map_entries as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KtMapEntry>());
-        let (preserve, block_len): (Vec<ModDef>, usize) = vector_from_bytes(
+        let (preserve, block_len): (Cow<'static, [ModDef]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((has_preserve as usize) * (n_map_entries as usize)) as usize,
         )?;
@@ -1615,14 +1615,14 @@ impl AsByteSequence for KeyType {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct KeySymMap {
+pub struct KeySymMap<'e> {
     pub kt_index: [Card8; 4],
     pub group_info: Card8,
     pub width: Card8,
-    pub syms: Vec<Keysym>,
+    pub syms: Cow<'e, [Keysym]>,
 }
-impl KeySymMap {}
-impl AsByteSequence for KeySymMap {
+impl<'e> KeySymMap {}
+impl<'e> AsByteSequence for KeySymMap<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1647,7 +1647,7 @@ impl AsByteSequence for KeySymMap {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (syms, block_len): (Vec<Keysym>, usize) =
+        let (syms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -2194,18 +2194,18 @@ impl AsByteSequence for KtSetMapEntry {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetKeyType {
+pub struct SetKeyType<'f, 'g> {
     pub mask: ModMask,
     pub real_mods: ModMask,
     pub virtual_mods: VMod,
     pub num_levels: Card8,
     pub n_map_entries: Card8,
     pub preserve: bool,
-    pub entries: Vec<KtSetMapEntry>,
-    pub preserve_entries: Vec<KtSetMapEntry>,
+    pub entries: Cow<'f, [KtSetMapEntry]>,
+    pub preserve_entries: Cow<'g, [KtSetMapEntry]>,
 }
-impl SetKeyType {}
-impl AsByteSequence for SetKeyType {
+impl<'f, 'g> SetKeyType {}
+impl<'f, 'g> AsByteSequence for SetKeyType<'f, 'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2241,14 +2241,15 @@ impl AsByteSequence for SetKeyType {
         let (preserve, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (entries, block_len): (Vec<KtSetMapEntry>, usize) =
+        let (entries, block_len): (Cow<'static, [KtSetMapEntry]>, usize) =
             vector_from_bytes(&bytes[index..], (n_map_entries as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KtSetMapEntry>());
-        let (preserve_entries, block_len): (Vec<KtSetMapEntry>, usize) = vector_from_bytes(
-            &bytes[index..],
-            ((preserve as usize) * (n_map_entries as usize)) as usize,
-        )?;
+        let (preserve_entries, block_len): (Cow<'static, [KtSetMapEntry]>, usize) =
+            vector_from_bytes(
+                &bytes[index..],
+                ((preserve as usize) * (n_map_entries as usize)) as usize,
+            )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KtSetMapEntry>());
         Some((
@@ -2288,12 +2289,12 @@ impl AsByteSequence for SetKeyType {
 }
 pub type String8 = Char;
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Outline {
+pub struct Outline<'h> {
     pub corner_radius: Card8,
-    pub points: Vec<Point>,
+    pub points: Cow<'h, [Point]>,
 }
-impl Outline {}
-impl AsByteSequence for Outline {
+impl<'h> Outline {}
+impl<'h> AsByteSequence for Outline<'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2314,7 +2315,7 @@ impl AsByteSequence for Outline {
         let (corner_radius, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (points, block_len): (Vec<Point>, usize) =
+        let (points, block_len): (Cow<'static, [Point]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Point>());
@@ -2336,14 +2337,14 @@ impl AsByteSequence for Outline {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Shape {
+pub struct Shape<'j, 'i> {
     pub name: Atom,
     pub primary_ndx: Card8,
     pub approx_ndx: Card8,
-    pub outlines: Vec<Outline>,
+    pub outlines: Cow<'j, [Outline<'i>]>,
 }
-impl Shape {}
-impl AsByteSequence for Shape {
+impl<'j, 'i> Shape {}
+impl<'j, 'i> AsByteSequence for Shape<'j, 'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2354,7 +2355,7 @@ impl AsByteSequence for Shape {
         index += 1;
         let block_len: usize = vector_as_bytes(&self.outlines, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Outline>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Outline<'i>>());
         index
     }
     #[inline]
@@ -2370,10 +2371,10 @@ impl AsByteSequence for Shape {
         let (approx_ndx, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (outlines, block_len): (Vec<Outline>, usize) =
+        let (outlines, block_len): (Cow<'static, [Outline<'i>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Outline>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Outline<'i>>());
         Some((
             Shape {
                 name: name,
@@ -2393,7 +2394,7 @@ impl AsByteSequence for Shape {
             + 1
             + {
                 let block_len: usize = self.outlines.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Outline>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Outline<'i>>());
                 block_len + pad
             }
     }
@@ -2479,12 +2480,12 @@ impl AsByteSequence for OverlayKey {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct OverlayRow {
+pub struct OverlayRow<'k> {
     pub row_under: Card8,
-    pub keys: Vec<OverlayKey>,
+    pub keys: Cow<'k, [OverlayKey]>,
 }
-impl OverlayRow {}
-impl AsByteSequence for OverlayRow {
+impl<'k> OverlayRow {}
+impl<'k> AsByteSequence for OverlayRow<'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2505,7 +2506,7 @@ impl AsByteSequence for OverlayRow {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (keys, block_len): (Vec<OverlayKey>, usize) =
+        let (keys, block_len): (Cow<'static, [OverlayKey]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<OverlayKey>());
@@ -2527,12 +2528,12 @@ impl AsByteSequence for OverlayRow {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Overlay {
+pub struct Overlay<'m, 'l> {
     pub name: Atom,
-    pub rows: Vec<OverlayRow>,
+    pub rows: Cow<'m, [OverlayRow<'l>]>,
 }
-impl Overlay {}
-impl AsByteSequence for Overlay {
+impl<'m, 'l> Overlay {}
+impl<'m, 'l> AsByteSequence for Overlay<'m, 'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2541,7 +2542,7 @@ impl AsByteSequence for Overlay {
         index += 3;
         let block_len: usize = vector_as_bytes(&self.rows, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<OverlayRow>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<OverlayRow<'l>>());
         index
     }
     #[inline]
@@ -2553,10 +2554,10 @@ impl AsByteSequence for Overlay {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
-        let (rows, block_len): (Vec<OverlayRow>, usize) =
+        let (rows, block_len): (Cow<'static, [OverlayRow<'l>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<OverlayRow>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<OverlayRow<'l>>());
         Some((
             Overlay {
                 name: name,
@@ -2569,20 +2570,20 @@ impl AsByteSequence for Overlay {
     fn size(&self) -> usize {
         self.name.size() + ::core::mem::size_of::<Card8>() + 3 + {
             let block_len: usize = self.rows.iter().map(|i| i.size()).sum();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<OverlayRow>());
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<OverlayRow<'l>>());
             block_len + pad
         }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Row {
+pub struct Row<'n> {
     pub top: Int16,
     pub left: Int16,
     pub vertical: bool,
-    pub keys: Vec<Key>,
+    pub keys: Cow<'n, [Key]>,
 }
-impl Row {}
-impl AsByteSequence for Row {
+impl<'n> Row {}
+impl<'n> AsByteSequence for Row<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2609,7 +2610,7 @@ impl AsByteSequence for Row {
         let (vertical, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (keys, block_len): (Vec<Key>, usize) =
+        let (keys, block_len): (Cow<'static, [Key]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Key>());
@@ -2638,13 +2639,13 @@ impl AsByteSequence for Row {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Listing {
+pub struct Listing<'o> {
     pub flags: Card16,
     pub length: Card16,
-    pub string: Vec<String8>,
+    pub string: Cow<'o, [String8]>,
 }
-impl Listing {}
-impl AsByteSequence for Listing {
+impl<'o> Listing {}
+impl<'o> AsByteSequence for Listing<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2663,7 +2664,7 @@ impl AsByteSequence for Listing {
         index += sz;
         let (length, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (Vec<String8>, usize) =
+        let (string, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 2);
@@ -2686,18 +2687,18 @@ impl AsByteSequence for Listing {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceLedInfo {
+pub struct DeviceLedInfo<'p, 'q> {
     pub led_class: LedClass,
     pub led_id: IdSpec,
     pub names_present: Card32,
     pub maps_present: Card32,
     pub phys_indicators: Card32,
     pub state: Card32,
-    pub names: Vec<Atom>,
-    pub maps: Vec<IndicatorMap>,
+    pub names: Cow<'p, [Atom]>,
+    pub maps: Cow<'q, [IndicatorMap]>,
 }
-impl DeviceLedInfo {}
-impl AsByteSequence for DeviceLedInfo {
+impl<'p, 'q> DeviceLedInfo {}
+impl<'p, 'q> AsByteSequence for DeviceLedInfo<'p, 'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2731,11 +2732,11 @@ impl AsByteSequence for DeviceLedInfo {
         index += sz;
         let (state, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (names, block_len): (Vec<Atom>, usize) =
+        let (names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((names_present).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (maps, block_len): (Vec<IndicatorMap>, usize) =
+        let (maps, block_len): (Cow<'static, [IndicatorMap]>, usize) =
             vector_from_bytes(&bytes[index..], ((maps_present).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
@@ -8060,7 +8061,7 @@ impl Request for GetMapRequest {
     type Reply = GetMapReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetMapReply {
+pub struct GetMapReply<'t, 'r, 's, 'v, 'u, 'w, 'x, 'y, 'z, 'ab, 'bb, 'cb> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -8082,18 +8083,20 @@ pub struct GetMapReply {
     pub first_v_mod_map_key: Keycode,
     pub n_v_mod_map_keys: Card8,
     pub virtual_mods: VMod,
-    pub types_rtrn: Vec<KeyType>,
-    pub syms_rtrn: Vec<KeySymMap>,
-    pub acts_rtrn_count: Vec<Card8>,
-    pub acts_rtrn_acts: Vec<Action>,
-    pub behaviors_rtrn: Vec<SetBehavior>,
-    pub vmods_rtrn: Vec<Card8>,
-    pub explicit_rtrn: Vec<SetExplicit>,
-    pub modmap_rtrn: Vec<KeyModMap>,
-    pub vmodmap_rtrn: Vec<KeyVModMap>,
+    pub types_rtrn: Cow<'t, [KeyType<'r, 's>]>,
+    pub syms_rtrn: Cow<'v, [KeySymMap<'u>]>,
+    pub acts_rtrn_count: Cow<'w, [Card8]>,
+    pub acts_rtrn_acts: Cow<'x, [Action]>,
+    pub behaviors_rtrn: Cow<'y, [SetBehavior]>,
+    pub vmods_rtrn: Cow<'z, [Card8]>,
+    pub explicit_rtrn: Cow<'ab, [SetExplicit]>,
+    pub modmap_rtrn: Cow<'bb, [KeyModMap]>,
+    pub vmodmap_rtrn: Cow<'cb, [KeyVModMap]>,
 }
-impl GetMapReply {}
-impl AsByteSequence for GetMapReply {
+impl<'t, 'r, 's, 'v, 'u, 'w, 'x, 'y, 'z, 'ab, 'bb, 'cb> GetMapReply {}
+impl<'t, 'r, 's, 'v, 'u, 'w, 'x, 'y, 'z, 'ab, 'bb, 'cb> AsByteSequence
+    for GetMapReply<'t, 'r, 's, 'v, 'u, 'w, 'x, 'y, 'z, 'ab, 'bb, 'cb>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8130,10 +8133,10 @@ impl AsByteSequence for GetMapReply {
         index += self.virtual_mods.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.types_rtrn, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType<'r, 's>>());
         let block_len: usize = vector_as_bytes(&self.syms_rtrn, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'u>>());
         let block_len: usize = vector_as_bytes(&self.acts_rtrn_count, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -8222,40 +8225,40 @@ impl AsByteSequence for GetMapReply {
         index += 1;
         let (virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (types_rtrn, block_len): (Vec<KeyType>, usize) =
+        let (types_rtrn, block_len): (Cow<'static, [KeyType<'r, 's>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
-        let (syms_rtrn, block_len): (Vec<KeySymMap>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType<'r, 's>>());
+        let (syms_rtrn, block_len): (Cow<'static, [KeySymMap<'u>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
-        let (acts_rtrn_count, block_len): (Vec<Card8>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'u>>());
+        let (acts_rtrn_count, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (acts_rtrn_acts, block_len): (Vec<Action>, usize) =
+        let (acts_rtrn_acts, block_len): (Cow<'static, [Action]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
-        let (behaviors_rtrn, block_len): (Vec<SetBehavior>, usize) =
+        let (behaviors_rtrn, block_len): (Cow<'static, [SetBehavior]>, usize) =
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods_rtrn, block_len): (Vec<Card8>, usize) =
+        let (vmods_rtrn, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
-        let (explicit_rtrn, block_len): (Vec<SetExplicit>, usize) =
+        let (explicit_rtrn, block_len): (Cow<'static, [SetExplicit]>, usize) =
             vector_from_bytes(&bytes[index..], len5 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetExplicit>());
-        let (modmap_rtrn, block_len): (Vec<KeyModMap>, usize) =
+        let (modmap_rtrn, block_len): (Cow<'static, [KeyModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len6 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyModMap>());
-        let (vmodmap_rtrn, block_len): (Vec<KeyVModMap>, usize) =
+        let (vmodmap_rtrn, block_len): (Cow<'static, [KeyVModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len7 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyVModMap>());
@@ -8330,12 +8333,12 @@ impl AsByteSequence for GetMapReply {
             + self.virtual_mods.size()
             + {
                 let block_len: usize = self.types_rtrn.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeyType<'r, 's>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.syms_rtrn.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'u>>());
                 block_len + pad
             }
             + {
@@ -8377,7 +8380,7 @@ impl AsByteSequence for GetMapReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetMapRequest {
+pub struct SetMapRequest<'fb, 'db, 'eb, 'hb, 'gb, 'ib, 'jb, 'kb, 'lb, 'mb, 'nb, 'ob> {
     pub req_type: u8,
     pub length: u16,
     pub device_spec: DeviceSpec,
@@ -8398,18 +8401,20 @@ pub struct SetMapRequest {
     pub first_v_mod_map_key: Keycode,
     pub n_v_mod_map_keys: Card8,
     pub virtual_mods: VMod,
-    pub types: Vec<SetKeyType>,
-    pub syms: Vec<KeySymMap>,
-    pub actions_count: Vec<Card8>,
-    pub actions: Vec<Action>,
-    pub behaviors: Vec<SetBehavior>,
-    pub vmods: Vec<Card8>,
-    pub explicit: Vec<SetExplicit>,
-    pub modmap: Vec<KeyModMap>,
-    pub vmodmap: Vec<KeyVModMap>,
+    pub types: Cow<'fb, [SetKeyType<'db, 'eb>]>,
+    pub syms: Cow<'hb, [KeySymMap<'gb>]>,
+    pub actions_count: Cow<'ib, [Card8]>,
+    pub actions: Cow<'jb, [Action]>,
+    pub behaviors: Cow<'kb, [SetBehavior]>,
+    pub vmods: Cow<'lb, [Card8]>,
+    pub explicit: Cow<'mb, [SetExplicit]>,
+    pub modmap: Cow<'nb, [KeyModMap]>,
+    pub vmodmap: Cow<'ob, [KeyVModMap]>,
 }
-impl SetMapRequest {}
-impl AsByteSequence for SetMapRequest {
+impl<'fb, 'db, 'eb, 'hb, 'gb, 'ib, 'jb, 'kb, 'lb, 'mb, 'nb, 'ob> SetMapRequest {}
+impl<'fb, 'db, 'eb, 'hb, 'gb, 'ib, 'jb, 'kb, 'lb, 'mb, 'nb, 'ob> AsByteSequence
+    for SetMapRequest<'fb, 'db, 'eb, 'hb, 'gb, 'ib, 'jb, 'kb, 'lb, 'mb, 'nb, 'ob>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8444,10 +8449,10 @@ impl AsByteSequence for SetMapRequest {
         index += self.virtual_mods.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.types, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<SetKeyType>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<SetKeyType<'db, 'eb>>());
         let block_len: usize = vector_as_bytes(&self.syms, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'gb>>());
         let block_len: usize = vector_as_bytes(&self.actions_count, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -8533,40 +8538,40 @@ impl AsByteSequence for SetMapRequest {
         index += sz;
         let (virtual_mods, sz): (VMod, usize) = <VMod>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (types, block_len): (Vec<SetKeyType>, usize) =
+        let (types, block_len): (Cow<'static, [SetKeyType<'db, 'eb>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<SetKeyType>());
-        let (syms, block_len): (Vec<KeySymMap>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<SetKeyType<'db, 'eb>>());
+        let (syms, block_len): (Cow<'static, [KeySymMap<'gb>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
-        let (actions_count, block_len): (Vec<Card8>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'gb>>());
+        let (actions_count, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (actions, block_len): (Vec<Action>, usize) =
+        let (actions, block_len): (Cow<'static, [Action]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
-        let (behaviors, block_len): (Vec<SetBehavior>, usize) =
+        let (behaviors, block_len): (Cow<'static, [SetBehavior]>, usize) =
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods, block_len): (Vec<Card8>, usize) =
+        let (vmods, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
-        let (explicit, block_len): (Vec<SetExplicit>, usize) =
+        let (explicit, block_len): (Cow<'static, [SetExplicit]>, usize) =
             vector_from_bytes(&bytes[index..], len5 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetExplicit>());
-        let (modmap, block_len): (Vec<KeyModMap>, usize) =
+        let (modmap, block_len): (Cow<'static, [KeyModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len6 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyModMap>());
-        let (vmodmap, block_len): (Vec<KeyVModMap>, usize) =
+        let (vmodmap, block_len): (Cow<'static, [KeyVModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len7 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyVModMap>());
@@ -8638,12 +8643,13 @@ impl AsByteSequence for SetMapRequest {
             + self.virtual_mods.size()
             + {
                 let block_len: usize = self.types.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<SetKeyType>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<SetKeyType<'db, 'eb>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.syms.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'gb>>());
                 block_len + pad
             }
             + {
@@ -8866,7 +8872,7 @@ impl Request for GetCompatMapRequest {
     type Reply = GetCompatMapReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCompatMapReply {
+pub struct GetCompatMapReply<'pb, 'qb> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -8874,11 +8880,11 @@ pub struct GetCompatMapReply {
     pub groups_rtrn: SetOfGroup,
     pub first_si_rtrn: Card16,
     pub n_total_si: Card16,
-    pub si_rtrn: Vec<SymInterpret>,
-    pub group_rtrn: Vec<ModDef>,
+    pub si_rtrn: Cow<'pb, [SymInterpret]>,
+    pub group_rtrn: Cow<'qb, [ModDef]>,
 }
-impl GetCompatMapReply {}
-impl AsByteSequence for GetCompatMapReply {
+impl<'pb, 'qb> GetCompatMapReply {}
+impl<'pb, 'qb> AsByteSequence for GetCompatMapReply<'pb, 'qb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8922,11 +8928,11 @@ impl AsByteSequence for GetCompatMapReply {
         let (n_total_si, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (si_rtrn, block_len): (Vec<SymInterpret>, usize) =
+        let (si_rtrn, block_len): (Cow<'static, [SymInterpret]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
-        let (group_rtrn, block_len): (Vec<ModDef>, usize) =
+        let (group_rtrn, block_len): (Cow<'static, [ModDef]>, usize) =
             vector_from_bytes(&bytes[index..], ((groups_rtrn).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
@@ -8970,7 +8976,7 @@ impl AsByteSequence for GetCompatMapReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetCompatMapRequest {
+pub struct SetCompatMapRequest<'rb, 'sb> {
     pub req_type: u8,
     pub length: u16,
     pub device_spec: DeviceSpec,
@@ -8978,11 +8984,11 @@ pub struct SetCompatMapRequest {
     pub truncate_si: bool,
     pub groups: SetOfGroup,
     pub first_si: Card16,
-    pub si: Vec<SymInterpret>,
-    pub group_maps: Vec<ModDef>,
+    pub si: Cow<'rb, [SymInterpret]>,
+    pub group_maps: Cow<'sb, [ModDef]>,
 }
-impl SetCompatMapRequest {}
-impl AsByteSequence for SetCompatMapRequest {
+impl<'rb, 'sb> SetCompatMapRequest {}
+impl<'rb, 'sb> AsByteSequence for SetCompatMapRequest<'rb, 'sb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9028,11 +9034,11 @@ impl AsByteSequence for SetCompatMapRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (si, block_len): (Vec<SymInterpret>, usize) =
+        let (si, block_len): (Cow<'static, [SymInterpret]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
-        let (group_maps, block_len): (Vec<ModDef>, usize) =
+        let (group_maps, block_len): (Cow<'static, [ModDef]>, usize) =
             vector_from_bytes(&bytes[index..], ((groups).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
@@ -9250,7 +9256,7 @@ impl Request for GetIndicatorMapRequest {
     type Reply = GetIndicatorMapReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetIndicatorMapReply {
+pub struct GetIndicatorMapReply<'tb> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -9258,10 +9264,10 @@ pub struct GetIndicatorMapReply {
     pub which: Card32,
     pub real_indicators: Card32,
     pub n_indicators: Card8,
-    pub maps: Vec<IndicatorMap>,
+    pub maps: Cow<'tb, [IndicatorMap]>,
 }
-impl GetIndicatorMapReply {}
-impl AsByteSequence for GetIndicatorMapReply {
+impl<'tb> GetIndicatorMapReply {}
+impl<'tb> AsByteSequence for GetIndicatorMapReply<'tb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9297,7 +9303,7 @@ impl AsByteSequence for GetIndicatorMapReply {
         let (n_indicators, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 15;
-        let (maps, block_len): (Vec<IndicatorMap>, usize) =
+        let (maps, block_len): (Cow<'static, [IndicatorMap]>, usize) =
             vector_from_bytes(&bytes[index..], ((which).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
@@ -9333,15 +9339,15 @@ impl AsByteSequence for GetIndicatorMapReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetIndicatorMapRequest {
+pub struct SetIndicatorMapRequest<'ub> {
     pub req_type: u8,
     pub length: u16,
     pub device_spec: DeviceSpec,
     pub which: Card32,
-    pub maps: Vec<IndicatorMap>,
+    pub maps: Cow<'ub, [IndicatorMap]>,
 }
-impl SetIndicatorMapRequest {}
-impl AsByteSequence for SetIndicatorMapRequest {
+impl<'ub> SetIndicatorMapRequest {}
+impl<'ub> AsByteSequence for SetIndicatorMapRequest<'ub> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9370,7 +9376,7 @@ impl AsByteSequence for SetIndicatorMapRequest {
         index += 2;
         let (which, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (maps, block_len): (Vec<IndicatorMap>, usize) =
+        let (maps, block_len): (Cow<'static, [IndicatorMap]>, usize) =
             vector_from_bytes(&bytes[index..], ((which).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
@@ -9902,7 +9908,7 @@ impl Request for GetNamesRequest {
     type Reply = GetNamesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetNamesReply {
+pub struct GetNamesReply<'vb, 'wb, 'xb, 'yb, 'zb, 'ac, 'bc, 'cc, 'dc> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -9922,18 +9928,20 @@ pub struct GetNamesReply {
     pub phys_symbols_name: Atom,
     pub types_name: Atom,
     pub compat_name: Atom,
-    pub type_names: Vec<Atom>,
-    pub n_levels_per_type: Vec<Card8>,
-    pub kt_level_names: Vec<Atom>,
-    pub indicator_names: Vec<Atom>,
-    pub virtual_mod_names: Vec<Atom>,
-    pub groups: Vec<Atom>,
-    pub key_names: Vec<KeyName>,
-    pub key_aliases: Vec<KeyAlias>,
-    pub radio_group_names: Vec<Atom>,
+    pub type_names: Cow<'vb, [Atom]>,
+    pub n_levels_per_type: Cow<'wb, [Card8]>,
+    pub kt_level_names: Cow<'xb, [Atom]>,
+    pub indicator_names: Cow<'yb, [Atom]>,
+    pub virtual_mod_names: Cow<'zb, [Atom]>,
+    pub groups: Cow<'ac, [Atom]>,
+    pub key_names: Cow<'bc, [KeyName]>,
+    pub key_aliases: Cow<'cc, [KeyAlias]>,
+    pub radio_group_names: Cow<'dc, [Atom]>,
 }
-impl GetNamesReply {}
-impl AsByteSequence for GetNamesReply {
+impl<'vb, 'wb, 'xb, 'yb, 'zb, 'ac, 'bc, 'cc, 'dc> GetNamesReply {}
+impl<'vb, 'wb, 'xb, 'yb, 'zb, 'ac, 'bc, 'cc, 'dc> AsByteSequence
+    for GetNamesReply<'vb, 'wb, 'xb, 'yb, 'zb, 'ac, 'bc, 'cc, 'dc>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10082,15 +10090,15 @@ impl AsByteSequence for GetNamesReply {
         } else {
             Default::default()
         };
-        let (type_names, block_len): (Vec<Atom>, usize) =
+        let (type_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (n_levels_per_type, block_len): (Vec<Card8>, usize) =
+        let (n_levels_per_type, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
-        let (kt_level_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
+        let (kt_level_names, block_len): (Cow<'static, [Atom]>, usize) = vector_from_bytes(
             &bytes[index..],
             (n_levels_per_type
                 .iter()
@@ -10101,27 +10109,27 @@ impl AsByteSequence for GetNamesReply {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) =
+        let (indicator_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+        let (virtual_mod_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) =
+        let (groups, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (key_names, block_len): (Vec<KeyName>, usize) =
+        let (key_names, block_len): (Cow<'static, [KeyName]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyName>());
-        let (key_aliases, block_len): (Vec<KeyAlias>, usize) =
+        let (key_aliases, block_len): (Cow<'static, [KeyAlias]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyAlias>());
-        let (radio_group_names, block_len): (Vec<Atom>, usize) =
+        let (radio_group_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -10551,7 +10559,7 @@ impl core::ops::BitXor for NameDetail {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetNamesRequest {
+pub struct SetNamesRequest<'ec, 'fc, 'gc, 'hc, 'ic, 'jc, 'kc, 'lc, 'mc> {
     pub req_type: u8,
     pub length: u16,
     pub device_spec: DeviceSpec,
@@ -10571,18 +10579,20 @@ pub struct SetNamesRequest {
     pub phys_symbols_name: Atom,
     pub types_name: Atom,
     pub compat_name: Atom,
-    pub type_names: Vec<Atom>,
-    pub n_levels_per_type: Vec<Card8>,
-    pub kt_level_names: Vec<Atom>,
-    pub indicator_names: Vec<Atom>,
-    pub virtual_mod_names: Vec<Atom>,
-    pub groups: Vec<Atom>,
-    pub key_names: Vec<KeyName>,
-    pub key_aliases: Vec<KeyAlias>,
-    pub radio_group_names: Vec<Atom>,
+    pub type_names: Cow<'ec, [Atom]>,
+    pub n_levels_per_type: Cow<'fc, [Card8]>,
+    pub kt_level_names: Cow<'gc, [Atom]>,
+    pub indicator_names: Cow<'hc, [Atom]>,
+    pub virtual_mod_names: Cow<'ic, [Atom]>,
+    pub groups: Cow<'jc, [Atom]>,
+    pub key_names: Cow<'kc, [KeyName]>,
+    pub key_aliases: Cow<'lc, [KeyAlias]>,
+    pub radio_group_names: Cow<'mc, [Atom]>,
 }
-impl SetNamesRequest {}
-impl AsByteSequence for SetNamesRequest {
+impl<'ec, 'fc, 'gc, 'hc, 'ic, 'jc, 'kc, 'lc, 'mc> SetNamesRequest {}
+impl<'ec, 'fc, 'gc, 'hc, 'ic, 'jc, 'kc, 'lc, 'mc> AsByteSequence
+    for SetNamesRequest<'ec, 'fc, 'gc, 'hc, 'ic, 'jc, 'kc, 'lc, 'mc>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10734,16 +10744,16 @@ impl AsByteSequence for SetNamesRequest {
         } else {
             Default::default()
         };
-        let (type_names, block_len): (Vec<Atom>, usize) =
+        let (type_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (n_levels_per_type, block_len): (Vec<Card8>, usize) =
+        let (n_levels_per_type, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (kt_level_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
+        let (kt_level_names, block_len): (Cow<'static, [Atom]>, usize) = vector_from_bytes(
             &bytes[index..],
             (n_levels_per_type
                 .iter()
@@ -10754,27 +10764,27 @@ impl AsByteSequence for SetNamesRequest {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) =
+        let (indicator_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+        let (virtual_mod_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) =
+        let (groups, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (key_names, block_len): (Vec<KeyName>, usize) =
+        let (key_names, block_len): (Cow<'static, [KeyName]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyName>());
-        let (key_aliases, block_len): (Vec<KeyAlias>, usize) =
+        let (key_aliases, block_len): (Cow<'static, [KeyAlias]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyAlias>());
-        let (radio_group_names, block_len): (Vec<Atom>, usize) =
+        let (radio_group_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -11266,21 +11276,23 @@ impl Request for ListComponentsRequest {
     type Reply = ListComponentsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListComponentsReply {
+pub struct ListComponentsReply<'oc, 'nc, 'qc, 'pc, 'sc, 'rc, 'uc, 'tc, 'wc, 'vc, 'yc, 'xc> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
     pub length: u32,
     pub extra: Card16,
-    pub keymaps: Vec<Listing>,
-    pub keycodes: Vec<Listing>,
-    pub types: Vec<Listing>,
-    pub compat_maps: Vec<Listing>,
-    pub symbols: Vec<Listing>,
-    pub geometries: Vec<Listing>,
+    pub keymaps: Cow<'oc, [Listing<'nc>]>,
+    pub keycodes: Cow<'qc, [Listing<'pc>]>,
+    pub types: Cow<'sc, [Listing<'rc>]>,
+    pub compat_maps: Cow<'uc, [Listing<'tc>]>,
+    pub symbols: Cow<'wc, [Listing<'vc>]>,
+    pub geometries: Cow<'yc, [Listing<'xc>]>,
 }
-impl ListComponentsReply {}
-impl AsByteSequence for ListComponentsReply {
+impl<'oc, 'nc, 'qc, 'pc, 'sc, 'rc, 'uc, 'tc, 'wc, 'vc, 'yc, 'xc> ListComponentsReply {}
+impl<'oc, 'nc, 'qc, 'pc, 'sc, 'rc, 'uc, 'tc, 'wc, 'vc, 'yc, 'xc> AsByteSequence
+    for ListComponentsReply<'oc, 'nc, 'qc, 'pc, 'sc, 'rc, 'uc, 'tc, 'wc, 'vc, 'yc, 'xc>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11298,22 +11310,22 @@ impl AsByteSequence for ListComponentsReply {
         index += 10;
         let block_len: usize = vector_as_bytes(&self.keymaps, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'nc>>());
         let block_len: usize = vector_as_bytes(&self.keycodes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'pc>>());
         let block_len: usize = vector_as_bytes(&self.types, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'rc>>());
         let block_len: usize = vector_as_bytes(&self.compat_maps, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'tc>>());
         let block_len: usize = vector_as_bytes(&self.symbols, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'vc>>());
         let block_len: usize = vector_as_bytes(&self.geometries, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'xc>>());
         index
     }
     #[inline]
@@ -11343,30 +11355,30 @@ impl AsByteSequence for ListComponentsReply {
         let (extra, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 10;
-        let (keymaps, block_len): (Vec<Listing>, usize) =
+        let (keymaps, block_len): (Cow<'static, [Listing<'nc>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
-        let (keycodes, block_len): (Vec<Listing>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'nc>>());
+        let (keycodes, block_len): (Cow<'static, [Listing<'pc>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
-        let (types, block_len): (Vec<Listing>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'pc>>());
+        let (types, block_len): (Cow<'static, [Listing<'rc>]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
-        let (compat_maps, block_len): (Vec<Listing>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'rc>>());
+        let (compat_maps, block_len): (Cow<'static, [Listing<'tc>]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
-        let (symbols, block_len): (Vec<Listing>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'tc>>());
+        let (symbols, block_len): (Cow<'static, [Listing<'vc>]>, usize) =
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
-        let (geometries, block_len): (Vec<Listing>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'vc>>());
+        let (geometries, block_len): (Cow<'static, [Listing<'xc>]>, usize) =
             vector_from_bytes(&bytes[index..], len5 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Listing<'xc>>());
         Some((
             ListComponentsReply {
                 reply_type: reply_type,
@@ -11400,32 +11412,32 @@ impl AsByteSequence for ListComponentsReply {
             + 10
             + {
                 let block_len: usize = self.keymaps.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'nc>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.keycodes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'pc>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.types.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'rc>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.compat_maps.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'tc>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.symbols.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'vc>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.geometries.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Listing<'xc>>());
                 block_len + pad
             }
     }
@@ -11503,7 +11515,34 @@ impl Request for GetKbdByNameRequest {
     type Reply = GetKbdByNameReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetKbdByNameReply {
+pub struct GetKbdByNameReply<
+    'bd,
+    'zc,
+    'ad,
+    'dd,
+    'cd,
+    'ed,
+    'fd,
+    'gd,
+    'hd,
+    'id,
+    'jd,
+    'kd,
+    'ld,
+    'md,
+    'nd,
+    'od,
+    'pd,
+    'qd,
+    'rd,
+    'sd,
+    'td,
+    'ud,
+    'vd,
+    'wd,
+    'xd,
+    'yd,
+> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -11536,15 +11575,15 @@ pub struct GetKbdByNameReply {
     pub first_v_mod_map_key: Keycode,
     pub n_v_mod_map_keys: Card8,
     pub virtual_mods: VMod,
-    pub types_rtrn: Vec<KeyType>,
-    pub syms_rtrn: Vec<KeySymMap>,
-    pub acts_rtrn_count: Vec<Card8>,
-    pub acts_rtrn_acts: Vec<Action>,
-    pub behaviors_rtrn: Vec<SetBehavior>,
-    pub vmods_rtrn: Vec<Card8>,
-    pub explicit_rtrn: Vec<SetExplicit>,
-    pub modmap_rtrn: Vec<KeyModMap>,
-    pub vmodmap_rtrn: Vec<KeyVModMap>,
+    pub types_rtrn: Cow<'bd, [KeyType<'zc, 'ad>]>,
+    pub syms_rtrn: Cow<'dd, [KeySymMap<'cd>]>,
+    pub acts_rtrn_count: Cow<'ed, [Card8]>,
+    pub acts_rtrn_acts: Cow<'fd, [Action]>,
+    pub behaviors_rtrn: Cow<'gd, [SetBehavior]>,
+    pub vmods_rtrn: Cow<'hd, [Card8]>,
+    pub explicit_rtrn: Cow<'id, [SetExplicit]>,
+    pub modmap_rtrn: Cow<'jd, [KeyModMap]>,
+    pub vmodmap_rtrn: Cow<'kd, [KeyVModMap]>,
     pub compatmap_type: Card8,
     pub compat_device_id: Card8,
     pub compatmap_sequence: Card16,
@@ -11552,15 +11591,15 @@ pub struct GetKbdByNameReply {
     pub groups_rtrn: SetOfGroup,
     pub first_si_rtrn: Card16,
     pub n_total_si: Card16,
-    pub si_rtrn: Vec<SymInterpret>,
-    pub group_rtrn: Vec<ModDef>,
+    pub si_rtrn: Cow<'ld, [SymInterpret]>,
+    pub group_rtrn: Cow<'md, [ModDef]>,
     pub indicatormap_type: Card8,
     pub indicator_device_id: Card8,
     pub indicatormap_sequence: Card16,
     pub indicatormap_length: Card32,
     pub which: Card32,
     pub real_indicators: Card32,
-    pub maps: Vec<IndicatorMap>,
+    pub maps: Cow<'nd, [IndicatorMap]>,
     pub keyname_type: Card8,
     pub key_device_id: Card8,
     pub keyname_sequence: Card16,
@@ -11580,15 +11619,15 @@ pub struct GetKbdByNameReply {
     pub phys_symbols_name: Atom,
     pub types_name: Atom,
     pub compat_name: Atom,
-    pub type_names: Vec<Atom>,
-    pub n_levels_per_type: Vec<Card8>,
-    pub kt_level_names: Vec<Atom>,
-    pub indicator_names: Vec<Atom>,
-    pub virtual_mod_names: Vec<Atom>,
-    pub groups: Vec<Atom>,
-    pub key_names: Vec<KeyName>,
-    pub key_aliases: Vec<KeyAlias>,
-    pub radio_group_names: Vec<Atom>,
+    pub type_names: Cow<'od, [Atom]>,
+    pub n_levels_per_type: Cow<'pd, [Card8]>,
+    pub kt_level_names: Cow<'qd, [Atom]>,
+    pub indicator_names: Cow<'rd, [Atom]>,
+    pub virtual_mod_names: Cow<'sd, [Atom]>,
+    pub groups: Cow<'td, [Atom]>,
+    pub key_names: Cow<'ud, [KeyName]>,
+    pub key_aliases: Cow<'vd, [KeyAlias]>,
+    pub radio_group_names: Cow<'wd, [Atom]>,
     pub geometry_type: Card8,
     pub geometry_device_id: Card8,
     pub geometry_sequence: Card16,
@@ -11605,10 +11644,95 @@ pub struct GetKbdByNameReply {
     pub n_key_aliases: Card16,
     pub base_color_ndx: Card8,
     pub label_color_ndx: Card8,
-    pub label_font: CountedString16,
+    pub label_font: CountedString16<'xd, 'yd>,
 }
-impl GetKbdByNameReply {}
-impl AsByteSequence for GetKbdByNameReply {
+impl<
+        'bd,
+        'zc,
+        'ad,
+        'dd,
+        'cd,
+        'ed,
+        'fd,
+        'gd,
+        'hd,
+        'id,
+        'jd,
+        'kd,
+        'ld,
+        'md,
+        'nd,
+        'od,
+        'pd,
+        'qd,
+        'rd,
+        'sd,
+        'td,
+        'ud,
+        'vd,
+        'wd,
+        'xd,
+        'yd,
+    > GetKbdByNameReply
+{
+}
+impl<
+        'bd,
+        'zc,
+        'ad,
+        'dd,
+        'cd,
+        'ed,
+        'fd,
+        'gd,
+        'hd,
+        'id,
+        'jd,
+        'kd,
+        'ld,
+        'md,
+        'nd,
+        'od,
+        'pd,
+        'qd,
+        'rd,
+        'sd,
+        'td,
+        'ud,
+        'vd,
+        'wd,
+        'xd,
+        'yd,
+    > AsByteSequence
+    for GetKbdByNameReply<
+        'bd,
+        'zc,
+        'ad,
+        'dd,
+        'cd,
+        'ed,
+        'fd,
+        'gd,
+        'hd,
+        'id,
+        'jd,
+        'kd,
+        'ld,
+        'md,
+        'nd,
+        'od,
+        'pd,
+        'qd,
+        'rd,
+        'sd,
+        'td,
+        'ud,
+        'vd,
+        'wd,
+        'xd,
+        'yd,
+    >
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11701,10 +11825,10 @@ impl AsByteSequence for GetKbdByNameReply {
         }
         let block_len: usize = vector_as_bytes(&self.types_rtrn, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType<'zc, 'ad>>());
         let block_len: usize = vector_as_bytes(&self.syms_rtrn, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'cd>>());
         let block_len: usize = vector_as_bytes(&self.acts_rtrn_count, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -12117,40 +12241,40 @@ impl AsByteSequence for GetKbdByNameReply {
         } else {
             Default::default()
         };
-        let (types_rtrn, block_len): (Vec<KeyType>, usize) =
+        let (types_rtrn, block_len): (Cow<'static, [KeyType<'zc, 'ad>]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
-        let (syms_rtrn, block_len): (Vec<KeySymMap>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeyType<'zc, 'ad>>());
+        let (syms_rtrn, block_len): (Cow<'static, [KeySymMap<'cd>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
-        let (acts_rtrn_count, block_len): (Vec<Card8>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'cd>>());
+        let (acts_rtrn_count, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (acts_rtrn_acts, block_len): (Vec<Action>, usize) =
+        let (acts_rtrn_acts, block_len): (Cow<'static, [Action]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
-        let (behaviors_rtrn, block_len): (Vec<SetBehavior>, usize) =
+        let (behaviors_rtrn, block_len): (Cow<'static, [SetBehavior]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetBehavior>());
-        let (vmods_rtrn, block_len): (Vec<Card8>, usize) =
+        let (vmods_rtrn, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
-        let (explicit_rtrn, block_len): (Vec<SetExplicit>, usize) =
+        let (explicit_rtrn, block_len): (Cow<'static, [SetExplicit]>, usize) =
             vector_from_bytes(&bytes[index..], len4 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SetExplicit>());
-        let (modmap_rtrn, block_len): (Vec<KeyModMap>, usize) =
+        let (modmap_rtrn, block_len): (Cow<'static, [KeyModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len5 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyModMap>());
-        let (vmodmap_rtrn, block_len): (Vec<KeyVModMap>, usize) =
+        let (vmodmap_rtrn, block_len): (Cow<'static, [KeyVModMap]>, usize) =
             vector_from_bytes(&bytes[index..], len6 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyVModMap>());
@@ -12205,11 +12329,11 @@ impl AsByteSequence for GetKbdByNameReply {
         } else {
             Default::default()
         };
-        let (si_rtrn, block_len): (Vec<SymInterpret>, usize) =
+        let (si_rtrn, block_len): (Cow<'static, [SymInterpret]>, usize) =
             vector_from_bytes(&bytes[index..], len7 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SymInterpret>());
-        let (group_rtrn, block_len): (Vec<ModDef>, usize) =
+        let (group_rtrn, block_len): (Cow<'static, [ModDef]>, usize) =
             vector_from_bytes(&bytes[index..], ((groups_rtrn).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModDef>());
@@ -12259,7 +12383,7 @@ impl AsByteSequence for GetKbdByNameReply {
         let (len8, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 15;
-        let (maps, block_len): (Vec<IndicatorMap>, usize) =
+        let (maps, block_len): (Cow<'static, [IndicatorMap]>, usize) =
             vector_from_bytes(&bytes[index..], len8 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<IndicatorMap>());
@@ -12402,15 +12526,15 @@ impl AsByteSequence for GetKbdByNameReply {
         } else {
             Default::default()
         };
-        let (type_names, block_len): (Vec<Atom>, usize) =
+        let (type_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (n_levels_per_type, block_len): (Vec<Card8>, usize) =
+        let (n_levels_per_type, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (n_types as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
-        let (kt_level_names, block_len): (Vec<Atom>, usize) = vector_from_bytes(
+        let (kt_level_names, block_len): (Cow<'static, [Atom]>, usize) = vector_from_bytes(
             &bytes[index..],
             (n_levels_per_type
                 .iter()
@@ -12421,27 +12545,27 @@ impl AsByteSequence for GetKbdByNameReply {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (indicator_names, block_len): (Vec<Atom>, usize) =
+        let (indicator_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((indicators).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (virtual_mod_names, block_len): (Vec<Atom>, usize) =
+        let (virtual_mod_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((virtual_mods).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (groups, block_len): (Vec<Atom>, usize) =
+        let (groups, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], ((group_names).count_ones()) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
-        let (key_names, block_len): (Vec<KeyName>, usize) =
+        let (key_names, block_len): (Cow<'static, [KeyName]>, usize) =
             vector_from_bytes(&bytes[index..], len9 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyName>());
-        let (key_aliases, block_len): (Vec<KeyAlias>, usize) =
+        let (key_aliases, block_len): (Cow<'static, [KeyAlias]>, usize) =
             vector_from_bytes(&bytes[index..], len11 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<KeyAlias>());
-        let (radio_group_names, block_len): (Vec<Atom>, usize) =
+        let (radio_group_names, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len10 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -12557,9 +12681,9 @@ impl AsByteSequence for GetKbdByNameReply {
         } else {
             Default::default()
         };
-        let label_font: CountedString16 = if cond0.geometry() {
-            let (label_font, sz): (CountedString16, usize) =
-                <CountedString16>::from_bytes(&bytes[index..])?;
+        let label_font: CountedString16<'xd, 'yd> = if cond0.geometry() {
+            let (label_font, sz): (CountedString16<'xd, 'yd>, usize) =
+                <CountedString16<'xd, 'yd>>::from_bytes(&bytes[index..])?;
             index += sz;
             label_font
         } else {
@@ -12719,12 +12843,13 @@ impl AsByteSequence for GetKbdByNameReply {
             + self.virtual_mods.size()
             + {
                 let block_len: usize = self.types_rtrn.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeyType>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<KeyType<'zc, 'ad>>());
                 block_len + pad
             }
             + {
                 let block_len: usize = self.syms_rtrn.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<KeySymMap<'cd>>());
                 block_len + pad
             }
             + {
@@ -13182,7 +13307,7 @@ impl Request for GetDeviceInfoRequest {
     type Reply = GetDeviceInfoReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceInfoReply {
+pub struct GetDeviceInfoReply<'zd, 'ae, 'de, 'be, 'ce> {
     pub reply_type: u8,
     pub device_id: Card8,
     pub sequence: u16,
@@ -13198,12 +13323,12 @@ pub struct GetDeviceInfoReply {
     pub dflt_kbd_fb: Card16,
     pub dflt_led_fb: Card16,
     pub dev_type: Atom,
-    pub name: Vec<String8>,
-    pub btn_actions: Vec<Action>,
-    pub leds: Vec<DeviceLedInfo>,
+    pub name: Cow<'zd, [String8]>,
+    pub btn_actions: Cow<'ae, [Action]>,
+    pub leds: Cow<'de, [DeviceLedInfo<'be, 'ce>]>,
 }
-impl GetDeviceInfoReply {}
-impl AsByteSequence for GetDeviceInfoReply {
+impl<'zd, 'ae, 'de, 'be, 'ce> GetDeviceInfoReply {}
+impl<'zd, 'ae, 'de, 'be, 'ce> AsByteSequence for GetDeviceInfoReply<'zd, 'ae, 'de, 'be, 'ce> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13234,7 +13359,10 @@ impl AsByteSequence for GetDeviceInfoReply {
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
         let block_len: usize = vector_as_bytes(&self.leds, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceLedInfo<'be, 'ce>>(),
+        );
         index
     }
     #[inline]
@@ -13278,18 +13406,21 @@ impl AsByteSequence for GetDeviceInfoReply {
         index += sz;
         let (len2, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (Vec<String8>, usize) =
+        let (name, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (btn_actions, block_len): (Vec<Action>, usize) =
+        let (btn_actions, block_len): (Cow<'static, [Action]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
-        let (leds, block_len): (Vec<DeviceLedInfo>, usize) =
+        let (leds, block_len): (Cow<'static, [DeviceLedInfo<'be, 'ce>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceLedInfo<'be, 'ce>>(),
+        );
         Some((
             GetDeviceInfoReply {
                 reply_type: reply_type,
@@ -13347,7 +13478,10 @@ impl AsByteSequence for GetDeviceInfoReply {
             }
             + {
                 let block_len: usize = self.leds.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+                let pad: usize = buffer_pad(
+                    block_len,
+                    ::core::mem::align_of::<DeviceLedInfo<'be, 'ce>>(),
+                );
                 block_len + pad
             }
     }
@@ -13510,17 +13644,17 @@ impl core::ops::BitXor for XiFeature {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceInfoRequest {
+pub struct SetDeviceInfoRequest<'ee, 'he, 'fe, 'ge> {
     pub req_type: u8,
     pub length: u16,
     pub device_spec: DeviceSpec,
     pub first_btn: Card8,
     pub change: XiFeature,
-    pub btn_actions: Vec<Action>,
-    pub leds: Vec<DeviceLedInfo>,
+    pub btn_actions: Cow<'ee, [Action]>,
+    pub leds: Cow<'he, [DeviceLedInfo<'fe, 'ge>]>,
 }
-impl SetDeviceInfoRequest {}
-impl AsByteSequence for SetDeviceInfoRequest {
+impl<'ee, 'he, 'fe, 'ge> SetDeviceInfoRequest {}
+impl<'ee, 'he, 'fe, 'ge> AsByteSequence for SetDeviceInfoRequest<'ee, 'he, 'fe, 'ge> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13537,7 +13671,10 @@ impl AsByteSequence for SetDeviceInfoRequest {
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
         let block_len: usize = vector_as_bytes(&self.leds, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceLedInfo<'fe, 'ge>>(),
+        );
         index
     }
     #[inline]
@@ -13559,14 +13696,17 @@ impl AsByteSequence for SetDeviceInfoRequest {
         index += sz;
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (btn_actions, block_len): (Vec<Action>, usize) =
+        let (btn_actions, block_len): (Cow<'static, [Action]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Action>());
-        let (leds, block_len): (Vec<DeviceLedInfo>, usize) =
+        let (leds, block_len): (Cow<'static, [DeviceLedInfo<'fe, 'ge>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceLedInfo<'fe, 'ge>>(),
+        );
         Some((
             SetDeviceInfoRequest {
                 req_type: req_type,
@@ -13597,7 +13737,10 @@ impl AsByteSequence for SetDeviceInfoRequest {
             }
             + {
                 let block_len: usize = self.leds.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceLedInfo>());
+                let pad: usize = buffer_pad(
+                    block_len,
+                    ::core::mem::align_of::<DeviceLedInfo<'fe, 'ge>>(),
+                );
                 block_len + pad
             }
     }
@@ -13609,17 +13752,17 @@ impl Request for SetDeviceInfoRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDebuggingFlagsRequest {
+pub struct SetDebuggingFlagsRequest<'ie> {
     pub req_type: u8,
     pub length: u16,
     pub affect_flags: Card32,
     pub flags: Card32,
     pub affect_ctrls: Card32,
     pub ctrls: Card32,
-    pub message: Vec<String8>,
+    pub message: Cow<'ie, [String8]>,
 }
-impl SetDebuggingFlagsRequest {}
-impl AsByteSequence for SetDebuggingFlagsRequest {
+impl<'ie> SetDebuggingFlagsRequest {}
+impl<'ie> AsByteSequence for SetDebuggingFlagsRequest<'ie> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13657,7 +13800,7 @@ impl AsByteSequence for SetDebuggingFlagsRequest {
         index += sz;
         let (ctrls, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (message, block_len): (Vec<String8>, usize) =
+        let (message, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());

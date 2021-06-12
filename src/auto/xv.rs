@@ -122,15 +122,15 @@ impl AsByteSequence for Format {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AdaptorInfo {
+pub struct AdaptorInfo<'a, 'b> {
     pub base_id: Port,
     pub num_ports: Card16,
     pub ty: Type,
-    pub name: String,
-    pub formats: Vec<Format>,
+    pub name: Cow<'a, str>,
+    pub formats: Cow<'b, [Format]>,
 }
-impl AdaptorInfo {}
-impl AsByteSequence for AdaptorInfo {
+impl<'a, 'b> AdaptorInfo {}
+impl<'a, 'b> AsByteSequence for AdaptorInfo<'a, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -163,10 +163,11 @@ impl AsByteSequence for AdaptorInfo {
         let (ty, sz): (Type, usize) = <Type>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (formats, block_len): (Vec<Format>, usize) =
+        let (formats, block_len): (Cow<'static, [Format]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Format>());
@@ -359,15 +360,15 @@ impl core::ops::BitXor for Type {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct EncodingInfo {
+pub struct EncodingInfo<'c> {
     pub encoding: Encoding,
     pub width: Card16,
     pub height: Card16,
     pub rate: Rational,
-    pub name: String,
+    pub name: Cow<'c, str>,
 }
-impl EncodingInfo {}
-impl AsByteSequence for EncodingInfo {
+impl<'c> EncodingInfo {}
+impl<'c> AsByteSequence for EncodingInfo<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -397,7 +398,8 @@ impl AsByteSequence for EncodingInfo {
         index += 2;
         let (rate, sz): (Rational, usize) = <Rational>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         Some((
@@ -427,17 +429,17 @@ impl AsByteSequence for EncodingInfo {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Image {
+pub struct Image<'d, 'e, 'f> {
     pub id: Card32,
     pub width: Card16,
     pub height: Card16,
     pub num_planes: Card32,
-    pub pitches: Vec<Card32>,
-    pub offsets: Vec<Card32>,
-    pub data: Vec<Card8>,
+    pub pitches: Cow<'d, [Card32]>,
+    pub offsets: Cow<'e, [Card32]>,
+    pub data: Cow<'f, [Card8]>,
 }
-impl Image {}
-impl AsByteSequence for Image {
+impl<'d, 'e, 'f> Image {}
+impl<'d, 'e, 'f> AsByteSequence for Image<'d, 'e, 'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -471,15 +473,15 @@ impl AsByteSequence for Image {
         index += sz;
         let (num_planes, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pitches, block_len): (Vec<Card32>, usize) =
+        let (pitches, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_planes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (offsets, block_len): (Vec<Card32>, usize) =
+        let (offsets, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_planes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (data, block_len): (Vec<Card8>, usize) =
+        let (data, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -521,14 +523,14 @@ impl AsByteSequence for Image {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AttributeInfo {
+pub struct AttributeInfo<'g> {
     pub flags: AttributeFlag,
     pub min: Int32,
     pub max: Int32,
-    pub name: String,
+    pub name: Cow<'g, str>,
 }
-impl AttributeInfo {}
-impl AsByteSequence for AttributeInfo {
+impl<'g> AttributeInfo {}
+impl<'g> AsByteSequence for AttributeInfo<'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -553,7 +555,8 @@ impl AsByteSequence for AttributeInfo {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         Some((
@@ -1122,14 +1125,14 @@ impl Request for QueryAdaptorsRequest {
     type Reply = QueryAdaptorsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryAdaptorsReply {
+pub struct QueryAdaptorsReply<'j, 'h, 'i> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub info: Vec<AdaptorInfo>,
+    pub info: Cow<'j, [AdaptorInfo<'h, 'i>]>,
 }
-impl QueryAdaptorsReply {}
-impl AsByteSequence for QueryAdaptorsReply {
+impl<'j, 'h, 'i> QueryAdaptorsReply {}
+impl<'j, 'h, 'i> AsByteSequence for QueryAdaptorsReply<'j, 'h, 'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1141,7 +1144,7 @@ impl AsByteSequence for QueryAdaptorsReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.info, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo<'h, 'i>>());
         index
     }
     #[inline]
@@ -1158,10 +1161,10 @@ impl AsByteSequence for QueryAdaptorsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (info, block_len): (Vec<AdaptorInfo>, usize) =
+        let (info, block_len): (Cow<'static, [AdaptorInfo<'h, 'i>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo<'h, 'i>>());
         Some((
             QueryAdaptorsReply {
                 reply_type: reply_type,
@@ -1182,7 +1185,8 @@ impl AsByteSequence for QueryAdaptorsReply {
             + 22
             + {
                 let block_len: usize = self.info.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<AdaptorInfo<'h, 'i>>());
                 block_len + pad
             }
     }
@@ -1236,14 +1240,14 @@ impl Request for QueryEncodingsRequest {
     type Reply = QueryEncodingsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryEncodingsReply {
+pub struct QueryEncodingsReply<'l, 'k> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub info: Vec<EncodingInfo>,
+    pub info: Cow<'l, [EncodingInfo<'k>]>,
 }
-impl QueryEncodingsReply {}
-impl AsByteSequence for QueryEncodingsReply {
+impl<'l, 'k> QueryEncodingsReply {}
+impl<'l, 'k> AsByteSequence for QueryEncodingsReply<'l, 'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1255,7 +1259,7 @@ impl AsByteSequence for QueryEncodingsReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.info, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo<'k>>());
         index
     }
     #[inline]
@@ -1272,10 +1276,10 @@ impl AsByteSequence for QueryEncodingsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (info, block_len): (Vec<EncodingInfo>, usize) =
+        let (info, block_len): (Cow<'static, [EncodingInfo<'k>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo<'k>>());
         Some((
             QueryEncodingsReply {
                 reply_type: reply_type,
@@ -1296,7 +1300,7 @@ impl AsByteSequence for QueryEncodingsReply {
             + 22
             + {
                 let block_len: usize = self.info.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EncodingInfo<'k>>());
                 block_len + pad
             }
     }
@@ -2451,15 +2455,15 @@ impl Request for QueryPortAttributesRequest {
     type Reply = QueryPortAttributesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryPortAttributesReply {
+pub struct QueryPortAttributesReply<'n, 'm> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub text_size: Card32,
-    pub attributes: Vec<AttributeInfo>,
+    pub attributes: Cow<'n, [AttributeInfo<'m>]>,
 }
-impl QueryPortAttributesReply {}
-impl AsByteSequence for QueryPortAttributesReply {
+impl<'n, 'm> QueryPortAttributesReply {}
+impl<'n, 'm> AsByteSequence for QueryPortAttributesReply<'n, 'm> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2472,7 +2476,7 @@ impl AsByteSequence for QueryPortAttributesReply {
         index += 16;
         let block_len: usize = vector_as_bytes(&self.attributes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo<'m>>());
         index
     }
     #[inline]
@@ -2491,10 +2495,10 @@ impl AsByteSequence for QueryPortAttributesReply {
         let (text_size, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (attributes, block_len): (Vec<AttributeInfo>, usize) =
+        let (attributes, block_len): (Cow<'static, [AttributeInfo<'m>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo<'m>>());
         Some((
             QueryPortAttributesReply {
                 reply_type: reply_type,
@@ -2517,7 +2521,8 @@ impl AsByteSequence for QueryPortAttributesReply {
             + 16
             + {
                 let block_len: usize = self.attributes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<AttributeInfo<'m>>());
                 block_len + pad
             }
     }
@@ -2571,14 +2576,14 @@ impl Request for ListImageFormatsRequest {
     type Reply = ListImageFormatsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListImageFormatsReply {
+pub struct ListImageFormatsReply<'o> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub format: Vec<ImageFormatInfo>,
+    pub format: Cow<'o, [ImageFormatInfo]>,
 }
-impl ListImageFormatsReply {}
-impl AsByteSequence for ListImageFormatsReply {
+impl<'o> ListImageFormatsReply {}
+impl<'o> AsByteSequence for ListImageFormatsReply<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2607,7 +2612,7 @@ impl AsByteSequence for ListImageFormatsReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (format, block_len): (Vec<ImageFormatInfo>, usize) =
+        let (format, block_len): (Cow<'static, [ImageFormatInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ImageFormatInfo>());
@@ -2706,7 +2711,7 @@ impl Request for QueryImageAttributesRequest {
     type Reply = QueryImageAttributesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryImageAttributesReply {
+pub struct QueryImageAttributesReply<'p, 'q> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -2714,11 +2719,11 @@ pub struct QueryImageAttributesReply {
     pub data_size: Card32,
     pub width: Card16,
     pub height: Card16,
-    pub pitches: Vec<Card32>,
-    pub offsets: Vec<Card32>,
+    pub pitches: Cow<'p, [Card32]>,
+    pub offsets: Cow<'q, [Card32]>,
 }
-impl QueryImageAttributesReply {}
-impl AsByteSequence for QueryImageAttributesReply {
+impl<'p, 'q> QueryImageAttributesReply {}
+impl<'p, 'q> AsByteSequence for QueryImageAttributesReply<'p, 'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2759,11 +2764,11 @@ impl AsByteSequence for QueryImageAttributesReply {
         let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (pitches, block_len): (Vec<Card32>, usize) =
+        let (pitches, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_planes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (offsets, block_len): (Vec<Card32>, usize) =
+        let (offsets, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_planes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -2806,7 +2811,7 @@ impl AsByteSequence for QueryImageAttributesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PutImageRequest {
+pub struct PutImageRequest<'r> {
     pub req_type: u8,
     pub length: u16,
     pub port: Port,
@@ -2823,10 +2828,10 @@ pub struct PutImageRequest {
     pub drw_h: Card16,
     pub width: Card16,
     pub height: Card16,
-    pub data: Vec<Card8>,
+    pub data: Cow<'r, [Card8]>,
 }
-impl PutImageRequest {}
-impl AsByteSequence for PutImageRequest {
+impl<'r> PutImageRequest {}
+impl<'r> AsByteSequence for PutImageRequest<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2889,7 +2894,7 @@ impl AsByteSequence for PutImageRequest {
         index += sz;
         let (height, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Vec<Card8>, usize) =
+        let (data, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());

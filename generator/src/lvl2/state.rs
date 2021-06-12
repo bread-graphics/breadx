@@ -483,8 +483,16 @@ pub fn convert_series(
 
     // now, take all of the aux. stuff
     res.extend(state.resolve_enums());
-    res.extend(mem::take(&mut state.errors).into_iter().map(|(_k, v)| Item::Struct(v)));
-    res.extend(mem::take(&mut state.events).into_iter().map(|(_k, v)| Item::Struct(v)));
+    res.extend(
+        mem::take(&mut state.errors)
+            .into_iter()
+            .map(|(_k, v)| Item::Struct(v)),
+    );
+    res.extend(
+        mem::take(&mut state.events)
+            .into_iter()
+            .map(|(_k, v)| Item::Struct(v)),
+    );
 
     (res, state.xidtypes)
 }

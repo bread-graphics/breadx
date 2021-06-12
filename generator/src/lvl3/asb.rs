@@ -4,6 +4,8 @@ use super::{
     syn_util::{str_to_path, str_to_ty},
     InputParameter, Method, ParameterUsage, Statement, SumOfSizes, SumStatement, ToSyn, Type,
 };
+use proc_macro2::Span;
+use std::iter;
 
 /// An implementation of the as-byte-sequence trait.
 #[derive(Default, Debug)]
@@ -31,7 +33,7 @@ impl Asb {
     }
 
     #[inline]
-    pub fn to_syn_item(self, tyname: &str) -> Vec<syn::Item> {
+    pub fn to_syn_item(self, tyname: &str, lifetimes: &[String]) -> Vec<syn::Item> {
         let Self {
             is_none,
             as_bytes_stmts,
@@ -98,9 +100,52 @@ impl Asb {
             defaultness: None,
             unsafety: None,
             impl_token: Default::default(),
-            generics: Default::default(),
+            generics: syn::Generics {
+                lt_token: Some(Default::default()),
+                params: lifetimes
+                    .iter()
+                    .map(|lifetime| {
+                        syn::GenericParam::Lifetime(syn::LifetimeDef {
+                            attrs: vec![],
+                            lifetime: syn::Lifetime {
+                                apostrophe: Span::call_site(),
+                                ident: syn::Ident::new(lifetime, Span::call_site()),
+                            },
+                            colon_token: None,
+                            bounds: syn::punctuated::Punctuated::new(),
+                        })
+                    })
+                    .collect(),
+                gt_token: Some(Default::default()),
+                where_clause: None,
+            },
             trait_: Some((None, str_to_path("AsByteSequence"), Default::default())),
-            self_ty: Box::new(str_to_ty(tyname)),
+            self_ty: Box::new(syn::Type::Path(syn::TypePath {
+                qself: None,
+                path: syn::Path {
+                    leading_colon: None,
+                    segments: iter::once(syn::PathSegment {
+                        ident: syn::Ident::new(tyname, Span::call_site()),
+                        arguments: syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments {
+                                colon2_token: None,
+                                lt_token: Default::default(),
+                                args: lifetimes
+                                    .iter()
+                                    .map(|lifetime| {
+                                        syn::GenericArgument::Lifetime(syn::Lifetime {
+                                            apostrophe: Span::call_site(),
+                                            ident: syn::Ident::new(lifetime, Span::call_site()),
+                                        })
+                                    })
+                                    .collect(),
+                                gt_token: Default::default(),
+                            },
+                        ),
+                    })
+                    .collect(),
+                },
+            })),
             brace_token: Default::default(),
             items: {
                 let mut v = vec![

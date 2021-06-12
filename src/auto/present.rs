@@ -159,7 +159,7 @@ impl AsByteSequence for QueryVersionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PixmapRequest {
+pub struct PixmapRequest<'a> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
@@ -176,10 +176,10 @@ pub struct PixmapRequest {
     pub target_msc: Card64,
     pub divisor: Card64,
     pub remainder: Card64,
-    pub notifies: Vec<Notify>,
+    pub notifies: Cow<'a, [Notify]>,
 }
-impl PixmapRequest {}
-impl AsByteSequence for PixmapRequest {
+impl<'a> PixmapRequest {}
+impl<'a> AsByteSequence for PixmapRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -244,7 +244,7 @@ impl AsByteSequence for PixmapRequest {
         index += sz;
         let (remainder, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (notifies, block_len): (Vec<Notify>, usize) =
+        let (notifies, block_len): (Cow<'static, [Notify]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Notify>());

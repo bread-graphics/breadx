@@ -121,13 +121,13 @@ impl AsByteSequence for QueryVersionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceCreateContextRequest {
+pub struct SetDeviceCreateContextRequest<'a> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'a, str>,
 }
-impl SetDeviceCreateContextRequest {}
-impl AsByteSequence for SetDeviceCreateContextRequest {
+impl<'a> SetDeviceCreateContextRequest {}
+impl<'a> AsByteSequence for SetDeviceCreateContextRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -151,7 +151,7 @@ impl AsByteSequence for SetDeviceCreateContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -223,14 +223,14 @@ impl Request for GetDeviceCreateContextRequest {
     type Reply = GetDeviceCreateContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceCreateContextReply {
+pub struct GetDeviceCreateContextReply<'b> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'b, str>,
 }
-impl GetDeviceCreateContextReply {}
-impl AsByteSequence for GetDeviceCreateContextReply {
+impl<'b> GetDeviceCreateContextReply {}
+impl<'b> AsByteSequence for GetDeviceCreateContextReply<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -259,7 +259,7 @@ impl AsByteSequence for GetDeviceCreateContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -289,14 +289,14 @@ impl AsByteSequence for GetDeviceCreateContextReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceContextRequest {
+pub struct SetDeviceContextRequest<'c> {
     pub req_type: u8,
     pub length: u16,
     pub device: Card32,
-    pub context: String,
+    pub context: Cow<'c, str>,
 }
-impl SetDeviceContextRequest {}
-impl AsByteSequence for SetDeviceContextRequest {
+impl<'c> SetDeviceContextRequest {}
+impl<'c> AsByteSequence for SetDeviceContextRequest<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -323,7 +323,7 @@ impl AsByteSequence for SetDeviceContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -406,14 +406,14 @@ impl Request for GetDeviceContextRequest {
     type Reply = GetDeviceContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceContextReply {
+pub struct GetDeviceContextReply<'d> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'d, str>,
 }
-impl GetDeviceContextReply {}
-impl AsByteSequence for GetDeviceContextReply {
+impl<'d> GetDeviceContextReply {}
+impl<'d> AsByteSequence for GetDeviceContextReply<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -442,7 +442,7 @@ impl AsByteSequence for GetDeviceContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -472,13 +472,13 @@ impl AsByteSequence for GetDeviceContextReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetWindowCreateContextRequest {
+pub struct SetWindowCreateContextRequest<'e> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'e, str>,
 }
-impl SetWindowCreateContextRequest {}
-impl AsByteSequence for SetWindowCreateContextRequest {
+impl<'e> SetWindowCreateContextRequest {}
+impl<'e> AsByteSequence for SetWindowCreateContextRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -502,7 +502,7 @@ impl AsByteSequence for SetWindowCreateContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -574,14 +574,14 @@ impl Request for GetWindowCreateContextRequest {
     type Reply = GetWindowCreateContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetWindowCreateContextReply {
+pub struct GetWindowCreateContextReply<'f> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'f, str>,
 }
-impl GetWindowCreateContextReply {}
-impl AsByteSequence for GetWindowCreateContextReply {
+impl<'f> GetWindowCreateContextReply {}
+impl<'f> AsByteSequence for GetWindowCreateContextReply<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -610,7 +610,7 @@ impl AsByteSequence for GetWindowCreateContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -688,14 +688,14 @@ impl Request for GetWindowContextRequest {
     type Reply = GetWindowContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetWindowContextReply {
+pub struct GetWindowContextReply<'g> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'g, str>,
 }
-impl GetWindowContextReply {}
-impl AsByteSequence for GetWindowContextReply {
+impl<'g> GetWindowContextReply {}
+impl<'g> AsByteSequence for GetWindowContextReply<'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -724,7 +724,7 @@ impl AsByteSequence for GetWindowContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -754,13 +754,13 @@ impl AsByteSequence for GetWindowContextReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListItem {
+pub struct ListItem<'h, 'i> {
     pub name: Atom,
-    pub object_context: String,
-    pub data_context: String,
+    pub object_context: Cow<'h, str>,
+    pub data_context: Cow<'i, str>,
 }
-impl ListItem {}
-impl AsByteSequence for ListItem {
+impl<'h, 'i> ListItem {}
+impl<'h, 'i> AsByteSequence for ListItem<'h, 'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -785,11 +785,11 @@ impl AsByteSequence for ListItem {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (object_context, block_len): (String, usize) =
+        let (object_context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (data_context, block_len): (String, usize) =
+        let (data_context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -820,13 +820,13 @@ impl AsByteSequence for ListItem {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetPropertyCreateContextRequest {
+pub struct SetPropertyCreateContextRequest<'j> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'j, str>,
 }
-impl SetPropertyCreateContextRequest {}
-impl AsByteSequence for SetPropertyCreateContextRequest {
+impl<'j> SetPropertyCreateContextRequest {}
+impl<'j> AsByteSequence for SetPropertyCreateContextRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -850,7 +850,7 @@ impl AsByteSequence for SetPropertyCreateContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -922,14 +922,14 @@ impl Request for GetPropertyCreateContextRequest {
     type Reply = GetPropertyCreateContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPropertyCreateContextReply {
+pub struct GetPropertyCreateContextReply<'k> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'k, str>,
 }
-impl GetPropertyCreateContextReply {}
-impl AsByteSequence for GetPropertyCreateContextReply {
+impl<'k> GetPropertyCreateContextReply {}
+impl<'k> AsByteSequence for GetPropertyCreateContextReply<'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -958,7 +958,7 @@ impl AsByteSequence for GetPropertyCreateContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -988,13 +988,13 @@ impl AsByteSequence for GetPropertyCreateContextReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetPropertyUseContextRequest {
+pub struct SetPropertyUseContextRequest<'l> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'l, str>,
 }
-impl SetPropertyUseContextRequest {}
-impl AsByteSequence for SetPropertyUseContextRequest {
+impl<'l> SetPropertyUseContextRequest {}
+impl<'l> AsByteSequence for SetPropertyUseContextRequest<'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1018,7 +1018,7 @@ impl AsByteSequence for SetPropertyUseContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1090,14 +1090,14 @@ impl Request for GetPropertyUseContextRequest {
     type Reply = GetPropertyUseContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPropertyUseContextReply {
+pub struct GetPropertyUseContextReply<'m> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'m, str>,
 }
-impl GetPropertyUseContextReply {}
-impl AsByteSequence for GetPropertyUseContextReply {
+impl<'m> GetPropertyUseContextReply {}
+impl<'m> AsByteSequence for GetPropertyUseContextReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1126,7 +1126,7 @@ impl AsByteSequence for GetPropertyUseContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1209,14 +1209,14 @@ impl Request for GetPropertyContextRequest {
     type Reply = GetPropertyContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPropertyContextReply {
+pub struct GetPropertyContextReply<'n> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'n, str>,
 }
-impl GetPropertyContextReply {}
-impl AsByteSequence for GetPropertyContextReply {
+impl<'n> GetPropertyContextReply {}
+impl<'n> AsByteSequence for GetPropertyContextReply<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1245,7 +1245,7 @@ impl AsByteSequence for GetPropertyContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1328,14 +1328,14 @@ impl Request for GetPropertyDataContextRequest {
     type Reply = GetPropertyDataContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPropertyDataContextReply {
+pub struct GetPropertyDataContextReply<'o> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'o, str>,
 }
-impl GetPropertyDataContextReply {}
-impl AsByteSequence for GetPropertyDataContextReply {
+impl<'o> GetPropertyDataContextReply {}
+impl<'o> AsByteSequence for GetPropertyDataContextReply<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1364,7 +1364,7 @@ impl AsByteSequence for GetPropertyDataContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1442,14 +1442,14 @@ impl Request for ListPropertiesRequest {
     type Reply = ListPropertiesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListPropertiesReply {
+pub struct ListPropertiesReply<'r, 'p, 'q> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub properties: Vec<ListItem>,
+    pub properties: Cow<'r, [ListItem<'p, 'q>]>,
 }
-impl ListPropertiesReply {}
-impl AsByteSequence for ListPropertiesReply {
+impl<'r, 'p, 'q> ListPropertiesReply {}
+impl<'r, 'p, 'q> AsByteSequence for ListPropertiesReply<'r, 'p, 'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1461,7 +1461,7 @@ impl AsByteSequence for ListPropertiesReply {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.properties, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem<'p, 'q>>());
         index
     }
     #[inline]
@@ -1478,10 +1478,10 @@ impl AsByteSequence for ListPropertiesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (properties, block_len): (Vec<ListItem>, usize) =
+        let (properties, block_len): (Cow<'static, [ListItem<'p, 'q>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem<'p, 'q>>());
         Some((
             ListPropertiesReply {
                 reply_type: reply_type,
@@ -1502,19 +1502,19 @@ impl AsByteSequence for ListPropertiesReply {
             + 20
             + {
                 let block_len: usize = self.properties.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<ListItem<'p, 'q>>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetSelectionCreateContextRequest {
+pub struct SetSelectionCreateContextRequest<'s> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'s, str>,
 }
-impl SetSelectionCreateContextRequest {}
-impl AsByteSequence for SetSelectionCreateContextRequest {
+impl<'s> SetSelectionCreateContextRequest {}
+impl<'s> AsByteSequence for SetSelectionCreateContextRequest<'s> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1538,7 +1538,7 @@ impl AsByteSequence for SetSelectionCreateContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1610,14 +1610,14 @@ impl Request for GetSelectionCreateContextRequest {
     type Reply = GetSelectionCreateContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSelectionCreateContextReply {
+pub struct GetSelectionCreateContextReply<'t> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'t, str>,
 }
-impl GetSelectionCreateContextReply {}
-impl AsByteSequence for GetSelectionCreateContextReply {
+impl<'t> GetSelectionCreateContextReply {}
+impl<'t> AsByteSequence for GetSelectionCreateContextReply<'t> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1646,7 +1646,7 @@ impl AsByteSequence for GetSelectionCreateContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1676,13 +1676,13 @@ impl AsByteSequence for GetSelectionCreateContextReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetSelectionUseContextRequest {
+pub struct SetSelectionUseContextRequest<'u> {
     pub req_type: u8,
     pub length: u16,
-    pub context: String,
+    pub context: Cow<'u, str>,
 }
-impl SetSelectionUseContextRequest {}
-impl AsByteSequence for SetSelectionUseContextRequest {
+impl<'u> SetSelectionUseContextRequest {}
+impl<'u> AsByteSequence for SetSelectionUseContextRequest<'u> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1706,7 +1706,7 @@ impl AsByteSequence for SetSelectionUseContextRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1778,14 +1778,14 @@ impl Request for GetSelectionUseContextRequest {
     type Reply = GetSelectionUseContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSelectionUseContextReply {
+pub struct GetSelectionUseContextReply<'v> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'v, str>,
 }
-impl GetSelectionUseContextReply {}
-impl AsByteSequence for GetSelectionUseContextReply {
+impl<'v> GetSelectionUseContextReply {}
+impl<'v> AsByteSequence for GetSelectionUseContextReply<'v> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1814,7 +1814,7 @@ impl AsByteSequence for GetSelectionUseContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1892,14 +1892,14 @@ impl Request for GetSelectionContextRequest {
     type Reply = GetSelectionContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSelectionContextReply {
+pub struct GetSelectionContextReply<'w> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'w, str>,
 }
-impl GetSelectionContextReply {}
-impl AsByteSequence for GetSelectionContextReply {
+impl<'w> GetSelectionContextReply {}
+impl<'w> AsByteSequence for GetSelectionContextReply<'w> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1928,7 +1928,7 @@ impl AsByteSequence for GetSelectionContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -2006,14 +2006,14 @@ impl Request for GetSelectionDataContextRequest {
     type Reply = GetSelectionDataContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSelectionDataContextReply {
+pub struct GetSelectionDataContextReply<'x> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'x, str>,
 }
-impl GetSelectionDataContextReply {}
-impl AsByteSequence for GetSelectionDataContextReply {
+impl<'x> GetSelectionDataContextReply {}
+impl<'x> AsByteSequence for GetSelectionDataContextReply<'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2042,7 +2042,7 @@ impl AsByteSequence for GetSelectionDataContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -2115,14 +2115,14 @@ impl Request for ListSelectionsRequest {
     type Reply = ListSelectionsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListSelectionsReply {
+pub struct ListSelectionsReply<'ab, 'y, 'z> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub selections: Vec<ListItem>,
+    pub selections: Cow<'ab, [ListItem<'y, 'z>]>,
 }
-impl ListSelectionsReply {}
-impl AsByteSequence for ListSelectionsReply {
+impl<'ab, 'y, 'z> ListSelectionsReply {}
+impl<'ab, 'y, 'z> AsByteSequence for ListSelectionsReply<'ab, 'y, 'z> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2134,7 +2134,7 @@ impl AsByteSequence for ListSelectionsReply {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.selections, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem<'y, 'z>>());
         index
     }
     #[inline]
@@ -2151,10 +2151,10 @@ impl AsByteSequence for ListSelectionsReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (selections, block_len): (Vec<ListItem>, usize) =
+        let (selections, block_len): (Cow<'static, [ListItem<'y, 'z>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<ListItem<'y, 'z>>());
         Some((
             ListSelectionsReply {
                 reply_type: reply_type,
@@ -2175,7 +2175,7 @@ impl AsByteSequence for ListSelectionsReply {
             + 20
             + {
                 let block_len: usize = self.selections.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<ListItem>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<ListItem<'y, 'z>>());
                 block_len + pad
             }
     }
@@ -2229,14 +2229,14 @@ impl Request for GetClientContextRequest {
     type Reply = GetClientContextReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetClientContextReply {
+pub struct GetClientContextReply<'bb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub context: String,
+    pub context: Cow<'bb, str>,
 }
-impl GetClientContextReply {}
-impl AsByteSequence for GetClientContextReply {
+impl<'bb> GetClientContextReply {}
+impl<'bb> AsByteSequence for GetClientContextReply<'bb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2265,7 +2265,7 @@ impl AsByteSequence for GetClientContextReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (context, block_len): (String, usize) =
+        let (context, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());

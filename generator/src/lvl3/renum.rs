@@ -59,7 +59,7 @@ impl ToSyn for REnum {
         });
 
         let name = self.name.clone();
-        let asb = self.asb.to_syn_item(&name);
+        let asb = self.asb.to_syn_item(&name, &[]);
         iter::once(s)
             .chain(asb.into_iter())
             .chain(

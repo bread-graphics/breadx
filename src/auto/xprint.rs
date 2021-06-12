@@ -8,12 +8,12 @@ use super::prelude::*;
 use super::xproto::*;
 pub type String8 = Char;
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Printer {
-    pub name: Vec<String8>,
-    pub description: Vec<String8>,
+pub struct Printer<'a, 'b> {
+    pub name: Cow<'a, [String8]>,
+    pub description: Cow<'b, [String8]>,
 }
-impl Printer {}
-impl AsByteSequence for Printer {
+impl<'a, 'b> Printer {}
+impl<'a, 'b> AsByteSequence for Printer<'a, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -33,13 +33,13 @@ impl AsByteSequence for Printer {
         log::trace!("Deserializing Printer from byte buffer");
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (Vec<String8>, usize) =
+        let (name, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (description, block_len): (Vec<String8>, usize) =
+        let (description, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -189,14 +189,14 @@ impl AsByteSequence for PrintQueryVersionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetPrinterListRequest {
+pub struct PrintGetPrinterListRequest<'f, 'g> {
     pub req_type: u8,
     pub length: u16,
-    pub printer_name: Vec<String8>,
-    pub locale: Vec<String8>,
+    pub printer_name: Cow<'f, [String8]>,
+    pub locale: Cow<'g, [String8]>,
 }
-impl PrintGetPrinterListRequest {}
-impl AsByteSequence for PrintGetPrinterListRequest {
+impl<'f, 'g> PrintGetPrinterListRequest {}
+impl<'f, 'g> AsByteSequence for PrintGetPrinterListRequest<'f, 'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -226,11 +226,11 @@ impl AsByteSequence for PrintGetPrinterListRequest {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (printer_name, block_len): (Vec<String8>, usize) =
+        let (printer_name, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
-        let (locale, block_len): (Vec<String8>, usize) =
+        let (locale, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -270,14 +270,14 @@ impl Request for PrintGetPrinterListRequest {
     type Reply = PrintGetPrinterListReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetPrinterListReply {
+pub struct PrintGetPrinterListReply<'e, 'c, 'd> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub printers: Vec<Printer>,
+    pub printers: Cow<'e, [Printer<'c, 'd>]>,
 }
-impl PrintGetPrinterListReply {}
-impl AsByteSequence for PrintGetPrinterListReply {
+impl<'e, 'c, 'd> PrintGetPrinterListReply {}
+impl<'e, 'c, 'd> AsByteSequence for PrintGetPrinterListReply<'e, 'c, 'd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -289,7 +289,7 @@ impl AsByteSequence for PrintGetPrinterListReply {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.printers, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Printer>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Printer<'c, 'd>>());
         index
     }
     #[inline]
@@ -306,10 +306,10 @@ impl AsByteSequence for PrintGetPrinterListReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (printers, block_len): (Vec<Printer>, usize) =
+        let (printers, block_len): (Cow<'static, [Printer<'c, 'd>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Printer>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Printer<'c, 'd>>());
         Some((
             PrintGetPrinterListReply {
                 reply_type: reply_type,
@@ -330,7 +330,7 @@ impl AsByteSequence for PrintGetPrinterListReply {
             + 20
             + {
                 let block_len: usize = self.printers.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Printer>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Printer<'c, 'd>>());
                 block_len + pad
             }
     }
@@ -379,15 +379,15 @@ impl Request for PrintRehashPrinterListRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateContextRequest {
+pub struct CreateContextRequest<'h, 'i> {
     pub req_type: u8,
     pub length: u16,
     pub context_id: Card32,
-    pub printer_name: Vec<String8>,
-    pub locale: Vec<String8>,
+    pub printer_name: Cow<'h, [String8]>,
+    pub locale: Cow<'i, [String8]>,
 }
-impl CreateContextRequest {}
-impl AsByteSequence for CreateContextRequest {
+impl<'h, 'i> CreateContextRequest {}
+impl<'h, 'i> AsByteSequence for CreateContextRequest<'h, 'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -420,11 +420,11 @@ impl AsByteSequence for CreateContextRequest {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (printer_name, block_len): (Vec<String8>, usize) =
+        let (printer_name, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
-        let (locale, block_len): (Vec<String8>, usize) =
+        let (locale, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -934,16 +934,16 @@ impl Request for PrintEndDocRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintPutDocumentDataRequest {
+pub struct PrintPutDocumentDataRequest<'j, 'k, 'l> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
-    pub data: Vec<Byte>,
-    pub doc_format: Vec<String8>,
-    pub options: Vec<String8>,
+    pub data: Cow<'j, [Byte]>,
+    pub doc_format: Cow<'k, [String8]>,
+    pub options: Cow<'l, [String8]>,
 }
-impl PrintPutDocumentDataRequest {}
-impl AsByteSequence for PrintPutDocumentDataRequest {
+impl<'j, 'k, 'l> PrintPutDocumentDataRequest {}
+impl<'j, 'k, 'l> AsByteSequence for PrintPutDocumentDataRequest<'j, 'k, 'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -982,15 +982,15 @@ impl AsByteSequence for PrintPutDocumentDataRequest {
         index += sz;
         let (len2, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Vec<Byte>, usize) =
+        let (data, block_len): (Cow<'static, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
-        let (doc_format, block_len): (Vec<String8>, usize) =
+        let (doc_format, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
-        let (options, block_len): (Vec<String8>, usize) =
+        let (options, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -1092,16 +1092,16 @@ impl Request for PrintGetDocumentDataRequest {
     type Reply = PrintGetDocumentDataReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetDocumentDataReply {
+pub struct PrintGetDocumentDataReply<'m> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub status_code: Card32,
     pub finished_flag: Card32,
-    pub data: Vec<Byte>,
+    pub data: Cow<'m, [Byte]>,
 }
-impl PrintGetDocumentDataReply {}
-impl AsByteSequence for PrintGetDocumentDataReply {
+impl<'m> PrintGetDocumentDataReply {}
+impl<'m> AsByteSequence for PrintGetDocumentDataReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1136,7 +1136,7 @@ impl AsByteSequence for PrintGetDocumentDataReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Vec<Byte>, usize) =
+        let (data, block_len): (Cow<'static, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -1481,14 +1481,14 @@ impl Request for PrintGetAttributesRequest {
     type Reply = PrintGetAttributesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetAttributesReply {
+pub struct PrintGetAttributesReply<'n> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub attributes: Vec<String8>,
+    pub attributes: Cow<'n, [String8]>,
 }
-impl PrintGetAttributesReply {}
-impl AsByteSequence for PrintGetAttributesReply {
+impl<'n> PrintGetAttributesReply {}
+impl<'n> AsByteSequence for PrintGetAttributesReply<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1517,7 +1517,7 @@ impl AsByteSequence for PrintGetAttributesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (attributes, block_len): (Vec<String8>, usize) =
+        let (attributes, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -1547,15 +1547,15 @@ impl AsByteSequence for PrintGetAttributesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetOneAttributesRequest {
+pub struct PrintGetOneAttributesRequest<'p> {
     pub req_type: u8,
     pub length: u16,
     pub context: Pcontext,
     pub pool: Card8,
-    pub name: Vec<String8>,
+    pub name: Cow<'p, [String8]>,
 }
-impl PrintGetOneAttributesRequest {}
-impl AsByteSequence for PrintGetOneAttributesRequest {
+impl<'p> PrintGetOneAttributesRequest {}
+impl<'p> AsByteSequence for PrintGetOneAttributesRequest<'p> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1587,7 +1587,7 @@ impl AsByteSequence for PrintGetOneAttributesRequest {
         let (pool, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
-        let (name, block_len): (Vec<String8>, usize) =
+        let (name, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -1625,14 +1625,14 @@ impl Request for PrintGetOneAttributesRequest {
     type Reply = PrintGetOneAttributesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintGetOneAttributesReply {
+pub struct PrintGetOneAttributesReply<'o> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub value: Vec<String8>,
+    pub value: Cow<'o, [String8]>,
 }
-impl PrintGetOneAttributesReply {}
-impl AsByteSequence for PrintGetOneAttributesReply {
+impl<'o> PrintGetOneAttributesReply {}
+impl<'o> AsByteSequence for PrintGetOneAttributesReply<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1661,7 +1661,7 @@ impl AsByteSequence for PrintGetOneAttributesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (value, block_len): (Vec<String8>, usize) =
+        let (value, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -1691,17 +1691,17 @@ impl AsByteSequence for PrintGetOneAttributesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintSetAttributesRequest {
+pub struct PrintSetAttributesRequest<'q> {
     pub req_type: u8,
     pub length: u16,
     pub context: Pcontext,
     pub string_len: Card32,
     pub pool: Card8,
     pub rule: Card8,
-    pub attributes: Vec<String8>,
+    pub attributes: Cow<'q, [String8]>,
 }
-impl PrintSetAttributesRequest {}
-impl AsByteSequence for PrintSetAttributesRequest {
+impl<'q> PrintSetAttributesRequest {}
+impl<'q> AsByteSequence for PrintSetAttributesRequest<'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1736,7 +1736,7 @@ impl AsByteSequence for PrintSetAttributesRequest {
         let (rule, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (attributes, block_len): (Vec<String8>, usize) =
+        let (attributes, block_len): (Cow<'static, [String8]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<String8>());
@@ -1949,14 +1949,14 @@ impl Request for PrintQueryScreensRequest {
     type Reply = PrintQueryScreensReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PrintQueryScreensReply {
+pub struct PrintQueryScreensReply<'r> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub roots: Vec<Window>,
+    pub roots: Cow<'r, [Window]>,
 }
-impl PrintQueryScreensReply {}
-impl AsByteSequence for PrintQueryScreensReply {
+impl<'r> PrintQueryScreensReply {}
+impl<'r> AsByteSequence for PrintQueryScreensReply<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1985,7 +1985,7 @@ impl AsByteSequence for PrintQueryScreensReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (roots, block_len): (Vec<Window>, usize) =
+        let (roots, block_len): (Cow<'static, [Window]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Window>());

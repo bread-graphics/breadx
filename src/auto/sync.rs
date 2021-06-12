@@ -70,13 +70,13 @@ impl XidType for Fence {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Systemcounter {
+pub struct Systemcounter<'a> {
     pub counter: Counter,
     pub resolution: Int64,
-    pub name: String,
+    pub name: Cow<'a, str>,
 }
-impl Systemcounter {}
-impl AsByteSequence for Systemcounter {
+impl<'a> Systemcounter {}
+impl<'a> AsByteSequence for Systemcounter<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -98,7 +98,8 @@ impl AsByteSequence for Systemcounter {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         Some((
@@ -426,14 +427,14 @@ impl Request for ListSystemCountersRequest {
     type Reply = ListSystemCountersReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListSystemCountersReply {
+pub struct ListSystemCountersReply<'c, 'b> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub counters: Vec<Systemcounter>,
+    pub counters: Cow<'c, [Systemcounter<'b>]>,
 }
-impl ListSystemCountersReply {}
-impl AsByteSequence for ListSystemCountersReply {
+impl<'c, 'b> ListSystemCountersReply {}
+impl<'c, 'b> AsByteSequence for ListSystemCountersReply<'c, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -445,7 +446,7 @@ impl AsByteSequence for ListSystemCountersReply {
         index += 20;
         let block_len: usize = vector_as_bytes(&self.counters, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Systemcounter>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Systemcounter<'b>>());
         index
     }
     #[inline]
@@ -462,10 +463,10 @@ impl AsByteSequence for ListSystemCountersReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (counters, block_len): (Vec<Systemcounter>, usize) =
+        let (counters, block_len): (Cow<'static, [Systemcounter<'b>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Systemcounter>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Systemcounter<'b>>());
         Some((
             ListSystemCountersReply {
                 reply_type: reply_type,
@@ -486,7 +487,8 @@ impl AsByteSequence for ListSystemCountersReply {
             + 20
             + {
                 let block_len: usize = self.counters.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Systemcounter>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<Systemcounter<'b>>());
                 block_len + pad
             }
     }
@@ -692,13 +694,13 @@ impl AsByteSequence for QueryCounterReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AwaitRequest {
+pub struct AwaitRequest<'d> {
     pub req_type: u8,
     pub length: u16,
-    pub wait_list: Vec<Waitcondition>,
+    pub wait_list: Cow<'d, [Waitcondition]>,
 }
-impl AwaitRequest {}
-impl AsByteSequence for AwaitRequest {
+impl<'d> AwaitRequest {}
+impl<'d> AsByteSequence for AwaitRequest<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -719,7 +721,7 @@ impl AsByteSequence for AwaitRequest {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (wait_list, block_len): (Vec<Waitcondition>, usize) =
+        let (wait_list, block_len): (Cow<'static, [Waitcondition]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Waitcondition>());
@@ -1965,13 +1967,13 @@ impl AsByteSequence for QueryFenceReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AwaitFenceRequest {
+pub struct AwaitFenceRequest<'e> {
     pub req_type: u8,
     pub length: u16,
-    pub fence_list: Vec<Fence>,
+    pub fence_list: Cow<'e, [Fence]>,
 }
-impl AwaitFenceRequest {}
-impl AsByteSequence for AwaitFenceRequest {
+impl<'e> AwaitFenceRequest {}
+impl<'e> AsByteSequence for AwaitFenceRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1992,7 +1994,7 @@ impl AsByteSequence for AwaitFenceRequest {
         index += 1;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (fence_list, block_len): (Vec<Fence>, usize) =
+        let (fence_list, block_len): (Cow<'static, [Fence]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fence>());

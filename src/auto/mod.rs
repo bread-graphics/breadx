@@ -9,6 +9,7 @@
 
 use super::Fd;
 use alloc::{
+    borrow::Cow,
     string::{String, ToString},
     vec::Vec,
 };
@@ -81,7 +82,7 @@ pub trait Event: AsByteSequence {
 pub(crate) fn vector_from_bytes<T: AsByteSequence>(
     bytes: &[u8],
     len: usize,
-) -> Option<(Vec<T>, usize)> {
+) -> Option<(Cow<'static, [T]>, usize)> {
     #[cfg(debug_assertions)]
     log::trace!("Deserializing vector of byte length {} from bytes", len);
 
@@ -96,12 +97,12 @@ pub(crate) fn vector_from_bytes<T: AsByteSequence>(
         current_index += sz;
     }
 
-    Some((items, current_index))
+    Some((Cow::Owned(items), current_index))
 }
 
 /// Internal use function to make it easier to convert the c-equivalent string to a Rust string.
 #[inline]
-pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usize)> {
+pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(Cow<'static, str>, usize)> {
     log::trace!("Deserializing string of length {} from bytes", len);
 
     let chars: Vec<u8> = bytes.iter().take(len).copied().collect();
@@ -117,7 +118,7 @@ pub(crate) fn string_from_bytes(bytes: &[u8], len: usize) -> Option<(String, usi
                     *b = b'?';
                 }
             });
-            Some((String::from_utf8(bytes).ok()?, len as usize))
+            Some((Cow::Owned(String::from_utf8(bytes).ok()?), len as usize))
         }
     }
 }

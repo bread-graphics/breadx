@@ -158,11 +158,11 @@ impl AsByteSequence for ScreenSize {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RefreshRates {
-    pub rates: Vec<Card16>,
+pub struct RefreshRates<'a> {
+    pub rates: Cow<'a, [Card16]>,
 }
-impl RefreshRates {}
-impl AsByteSequence for RefreshRates {
+impl<'a> RefreshRates {}
+impl<'a> AsByteSequence for RefreshRates<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -178,7 +178,7 @@ impl AsByteSequence for RefreshRates {
         log::trace!("Deserializing RefreshRates from byte buffer");
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rates, block_len): (Vec<Card16>, usize) =
+        let (rates, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -994,7 +994,7 @@ impl Request for GetScreenInfoRequest {
     type Reply = GetScreenInfoReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetScreenInfoReply {
+pub struct GetScreenInfoReply<'b, 'd, 'c> {
     pub reply_type: u8,
     pub rotations: Rotation,
     pub sequence: u16,
@@ -1007,11 +1007,11 @@ pub struct GetScreenInfoReply {
     pub rotation: Rotation,
     pub rate: Card16,
     pub n_info: Card16,
-    pub sizes: Vec<ScreenSize>,
-    pub rates: Vec<RefreshRates>,
+    pub sizes: Cow<'b, [ScreenSize]>,
+    pub rates: Cow<'d, [RefreshRates<'c>]>,
 }
-impl GetScreenInfoReply {}
-impl AsByteSequence for GetScreenInfoReply {
+impl<'b, 'd, 'c> GetScreenInfoReply {}
+impl<'b, 'd, 'c> AsByteSequence for GetScreenInfoReply<'b, 'd, 'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1033,7 +1033,7 @@ impl AsByteSequence for GetScreenInfoReply {
         index += buffer_pad(block_len, ::core::mem::align_of::<ScreenSize>());
         let block_len: usize = vector_as_bytes(&self.rates, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<RefreshRates>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<RefreshRates<'c>>());
         index
     }
     #[inline]
@@ -1065,16 +1065,16 @@ impl AsByteSequence for GetScreenInfoReply {
         let (n_info, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (sizes, block_len): (Vec<ScreenSize>, usize) =
+        let (sizes, block_len): (Cow<'static, [ScreenSize]>, usize) =
             vector_from_bytes(&bytes[index..], (n_sizes as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ScreenSize>());
-        let (rates, block_len): (Vec<RefreshRates>, usize) = vector_from_bytes(
+        let (rates, block_len): (Cow<'static, [RefreshRates<'c>]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((n_info as usize) - (n_sizes as usize)) as usize,
         )?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<RefreshRates>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<RefreshRates<'c>>());
         Some((
             GetScreenInfoReply {
                 reply_type: reply_type,
@@ -1117,7 +1117,7 @@ impl AsByteSequence for GetScreenInfoReply {
             }
             + {
                 let block_len: usize = self.rates.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<RefreshRates>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<RefreshRates<'c>>());
                 block_len + pad
             }
     }
@@ -1787,19 +1787,19 @@ impl Request for GetScreenResourcesRequest {
     type Reply = GetScreenResourcesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetScreenResourcesReply {
+pub struct GetScreenResourcesReply<'e, 'f, 'g, 'h> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub timestamp: Timestamp,
     pub config_timestamp: Timestamp,
-    pub crtcs: Vec<Crtc>,
-    pub outputs: Vec<Output>,
-    pub modes: Vec<ModeInfo>,
-    pub names: Vec<Byte>,
+    pub crtcs: Cow<'e, [Crtc]>,
+    pub outputs: Cow<'f, [Output]>,
+    pub modes: Cow<'g, [ModeInfo]>,
+    pub names: Cow<'h, [Byte]>,
 }
-impl GetScreenResourcesReply {}
-impl AsByteSequence for GetScreenResourcesReply {
+impl<'e, 'f, 'g, 'h> GetScreenResourcesReply {}
+impl<'e, 'f, 'g, 'h> AsByteSequence for GetScreenResourcesReply<'e, 'f, 'g, 'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1852,19 +1852,19 @@ impl AsByteSequence for GetScreenResourcesReply {
         let (len3, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (crtcs, block_len): (Vec<Crtc>, usize) =
+        let (crtcs, block_len): (Cow<'static, [Crtc]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Crtc>());
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
-        let (modes, block_len): (Vec<ModeInfo>, usize) =
+        let (modes, block_len): (Cow<'static, [ModeInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModeInfo>());
-        let (names, block_len): (Vec<Byte>, usize) =
+        let (names, block_len): (Cow<'static, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -1976,7 +1976,7 @@ impl Request for GetOutputInfoRequest {
     type Reply = GetOutputInfoReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetOutputInfoReply {
+pub struct GetOutputInfoReply<'i, 'j, 'k, 'l> {
     pub reply_type: u8,
     pub status: SetConfig,
     pub sequence: u16,
@@ -1988,13 +1988,13 @@ pub struct GetOutputInfoReply {
     pub connection: Connection,
     pub subpixel_order: SubPixel,
     pub num_preferred: Card16,
-    pub crtcs: Vec<Crtc>,
-    pub modes: Vec<Mode>,
-    pub clones: Vec<Output>,
-    pub name: Vec<Byte>,
+    pub crtcs: Cow<'i, [Crtc]>,
+    pub modes: Cow<'j, [Mode]>,
+    pub clones: Cow<'k, [Output]>,
+    pub name: Cow<'l, [Byte]>,
 }
-impl GetOutputInfoReply {}
-impl AsByteSequence for GetOutputInfoReply {
+impl<'i, 'j, 'k, 'l> GetOutputInfoReply {}
+impl<'i, 'j, 'k, 'l> AsByteSequence for GetOutputInfoReply<'i, 'j, 'k, 'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2061,19 +2061,19 @@ impl AsByteSequence for GetOutputInfoReply {
         index += sz;
         let (len3, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtcs, block_len): (Vec<Crtc>, usize) =
+        let (crtcs, block_len): (Cow<'static, [Crtc]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Crtc>());
-        let (modes, block_len): (Vec<Mode>, usize) =
+        let (modes, block_len): (Cow<'static, [Mode]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Mode>());
-        let (clones, block_len): (Vec<Output>, usize) =
+        let (clones, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
-        let (name, block_len): (Vec<Byte>, usize) =
+        let (name, block_len): (Cow<'static, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -2219,14 +2219,14 @@ impl Request for ListOutputPropertiesRequest {
     type Reply = ListOutputPropertiesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListOutputPropertiesReply {
+pub struct ListOutputPropertiesReply<'m> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub atoms: Vec<Atom>,
+    pub atoms: Cow<'m, [Atom]>,
 }
-impl ListOutputPropertiesReply {}
-impl AsByteSequence for ListOutputPropertiesReply {
+impl<'m> ListOutputPropertiesReply {}
+impl<'m> AsByteSequence for ListOutputPropertiesReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2255,7 +2255,7 @@ impl AsByteSequence for ListOutputPropertiesReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (atoms, block_len): (Vec<Atom>, usize) =
+        let (atoms, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -2338,17 +2338,17 @@ impl Request for QueryOutputPropertyRequest {
     type Reply = QueryOutputPropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryOutputPropertyReply {
+pub struct QueryOutputPropertyReply<'n> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub pending: bool,
     pub range: bool,
     pub immutable: bool,
-    pub valid_values: Vec<Int32>,
+    pub valid_values: Cow<'n, [Int32]>,
 }
-impl QueryOutputPropertyReply {}
-impl AsByteSequence for QueryOutputPropertyReply {
+impl<'n> QueryOutputPropertyReply {}
+impl<'n> AsByteSequence for QueryOutputPropertyReply<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2383,7 +2383,7 @@ impl AsByteSequence for QueryOutputPropertyReply {
         let (immutable, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 21;
-        let (valid_values, block_len): (Vec<Int32>, usize) =
+        let (valid_values, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -2418,17 +2418,17 @@ impl AsByteSequence for QueryOutputPropertyReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ConfigureOutputPropertyRequest {
+pub struct ConfigureOutputPropertyRequest<'o> {
     pub req_type: u8,
     pub length: u16,
     pub output: Output,
     pub property: Atom,
     pub pending: bool,
     pub range: bool,
-    pub values: Vec<Int32>,
+    pub values: Cow<'o, [Int32]>,
 }
-impl ConfigureOutputPropertyRequest {}
-impl AsByteSequence for ConfigureOutputPropertyRequest {
+impl<'o> ConfigureOutputPropertyRequest {}
+impl<'o> AsByteSequence for ConfigureOutputPropertyRequest<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2463,7 +2463,7 @@ impl AsByteSequence for ConfigureOutputPropertyRequest {
         let (range, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (values, block_len): (Vec<Int32>, usize) =
+        let (values, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -2504,7 +2504,7 @@ impl Request for ConfigureOutputPropertyRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeOutputPropertyRequest {
+pub struct ChangeOutputPropertyRequest<'p> {
     pub req_type: u8,
     pub length: u16,
     pub output: Output,
@@ -2513,10 +2513,10 @@ pub struct ChangeOutputPropertyRequest {
     pub format: Card8,
     pub mode: PropMode,
     pub num_units: Card32,
-    pub data: Vec<Void>,
+    pub data: Cow<'p, [Void]>,
 }
-impl ChangeOutputPropertyRequest {}
-impl AsByteSequence for ChangeOutputPropertyRequest {
+impl<'p> ChangeOutputPropertyRequest {}
+impl<'p> AsByteSequence for ChangeOutputPropertyRequest<'p> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2557,7 +2557,7 @@ impl AsByteSequence for ChangeOutputPropertyRequest {
         index += 2;
         let (num_units, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (data, block_len): (Cow<'static, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             (((num_units as usize) * (format as usize)) / (8)) as usize,
         )?;
@@ -2747,7 +2747,7 @@ impl Request for GetOutputPropertyRequest {
     type Reply = GetOutputPropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetOutputPropertyReply {
+pub struct GetOutputPropertyReply<'q> {
     pub reply_type: u8,
     pub format: Card8,
     pub sequence: u16,
@@ -2755,10 +2755,10 @@ pub struct GetOutputPropertyReply {
     pub ty: Atom,
     pub bytes_after: Card32,
     pub num_items: Card32,
-    pub data: Vec<Byte>,
+    pub data: Cow<'q, [Byte]>,
 }
-impl GetOutputPropertyReply {}
-impl AsByteSequence for GetOutputPropertyReply {
+impl<'q> GetOutputPropertyReply {}
+impl<'q> AsByteSequence for GetOutputPropertyReply<'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2794,7 +2794,7 @@ impl AsByteSequence for GetOutputPropertyReply {
         let (num_items, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Vec<Byte>, usize) = vector_from_bytes(
+        let (data, block_len): (Cow<'static, [Byte]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((num_items as usize) * ((format as usize) / (8))) as usize,
         )?;
@@ -2832,15 +2832,15 @@ impl AsByteSequence for GetOutputPropertyReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateModeRequest {
+pub struct CreateModeRequest<'r> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
     pub mode_info: ModeInfo,
-    pub name: String,
+    pub name: Cow<'r, str>,
 }
-impl CreateModeRequest {}
-impl AsByteSequence for CreateModeRequest {
+impl<'r> CreateModeRequest {}
+impl<'r> AsByteSequence for CreateModeRequest<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2867,7 +2867,7 @@ impl AsByteSequence for CreateModeRequest {
         index += sz;
         let (mode_info, sz): (ModeInfo, usize) = <ModeInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) =
+        let (name, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -3168,7 +3168,7 @@ impl Request for GetCrtcInfoRequest {
     type Reply = GetCrtcInfoReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCrtcInfoReply {
+pub struct GetCrtcInfoReply<'s, 't> {
     pub reply_type: u8,
     pub status: SetConfig,
     pub sequence: u16,
@@ -3181,11 +3181,11 @@ pub struct GetCrtcInfoReply {
     pub mode: Mode,
     pub rotation: Rotation,
     pub rotations: Rotation,
-    pub outputs: Vec<Output>,
-    pub possible: Vec<Output>,
+    pub outputs: Cow<'s, [Output]>,
+    pub possible: Cow<'t, [Output]>,
 }
-impl GetCrtcInfoReply {}
-impl AsByteSequence for GetCrtcInfoReply {
+impl<'s, 't> GetCrtcInfoReply {}
+impl<'s, 't> AsByteSequence for GetCrtcInfoReply<'s, 't> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3243,11 +3243,11 @@ impl AsByteSequence for GetCrtcInfoReply {
         index += sz;
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
-        let (possible, block_len): (Vec<Output>, usize) =
+        let (possible, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
@@ -3300,7 +3300,7 @@ impl AsByteSequence for GetCrtcInfoReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetCrtcConfigRequest {
+pub struct SetCrtcConfigRequest<'u> {
     pub req_type: u8,
     pub length: u16,
     pub crtc: Crtc,
@@ -3310,10 +3310,10 @@ pub struct SetCrtcConfigRequest {
     pub y: Int16,
     pub mode: Mode,
     pub rotation: Rotation,
-    pub outputs: Vec<Output>,
+    pub outputs: Cow<'u, [Output]>,
 }
-impl SetCrtcConfigRequest {}
-impl AsByteSequence for SetCrtcConfigRequest {
+impl<'u> SetCrtcConfigRequest {}
+impl<'u> AsByteSequence for SetCrtcConfigRequest<'u> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3357,7 +3357,7 @@ impl AsByteSequence for SetCrtcConfigRequest {
         let (rotation, sz): (Rotation, usize) = <Rotation>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
@@ -3611,17 +3611,17 @@ impl Request for GetCrtcGammaRequest {
     type Reply = GetCrtcGammaReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCrtcGammaReply {
+pub struct GetCrtcGammaReply<'v, 'w, 'x> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub size: Card16,
-    pub red: Vec<Card16>,
-    pub green: Vec<Card16>,
-    pub blue: Vec<Card16>,
+    pub red: Cow<'v, [Card16]>,
+    pub green: Cow<'w, [Card16]>,
+    pub blue: Cow<'x, [Card16]>,
 }
-impl GetCrtcGammaReply {}
-impl AsByteSequence for GetCrtcGammaReply {
+impl<'v, 'w, 'x> GetCrtcGammaReply {}
+impl<'v, 'w, 'x> AsByteSequence for GetCrtcGammaReply<'v, 'w, 'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3656,15 +3656,15 @@ impl AsByteSequence for GetCrtcGammaReply {
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (red, block_len): (Vec<Card16>, usize) =
+        let (red, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (green, block_len): (Vec<Card16>, usize) =
+        let (green, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (blue, block_len): (Vec<Card16>, usize) =
+        let (blue, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -3707,17 +3707,17 @@ impl AsByteSequence for GetCrtcGammaReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetCrtcGammaRequest {
+pub struct SetCrtcGammaRequest<'y, 'z, 'ab> {
     pub req_type: u8,
     pub length: u16,
     pub crtc: Crtc,
     pub size: Card16,
-    pub red: Vec<Card16>,
-    pub green: Vec<Card16>,
-    pub blue: Vec<Card16>,
+    pub red: Cow<'y, [Card16]>,
+    pub green: Cow<'z, [Card16]>,
+    pub blue: Cow<'ab, [Card16]>,
 }
-impl SetCrtcGammaRequest {}
-impl AsByteSequence for SetCrtcGammaRequest {
+impl<'y, 'z, 'ab> SetCrtcGammaRequest {}
+impl<'y, 'z, 'ab> AsByteSequence for SetCrtcGammaRequest<'y, 'z, 'ab> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3752,15 +3752,15 @@ impl AsByteSequence for SetCrtcGammaRequest {
         let (size, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (red, block_len): (Vec<Card16>, usize) =
+        let (red, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (green, block_len): (Vec<Card16>, usize) =
+        let (green, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (blue, block_len): (Vec<Card16>, usize) =
+        let (blue, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (size as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -3857,19 +3857,19 @@ impl Request for GetScreenResourcesCurrentRequest {
     type Reply = GetScreenResourcesCurrentReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetScreenResourcesCurrentReply {
+pub struct GetScreenResourcesCurrentReply<'bb, 'cb, 'db, 'eb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub timestamp: Timestamp,
     pub config_timestamp: Timestamp,
-    pub crtcs: Vec<Crtc>,
-    pub outputs: Vec<Output>,
-    pub modes: Vec<ModeInfo>,
-    pub names: Vec<Byte>,
+    pub crtcs: Cow<'bb, [Crtc]>,
+    pub outputs: Cow<'cb, [Output]>,
+    pub modes: Cow<'db, [ModeInfo]>,
+    pub names: Cow<'eb, [Byte]>,
 }
-impl GetScreenResourcesCurrentReply {}
-impl AsByteSequence for GetScreenResourcesCurrentReply {
+impl<'bb, 'cb, 'db, 'eb> GetScreenResourcesCurrentReply {}
+impl<'bb, 'cb, 'db, 'eb> AsByteSequence for GetScreenResourcesCurrentReply<'bb, 'cb, 'db, 'eb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3922,19 +3922,19 @@ impl AsByteSequence for GetScreenResourcesCurrentReply {
         let (len3, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (crtcs, block_len): (Vec<Crtc>, usize) =
+        let (crtcs, block_len): (Cow<'static, [Crtc]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Crtc>());
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
-        let (modes, block_len): (Vec<ModeInfo>, usize) =
+        let (modes, block_len): (Cow<'static, [ModeInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ModeInfo>());
-        let (names, block_len): (Vec<Byte>, usize) =
+        let (names, block_len): (Cow<'static, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -3989,16 +3989,16 @@ impl AsByteSequence for GetScreenResourcesCurrentReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetCrtcTransformRequest {
+pub struct SetCrtcTransformRequest<'fb, 'gb> {
     pub req_type: u8,
     pub length: u16,
     pub crtc: Crtc,
     pub transform: Transform,
-    pub filter_name: String,
-    pub filter_params: Vec<Fixed>,
+    pub filter_name: Cow<'fb, str>,
+    pub filter_params: Cow<'gb, [Fixed]>,
 }
-impl SetCrtcTransformRequest {}
-impl AsByteSequence for SetCrtcTransformRequest {
+impl<'fb, 'gb> SetCrtcTransformRequest {}
+impl<'fb, 'gb> AsByteSequence for SetCrtcTransformRequest<'fb, 'gb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4033,11 +4033,11 @@ impl AsByteSequence for SetCrtcTransformRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (filter_name, block_len): (String, usize) =
+        let (filter_name, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (filter_params, block_len): (Vec<Fixed>, usize) =
+        let (filter_params, block_len): (Cow<'static, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
@@ -4129,20 +4129,20 @@ impl Request for GetCrtcTransformRequest {
     type Reply = GetCrtcTransformReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCrtcTransformReply {
+pub struct GetCrtcTransformReply<'hb, 'ib, 'jb, 'kb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub pending_transform: Transform,
     pub has_transforms: bool,
     pub current_transform: Transform,
-    pub pending_filter_name: String,
-    pub pending_params: Vec<Fixed>,
-    pub current_filter_name: String,
-    pub current_params: Vec<Fixed>,
+    pub pending_filter_name: Cow<'hb, str>,
+    pub pending_params: Cow<'ib, [Fixed]>,
+    pub current_filter_name: Cow<'jb, str>,
+    pub current_params: Cow<'kb, [Fixed]>,
 }
-impl GetCrtcTransformReply {}
-impl AsByteSequence for GetCrtcTransformReply {
+impl<'hb, 'ib, 'jb, 'kb> GetCrtcTransformReply {}
+impl<'hb, 'ib, 'jb, 'kb> AsByteSequence for GetCrtcTransformReply<'hb, 'ib, 'jb, 'kb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4200,19 +4200,19 @@ impl AsByteSequence for GetCrtcTransformReply {
         index += sz;
         let (len3, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pending_filter_name, block_len): (String, usize) =
+        let (pending_filter_name, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (pending_params, block_len): (Vec<Fixed>, usize) =
+        let (pending_params, block_len): (Cow<'static, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
-        let (current_filter_name, block_len): (String, usize) =
+        let (current_filter_name, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (current_params, block_len): (Vec<Fixed>, usize) =
+        let (current_params, block_len): (Cow<'static, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], len3 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
@@ -4823,15 +4823,15 @@ impl Request for GetProvidersRequest {
     type Reply = GetProvidersReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetProvidersReply {
+pub struct GetProvidersReply<'lb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub timestamp: Timestamp,
-    pub providers: Vec<Provider>,
+    pub providers: Cow<'lb, [Provider]>,
 }
-impl GetProvidersReply {}
-impl AsByteSequence for GetProvidersReply {
+impl<'lb> GetProvidersReply {}
+impl<'lb> AsByteSequence for GetProvidersReply<'lb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4863,7 +4863,7 @@ impl AsByteSequence for GetProvidersReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 18;
-        let (providers, block_len): (Vec<Provider>, usize) =
+        let (providers, block_len): (Cow<'static, [Provider]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Provider>());
@@ -4952,7 +4952,7 @@ impl Request for GetProviderInfoRequest {
     type Reply = GetProviderInfoReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetProviderInfoReply {
+pub struct GetProviderInfoReply<'mb, 'nb, 'ob, 'pb, 'qb> {
     pub reply_type: u8,
     pub status: Card8,
     pub sequence: u16,
@@ -4960,14 +4960,14 @@ pub struct GetProviderInfoReply {
     pub timestamp: Timestamp,
     pub capabilities: ProviderCapability,
     pub num_associated_providers: Card16,
-    pub crtcs: Vec<Crtc>,
-    pub outputs: Vec<Output>,
-    pub associated_providers: Vec<Provider>,
-    pub associated_capability: Vec<Card32>,
-    pub name: String,
+    pub crtcs: Cow<'mb, [Crtc]>,
+    pub outputs: Cow<'nb, [Output]>,
+    pub associated_providers: Cow<'ob, [Provider]>,
+    pub associated_capability: Cow<'pb, [Card32]>,
+    pub name: Cow<'qb, str>,
 }
-impl GetProviderInfoReply {}
-impl AsByteSequence for GetProviderInfoReply {
+impl<'mb, 'nb, 'ob, 'pb, 'qb> GetProviderInfoReply {}
+impl<'mb, 'nb, 'ob, 'pb, 'qb> AsByteSequence for GetProviderInfoReply<'mb, 'nb, 'ob, 'pb, 'qb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5026,27 +5026,30 @@ impl AsByteSequence for GetProviderInfoReply {
         let (len2, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (crtcs, block_len): (Vec<Crtc>, usize) =
+        let (crtcs, block_len): (Cow<'static, [Crtc]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Crtc>());
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
-        let (associated_providers, block_len): (Vec<Provider>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (num_associated_providers as usize) as usize,
-        )?;
+        let (associated_providers, block_len): (Cow<'static, [Provider]>, usize) =
+            vector_from_bytes(
+                &bytes[index..],
+                (num_associated_providers as usize) as usize,
+            )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Provider>());
-        let (associated_capability, block_len): (Vec<Card32>, usize) = vector_from_bytes(
-            &bytes[index..],
-            (num_associated_providers as usize) as usize,
-        )?;
+        let (associated_capability, block_len): (Cow<'static, [Card32]>, usize) =
+            vector_from_bytes(
+                &bytes[index..],
+                (num_associated_providers as usize) as usize,
+            )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len2 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -5421,14 +5424,14 @@ impl Request for ListProviderPropertiesRequest {
     type Reply = ListProviderPropertiesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListProviderPropertiesReply {
+pub struct ListProviderPropertiesReply<'rb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub atoms: Vec<Atom>,
+    pub atoms: Cow<'rb, [Atom]>,
 }
-impl ListProviderPropertiesReply {}
-impl AsByteSequence for ListProviderPropertiesReply {
+impl<'rb> ListProviderPropertiesReply {}
+impl<'rb> AsByteSequence for ListProviderPropertiesReply<'rb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5457,7 +5460,7 @@ impl AsByteSequence for ListProviderPropertiesReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (atoms, block_len): (Vec<Atom>, usize) =
+        let (atoms, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -5540,17 +5543,17 @@ impl Request for QueryProviderPropertyRequest {
     type Reply = QueryProviderPropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryProviderPropertyReply {
+pub struct QueryProviderPropertyReply<'sb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub pending: bool,
     pub range: bool,
     pub immutable: bool,
-    pub valid_values: Vec<Int32>,
+    pub valid_values: Cow<'sb, [Int32]>,
 }
-impl QueryProviderPropertyReply {}
-impl AsByteSequence for QueryProviderPropertyReply {
+impl<'sb> QueryProviderPropertyReply {}
+impl<'sb> AsByteSequence for QueryProviderPropertyReply<'sb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5585,7 +5588,7 @@ impl AsByteSequence for QueryProviderPropertyReply {
         let (immutable, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 21;
-        let (valid_values, block_len): (Vec<Int32>, usize) =
+        let (valid_values, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5620,17 +5623,17 @@ impl AsByteSequence for QueryProviderPropertyReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ConfigureProviderPropertyRequest {
+pub struct ConfigureProviderPropertyRequest<'tb> {
     pub req_type: u8,
     pub length: u16,
     pub provider: Provider,
     pub property: Atom,
     pub pending: bool,
     pub range: bool,
-    pub values: Vec<Int32>,
+    pub values: Cow<'tb, [Int32]>,
 }
-impl ConfigureProviderPropertyRequest {}
-impl AsByteSequence for ConfigureProviderPropertyRequest {
+impl<'tb> ConfigureProviderPropertyRequest {}
+impl<'tb> AsByteSequence for ConfigureProviderPropertyRequest<'tb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5665,7 +5668,7 @@ impl AsByteSequence for ConfigureProviderPropertyRequest {
         let (range, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (values, block_len): (Vec<Int32>, usize) =
+        let (values, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5706,7 +5709,7 @@ impl Request for ConfigureProviderPropertyRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeProviderPropertyRequest {
+pub struct ChangeProviderPropertyRequest<'ub> {
     pub req_type: u8,
     pub length: u16,
     pub provider: Provider,
@@ -5715,10 +5718,10 @@ pub struct ChangeProviderPropertyRequest {
     pub format: Card8,
     pub mode: Card8,
     pub num_items: Card32,
-    pub data: Vec<Void>,
+    pub data: Cow<'ub, [Void]>,
 }
-impl ChangeProviderPropertyRequest {}
-impl AsByteSequence for ChangeProviderPropertyRequest {
+impl<'ub> ChangeProviderPropertyRequest {}
+impl<'ub> AsByteSequence for ChangeProviderPropertyRequest<'ub> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5759,7 +5762,7 @@ impl AsByteSequence for ChangeProviderPropertyRequest {
         index += 2;
         let (num_items, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (data, block_len): (Cow<'static, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((num_items as usize) * ((format as usize) / (8))) as usize,
         )?;
@@ -5949,7 +5952,7 @@ impl Request for GetProviderPropertyRequest {
     type Reply = GetProviderPropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetProviderPropertyReply {
+pub struct GetProviderPropertyReply<'vb> {
     pub reply_type: u8,
     pub format: Card8,
     pub sequence: u16,
@@ -5957,10 +5960,10 @@ pub struct GetProviderPropertyReply {
     pub ty: Atom,
     pub bytes_after: Card32,
     pub num_items: Card32,
-    pub data: Vec<Void>,
+    pub data: Cow<'vb, [Void]>,
 }
-impl GetProviderPropertyReply {}
-impl AsByteSequence for GetProviderPropertyReply {
+impl<'vb> GetProviderPropertyReply {}
+impl<'vb> AsByteSequence for GetProviderPropertyReply<'vb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5996,7 +5999,7 @@ impl AsByteSequence for GetProviderPropertyReply {
         let (num_items, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (data, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (data, block_len): (Cow<'static, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((num_items as usize) * ((format as usize) / (8))) as usize,
         )?;
@@ -6387,7 +6390,7 @@ impl AsByteSequence for ResourceChange {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct MonitorInfo {
+pub struct MonitorInfo<'wb> {
     pub name: Atom,
     pub primary: bool,
     pub automatic: bool,
@@ -6397,10 +6400,10 @@ pub struct MonitorInfo {
     pub height: Card16,
     pub width_in_millimeters: Card32,
     pub height_in_millimeters: Card32,
-    pub outputs: Vec<Output>,
+    pub outputs: Cow<'wb, [Output]>,
 }
-impl MonitorInfo {}
-impl AsByteSequence for MonitorInfo {
+impl<'wb> MonitorInfo {}
+impl<'wb> AsByteSequence for MonitorInfo<'wb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6443,7 +6446,7 @@ impl AsByteSequence for MonitorInfo {
         index += sz;
         let (height_in_millimeters, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());
@@ -6536,16 +6539,16 @@ impl Request for GetMonitorsRequest {
     type Reply = GetMonitorsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetMonitorsReply {
+pub struct GetMonitorsReply<'yb, 'xb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub timestamp: Timestamp,
     pub n_outputs: Card32,
-    pub monitors: Vec<MonitorInfo>,
+    pub monitors: Cow<'yb, [MonitorInfo<'xb>]>,
 }
-impl GetMonitorsReply {}
-impl AsByteSequence for GetMonitorsReply {
+impl<'yb, 'xb> GetMonitorsReply {}
+impl<'yb, 'xb> AsByteSequence for GetMonitorsReply<'yb, 'xb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6559,7 +6562,7 @@ impl AsByteSequence for GetMonitorsReply {
         index += 12;
         let block_len: usize = vector_as_bytes(&self.monitors, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo<'xb>>());
         index
     }
     #[inline]
@@ -6580,10 +6583,10 @@ impl AsByteSequence for GetMonitorsReply {
         let (n_outputs, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (monitors, block_len): (Vec<MonitorInfo>, usize) =
+        let (monitors, block_len): (Cow<'static, [MonitorInfo<'xb>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo<'xb>>());
         Some((
             GetMonitorsReply {
                 reply_type: reply_type,
@@ -6608,20 +6611,20 @@ impl AsByteSequence for GetMonitorsReply {
             + 12
             + {
                 let block_len: usize = self.monitors.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<MonitorInfo<'xb>>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetMonitorRequest {
+pub struct SetMonitorRequest<'zb> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
-    pub monitorinfo: MonitorInfo,
+    pub monitorinfo: MonitorInfo<'zb>,
 }
-impl SetMonitorRequest {}
-impl AsByteSequence for SetMonitorRequest {
+impl<'zb> SetMonitorRequest {}
+impl<'zb> AsByteSequence for SetMonitorRequest<'zb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6643,7 +6646,8 @@ impl AsByteSequence for SetMonitorRequest {
         index += sz;
         let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (monitorinfo, sz): (MonitorInfo, usize) = <MonitorInfo>::from_bytes(&bytes[index..])?;
+        let (monitorinfo, sz): (MonitorInfo<'zb>, usize) =
+            <MonitorInfo<'zb>>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             SetMonitorRequest {
@@ -6720,16 +6724,16 @@ impl Request for DeleteMonitorRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateLeaseRequest {
+pub struct CreateLeaseRequest<'ac, 'bc> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
     pub lid: Lease,
-    pub crtcs: Vec<Crtc>,
-    pub outputs: Vec<Output>,
+    pub crtcs: Cow<'ac, [Crtc]>,
+    pub outputs: Cow<'bc, [Output]>,
 }
-impl CreateLeaseRequest {}
-impl AsByteSequence for CreateLeaseRequest {
+impl<'ac, 'bc> CreateLeaseRequest {}
+impl<'ac, 'bc> AsByteSequence for CreateLeaseRequest<'ac, 'bc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6765,11 +6769,11 @@ impl AsByteSequence for CreateLeaseRequest {
         index += sz;
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (crtcs, block_len): (Vec<Crtc>, usize) =
+        let (crtcs, block_len): (Cow<'static, [Crtc]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Crtc>());
-        let (outputs, block_len): (Vec<Output>, usize) =
+        let (outputs, block_len): (Cow<'static, [Output]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Output>());

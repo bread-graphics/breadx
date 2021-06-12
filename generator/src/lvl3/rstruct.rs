@@ -1,21 +1,17 @@
 // MIT/Apache2 License
 
 use super::{
+    get_mapped_lifetime, lifetime, set_mapped_lifetime,
     syn_util::{derive_attrs, pub_vis, repr_transparent, str_to_exprpath, str_to_ty},
-    Asb, Method, SizeSumPart, Statement, SumOfSizes, SumStatement, ToSyn, Trait, Type,
+    Asb, Field, List, MaybeString, Method, SizeSumPart, Statement, StructureItem, SumOfSizes,
+    SumStatement, ToSyn, Trait, Type,
 };
 use crate::lvl2::{
-    safe_name, Expression, Field, List, MaybeString, Struct as Lvl2Struct, StructSpecial,
-    StructureItem, Type as Lvl2Type, UseCondition,
+    safe_name, Expression, Field as Lvl2Field, Struct as Lvl2Struct, StructSpecial,
+    StructureItem as Lvl2StructureItem, Type as Lvl2Type, UseCondition,
 };
 use proc_macro2::Span;
-use std::{
-    collections::BTreeMap,
-    fmt,
-    iter, mem,
-    ops::Deref,
-    rc::Rc,
-};
+use std::{collections::BTreeMap, fmt, iter, mem, ops::Deref, rc::Rc};
 use tinyvec::ArrayVec;
 
 /// Rust structure.
@@ -29,6 +25,7 @@ pub struct RStruct {
     pub traits: Vec<Trait>,
     pub fds: Vec<String>,
     pub asb: Asb,
+    pub lifetimes: Vec<String>,
 }
 
 impl fmt::Debug for RStruct {
@@ -116,9 +113,7 @@ impl RStruct {
                         ty.clone(),
                         *padding,
                     ),
-                    StructureItem::LenSlot { ty, .. } => {
-                        SizeSumPart::SizeofType(Type::from_lvl2(ty.clone()))
-                    }
+                    StructureItem::LenSlot { ty, .. } => SizeSumPart::SizeofType(ty.clone()),
                 })
                 .collect(),
         );
@@ -155,11 +150,10 @@ impl RStruct {
                 StructureItem::LenSlot { owning_list, ty } => {
                     vec![super::AppendLengthToIndex {
                         owner: owning_list.clone().into_boxed_str(),
-                        ty: Type::from_lvl2(ty.clone()),
+                        ty: ty.clone(),
                     }
                     .into()]
                 }
-
                 StructureItem::List(List {
                     name, ty, padding, ..
                 }) => vec![super::AsBytesList {
@@ -195,14 +189,14 @@ impl RStruct {
                 ..
             }) => {
                 let (cond_pass, cond_init) =
-                    cond_vars(condition, &mut cond_map, &mut last_cond_index, false);
+                    cond_vars(&condition, &mut cond_map, &mut last_cond_index, false);
 
                 cond_init
                     .into_iter()
                     .chain(iter::once(
                         super::LoadStatementVariable {
                             name: name.clone().into(),
-                            ty: Type::from_lvl2(ty.clone()),
+                            ty: ty.clone(),
                             use_slice: true,
                             condition: cond_pass,
                         }
@@ -222,7 +216,7 @@ impl RStruct {
 
                 vec![super::LoadStatementVariable {
                     name: len_name.into(),
-                    ty: Type::from_lvl2(ty.clone()),
+                    ty: ty.clone(),
                     use_slice: true,
                     condition: None,
                 }
@@ -280,7 +274,7 @@ impl RStruct {
 impl ToSyn for RStruct {
     #[inline]
     fn to_syn_item(mut self) -> Vec<syn::Item> {
-        let s = syn::Item::Struct(syn::ItemStruct {
+        let mut s = syn::ItemStruct {
             attrs: (match self.is_transparent {
                 false => None,
                 true => Some(repr_transparent()),
@@ -312,7 +306,29 @@ impl ToSyn for RStruct {
             }
             .into(),
             semi_token: None,
-        });
+        };
+        let generics = syn::Generics {
+            lt_token: Some(Default::default()),
+            gt_token: Some(Default::default()),
+            where_clause: None,
+            params: self
+                .lifetimes
+                .iter()
+                .map(|lifetime| {
+                    syn::GenericParam::Lifetime(syn::LifetimeDef {
+                        attrs: vec![],
+                        colon_token: None,
+                        bounds: iter::empty::<syn::Lifetime>().collect(),
+                        lifetime: syn::Lifetime {
+                            apostrophe: Span::call_site(),
+                            ident: syn::Ident::new(lifetime, Span::call_site()),
+                        },
+                    })
+                })
+                .collect(),
+        };
+        s.generics = generics.clone();
+        let s = syn::Item::Struct(s);
 
         let other_impl_items = mem::take(&mut self.other_impl_items);
         let methods = syn::Item::Impl(syn::ItemImpl {
@@ -320,7 +336,7 @@ impl ToSyn for RStruct {
             defaultness: None,
             unsafety: None,
             impl_token: Default::default(),
-            generics: Default::default(),
+            generics,
             trait_: None,
             self_ty: Box::new(str_to_ty(&self.name)),
             brace_token: Default::default(),
@@ -335,7 +351,7 @@ impl ToSyn for RStruct {
         let Self {
             name, asb, traits, ..
         } = self;
-        let asb = asb.to_syn_item(&name);
+        let asb = asb.to_syn_item(&name, &self.lifetimes);
         let mut s = vec![s, methods];
         s.extend(asb);
         s.extend(traits.into_iter().flat_map(|t| t.to_syn_item(&name)));
@@ -360,7 +376,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
     // special-dependent stuff
     let other: Option<RStruct> = if is_reply {
         if !fields.iter().any(|f| {
-            if let StructureItem::Field(Field { name, .. }) = f {
+            if let Lvl2StructureItem::Field(Lvl2Field { name, .. }) = f {
                 name == "length"
             } else {
                 false
@@ -413,6 +429,14 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         }
     };
 
+    // figure out lifetime stuff
+    let fields: Vec<StructureItem> = fields
+        .into_iter()
+        .map(|field| StructureItem::from_lvl2(field))
+        .collect();
+    let lifetimes: Vec<String> = fields.iter().flat_map(|field| field.lifetimes()).collect();
+    set_mapped_lifetime(&name, lifetimes.len());
+
     let res = RStruct {
         name,
         derives: vec!["Clone", "Debug", "Default", "PartialEq", "PartialOrd"],
@@ -423,6 +447,7 @@ fn from_lvl2(s: Lvl2Struct, is_reply: bool, ext_name: Option<&str>) -> (RStruct,
         other_impl_items: vec![],
         traits,
         asb: Default::default(),
+        lifetimes,
     };
 
     (res, other)

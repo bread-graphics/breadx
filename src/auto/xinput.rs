@@ -47,13 +47,13 @@ impl AsByteSequence for Fp3232 {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetExtensionVersionRequest {
+pub struct GetExtensionVersionRequest<'a> {
     pub req_type: u8,
     pub length: u16,
-    pub name: String,
+    pub name: Cow<'a, str>,
 }
-impl GetExtensionVersionRequest {}
-impl AsByteSequence for GetExtensionVersionRequest {
+impl<'a> GetExtensionVersionRequest {}
+impl<'a> AsByteSequence for GetExtensionVersionRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -79,7 +79,8 @@ impl AsByteSequence for GetExtensionVersionRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -442,15 +443,15 @@ impl AsByteSequence for AxisInfo {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ValuatorInfo {
+pub struct ValuatorInfo<'b> {
     pub class_id: InputClass,
     pub len: Card8,
     pub mode: ValuatorMode,
     pub motion_size: Card32,
-    pub axes: Vec<AxisInfo>,
+    pub axes: Cow<'b, [AxisInfo]>,
 }
-impl ValuatorInfo {}
-impl AsByteSequence for ValuatorInfo {
+impl<'b> ValuatorInfo {}
+impl<'b> AsByteSequence for ValuatorInfo<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -478,7 +479,7 @@ impl AsByteSequence for ValuatorInfo {
         index += sz;
         let (motion_size, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (axes, block_len): (Vec<AxisInfo>, usize) =
+        let (axes, block_len): (Cow<'static, [AxisInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<AxisInfo>());
@@ -539,7 +540,7 @@ impl Default for ValuatorMode {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct InputInfo {
+pub struct InputInfo<'c> {
     pub class_id: InputClass,
     pub len: Card8,
     pub min_keycode: KeyCode,
@@ -548,10 +549,10 @@ pub struct InputInfo {
     pub num_buttons: Card16,
     pub mode: ValuatorMode,
     pub motion_size: Card32,
-    pub axes: Vec<AxisInfo>,
+    pub axes: Cow<'c, [AxisInfo]>,
 }
-impl InputInfo {}
-impl AsByteSequence for InputInfo {
+impl<'c> InputInfo {}
+impl<'c> AsByteSequence for InputInfo<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -637,7 +638,7 @@ impl AsByteSequence for InputInfo {
         } else {
             Default::default()
         };
-        let (axes, block_len): (Vec<AxisInfo>, usize) =
+        let (axes, block_len): (Cow<'static, [AxisInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<AxisInfo>());
@@ -676,11 +677,11 @@ impl AsByteSequence for InputInfo {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceName {
-    pub string: String,
+pub struct DeviceName<'d> {
+    pub string: Cow<'d, str>,
 }
-impl DeviceName {}
-impl AsByteSequence for DeviceName {
+impl<'d> DeviceName {}
+impl<'d> AsByteSequence for DeviceName<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -696,7 +697,7 @@ impl AsByteSequence for DeviceName {
         log::trace!("Deserializing DeviceName from byte buffer");
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (String, usize) =
+        let (string, block_len): (Cow<'static, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -755,18 +756,18 @@ impl Request for ListInputDevicesRequest {
     type Reply = ListInputDevicesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListInputDevicesReply {
+pub struct ListInputDevicesReply<'e, 'g, 'f, 'h> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
     pub devices_len: Card8,
-    pub devices: Vec<DeviceInfo>,
-    pub infos: Vec<InputInfo>,
-    pub names: Vec<Str>,
+    pub devices: Cow<'e, [DeviceInfo]>,
+    pub infos: Cow<'g, [InputInfo<'f>]>,
+    pub names: Cow<'h, [Str]>,
 }
-impl ListInputDevicesReply {}
-impl AsByteSequence for ListInputDevicesReply {
+impl<'e, 'g, 'f, 'h> ListInputDevicesReply {}
+impl<'e, 'g, 'f, 'h> AsByteSequence for ListInputDevicesReply<'e, 'g, 'f, 'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -781,7 +782,7 @@ impl AsByteSequence for ListInputDevicesReply {
         index += buffer_pad(block_len, ::core::mem::align_of::<DeviceInfo>());
         let block_len: usize = vector_as_bytes(&self.infos, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<InputInfo>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<InputInfo<'f>>());
         let block_len: usize = vector_as_bytes(&self.names, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -802,11 +803,11 @@ impl AsByteSequence for ListInputDevicesReply {
         let (devices_len, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (devices, block_len): (Vec<DeviceInfo>, usize) =
+        let (devices, block_len): (Cow<'static, [DeviceInfo]>, usize) =
             vector_from_bytes(&bytes[index..], (devices_len as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<DeviceInfo>());
-        let (infos, block_len): (Vec<InputInfo>, usize) = vector_from_bytes(
+        let (infos, block_len): (Cow<'static, [InputInfo<'f>]>, usize) = vector_from_bytes(
             &bytes[index..],
             (devices
                 .iter()
@@ -814,8 +815,8 @@ impl AsByteSequence for ListInputDevicesReply {
                 .sum::<usize>()) as usize,
         )?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<InputInfo>());
-        let (names, block_len): (Vec<Str>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<InputInfo<'f>>());
+        let (names, block_len): (Cow<'static, [Str]>, usize) =
             vector_from_bytes(&bytes[index..], (devices_len as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -848,7 +849,7 @@ impl AsByteSequence for ListInputDevicesReply {
             }
             + {
                 let block_len: usize = self.infos.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<InputInfo>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<InputInfo<'f>>());
                 block_len + pad
             }
             + {
@@ -946,15 +947,15 @@ impl Request for OpenDeviceRequest {
     type Reply = OpenDeviceReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct OpenDeviceReply {
+pub struct OpenDeviceReply<'i> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub class_info: Vec<InputClassInfo>,
+    pub class_info: Cow<'i, [InputClassInfo]>,
 }
-impl OpenDeviceReply {}
-impl AsByteSequence for OpenDeviceReply {
+impl<'i> OpenDeviceReply {}
+impl<'i> AsByteSequence for OpenDeviceReply<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -984,7 +985,7 @@ impl AsByteSequence for OpenDeviceReply {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (class_info, block_len): (Vec<InputClassInfo>, usize) =
+        let (class_info, block_len): (Cow<'static, [InputClassInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -1177,14 +1178,14 @@ impl AsByteSequence for SetDeviceModeReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SelectExtensionEventRequest {
+pub struct SelectExtensionEventRequest<'j> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'j, [EventClass]>,
 }
-impl SelectExtensionEventRequest {}
-impl AsByteSequence for SelectExtensionEventRequest {
+impl<'j> SelectExtensionEventRequest {}
+impl<'j> AsByteSequence for SelectExtensionEventRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1213,7 +1214,7 @@ impl AsByteSequence for SelectExtensionEventRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -1297,16 +1298,16 @@ impl Request for GetSelectedExtensionEventsRequest {
     type Reply = GetSelectedExtensionEventsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSelectedExtensionEventsReply {
+pub struct GetSelectedExtensionEventsReply<'k, 'l> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub this_classes: Vec<EventClass>,
-    pub all_classes: Vec<EventClass>,
+    pub this_classes: Cow<'k, [EventClass]>,
+    pub all_classes: Cow<'l, [EventClass]>,
 }
-impl GetSelectedExtensionEventsReply {}
-impl AsByteSequence for GetSelectedExtensionEventsReply {
+impl<'k, 'l> GetSelectedExtensionEventsReply {}
+impl<'k, 'l> AsByteSequence for GetSelectedExtensionEventsReply<'k, 'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1342,11 +1343,11 @@ impl AsByteSequence for GetSelectedExtensionEventsReply {
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (this_classes, block_len): (Vec<EventClass>, usize) =
+        let (this_classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
-        let (all_classes, block_len): (Vec<EventClass>, usize) =
+        let (all_classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -1384,15 +1385,15 @@ impl AsByteSequence for GetSelectedExtensionEventsReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeDeviceDontPropagateListRequest {
+pub struct ChangeDeviceDontPropagateListRequest<'m> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
     pub mode: PropagateMode,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'m, [EventClass]>,
 }
-impl ChangeDeviceDontPropagateListRequest {}
-impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
+impl<'m> ChangeDeviceDontPropagateListRequest {}
+impl<'m> AsByteSequence for ChangeDeviceDontPropagateListRequest<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1424,7 +1425,7 @@ impl AsByteSequence for ChangeDeviceDontPropagateListRequest {
         let (mode, sz): (PropagateMode, usize) = <PropagateMode>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -1541,15 +1542,15 @@ impl Request for GetDeviceDontPropagateListRequest {
     type Reply = GetDeviceDontPropagateListReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceDontPropagateListReply {
+pub struct GetDeviceDontPropagateListReply<'n> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'n, [EventClass]>,
 }
-impl GetDeviceDontPropagateListReply {}
-impl AsByteSequence for GetDeviceDontPropagateListReply {
+impl<'n> GetDeviceDontPropagateListReply {}
+impl<'n> AsByteSequence for GetDeviceDontPropagateListReply<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1579,7 +1580,7 @@ impl AsByteSequence for GetDeviceDontPropagateListReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -1840,7 +1841,7 @@ impl AsByteSequence for ChangePointerDeviceReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GrabDeviceRequest {
+pub struct GrabDeviceRequest<'o> {
     pub req_type: u8,
     pub length: u16,
     pub grab_window: Window,
@@ -1849,10 +1850,10 @@ pub struct GrabDeviceRequest {
     pub other_device_mode: GrabMode,
     pub owner_events: bool,
     pub device_id: Card8,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'o, [EventClass]>,
 }
-impl GrabDeviceRequest {}
-impl AsByteSequence for GrabDeviceRequest {
+impl<'o> GrabDeviceRequest {}
+impl<'o> AsByteSequence for GrabDeviceRequest<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1896,7 +1897,7 @@ impl AsByteSequence for GrabDeviceRequest {
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -2054,7 +2055,7 @@ impl Request for UngrabDeviceRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GrabDeviceKeyRequest {
+pub struct GrabDeviceKeyRequest<'p> {
     pub req_type: u8,
     pub length: u16,
     pub grab_window: Window,
@@ -2065,10 +2066,10 @@ pub struct GrabDeviceKeyRequest {
     pub this_device_mode: GrabMode,
     pub other_device_mode: GrabMode,
     pub owner_events: bool,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'p, [EventClass]>,
 }
-impl GrabDeviceKeyRequest {}
-impl AsByteSequence for GrabDeviceKeyRequest {
+impl<'p> GrabDeviceKeyRequest {}
+impl<'p> AsByteSequence for GrabDeviceKeyRequest<'p> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2118,7 +2119,7 @@ impl AsByteSequence for GrabDeviceKeyRequest {
         let (owner_events, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -2272,7 +2273,7 @@ impl Request for UngrabDeviceKeyRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GrabDeviceButtonRequest {
+pub struct GrabDeviceButtonRequest<'q> {
     pub req_type: u8,
     pub length: u16,
     pub grab_window: Window,
@@ -2283,10 +2284,10 @@ pub struct GrabDeviceButtonRequest {
     pub other_device_mode: GrabMode,
     pub button: Card8,
     pub owner_events: bool,
-    pub classes: Vec<EventClass>,
+    pub classes: Cow<'q, [EventClass]>,
 }
-impl GrabDeviceButtonRequest {}
-impl AsByteSequence for GrabDeviceButtonRequest {
+impl<'q> GrabDeviceButtonRequest {}
+impl<'q> AsByteSequence for GrabDeviceButtonRequest<'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2336,7 +2337,7 @@ impl AsByteSequence for GrabDeviceButtonRequest {
         let (owner_events, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -3015,15 +3016,15 @@ impl AsByteSequence for IntegerFeedbackState {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct StringFeedbackState {
+pub struct StringFeedbackState<'r> {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
     pub len: Card16,
     pub max_symbols: Card16,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'r, [Keysym]>,
 }
-impl StringFeedbackState {}
-impl AsByteSequence for StringFeedbackState {
+impl<'r> StringFeedbackState {}
+impl<'r> AsByteSequence for StringFeedbackState<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3051,7 +3052,7 @@ impl AsByteSequence for StringFeedbackState {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -3198,7 +3199,7 @@ impl AsByteSequence for LedFeedbackState {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FeedbackState {
+pub struct FeedbackState<'s> {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
     pub len: Card16,
@@ -3214,7 +3215,7 @@ pub struct FeedbackState {
     pub accel_denom: Card16,
     pub threshold: Card16,
     pub max_symbols: Card16,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'s, [Keysym]>,
     pub resolution: Card32,
     pub min_value: Int32,
     pub max_value: Int32,
@@ -3224,8 +3225,8 @@ pub struct FeedbackState {
     pub pitch_: Card16,
     pub duration_: Card16,
 }
-impl FeedbackState {}
-impl AsByteSequence for FeedbackState {
+impl<'s> FeedbackState {}
+impl<'s> AsByteSequence for FeedbackState<'s> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3394,7 +3395,7 @@ impl AsByteSequence for FeedbackState {
         };
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -3572,15 +3573,15 @@ impl Request for GetFeedbackControlRequest {
     type Reply = GetFeedbackControlReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetFeedbackControlReply {
+pub struct GetFeedbackControlReply<'u, 't> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub feedbacks: Vec<FeedbackState>,
+    pub feedbacks: Cow<'u, [FeedbackState<'t>]>,
 }
-impl GetFeedbackControlReply {}
-impl AsByteSequence for GetFeedbackControlReply {
+impl<'u, 't> GetFeedbackControlReply {}
+impl<'u, 't> AsByteSequence for GetFeedbackControlReply<'u, 't> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3592,7 +3593,7 @@ impl AsByteSequence for GetFeedbackControlReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.feedbacks, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<FeedbackState>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<FeedbackState<'t>>());
         index
     }
     #[inline]
@@ -3610,10 +3611,10 @@ impl AsByteSequence for GetFeedbackControlReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (feedbacks, block_len): (Vec<FeedbackState>, usize) =
+        let (feedbacks, block_len): (Cow<'static, [FeedbackState<'t>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<FeedbackState>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<FeedbackState<'t>>());
         Some((
             GetFeedbackControlReply {
                 reply_type: reply_type,
@@ -3635,7 +3636,8 @@ impl AsByteSequence for GetFeedbackControlReply {
             + 22
             + {
                 let block_len: usize = self.feedbacks.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<FeedbackState>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<FeedbackState<'t>>());
                 block_len + pad
             }
     }
@@ -3842,14 +3844,14 @@ impl AsByteSequence for IntegerFeedbackCtl {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct StringFeedbackCtl {
+pub struct StringFeedbackCtl<'v> {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
     pub len: Card16,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'v, [Keysym]>,
 }
-impl StringFeedbackCtl {}
-impl AsByteSequence for StringFeedbackCtl {
+impl<'v> StringFeedbackCtl {}
+impl<'v> AsByteSequence for StringFeedbackCtl<'v> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3876,7 +3878,7 @@ impl AsByteSequence for StringFeedbackCtl {
         index += 2;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -4022,7 +4024,7 @@ impl AsByteSequence for LedFeedbackCtl {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FeedbackCtl {
+pub struct FeedbackCtl<'w> {
     pub class_id: FeedbackClass,
     pub feedback_id: Card8,
     pub len: Card16,
@@ -4037,7 +4039,7 @@ pub struct FeedbackCtl {
     pub num: Int16,
     pub denom: Int16,
     pub threshold: Int16,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'w, [Keysym]>,
     pub int_to_display: Int32,
     pub led_mask_: Card32,
     pub led_values_: Card32,
@@ -4045,8 +4047,8 @@ pub struct FeedbackCtl {
     pub pitch: Int16,
     pub duration: Int16,
 }
-impl FeedbackCtl {}
-impl AsByteSequence for FeedbackCtl {
+impl<'w> FeedbackCtl {}
+impl<'w> AsByteSequence for FeedbackCtl<'w> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4204,7 +4206,7 @@ impl AsByteSequence for FeedbackCtl {
         };
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -4311,16 +4313,16 @@ impl AsByteSequence for FeedbackCtl {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeFeedbackControlRequest {
+pub struct ChangeFeedbackControlRequest<'x> {
     pub req_type: u8,
     pub length: u16,
     pub mask: ChangeFeedbackControlMask,
     pub device_id: Card8,
     pub feedback_id: Card8,
-    pub feedback: FeedbackCtl,
+    pub feedback: FeedbackCtl<'x>,
 }
-impl ChangeFeedbackControlRequest {}
-impl AsByteSequence for ChangeFeedbackControlRequest {
+impl<'x> ChangeFeedbackControlRequest {}
+impl<'x> AsByteSequence for ChangeFeedbackControlRequest<'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4351,7 +4353,8 @@ impl AsByteSequence for ChangeFeedbackControlRequest {
         let (feedback_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (feedback, sz): (FeedbackCtl, usize) = <FeedbackCtl>::from_bytes(&bytes[index..])?;
+        let (feedback, sz): (FeedbackCtl<'x>, usize) =
+            <FeedbackCtl<'x>>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ChangeFeedbackControlRequest {
@@ -4661,16 +4664,16 @@ impl Request for GetDeviceKeyMappingRequest {
     type Reply = GetDeviceKeyMappingReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceKeyMappingReply {
+pub struct GetDeviceKeyMappingReply<'y> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
     pub keysyms_per_keycode: Card8,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'y, [Keysym]>,
 }
-impl GetDeviceKeyMappingReply {}
-impl AsByteSequence for GetDeviceKeyMappingReply {
+impl<'y> GetDeviceKeyMappingReply {}
+impl<'y> AsByteSequence for GetDeviceKeyMappingReply<'y> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4700,7 +4703,7 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
         let (keysyms_per_keycode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -4732,17 +4735,17 @@ impl AsByteSequence for GetDeviceKeyMappingReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeDeviceKeyMappingRequest {
+pub struct ChangeDeviceKeyMappingRequest<'z> {
     pub req_type: u8,
     pub length: u16,
     pub device_id: Card8,
     pub first_keycode: KeyCode,
     pub keysyms_per_keycode: Card8,
     pub keycode_count: Card8,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'z, [Keysym]>,
 }
-impl ChangeDeviceKeyMappingRequest {}
-impl AsByteSequence for ChangeDeviceKeyMappingRequest {
+impl<'z> ChangeDeviceKeyMappingRequest {}
+impl<'z> AsByteSequence for ChangeDeviceKeyMappingRequest<'z> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4775,7 +4778,7 @@ impl AsByteSequence for ChangeDeviceKeyMappingRequest {
         index += sz;
         let (keycode_count, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keysyms, block_len): (Vec<Keysym>, usize) = vector_from_bytes(
+        let (keysyms, block_len): (Cow<'static, [Keysym]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycode_count as usize) * (keysyms_per_keycode as usize)) as usize,
         )?;
@@ -4867,16 +4870,16 @@ impl Request for GetDeviceModifierMappingRequest {
     type Reply = GetDeviceModifierMappingReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceModifierMappingReply {
+pub struct GetDeviceModifierMappingReply<'ab> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
     pub keycodes_per_modifier: Card8,
-    pub keymaps: Vec<Card8>,
+    pub keymaps: Cow<'ab, [Card8]>,
 }
-impl GetDeviceModifierMappingReply {}
-impl AsByteSequence for GetDeviceModifierMappingReply {
+impl<'ab> GetDeviceModifierMappingReply {}
+impl<'ab> AsByteSequence for GetDeviceModifierMappingReply<'ab> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4906,7 +4909,7 @@ impl AsByteSequence for GetDeviceModifierMappingReply {
         let (keycodes_per_modifier, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (keymaps, block_len): (Vec<Card8>, usize) = vector_from_bytes(
+        let (keymaps, block_len): (Cow<'static, [Card8]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycodes_per_modifier as usize) * (8)) as usize,
         )?;
@@ -4940,15 +4943,15 @@ impl AsByteSequence for GetDeviceModifierMappingReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceModifierMappingRequest {
+pub struct SetDeviceModifierMappingRequest<'bb> {
     pub req_type: u8,
     pub length: u16,
     pub device_id: Card8,
     pub keycodes_per_modifier: Card8,
-    pub keymaps: Vec<Card8>,
+    pub keymaps: Cow<'bb, [Card8]>,
 }
-impl SetDeviceModifierMappingRequest {}
-impl AsByteSequence for SetDeviceModifierMappingRequest {
+impl<'bb> SetDeviceModifierMappingRequest {}
+impl<'bb> AsByteSequence for SetDeviceModifierMappingRequest<'bb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4977,7 +4980,7 @@ impl AsByteSequence for SetDeviceModifierMappingRequest {
         let (keycodes_per_modifier, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (keymaps, block_len): (Vec<Card8>, usize) = vector_from_bytes(
+        let (keymaps, block_len): (Cow<'static, [Card8]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycodes_per_modifier as usize) * (8)) as usize,
         )?;
@@ -5123,15 +5126,15 @@ impl Request for GetDeviceButtonMappingRequest {
     type Reply = GetDeviceButtonMappingReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceButtonMappingReply {
+pub struct GetDeviceButtonMappingReply<'cb> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub map: Vec<Card8>,
+    pub map: Cow<'cb, [Card8]>,
 }
-impl GetDeviceButtonMappingReply {}
-impl AsByteSequence for GetDeviceButtonMappingReply {
+impl<'cb> GetDeviceButtonMappingReply {}
+impl<'cb> AsByteSequence for GetDeviceButtonMappingReply<'cb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5161,7 +5164,7 @@ impl AsByteSequence for GetDeviceButtonMappingReply {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (map, block_len): (Vec<Card8>, usize) =
+        let (map, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -5192,14 +5195,14 @@ impl AsByteSequence for GetDeviceButtonMappingReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceButtonMappingRequest {
+pub struct SetDeviceButtonMappingRequest<'db> {
     pub req_type: u8,
     pub length: u16,
     pub device_id: Card8,
-    pub map: Vec<Card8>,
+    pub map: Cow<'db, [Card8]>,
 }
-impl SetDeviceButtonMappingRequest {}
-impl AsByteSequence for SetDeviceButtonMappingRequest {
+impl<'db> SetDeviceButtonMappingRequest {}
+impl<'db> AsByteSequence for SetDeviceButtonMappingRequest<'db> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5228,7 +5231,7 @@ impl AsByteSequence for SetDeviceButtonMappingRequest {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (map, block_len): (Vec<Card8>, usize) =
+        let (map, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -5415,14 +5418,14 @@ impl AsByteSequence for ButtonState {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ValuatorState {
+pub struct ValuatorState<'eb> {
     pub class_id: InputClass,
     pub len: Card8,
     pub mode: ValuatorStateModeMask,
-    pub valuators: Vec<Int32>,
+    pub valuators: Cow<'eb, [Int32]>,
 }
-impl ValuatorState {}
-impl AsByteSequence for ValuatorState {
+impl<'eb> ValuatorState {}
+impl<'eb> AsByteSequence for ValuatorState<'eb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5448,7 +5451,7 @@ impl AsByteSequence for ValuatorState {
         let (mode, sz): (ValuatorStateModeMask, usize) =
             <ValuatorStateModeMask>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (valuators, block_len): (Vec<Int32>, usize) =
+        let (valuators, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5576,7 +5579,7 @@ impl core::ops::BitXor for ValuatorStateModeMask {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct InputState {
+pub struct InputState<'fb> {
     pub class_id: InputClass,
     pub len: Card8,
     pub num_keys: Card8,
@@ -5584,10 +5587,10 @@ pub struct InputState {
     pub num_buttons: Card8,
     pub buttons: [Card8; 32],
     pub mode: ValuatorStateModeMask,
-    pub valuators: Vec<Int32>,
+    pub valuators: Cow<'fb, [Int32]>,
 }
-impl InputState {}
-impl AsByteSequence for InputState {
+impl<'fb> InputState {}
+impl<'fb> AsByteSequence for InputState<'fb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5650,7 +5653,7 @@ impl AsByteSequence for InputState {
         } else {
             Default::default()
         };
-        let (valuators, block_len): (Vec<Int32>, usize) =
+        let (valuators, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -5737,15 +5740,15 @@ impl Request for QueryDeviceStateRequest {
     type Reply = QueryDeviceStateReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryDeviceStateReply {
+pub struct QueryDeviceStateReply<'hb, 'gb> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub classes: Vec<InputState>,
+    pub classes: Cow<'hb, [InputState<'gb>]>,
 }
-impl QueryDeviceStateReply {}
-impl AsByteSequence for QueryDeviceStateReply {
+impl<'hb, 'gb> QueryDeviceStateReply {}
+impl<'hb, 'gb> AsByteSequence for QueryDeviceStateReply<'hb, 'gb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5757,7 +5760,7 @@ impl AsByteSequence for QueryDeviceStateReply {
         index += 23;
         let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<InputState>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<InputState<'gb>>());
         index
     }
     #[inline]
@@ -5775,10 +5778,10 @@ impl AsByteSequence for QueryDeviceStateReply {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (classes, block_len): (Vec<InputState>, usize) =
+        let (classes, block_len): (Cow<'static, [InputState<'gb>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<InputState>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<InputState<'gb>>());
         Some((
             QueryDeviceStateReply {
                 reply_type: reply_type,
@@ -5800,7 +5803,7 @@ impl AsByteSequence for QueryDeviceStateReply {
             + 23
             + {
                 let block_len: usize = self.classes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<InputState>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<InputState<'gb>>());
                 block_len + pad
             }
     }
@@ -5875,15 +5878,15 @@ impl Request for DeviceBellRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDeviceValuatorsRequest {
+pub struct SetDeviceValuatorsRequest<'ib> {
     pub req_type: u8,
     pub length: u16,
     pub device_id: Card8,
     pub first_valuator: Card8,
-    pub valuators: Vec<Int32>,
+    pub valuators: Cow<'ib, [Int32]>,
 }
-impl SetDeviceValuatorsRequest {}
-impl AsByteSequence for SetDeviceValuatorsRequest {
+impl<'ib> SetDeviceValuatorsRequest {}
+impl<'ib> AsByteSequence for SetDeviceValuatorsRequest<'ib> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5915,7 +5918,7 @@ impl AsByteSequence for SetDeviceValuatorsRequest {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (valuators, block_len): (Vec<Int32>, usize) =
+        let (valuators, block_len): (Cow<'static, [Int32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Int32>());
@@ -6010,16 +6013,16 @@ impl AsByteSequence for SetDeviceValuatorsReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceResolutionState {
+pub struct DeviceResolutionState<'jb, 'kb, 'lb> {
     pub control_id: DeviceControl,
     pub len: Card16,
     pub num_valuators: Card32,
-    pub resolution_values: Vec<Card32>,
-    pub resolution_min: Vec<Card32>,
-    pub resolution_max: Vec<Card32>,
+    pub resolution_values: Cow<'jb, [Card32]>,
+    pub resolution_min: Cow<'kb, [Card32]>,
+    pub resolution_max: Cow<'lb, [Card32]>,
 }
-impl DeviceResolutionState {}
-impl AsByteSequence for DeviceResolutionState {
+impl<'jb, 'kb, 'lb> DeviceResolutionState {}
+impl<'jb, 'kb, 'lb> AsByteSequence for DeviceResolutionState<'jb, 'kb, 'lb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6048,15 +6051,15 @@ impl AsByteSequence for DeviceResolutionState {
         index += sz;
         let (num_valuators, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (resolution_values, block_len): (Vec<Card32>, usize) =
+        let (resolution_values, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (resolution_min, block_len): (Vec<Card32>, usize) =
+        let (resolution_min, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (resolution_max, block_len): (Vec<Card32>, usize) =
+        let (resolution_max, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -6381,13 +6384,13 @@ impl AsByteSequence for DeviceEnableState {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceState {
+pub struct DeviceState<'mb, 'nb, 'ob> {
     pub control_id: DeviceControl,
     pub len: Card16,
     pub num_valuators: Card32,
-    pub resolution_values: Vec<Card32>,
-    pub resolution_min: Vec<Card32>,
-    pub resolution_max: Vec<Card32>,
+    pub resolution_values: Cow<'mb, [Card32]>,
+    pub resolution_min: Cow<'nb, [Card32]>,
+    pub resolution_max: Cow<'ob, [Card32]>,
     pub min_x: Int32,
     pub max_x: Int32,
     pub min_y: Int32,
@@ -6406,8 +6409,8 @@ pub struct DeviceState {
     pub screen: Card32,
     pub following: Card32,
 }
-impl DeviceState {}
-impl AsByteSequence for DeviceState {
+impl<'mb, 'nb, 'ob> DeviceState {}
+impl<'mb, 'nb, 'ob> AsByteSequence for DeviceState<'mb, 'nb, 'ob> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6498,15 +6501,15 @@ impl AsByteSequence for DeviceState {
         } else {
             Default::default()
         };
-        let (resolution_values, block_len): (Vec<Card32>, usize) =
+        let (resolution_values, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (resolution_min, block_len): (Vec<Card32>, usize) =
+        let (resolution_min, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (resolution_max, block_len): (Vec<Card32>, usize) =
+        let (resolution_max, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_valuators as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -6763,16 +6766,16 @@ impl Request for GetDeviceControlRequest {
     type Reply = GetDeviceControlReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDeviceControlReply {
+pub struct GetDeviceControlReply<'pb, 'qb, 'rb> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
     pub status: Card8,
-    pub control: DeviceState,
+    pub control: DeviceState<'pb, 'qb, 'rb>,
 }
-impl GetDeviceControlReply {}
-impl AsByteSequence for GetDeviceControlReply {
+impl<'pb, 'qb, 'rb> GetDeviceControlReply {}
+impl<'pb, 'qb, 'rb> AsByteSequence for GetDeviceControlReply<'pb, 'qb, 'rb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6800,7 +6803,8 @@ impl AsByteSequence for GetDeviceControlReply {
         let (status, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 23;
-        let (control, sz): (DeviceState, usize) = <DeviceState>::from_bytes(&bytes[index..])?;
+        let (control, sz): (DeviceState<'pb, 'qb, 'rb>, usize) =
+            <DeviceState<'pb, 'qb, 'rb>>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             GetDeviceControlReply {
@@ -6826,14 +6830,14 @@ impl AsByteSequence for GetDeviceControlReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceResolutionCtl {
+pub struct DeviceResolutionCtl<'sb> {
     pub control_id: DeviceControl,
     pub len: Card16,
     pub first_valuator: Card8,
-    pub resolution_values: Vec<Card32>,
+    pub resolution_values: Cow<'sb, [Card32]>,
 }
-impl DeviceResolutionCtl {}
-impl AsByteSequence for DeviceResolutionCtl {
+impl<'sb> DeviceResolutionCtl {}
+impl<'sb> AsByteSequence for DeviceResolutionCtl<'sb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -6861,7 +6865,7 @@ impl AsByteSequence for DeviceResolutionCtl {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (resolution_values, block_len): (Vec<Card32>, usize) =
+        let (resolution_values, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -7134,11 +7138,11 @@ impl AsByteSequence for DeviceEnableCtrl {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceCtl {
+pub struct DeviceCtl<'tb> {
     pub control_id: DeviceControl,
     pub len: Card16,
     pub first_valuator: Card8,
-    pub resolution_values: Vec<Card32>,
+    pub resolution_values: Cow<'tb, [Card32]>,
     pub min_x: Int32,
     pub max_x: Int32,
     pub min_y: Int32,
@@ -7156,8 +7160,8 @@ pub struct DeviceCtl {
     pub screen: Int32,
     pub following: Card32,
 }
-impl DeviceCtl {}
-impl AsByteSequence for DeviceCtl {
+impl<'tb> DeviceCtl {}
+impl<'tb> AsByteSequence for DeviceCtl<'tb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7243,7 +7247,7 @@ impl AsByteSequence for DeviceCtl {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (resolution_values, block_len): (Vec<Card32>, usize) =
+        let (resolution_values, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -7418,15 +7422,15 @@ impl AsByteSequence for DeviceCtl {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeDeviceControlRequest {
+pub struct ChangeDeviceControlRequest<'ub> {
     pub req_type: u8,
     pub length: u16,
     pub control_id: DeviceControl,
     pub device_id: Card8,
-    pub control: DeviceCtl,
+    pub control: DeviceCtl<'ub>,
 }
-impl ChangeDeviceControlRequest {}
-impl AsByteSequence for ChangeDeviceControlRequest {
+impl<'ub> ChangeDeviceControlRequest {}
+impl<'ub> AsByteSequence for ChangeDeviceControlRequest<'ub> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7454,7 +7458,7 @@ impl AsByteSequence for ChangeDeviceControlRequest {
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (control, sz): (DeviceCtl, usize) = <DeviceCtl>::from_bytes(&bytes[index..])?;
+        let (control, sz): (DeviceCtl<'ub>, usize) = <DeviceCtl<'ub>>::from_bytes(&bytes[index..])?;
         index += sz;
         Some((
             ChangeDeviceControlRequest {
@@ -7592,15 +7596,15 @@ impl Request for ListDevicePropertiesRequest {
     type Reply = ListDevicePropertiesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListDevicePropertiesReply {
+pub struct ListDevicePropertiesReply<'vb> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub atoms: Vec<Atom>,
+    pub atoms: Cow<'vb, [Atom]>,
 }
-impl ListDevicePropertiesReply {}
-impl AsByteSequence for ListDevicePropertiesReply {
+impl<'vb> ListDevicePropertiesReply {}
+impl<'vb> AsByteSequence for ListDevicePropertiesReply<'vb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7630,7 +7634,7 @@ impl AsByteSequence for ListDevicePropertiesReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (atoms, block_len): (Vec<Atom>, usize) =
+        let (atoms, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -7661,7 +7665,7 @@ impl AsByteSequence for ListDevicePropertiesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeDevicePropertyRequest {
+pub struct ChangeDevicePropertyRequest<'wb, 'xb, 'yb> {
     pub req_type: u8,
     pub length: u16,
     pub property: Atom,
@@ -7670,12 +7674,12 @@ pub struct ChangeDevicePropertyRequest {
     pub format: PropertyFormat,
     pub mode: PropMode,
     pub num_items: Card32,
-    pub data8: Vec<Card8>,
-    pub data16: Vec<Card16>,
-    pub data32: Vec<Card32>,
+    pub data8: Cow<'wb, [Card8]>,
+    pub data16: Cow<'xb, [Card16]>,
+    pub data32: Cow<'yb, [Card32]>,
 }
-impl ChangeDevicePropertyRequest {}
-impl AsByteSequence for ChangeDevicePropertyRequest {
+impl<'wb, 'xb, 'yb> ChangeDevicePropertyRequest {}
+impl<'wb, 'xb, 'yb> AsByteSequence for ChangeDevicePropertyRequest<'wb, 'xb, 'yb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7723,16 +7727,16 @@ impl AsByteSequence for ChangeDevicePropertyRequest {
         index += 1;
         let (num_items, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data8, block_len): (Vec<Card8>, usize) =
+        let (data8, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (data16, block_len): (Vec<Card16>, usize) =
+        let (data16, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (data32, block_len): (Vec<Card32>, usize) =
+        let (data32, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -7967,7 +7971,7 @@ impl Request for GetDevicePropertyRequest {
     type Reply = GetDevicePropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetDevicePropertyReply {
+pub struct GetDevicePropertyReply<'zb, 'ac, 'bc> {
     pub reply_type: u8,
     pub xi_reply_type: Card8,
     pub sequence: u16,
@@ -7977,12 +7981,12 @@ pub struct GetDevicePropertyReply {
     pub num_items: Card32,
     pub format: PropertyFormat,
     pub device_id: Card8,
-    pub data8: Vec<Card8>,
-    pub data16: Vec<Card16>,
-    pub data32: Vec<Card32>,
+    pub data8: Cow<'zb, [Card8]>,
+    pub data16: Cow<'ac, [Card16]>,
+    pub data32: Cow<'bc, [Card32]>,
 }
-impl GetDevicePropertyReply {}
-impl AsByteSequence for GetDevicePropertyReply {
+impl<'zb, 'ac, 'bc> GetDevicePropertyReply {}
+impl<'zb, 'ac, 'bc> AsByteSequence for GetDevicePropertyReply<'zb, 'ac, 'bc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8031,16 +8035,16 @@ impl AsByteSequence for GetDevicePropertyReply {
         let (device_id, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 10;
-        let (data8, block_len): (Vec<Card8>, usize) =
+        let (data8, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (data16, block_len): (Vec<Card16>, usize) =
+        let (data16, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (data32, block_len): (Vec<Card32>, usize) =
+        let (data32, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -8243,7 +8247,7 @@ impl Request for XiQueryPointerRequest {
     type Reply = XiQueryPointerReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiQueryPointerReply {
+pub struct XiQueryPointerReply<'cc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -8256,10 +8260,10 @@ pub struct XiQueryPointerReply {
     pub same_screen: bool,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
+    pub buttons: Cow<'cc, [Card32]>,
 }
-impl XiQueryPointerReply {}
-impl AsByteSequence for XiQueryPointerReply {
+impl<'cc> XiQueryPointerReply {}
+impl<'cc> AsByteSequence for XiQueryPointerReply<'cc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8313,7 +8317,7 @@ impl AsByteSequence for XiQueryPointerReply {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
+        let (buttons, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -8559,15 +8563,15 @@ impl Request for XiChangeCursorRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AddMaster {
+pub struct AddMaster<'dc> {
     pub ty: HierarchyChangeType,
     pub len: Card16,
     pub send_core: bool,
     pub enable: bool,
-    pub name: String,
+    pub name: Cow<'dc, str>,
 }
-impl AddMaster {}
-impl AsByteSequence for AddMaster {
+impl<'dc> AddMaster {}
+impl<'dc> AsByteSequence for AddMaster<'dc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8596,7 +8600,8 @@ impl AsByteSequence for AddMaster {
         index += sz;
         let (enable, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         Some((
@@ -8844,12 +8849,12 @@ impl AsByteSequence for DetachSlave {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct HierarchyChange {
+pub struct HierarchyChange<'ec> {
     pub ty: HierarchyChangeType,
     pub len: Card16,
     pub send_core: bool,
     pub enable: bool,
-    pub name: String,
+    pub name: Cow<'ec, str>,
     pub deviceid: DeviceId,
     pub return_mode: ChangeMode,
     pub return_pointer: DeviceId,
@@ -8858,8 +8863,8 @@ pub struct HierarchyChange {
     pub master: DeviceId,
     pub deviceid__: DeviceId,
 }
-impl HierarchyChange {}
-impl AsByteSequence for HierarchyChange {
+impl<'ec> HierarchyChange {}
+impl<'ec> AsByteSequence for HierarchyChange<'ec> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8928,7 +8933,8 @@ impl AsByteSequence for HierarchyChange {
         } else {
             Default::default()
         };
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         index += 4;
@@ -9026,13 +9032,13 @@ impl AsByteSequence for HierarchyChange {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiChangeHierarchyRequest {
+pub struct XiChangeHierarchyRequest<'gc, 'fc> {
     pub req_type: u8,
     pub length: u16,
-    pub changes: Vec<HierarchyChange>,
+    pub changes: Cow<'gc, [HierarchyChange<'fc>]>,
 }
-impl XiChangeHierarchyRequest {}
-impl AsByteSequence for XiChangeHierarchyRequest {
+impl<'gc, 'fc> XiChangeHierarchyRequest {}
+impl<'gc, 'fc> AsByteSequence for XiChangeHierarchyRequest<'gc, 'fc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9043,7 +9049,7 @@ impl AsByteSequence for XiChangeHierarchyRequest {
         index += 3;
         let block_len: usize = vector_as_bytes(&self.changes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange<'fc>>());
         index
     }
     #[inline]
@@ -9058,10 +9064,10 @@ impl AsByteSequence for XiChangeHierarchyRequest {
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
-        let (changes, block_len): (Vec<HierarchyChange>, usize) =
+        let (changes, block_len): (Cow<'static, [HierarchyChange<'fc>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange<'fc>>());
         Some((
             XiChangeHierarchyRequest {
                 req_type: req_type,
@@ -9075,7 +9081,7 @@ impl AsByteSequence for XiChangeHierarchyRequest {
     fn size(&self) -> usize {
         self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card8>() + 3 + {
             let block_len: usize = self.changes.iter().map(|i| i.size()).sum();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange>());
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<HierarchyChange<'fc>>());
             block_len + pad
         }
     }
@@ -9255,12 +9261,12 @@ impl AsByteSequence for XiGetClientPointerReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct EventMask {
+pub struct EventMask<'hc> {
     pub deviceid: DeviceId,
-    pub mask: Vec<Card32>,
+    pub mask: Cow<'hc, [Card32]>,
 }
-impl EventMask {}
-impl AsByteSequence for EventMask {
+impl<'hc> EventMask {}
+impl<'hc> AsByteSequence for EventMask<'hc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9279,7 +9285,7 @@ impl AsByteSequence for EventMask {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mask, block_len): (Vec<Card32>, usize) =
+        let (mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -9301,14 +9307,14 @@ impl AsByteSequence for EventMask {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiSelectEventsRequest {
+pub struct XiSelectEventsRequest<'jc, 'ic> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
-    pub masks: Vec<EventMask>,
+    pub masks: Cow<'jc, [EventMask<'ic>]>,
 }
-impl XiSelectEventsRequest {}
-impl AsByteSequence for XiSelectEventsRequest {
+impl<'jc, 'ic> XiSelectEventsRequest {}
+impl<'jc, 'ic> AsByteSequence for XiSelectEventsRequest<'jc, 'ic> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9320,7 +9326,7 @@ impl AsByteSequence for XiSelectEventsRequest {
         index += 2;
         let block_len: usize = vector_as_bytes(&self.masks, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask<'ic>>());
         index
     }
     #[inline]
@@ -9337,10 +9343,10 @@ impl AsByteSequence for XiSelectEventsRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (masks, block_len): (Vec<EventMask>, usize) =
+        let (masks, block_len): (Cow<'static, [EventMask<'ic>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask<'ic>>());
         Some((
             XiSelectEventsRequest {
                 req_type: req_type,
@@ -9361,7 +9367,7 @@ impl AsByteSequence for XiSelectEventsRequest {
             + 2
             + {
                 let block_len: usize = self.masks.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EventMask<'ic>>());
                 block_len + pad
             }
     }
@@ -9490,16 +9496,16 @@ impl AsByteSequence for XiQueryVersionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ButtonClass {
+pub struct ButtonClass<'kc, 'lc> {
     pub ty: DeviceClassType,
     pub len: Card16,
     pub sourceid: DeviceId,
     pub num_buttons: Card16,
-    pub state: Vec<Card32>,
-    pub labels: Vec<Atom>,
+    pub state: Cow<'kc, [Card32]>,
+    pub labels: Cow<'lc, [Atom]>,
 }
-impl ButtonClass {}
-impl AsByteSequence for ButtonClass {
+impl<'kc, 'lc> ButtonClass {}
+impl<'kc, 'lc> AsByteSequence for ButtonClass<'kc, 'lc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9527,13 +9533,13 @@ impl AsByteSequence for ButtonClass {
         index += sz;
         let (num_buttons, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (state, block_len): (Vec<Card32>, usize) = vector_from_bytes(
+        let (state, block_len): (Cow<'static, [Card32]>, usize) = vector_from_bytes(
             &bytes[index..],
             (((num_buttons as usize) + (31)) / (32)) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (labels, block_len): (Vec<Atom>, usize) =
+        let (labels, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], (num_buttons as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -9605,14 +9611,14 @@ impl Default for DeviceClassType {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct KeyClass {
+pub struct KeyClass<'mc> {
     pub ty: DeviceClassType,
     pub len: Card16,
     pub sourceid: DeviceId,
-    pub keys: Vec<Card32>,
+    pub keys: Cow<'mc, [Card32]>,
 }
-impl KeyClass {}
-impl AsByteSequence for KeyClass {
+impl<'mc> KeyClass {}
+impl<'mc> AsByteSequence for KeyClass<'mc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -9637,7 +9643,7 @@ impl AsByteSequence for KeyClass {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keys, block_len): (Vec<Card32>, usize) =
+        let (keys, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -10037,14 +10043,14 @@ impl AsByteSequence for ValuatorClass {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceClass {
+pub struct DeviceClass<'nc, 'oc, 'pc> {
     pub ty: DeviceClassType,
     pub len: Card16,
     pub sourceid: DeviceId,
-    pub keys: Vec<Card32>,
+    pub keys: Cow<'nc, [Card32]>,
     pub num_buttons: Card16,
-    pub state: Vec<Card32>,
-    pub labels: Vec<Atom>,
+    pub state: Cow<'oc, [Card32]>,
+    pub labels: Cow<'pc, [Atom]>,
     pub number: Card16,
     pub label: Atom,
     pub min: Fp3232,
@@ -10059,8 +10065,8 @@ pub struct DeviceClass {
     pub mode_: TouchMode,
     pub num_touches: Card8,
 }
-impl DeviceClass {}
-impl AsByteSequence for DeviceClass {
+impl<'nc, 'oc, 'pc> DeviceClass {}
+impl<'nc, 'oc, 'pc> AsByteSequence for DeviceClass<'nc, 'oc, 'pc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10136,7 +10142,7 @@ impl AsByteSequence for DeviceClass {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keys, block_len): (Vec<Card32>, usize) =
+        let (keys, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -10148,13 +10154,13 @@ impl AsByteSequence for DeviceClass {
         } else {
             Default::default()
         };
-        let (state, block_len): (Vec<Card32>, usize) = vector_from_bytes(
+        let (state, block_len): (Cow<'static, [Card32]>, usize) = vector_from_bytes(
             &bytes[index..],
             (((num_buttons as usize) + (31)) / (32)) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (labels, block_len): (Vec<Atom>, usize) =
+        let (labels, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], (num_buttons as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -10317,16 +10323,16 @@ impl AsByteSequence for DeviceClass {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiDeviceInfo {
+pub struct XiDeviceInfo<'qc, 'uc, 'rc, 'sc, 'tc> {
     pub deviceid: DeviceId,
     pub ty: DeviceType,
     pub attachment: DeviceId,
     pub enabled: bool,
-    pub name: String,
-    pub classes: Vec<DeviceClass>,
+    pub name: Cow<'qc, str>,
+    pub classes: Cow<'uc, [DeviceClass<'rc, 'sc, 'tc>]>,
 }
-impl XiDeviceInfo {}
-impl AsByteSequence for XiDeviceInfo {
+impl<'qc, 'uc, 'rc, 'sc, 'tc> XiDeviceInfo {}
+impl<'qc, 'uc, 'rc, 'sc, 'tc> AsByteSequence for XiDeviceInfo<'qc, 'uc, 'rc, 'sc, 'tc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10342,7 +10348,10 @@ impl AsByteSequence for XiDeviceInfo {
         index += buffer_pad(block_len, 4);
         let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceClass<'rc, 'sc, 'tc>>(),
+        );
         index
     }
     #[inline]
@@ -10362,13 +10371,17 @@ impl AsByteSequence for XiDeviceInfo {
         let (enabled, sz): (bool, usize) = <bool>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 1;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len1 as usize)?;
+        let (name, block_len): (Cow<'static, str>, usize) =
+            string_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (classes, block_len): (Vec<DeviceClass>, usize) =
+        let (classes, block_len): (Cow<'static, [DeviceClass<'rc, 'sc, 'tc>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceClass<'rc, 'sc, 'tc>>(),
+        );
         Some((
             XiDeviceInfo {
                 deviceid: deviceid,
@@ -10397,7 +10410,10 @@ impl AsByteSequence for XiDeviceInfo {
             }
             + {
                 let block_len: usize = self.classes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+                let pad: usize = buffer_pad(
+                    block_len,
+                    ::core::mem::align_of::<DeviceClass<'rc, 'sc, 'tc>>(),
+                );
                 block_len + pad
             }
     }
@@ -10490,14 +10506,16 @@ impl Request for XiQueryDeviceRequest {
     type Reply = XiQueryDeviceReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiQueryDeviceReply {
+pub struct XiQueryDeviceReply<'ad, 'vc, 'wc, 'xc, 'yc, 'zc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub infos: Vec<XiDeviceInfo>,
+    pub infos: Cow<'ad, [XiDeviceInfo<'vc, 'wc, 'xc, 'yc, 'zc>]>,
 }
-impl XiQueryDeviceReply {}
-impl AsByteSequence for XiQueryDeviceReply {
+impl<'ad, 'vc, 'wc, 'xc, 'yc, 'zc> XiQueryDeviceReply {}
+impl<'ad, 'vc, 'wc, 'xc, 'yc, 'zc> AsByteSequence
+    for XiQueryDeviceReply<'ad, 'vc, 'wc, 'xc, 'yc, 'zc>
+{
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10509,7 +10527,10 @@ impl AsByteSequence for XiQueryDeviceReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.infos, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<XiDeviceInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<XiDeviceInfo<'vc, 'wc, 'xc, 'yc, 'zc>>(),
+        );
         index
     }
     #[inline]
@@ -10526,10 +10547,13 @@ impl AsByteSequence for XiQueryDeviceReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (infos, block_len): (Vec<XiDeviceInfo>, usize) =
+        let (infos, block_len): (Cow<'static, [XiDeviceInfo<'vc, 'wc, 'xc, 'yc, 'zc>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<XiDeviceInfo>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<XiDeviceInfo<'vc, 'wc, 'xc, 'yc, 'zc>>(),
+        );
         Some((
             XiQueryDeviceReply {
                 reply_type: reply_type,
@@ -10550,7 +10574,10 @@ impl AsByteSequence for XiQueryDeviceReply {
             + 22
             + {
                 let block_len: usize = self.infos.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<XiDeviceInfo>());
+                let pad: usize = buffer_pad(
+                    block_len,
+                    ::core::mem::align_of::<XiDeviceInfo<'vc, 'wc, 'xc, 'yc, 'zc>>(),
+                );
                 block_len + pad
             }
     }
@@ -10726,7 +10753,7 @@ impl AsByteSequence for XiGetFocusReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiGrabDeviceRequest {
+pub struct XiGrabDeviceRequest<'bd> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
@@ -10736,10 +10763,10 @@ pub struct XiGrabDeviceRequest {
     pub mode: GrabMode,
     pub paired_device_mode: GrabMode,
     pub owner_events: GrabOwner,
-    pub mask: Vec<Card32>,
+    pub mask: Cow<'bd, [Card32]>,
 }
-impl XiGrabDeviceRequest {}
-impl AsByteSequence for XiGrabDeviceRequest {
+impl<'bd> XiGrabDeviceRequest {}
+impl<'bd> AsByteSequence for XiGrabDeviceRequest<'bd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10786,7 +10813,7 @@ impl AsByteSequence for XiGrabDeviceRequest {
         index += 1;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (mask, block_len): (Vec<Card32>, usize) =
+        let (mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -11215,7 +11242,7 @@ impl core::ops::BitXor for ModifierMask {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiPassiveGrabDeviceRequest {
+pub struct XiPassiveGrabDeviceRequest<'dd, 'ed> {
     pub req_type: u8,
     pub length: u16,
     pub time: Timestamp,
@@ -11227,11 +11254,11 @@ pub struct XiPassiveGrabDeviceRequest {
     pub grab_mode: GrabMode22,
     pub paired_device_mode: GrabMode,
     pub owner_events: GrabOwner,
-    pub mask: Vec<Card32>,
-    pub modifiers: Vec<Card32>,
+    pub mask: Cow<'dd, [Card32]>,
+    pub modifiers: Cow<'ed, [Card32]>,
 }
-impl XiPassiveGrabDeviceRequest {}
-impl AsByteSequence for XiPassiveGrabDeviceRequest {
+impl<'dd, 'ed> XiPassiveGrabDeviceRequest {}
+impl<'dd, 'ed> AsByteSequence for XiPassiveGrabDeviceRequest<'dd, 'ed> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11290,11 +11317,11 @@ impl AsByteSequence for XiPassiveGrabDeviceRequest {
         let (owner_events, sz): (GrabOwner, usize) = <GrabOwner>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (mask, block_len): (Vec<Card32>, usize) =
+        let (mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (modifiers, block_len): (Vec<Card32>, usize) =
+        let (modifiers, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -11353,14 +11380,14 @@ impl Request for XiPassiveGrabDeviceRequest {
     type Reply = XiPassiveGrabDeviceReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiPassiveGrabDeviceReply {
+pub struct XiPassiveGrabDeviceReply<'cd> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub modifiers: Vec<GrabModifierInfo>,
+    pub modifiers: Cow<'cd, [GrabModifierInfo]>,
 }
-impl XiPassiveGrabDeviceReply {}
-impl AsByteSequence for XiPassiveGrabDeviceReply {
+impl<'cd> XiPassiveGrabDeviceReply {}
+impl<'cd> AsByteSequence for XiPassiveGrabDeviceReply<'cd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11389,7 +11416,7 @@ impl AsByteSequence for XiPassiveGrabDeviceReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (modifiers, block_len): (Vec<GrabModifierInfo>, usize) =
+        let (modifiers, block_len): (Cow<'static, [GrabModifierInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<GrabModifierInfo>());
@@ -11489,17 +11516,17 @@ impl Default for GrabMode22 {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiPassiveUngrabDeviceRequest {
+pub struct XiPassiveUngrabDeviceRequest<'fd> {
     pub req_type: u8,
     pub length: u16,
     pub grab_window: Window,
     pub detail: Card32,
     pub deviceid: DeviceId,
     pub grab_type: GrabType,
-    pub modifiers: Vec<Card32>,
+    pub modifiers: Cow<'fd, [Card32]>,
 }
-impl XiPassiveUngrabDeviceRequest {}
-impl AsByteSequence for XiPassiveUngrabDeviceRequest {
+impl<'fd> XiPassiveUngrabDeviceRequest {}
+impl<'fd> AsByteSequence for XiPassiveUngrabDeviceRequest<'fd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11537,7 +11564,7 @@ impl AsByteSequence for XiPassiveUngrabDeviceRequest {
         let (grab_type, sz): (GrabType, usize) = <GrabType>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
-        let (modifiers, block_len): (Vec<Card32>, usize) =
+        let (modifiers, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -11629,14 +11656,14 @@ impl Request for XiListPropertiesRequest {
     type Reply = XiListPropertiesReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiListPropertiesReply {
+pub struct XiListPropertiesReply<'gd> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub properties: Vec<Atom>,
+    pub properties: Cow<'gd, [Atom]>,
 }
-impl XiListPropertiesReply {}
-impl AsByteSequence for XiListPropertiesReply {
+impl<'gd> XiListPropertiesReply {}
+impl<'gd> AsByteSequence for XiListPropertiesReply<'gd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11665,7 +11692,7 @@ impl AsByteSequence for XiListPropertiesReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (properties, block_len): (Vec<Atom>, usize) =
+        let (properties, block_len): (Cow<'static, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -11695,7 +11722,7 @@ impl AsByteSequence for XiListPropertiesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiChangePropertyRequest {
+pub struct XiChangePropertyRequest<'hd, 'id, 'jd> {
     pub req_type: u8,
     pub length: u16,
     pub deviceid: DeviceId,
@@ -11704,12 +11731,12 @@ pub struct XiChangePropertyRequest {
     pub property: Atom,
     pub ty: Atom,
     pub num_items: Card32,
-    pub data8: Vec<Card8>,
-    pub data16: Vec<Card16>,
-    pub data32: Vec<Card32>,
+    pub data8: Cow<'hd, [Card8]>,
+    pub data16: Cow<'id, [Card16]>,
+    pub data32: Cow<'jd, [Card32]>,
 }
-impl XiChangePropertyRequest {}
-impl AsByteSequence for XiChangePropertyRequest {
+impl<'hd, 'id, 'jd> XiChangePropertyRequest {}
+impl<'hd, 'id, 'jd> AsByteSequence for XiChangePropertyRequest<'hd, 'id, 'jd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11755,16 +11782,16 @@ impl AsByteSequence for XiChangePropertyRequest {
         index += sz;
         let (num_items, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data8, block_len): (Vec<Card8>, usize) =
+        let (data8, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (data16, block_len): (Vec<Card16>, usize) =
+        let (data16, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (data32, block_len): (Vec<Card32>, usize) =
+        let (data32, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -11965,7 +11992,7 @@ impl Request for XiGetPropertyRequest {
     type Reply = XiGetPropertyReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiGetPropertyReply {
+pub struct XiGetPropertyReply<'kd, 'ld, 'md> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -11973,12 +12000,12 @@ pub struct XiGetPropertyReply {
     pub bytes_after: Card32,
     pub num_items: Card32,
     pub format: PropertyFormat,
-    pub data8: Vec<Card8>,
-    pub data16: Vec<Card16>,
-    pub data32: Vec<Card32>,
+    pub data8: Cow<'kd, [Card8]>,
+    pub data16: Cow<'ld, [Card16]>,
+    pub data32: Cow<'md, [Card32]>,
 }
-impl XiGetPropertyReply {}
-impl AsByteSequence for XiGetPropertyReply {
+impl<'kd, 'ld, 'md> XiGetPropertyReply {}
+impl<'kd, 'ld, 'md> AsByteSequence for XiGetPropertyReply<'kd, 'ld, 'md> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12023,16 +12050,16 @@ impl AsByteSequence for XiGetPropertyReply {
         let (format, sz): (PropertyFormat, usize) = <PropertyFormat>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 11;
-        let (data8, block_len): (Vec<Card8>, usize) =
+        let (data8, block_len): (Cow<'static, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
         index += 4;
-        let (data16, block_len): (Vec<Card16>, usize) =
+        let (data16, block_len): (Cow<'static, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (data32, block_len): (Vec<Card32>, usize) =
+        let (data32, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (num_items as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -12130,14 +12157,14 @@ impl Request for XiGetSelectedEventsRequest {
     type Reply = XiGetSelectedEventsReply;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiGetSelectedEventsReply {
+pub struct XiGetSelectedEventsReply<'od, 'nd> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub masks: Vec<EventMask>,
+    pub masks: Cow<'od, [EventMask<'nd>]>,
 }
-impl XiGetSelectedEventsReply {}
-impl AsByteSequence for XiGetSelectedEventsReply {
+impl<'od, 'nd> XiGetSelectedEventsReply {}
+impl<'od, 'nd> AsByteSequence for XiGetSelectedEventsReply<'od, 'nd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12149,7 +12176,7 @@ impl AsByteSequence for XiGetSelectedEventsReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.masks, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask<'nd>>());
         index
     }
     #[inline]
@@ -12166,10 +12193,10 @@ impl AsByteSequence for XiGetSelectedEventsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (masks, block_len): (Vec<EventMask>, usize) =
+        let (masks, block_len): (Cow<'static, [EventMask<'nd>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<EventMask<'nd>>());
         Some((
             XiGetSelectedEventsReply {
                 reply_type: reply_type,
@@ -12190,7 +12217,7 @@ impl AsByteSequence for XiGetSelectedEventsReply {
             + 22
             + {
                 let block_len: usize = self.masks.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EventMask>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<EventMask<'nd>>());
                 block_len + pad
             }
     }
@@ -12238,13 +12265,13 @@ impl AsByteSequence for BarrierReleasePointerInfo {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct XiBarrierReleasePointerRequest {
+pub struct XiBarrierReleasePointerRequest<'pd> {
     pub req_type: u8,
     pub length: u16,
-    pub barriers: Vec<BarrierReleasePointerInfo>,
+    pub barriers: Cow<'pd, [BarrierReleasePointerInfo]>,
 }
-impl XiBarrierReleasePointerRequest {}
-impl AsByteSequence for XiBarrierReleasePointerRequest {
+impl<'pd> XiBarrierReleasePointerRequest {}
+impl<'pd> AsByteSequence for XiBarrierReleasePointerRequest<'pd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12271,7 +12298,7 @@ impl AsByteSequence for XiBarrierReleasePointerRequest {
         index += sz;
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (barriers, block_len): (Vec<BarrierReleasePointerInfo>, usize) =
+        let (barriers, block_len): (Cow<'static, [BarrierReleasePointerInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(
@@ -13260,17 +13287,17 @@ impl core::ops::BitXor for BarrierFlags {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SendExtensionEventRequest {
+pub struct SendExtensionEventRequest<'qd, 'rd> {
     pub req_type: u8,
     pub length: u16,
     pub destination: Window,
     pub device_id: Card8,
     pub propagate: bool,
-    pub events: Vec<EventForSend>,
-    pub classes: Vec<EventClass>,
+    pub events: Cow<'qd, [EventForSend]>,
+    pub classes: Cow<'rd, [EventClass]>,
 }
-impl SendExtensionEventRequest {}
-impl AsByteSequence for SendExtensionEventRequest {
+impl<'qd, 'rd> SendExtensionEventRequest {}
+impl<'qd, 'rd> AsByteSequence for SendExtensionEventRequest<'qd, 'rd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13311,11 +13338,11 @@ impl AsByteSequence for SendExtensionEventRequest {
         let (len1, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 3;
-        let (events, block_len): (Vec<EventForSend>, usize) =
+        let (events, block_len): (Cow<'static, [EventForSend]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventForSend>());
-        let (classes, block_len): (Vec<EventClass>, usize) =
+        let (classes, block_len): (Cow<'static, [EventClass]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<EventClass>());
@@ -14302,7 +14329,7 @@ impl crate::auto::Event for BarrierLeaveEvent {
     const OPCODE: u8 = 26;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ButtonPressEvent {
+pub struct ButtonPressEvent<'sd, 'td, 'ud> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -14319,12 +14346,12 @@ pub struct ButtonPressEvent {
     pub flags: PointerEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'sd, [Card32]>,
+    pub valuator_mask: Cow<'td, [Card32]>,
+    pub axisvalues: Cow<'ud, [Fp3232]>,
 }
-impl ButtonPressEvent {}
-impl AsByteSequence for ButtonPressEvent {
+impl<'sd, 'td, 'ud> ButtonPressEvent {}
+impl<'sd, 'td, 'ud> AsByteSequence for ButtonPressEvent<'sd, 'td, 'ud> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14400,15 +14427,15 @@ impl AsByteSequence for ButtonPressEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -14487,7 +14514,7 @@ impl crate::auto::Event for ButtonPressEvent {
     const OPCODE: u8 = 4;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ButtonReleaseEvent {
+pub struct ButtonReleaseEvent<'vd, 'wd, 'xd> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -14504,12 +14531,12 @@ pub struct ButtonReleaseEvent {
     pub flags: PointerEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'vd, [Card32]>,
+    pub valuator_mask: Cow<'wd, [Card32]>,
+    pub axisvalues: Cow<'xd, [Fp3232]>,
 }
-impl ButtonReleaseEvent {}
-impl AsByteSequence for ButtonReleaseEvent {
+impl<'vd, 'wd, 'xd> ButtonReleaseEvent {}
+impl<'vd, 'wd, 'xd> AsByteSequence for ButtonReleaseEvent<'vd, 'wd, 'xd> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14585,15 +14612,15 @@ impl AsByteSequence for ButtonReleaseEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -15002,17 +15029,17 @@ impl crate::auto::Event for DeviceButtonStateNotifyEvent {
     const OPCODE: u8 = 14;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct DeviceChangedEvent {
+pub struct DeviceChangedEvent<'be, 'yd, 'zd, 'ae> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
     pub sourceid: DeviceId,
     pub reason: ChangeReason,
-    pub classes: Vec<DeviceClass>,
+    pub classes: Cow<'be, [DeviceClass<'yd, 'zd, 'ae>]>,
 }
-impl DeviceChangedEvent {}
-impl AsByteSequence for DeviceChangedEvent {
+impl<'be, 'yd, 'zd, 'ae> DeviceChangedEvent {}
+impl<'be, 'yd, 'zd, 'ae> AsByteSequence for DeviceChangedEvent<'be, 'yd, 'zd, 'ae> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15026,7 +15053,10 @@ impl AsByteSequence for DeviceChangedEvent {
         index += 11;
         let block_len: usize = vector_as_bytes(&self.classes, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceClass<'yd, 'zd, 'ae>>(),
+        );
         index
     }
     #[inline]
@@ -15048,10 +15078,13 @@ impl AsByteSequence for DeviceChangedEvent {
         let (reason, sz): (ChangeReason, usize) = <ChangeReason>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 11;
-        let (classes, block_len): (Vec<DeviceClass>, usize) =
+        let (classes, block_len): (Cow<'static, [DeviceClass<'yd, 'zd, 'ae>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+        index += buffer_pad(
+            block_len,
+            ::core::mem::align_of::<DeviceClass<'yd, 'zd, 'ae>>(),
+        );
         Some((
             DeviceChangedEvent {
                 event_type: event_type,
@@ -15077,7 +15110,10 @@ impl AsByteSequence for DeviceChangedEvent {
             + 11
             + {
                 let block_len: usize = self.classes.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<DeviceClass>());
+                let pad: usize = buffer_pad(
+                    block_len,
+                    ::core::mem::align_of::<DeviceClass<'yd, 'zd, 'ae>>(),
+                );
                 block_len + pad
             }
     }
@@ -15988,7 +16024,7 @@ impl crate::auto::Event for DeviceValuatorEvent {
     const OPCODE: u8 = 0;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct EnterEvent {
+pub struct EnterEvent<'ce> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16007,10 +16043,10 @@ pub struct EnterEvent {
     pub focus: bool,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
+    pub buttons: Cow<'ce, [Card32]>,
 }
-impl EnterEvent {}
-impl AsByteSequence for EnterEvent {
+impl<'ce> EnterEvent {}
+impl<'ce> AsByteSequence for EnterEvent<'ce> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16082,7 +16118,7 @@ impl AsByteSequence for EnterEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
+        let (buttons, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -16143,7 +16179,7 @@ impl crate::auto::Event for EnterEvent {
     const OPCODE: u8 = 7;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FocusInEvent {
+pub struct FocusInEvent<'de> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16162,10 +16198,10 @@ pub struct FocusInEvent {
     pub focus: bool,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
+    pub buttons: Cow<'de, [Card32]>,
 }
-impl FocusInEvent {}
-impl AsByteSequence for FocusInEvent {
+impl<'de> FocusInEvent {}
+impl<'de> AsByteSequence for FocusInEvent<'de> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16237,7 +16273,7 @@ impl AsByteSequence for FocusInEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
+        let (buttons, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -16298,7 +16334,7 @@ impl crate::auto::Event for FocusInEvent {
     const OPCODE: u8 = 9;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FocusOutEvent {
+pub struct FocusOutEvent<'ee> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16317,10 +16353,10 @@ pub struct FocusOutEvent {
     pub focus: bool,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
+    pub buttons: Cow<'ee, [Card32]>,
 }
-impl FocusOutEvent {}
-impl AsByteSequence for FocusOutEvent {
+impl<'ee> FocusOutEvent {}
+impl<'ee> AsByteSequence for FocusOutEvent<'ee> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16392,7 +16428,7 @@ impl AsByteSequence for FocusOutEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
+        let (buttons, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -16453,16 +16489,16 @@ impl crate::auto::Event for FocusOutEvent {
     const OPCODE: u8 = 10;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct HierarchyEvent {
+pub struct HierarchyEvent<'fe> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
     pub time: Timestamp,
     pub flags: HierarchyMask,
-    pub infos: Vec<HierarchyInfo>,
+    pub infos: Cow<'fe, [HierarchyInfo]>,
 }
-impl HierarchyEvent {}
-impl AsByteSequence for HierarchyEvent {
+impl<'fe> HierarchyEvent {}
+impl<'fe> AsByteSequence for HierarchyEvent<'fe> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16495,7 +16531,7 @@ impl AsByteSequence for HierarchyEvent {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 10;
-        let (infos, block_len): (Vec<HierarchyInfo>, usize) =
+        let (infos, block_len): (Cow<'static, [HierarchyInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<HierarchyInfo>());
@@ -16531,7 +16567,7 @@ impl crate::auto::Event for HierarchyEvent {
     const OPCODE: u8 = 11;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct KeyPressEvent {
+pub struct KeyPressEvent<'ge, 'he, 'ie> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16548,12 +16584,12 @@ pub struct KeyPressEvent {
     pub flags: KeyEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'ge, [Card32]>,
+    pub valuator_mask: Cow<'he, [Card32]>,
+    pub axisvalues: Cow<'ie, [Fp3232]>,
 }
-impl KeyPressEvent {}
-impl AsByteSequence for KeyPressEvent {
+impl<'ge, 'he, 'ie> KeyPressEvent {}
+impl<'ge, 'he, 'ie> AsByteSequence for KeyPressEvent<'ge, 'he, 'ie> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16628,15 +16664,15 @@ impl AsByteSequence for KeyPressEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -16715,7 +16751,7 @@ impl crate::auto::Event for KeyPressEvent {
     const OPCODE: u8 = 2;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct KeyReleaseEvent {
+pub struct KeyReleaseEvent<'je, 'ke, 'le> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16732,12 +16768,12 @@ pub struct KeyReleaseEvent {
     pub flags: KeyEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'je, [Card32]>,
+    pub valuator_mask: Cow<'ke, [Card32]>,
+    pub axisvalues: Cow<'le, [Fp3232]>,
 }
-impl KeyReleaseEvent {}
-impl AsByteSequence for KeyReleaseEvent {
+impl<'je, 'ke, 'le> KeyReleaseEvent {}
+impl<'je, 'ke, 'le> AsByteSequence for KeyReleaseEvent<'je, 'ke, 'le> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16812,15 +16848,15 @@ impl AsByteSequence for KeyReleaseEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -16899,7 +16935,7 @@ impl crate::auto::Event for KeyReleaseEvent {
     const OPCODE: u8 = 3;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct LeaveEvent {
+pub struct LeaveEvent<'me> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -16918,10 +16954,10 @@ pub struct LeaveEvent {
     pub focus: bool,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub buttons: Vec<Card32>,
+    pub buttons: Cow<'me, [Card32]>,
 }
-impl LeaveEvent {}
-impl AsByteSequence for LeaveEvent {
+impl<'me> LeaveEvent {}
+impl<'me> AsByteSequence for LeaveEvent<'me> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16993,7 +17029,7 @@ impl AsByteSequence for LeaveEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buttons, block_len): (Vec<Card32>, usize) =
+        let (buttons, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -17054,7 +17090,7 @@ impl crate::auto::Event for LeaveEvent {
     const OPCODE: u8 = 8;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct MotionEvent {
+pub struct MotionEvent<'ne, 'oe, 'pe> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -17071,12 +17107,12 @@ pub struct MotionEvent {
     pub flags: PointerEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'ne, [Card32]>,
+    pub valuator_mask: Cow<'oe, [Card32]>,
+    pub axisvalues: Cow<'pe, [Fp3232]>,
 }
-impl MotionEvent {}
-impl AsByteSequence for MotionEvent {
+impl<'ne, 'oe, 'pe> MotionEvent {}
+impl<'ne, 'oe, 'pe> AsByteSequence for MotionEvent<'ne, 'oe, 'pe> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17152,15 +17188,15 @@ impl AsByteSequence for MotionEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17527,7 +17563,7 @@ impl crate::auto::Event for ProximityOutEvent {
     const OPCODE: u8 = 9;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawButtonPressEvent {
+pub struct RawButtonPressEvent<'qe, 're, 'se> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -17535,12 +17571,12 @@ pub struct RawButtonPressEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'qe, [Card32]>,
+    pub axisvalues: Cow<'re, [Fp3232]>,
+    pub axisvalues_raw: Cow<'se, [Fp3232]>,
 }
-impl RawButtonPressEvent {}
-impl AsByteSequence for RawButtonPressEvent {
+impl<'qe, 're, 'se> RawButtonPressEvent {}
+impl<'qe, 're, 'se> AsByteSequence for RawButtonPressEvent<'qe, 're, 'se> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17586,11 +17622,11 @@ impl AsByteSequence for RawButtonPressEvent {
             <PointerEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17602,7 +17638,7 @@ impl AsByteSequence for RawButtonPressEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17662,7 +17698,7 @@ impl crate::auto::Event for RawButtonPressEvent {
     const OPCODE: u8 = 15;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawButtonReleaseEvent {
+pub struct RawButtonReleaseEvent<'te, 'ue, 've> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -17670,12 +17706,12 @@ pub struct RawButtonReleaseEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'te, [Card32]>,
+    pub axisvalues: Cow<'ue, [Fp3232]>,
+    pub axisvalues_raw: Cow<'ve, [Fp3232]>,
 }
-impl RawButtonReleaseEvent {}
-impl AsByteSequence for RawButtonReleaseEvent {
+impl<'te, 'ue, 've> RawButtonReleaseEvent {}
+impl<'te, 'ue, 've> AsByteSequence for RawButtonReleaseEvent<'te, 'ue, 've> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17721,11 +17757,11 @@ impl AsByteSequence for RawButtonReleaseEvent {
             <PointerEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17737,7 +17773,7 @@ impl AsByteSequence for RawButtonReleaseEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17797,7 +17833,7 @@ impl crate::auto::Event for RawButtonReleaseEvent {
     const OPCODE: u8 = 16;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawKeyPressEvent {
+pub struct RawKeyPressEvent<'we, 'xe, 'ye> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -17805,12 +17841,12 @@ pub struct RawKeyPressEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: KeyEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'we, [Card32]>,
+    pub axisvalues: Cow<'xe, [Fp3232]>,
+    pub axisvalues_raw: Cow<'ye, [Fp3232]>,
 }
-impl RawKeyPressEvent {}
-impl AsByteSequence for RawKeyPressEvent {
+impl<'we, 'xe, 'ye> RawKeyPressEvent {}
+impl<'we, 'xe, 'ye> AsByteSequence for RawKeyPressEvent<'we, 'xe, 'ye> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17855,11 +17891,11 @@ impl AsByteSequence for RawKeyPressEvent {
         let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17871,7 +17907,7 @@ impl AsByteSequence for RawKeyPressEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -17931,7 +17967,7 @@ impl crate::auto::Event for RawKeyPressEvent {
     const OPCODE: u8 = 13;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawKeyReleaseEvent {
+pub struct RawKeyReleaseEvent<'ze, 'af, 'bf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -17939,12 +17975,12 @@ pub struct RawKeyReleaseEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: KeyEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'ze, [Card32]>,
+    pub axisvalues: Cow<'af, [Fp3232]>,
+    pub axisvalues_raw: Cow<'bf, [Fp3232]>,
 }
-impl RawKeyReleaseEvent {}
-impl AsByteSequence for RawKeyReleaseEvent {
+impl<'ze, 'af, 'bf> RawKeyReleaseEvent {}
+impl<'ze, 'af, 'bf> AsByteSequence for RawKeyReleaseEvent<'ze, 'af, 'bf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17989,11 +18025,11 @@ impl AsByteSequence for RawKeyReleaseEvent {
         let (flags, sz): (KeyEventFlags, usize) = <KeyEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18005,7 +18041,7 @@ impl AsByteSequence for RawKeyReleaseEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18065,7 +18101,7 @@ impl crate::auto::Event for RawKeyReleaseEvent {
     const OPCODE: u8 = 14;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawMotionEvent {
+pub struct RawMotionEvent<'cf, 'df, 'ef> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18073,12 +18109,12 @@ pub struct RawMotionEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: PointerEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'cf, [Card32]>,
+    pub axisvalues: Cow<'df, [Fp3232]>,
+    pub axisvalues_raw: Cow<'ef, [Fp3232]>,
 }
-impl RawMotionEvent {}
-impl AsByteSequence for RawMotionEvent {
+impl<'cf, 'df, 'ef> RawMotionEvent {}
+impl<'cf, 'df, 'ef> AsByteSequence for RawMotionEvent<'cf, 'df, 'ef> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18124,11 +18160,11 @@ impl AsByteSequence for RawMotionEvent {
             <PointerEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18140,7 +18176,7 @@ impl AsByteSequence for RawMotionEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18200,7 +18236,7 @@ impl crate::auto::Event for RawMotionEvent {
     const OPCODE: u8 = 17;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawTouchBeginEvent {
+pub struct RawTouchBeginEvent<'ff, 'gf, 'hf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18208,12 +18244,12 @@ pub struct RawTouchBeginEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: TouchEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'ff, [Card32]>,
+    pub axisvalues: Cow<'gf, [Fp3232]>,
+    pub axisvalues_raw: Cow<'hf, [Fp3232]>,
 }
-impl RawTouchBeginEvent {}
-impl AsByteSequence for RawTouchBeginEvent {
+impl<'ff, 'gf, 'hf> RawTouchBeginEvent {}
+impl<'ff, 'gf, 'hf> AsByteSequence for RawTouchBeginEvent<'ff, 'gf, 'hf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18258,11 +18294,11 @@ impl AsByteSequence for RawTouchBeginEvent {
         let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18274,7 +18310,7 @@ impl AsByteSequence for RawTouchBeginEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18334,7 +18370,7 @@ impl crate::auto::Event for RawTouchBeginEvent {
     const OPCODE: u8 = 22;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawTouchEndEvent {
+pub struct RawTouchEndEvent<'if, 'jf, 'kf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18342,12 +18378,12 @@ pub struct RawTouchEndEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: TouchEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'if, [Card32]>,
+    pub axisvalues: Cow<'jf, [Fp3232]>,
+    pub axisvalues_raw: Cow<'kf, [Fp3232]>,
 }
-impl RawTouchEndEvent {}
-impl AsByteSequence for RawTouchEndEvent {
+impl<'if, 'jf, 'kf> RawTouchEndEvent {}
+impl<'if, 'jf, 'kf> AsByteSequence for RawTouchEndEvent<'if, 'jf, 'kf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18392,11 +18428,11 @@ impl AsByteSequence for RawTouchEndEvent {
         let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18408,7 +18444,7 @@ impl AsByteSequence for RawTouchEndEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18468,7 +18504,7 @@ impl crate::auto::Event for RawTouchEndEvent {
     const OPCODE: u8 = 24;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RawTouchUpdateEvent {
+pub struct RawTouchUpdateEvent<'lf, 'mf, 'nf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18476,12 +18512,12 @@ pub struct RawTouchUpdateEvent {
     pub detail: Card32,
     pub sourceid: DeviceId,
     pub flags: TouchEventFlags,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
-    pub axisvalues_raw: Vec<Fp3232>,
+    pub valuator_mask: Cow<'lf, [Card32]>,
+    pub axisvalues: Cow<'mf, [Fp3232]>,
+    pub axisvalues_raw: Cow<'nf, [Fp3232]>,
 }
-impl RawTouchUpdateEvent {}
-impl AsByteSequence for RawTouchUpdateEvent {
+impl<'lf, 'mf, 'nf> RawTouchUpdateEvent {}
+impl<'lf, 'mf, 'nf> AsByteSequence for RawTouchUpdateEvent<'lf, 'mf, 'nf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18526,11 +18562,11 @@ impl AsByteSequence for RawTouchUpdateEvent {
         let (flags, sz): (TouchEventFlags, usize) = <TouchEventFlags>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18542,7 +18578,7 @@ impl AsByteSequence for RawTouchUpdateEvent {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fp3232>());
-        let (axisvalues_raw, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues_raw, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18602,7 +18638,7 @@ impl crate::auto::Event for RawTouchUpdateEvent {
     const OPCODE: u8 = 23;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchBeginEvent {
+pub struct TouchBeginEvent<'of, 'pf, 'qf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18619,12 +18655,12 @@ pub struct TouchBeginEvent {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'of, [Card32]>,
+    pub valuator_mask: Cow<'pf, [Card32]>,
+    pub axisvalues: Cow<'qf, [Fp3232]>,
 }
-impl TouchBeginEvent {}
-impl AsByteSequence for TouchBeginEvent {
+impl<'of, 'pf, 'qf> TouchBeginEvent {}
+impl<'of, 'pf, 'qf> AsByteSequence for TouchBeginEvent<'of, 'pf, 'qf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18699,15 +18735,15 @@ impl AsByteSequence for TouchBeginEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -18786,7 +18822,7 @@ impl crate::auto::Event for TouchBeginEvent {
     const OPCODE: u8 = 18;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchEndEvent {
+pub struct TouchEndEvent<'rf, 'sf, 'tf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -18803,12 +18839,12 @@ pub struct TouchEndEvent {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'rf, [Card32]>,
+    pub valuator_mask: Cow<'sf, [Card32]>,
+    pub axisvalues: Cow<'tf, [Fp3232]>,
 }
-impl TouchEndEvent {}
-impl AsByteSequence for TouchEndEvent {
+impl<'rf, 'sf, 'tf> TouchEndEvent {}
+impl<'rf, 'sf, 'tf> AsByteSequence for TouchEndEvent<'rf, 'sf, 'tf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -18883,15 +18919,15 @@ impl AsByteSequence for TouchEndEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()
@@ -19064,7 +19100,7 @@ impl crate::auto::Event for TouchOwnershipEvent {
     const OPCODE: u8 = 21;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TouchUpdateEvent {
+pub struct TouchUpdateEvent<'uf, 'vf, 'wf> {
     pub event_type: u8,
     pub deviceid: DeviceId,
     pub sequence: u16,
@@ -19081,12 +19117,12 @@ pub struct TouchUpdateEvent {
     pub flags: TouchEventFlags,
     pub mods: ModifierInfo,
     pub group: GroupInfo,
-    pub button_mask: Vec<Card32>,
-    pub valuator_mask: Vec<Card32>,
-    pub axisvalues: Vec<Fp3232>,
+    pub button_mask: Cow<'uf, [Card32]>,
+    pub valuator_mask: Cow<'vf, [Card32]>,
+    pub axisvalues: Cow<'wf, [Fp3232]>,
 }
-impl TouchUpdateEvent {}
-impl AsByteSequence for TouchUpdateEvent {
+impl<'uf, 'vf, 'wf> TouchUpdateEvent {}
+impl<'uf, 'vf, 'wf> AsByteSequence for TouchUpdateEvent<'uf, 'vf, 'wf> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -19161,15 +19197,15 @@ impl AsByteSequence for TouchUpdateEvent {
         index += sz;
         let (group, sz): (GroupInfo, usize) = <GroupInfo>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (button_mask, block_len): (Vec<Card32>, usize) =
+        let (button_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (valuator_mask, block_len): (Vec<Card32>, usize) =
+        let (valuator_mask, block_len): (Cow<'static, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (axisvalues, block_len): (Vec<Fp3232>, usize) = vector_from_bytes(
+        let (axisvalues, block_len): (Cow<'static, [Fp3232]>, usize) = vector_from_bytes(
             &bytes[index..],
             (valuator_mask
                 .iter()

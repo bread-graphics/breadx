@@ -2,9 +2,9 @@
 
 use super::{
     syn_util::{int_litexpr_int, item_field, str_to_exprpath, str_to_path, str_to_pathseg},
-    Type,
+    MaybeString, Type,
 };
-use crate::lvl2::{Expression, MaybeString, UseCondition};
+use crate::lvl2::{Expression, UseCondition};
 use proc_macro2::{Span, TokenStream};
 use std::{borrow::Cow, fmt, iter, ops::Deref, rc::Rc};
 
@@ -713,7 +713,7 @@ impl SizeSumPart {
                             None => {
                                 let align_ty = match ty {
                                     MaybeString::IsAString => Type::Basic("c_char".into()),
-                                    MaybeString::NotAString(ty) => Type::from_lvl2(ty.clone()),
+                                    MaybeString::NotAString(ty) => ty.clone(),
                                 };
                                 get_pad_align(&align_ty)
                             }
