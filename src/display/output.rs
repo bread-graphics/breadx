@@ -5,7 +5,7 @@ use super::{
     RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
 };
 use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace};
-use alloc::{borrow::Cow, string::ToString};
+use alloc::borrow::Cow;
 use core::mem;
 
 #[cfg(feature = "async")]

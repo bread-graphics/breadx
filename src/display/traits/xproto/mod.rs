@@ -19,7 +19,7 @@ use crate::{
     display::{generate_xid, Display, RequestCookie},
     Event, Extension,
 };
-use alloc::{boxed::Box, string::String};
+use alloc::{borrow::Cow, boxed::Box};
 use cty::c_char;
 
 #[cfg(feature = "async")]
@@ -288,10 +288,10 @@ fn create_gc_request(cid: Gcontext, drawable: Drawable, props: GcParameters) -> 
 
 /// Create an `InternAtomRequest` for our use.
 #[inline]
-fn intern_atom_request(name: &str, exists: bool) -> InternAtomRequest<'_> {
+fn intern_atom_request(name: Cow<'_, str>, exists: bool) -> InternAtomRequest<'_> {
     InternAtomRequest {
         only_if_exists: exists,
-        name: name.into(),
+        name,
         ..Default::default()
     }
 }
@@ -403,12 +403,12 @@ fn create_colormap_request(
 pub trait DisplayXprotoExt: Display {
     /// Query for extension information.
     #[inline]
-    fn query_extension(
+    fn query_extension<'a, Name: Into<Cow<'a, str>>>(
         &mut self,
-        name: String,
-    ) -> crate::Result<RequestCookie<QueryExtensionRequest>> {
+        name: Name,
+    ) -> crate::Result<RequestCookie<QueryExtensionRequest<'a>>> {
         self.send_request(QueryExtensionRequest {
-            name,
+            name: name.into(),
             ..Default::default()
         })
     }
@@ -416,9 +416,12 @@ pub trait DisplayXprotoExt: Display {
     /// Query for extension information, but resolve immediately. The `Error::ExtensionNotPresent` error is
     /// returned when the extension is not found.
     #[inline]
-    fn query_extension_immediate(&mut self, name: String) -> crate::Result<Extension> {
+    fn query_extension_immediate<'a, Name: Into<Cow<'a, str>>>(
+        &mut self,
+        name: Name,
+    ) -> crate::Result<Extension> {
         let qer = self.exchange_request(QueryExtensionRequest {
-            name,
+            name: name.into(),
             ..Default::default()
         })?;
         Extension::from_reply(qer)
@@ -502,17 +505,22 @@ pub trait DisplayXprotoExt: Display {
 
     /// Intern a string and get a corresponding atom for that string.
     #[inline]
-    fn intern_atom(
+    fn intern_atom<'a, Name: Into<Cow<'a, str>>>(
         &mut self,
-        name: String,
+        name: Name,
         only_if_exists: bool,
-    ) -> crate::Result<RequestCookie<InternAtomRequest>> {
+    ) -> crate::Result<RequestCookie<InternAtomRequest<'a>>> {
+        let name = name.into();
         self.send_request(intern_atom_request(name, only_if_exists))
     }
 
     /// Intern an atom, but try to resolve the request immediately.
     #[inline]
-    fn intern_atom_immediate(&mut self, name: String, only_if_exists: bool) -> crate::Result<Atom> {
+    fn intern_atom_immediate<'a, Name: Into<Cow<'a, str>>>(
+        &mut self,
+        name: Name,
+        only_if_exists: bool,
+    ) -> crate::Result<Atom> {
         let r = self.intern_atom(name, only_if_exists)?;
         Ok(self.resolve_request(r)?.atom)
     }
@@ -679,12 +687,12 @@ impl<D: Display + ?Sized> DisplayXprotoExt for D {}
 pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     /// Query for extension information redox.
     #[inline]
-    fn query_extension_async(
-        &mut self,
-        name: String,
-    ) -> SendRequestFuture<'_, Self, QueryExtensionRequest> {
+    fn query_extension_async<'a, 'b, Name: Into<Cow<'b, str>>>(
+        &'a mut self,
+        name: Name,
+    ) -> SendRequestFuture<'a, Self, QueryExtensionRequest<'b>> {
         self.send_request_async(QueryExtensionRequest {
-            name,
+            name: name.into(),
             ..Default::default()
         })
     }
@@ -692,16 +700,16 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     /// Query for extension information, but resolve immediately redox . The `Error::ExtensionNotPresent`
     /// error is returned when the extension is not found.
     #[inline]
-    fn query_extension_immediate_async(
-        &mut self,
-        name: String,
+    fn query_extension_immediate_async<'a, 'b, Name: Into<Cow<'b, str>>>(
+        &'a mut self,
+        name: Name,
     ) -> MapFuture<
-        ExchangeRequestFuture<'_, Self, QueryExtensionRequest>,
+        ExchangeRequestFuture<'a, Self, QueryExtensionRequest<'b>>,
         fn(crate::Result<QueryExtensionReply>) -> crate::Result<Extension>,
     > {
         MapFuture::run(
             self.exchange_request_async(QueryExtensionRequest {
-                name,
+                name: name.into(),
                 ..Default::default()
             }),
             |repl| repl.and_then(Extension::from_reply),
@@ -808,26 +816,26 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
 
     /// Intern a string and get a corresponding atom for that string redox.
     #[inline]
-    fn intern_atom_async(
-        &mut self,
-        name: String,
+    fn intern_atom_async<'a, 'b, Name: Into<Cow<'b, str>>>(
+        &'a mut self,
+        name: Name,
         only_if_exists: bool,
-    ) -> SendRequestFuture<'_, Self, InternAtomRequest> {
-        self.send_request_async(intern_atom_request(name, only_if_exists))
+    ) -> SendRequestFuture<'a, Self, InternAtomRequest<'b>> {
+        self.send_request_async(intern_atom_request(name.into(), only_if_exists))
     }
 
     /// Intern an atom, but try to resolve the request immediately redox.
     #[inline]
-    fn intern_atom_immediate_async(
-        &mut self,
-        name: String,
+    fn intern_atom_immediate_async<'a, 'b, Name: Into<Cow<'b, str>>>(
+        &'a mut self,
+        name: Name,
         only_if_exists: bool,
     ) -> MapFuture<
-        ExchangeRequestFuture<'_, Self, InternAtomRequest>,
+        ExchangeRequestFuture<'a, Self, InternAtomRequest<'b>>,
         fn(crate::Result<InternAtomReply>) -> crate::Result<Atom>,
     > {
         MapFuture::run(
-            self.exchange_request_async(intern_atom_request(name, only_if_exists)),
+            self.exchange_request_async(intern_atom_request(name.into(), only_if_exists)),
             |repl| repl.map(|repl| repl.atom),
         )
     }

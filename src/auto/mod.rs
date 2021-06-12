@@ -9,7 +9,7 @@
 
 use super::Fd;
 use alloc::{
-    borrow::{Cow, ToOwned},
+    borrow::Cow,
     string::{String, ToString},
     vec::Vec,
 };

@@ -120,7 +120,7 @@ impl<Conn> BasicDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection + 'static> BasicDisplay<Conn> {
+impl<Conn: Connection> BasicDisplay<Conn> {
     #[inline]
     pub fn from_connection(
         connection: Conn,
@@ -128,7 +128,9 @@ impl<Conn: Connection + 'static> BasicDisplay<Conn> {
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
-        let (setup, xid) = this.connection.as_mut().unwrap().establish(auth_info)?;
+        let mut conn = this.connection.take().unwrap();
+        let (setup, xid) = conn.establish(auth_info)?;
+        this.connection = Some(conn);
 
         this.max_request_len = (setup.maximum_request_length as usize).saturating_mul(4);
 

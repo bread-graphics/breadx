@@ -3,10 +3,8 @@
 use super::Connection;
 use crate::{
     auth_info::AuthInfo,
-    auto::{
-        xproto::{Setup, SetupRequest},
-        AsByteSequence,
-    },
+    auto::{xproto::SetupRequest, AsByteSequence},
+    display::StaticSetup,
     xid::XidGenerator,
     Fd,
 };
@@ -41,8 +39,8 @@ pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest<'static, 'static> {
         byte_order: endian_byte(),
         protocol_major_version: 11,
         protocol_minor_version: 0,
-        authorization_protocol_name: name,
-        authorization_protocol_data: data,
+        authorization_protocol_name: name.into(),
+        authorization_protocol_data: data.into(),
     }
 }
 
@@ -50,7 +48,7 @@ pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest<'static, 'static> {
 pub(crate) fn establish_connection<C: Connection + ?Sized>(
     conn: &mut C,
     auth_info: Option<AuthInfo>,
-) -> crate::Result<(Setup, XidGenerator)> {
+) -> crate::Result<(StaticSetup, XidGenerator)> {
     let setup = create_setup(match auth_info {
         Some(auth) => auth,
         None => AuthInfo::get(),
@@ -80,7 +78,7 @@ pub(crate) fn establish_connection<C: Connection + ?Sized>(
     conn.read_packet(&mut bytes[8..], &mut _fds)?;
 
     let (setup, _) =
-        Setup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
+        StaticSetup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;
     let xid = XidGenerator::new(setup.resource_id_base, setup.resource_id_mask);
     Ok((setup, xid))
 }

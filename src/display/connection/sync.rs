@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::establish_connection;
-use crate::{auth_info::AuthInfo, auto::xproto::Setup, XidGenerator};
+use crate::{auth_info::AuthInfo, display::StaticSetup, XidGenerator};
 
 #[cfg(all(feature = "std", unix))]
 use super::unix;
@@ -26,7 +26,10 @@ pub trait Connection {
     fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result;
     /// Establish a setup using this connection.
     #[inline]
-    fn establish(&mut self, auth_info: Option<AuthInfo>) -> crate::Result<(Setup, XidGenerator)> {
+    fn establish(
+        &mut self,
+        auth_info: Option<AuthInfo>,
+    ) -> crate::Result<(StaticSetup, XidGenerator)> {
         establish_connection(self, auth_info)
     }
 }
