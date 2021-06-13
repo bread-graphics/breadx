@@ -5,7 +5,7 @@ use crate::{
         xfixes::{CreateRegionRequest, DestroyRegionRequest, Region},
         xproto::Rectangle,
     },
-    display::{prelude::*, Display},
+    display::{generate_xid, prelude::*, Display},
 };
 use alloc::vec::Vec;
 
@@ -13,7 +13,7 @@ use alloc::vec::Vec;
 use crate::{
     display::{
         futures::{ExchangeRequestFuture, ExchangeXidFuture},
-        generate_xid, AsyncDisplay,
+        AsyncDisplay,
     },
     util::BoxedFnOnce,
 };
@@ -26,7 +26,7 @@ pub trait DisplayXfixesExt: Display {
         let xid = Region::const_from_xid(generate_xid(self)?);
         self.exchange_request(CreateRegionRequest {
             region: xid,
-            rectangles,
+            rectangles: rectangles.into(),
             ..Default::default()
         })?;
         Ok(xid)
@@ -50,7 +50,7 @@ pub trait AsyncDisplayXfixesExt: AsyncDisplay {
     > {
         let mut crr = CreateRegionRequest {
             region: Region::const_from_xid(0),
-            rectangles,
+            rectangles: rectangles.into(),
             ..Default::default()
         };
         self.exchange_xid_async(Box::new(move |rid| {

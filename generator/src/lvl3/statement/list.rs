@@ -1,13 +1,10 @@
 // MIT/Apache2 License
 
 use super::{bytes_slice, index_plus_equal, let_statement, Statement};
-use crate::{
-    lvl2::MaybeString,
-    lvl3::{
-        cast_to_usize,
-        syn_util::{item_field, str_to_exprpath},
-        Type,
-    },
+use crate::lvl3::{
+    cast_to_usize,
+    syn_util::{item_field, str_to_exprpath},
+    MaybeString, Type,
 };
 use proc_macro2::Span;
 use std::{borrow::Cow, fmt, iter};
@@ -52,7 +49,7 @@ fn pad_statement(ms: &MaybeString, pad: Option<usize>) -> super::SetAlignAndAddP
         Some(pad) => super::SetAlignAndAddPadding::Number(pad as _),
         None => super::SetAlignAndAddPadding::AlignType(match ms {
             MaybeString::IsAString => Type::Basic("c_char".into()),
-            MaybeString::NotAString(ty) => Type::from_lvl2(ty.clone()),
+            MaybeString::NotAString(ty) => ty.clone(),
         }),
     }
 }
@@ -139,10 +136,23 @@ impl Statement for FromBytesList {
                         paren_token: Default::default(),
                         elems: vec![
                             match self.ty {
-                                MaybeString::IsAString => Type::Basic("String".into()).to_syn_ty(),
-                                MaybeString::NotAString(ref ty) => {
-                                    Type::Vector(Box::new(Type::from_lvl2(ty.clone()))).to_syn_ty()
+                                MaybeString::IsAString => {
+                                    Type::Cow(Box::new(Type::Basic("str".into())), "_".into())
+                                        .to_syn_ty()
                                 }
+                                MaybeString::NotAString(ref ty) => Type::Cow(
+                                    Box::new(Type::Slice(Box::new(match ty.clone() {
+                                        Type::HasLifetime(name, lifetimes) => Type::HasLifetime(
+                                            name,
+                                            iter::repeat("_".to_string())
+                                                .take(lifetimes.len())
+                                                .collect(),
+                                        ),
+                                        ty => ty,
+                                    }))),
+                                    "_".into(),
+                                )
+                                .to_syn_ty(),
                             },
                             Type::Basic("usize".into()).to_syn_ty(),
                         ]

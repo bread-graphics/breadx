@@ -1,9 +1,10 @@
 // MIT/Apache2 License
 
 use super::{
-    bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, EXT_KEY_SIZE,
+    bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, StaticSetup,
+    EXT_KEY_SIZE,
 };
-use crate::{auth_info::AuthInfo, auto::xproto::Setup, event::Event, XidGenerator, XID};
+use crate::{auth_info::AuthInfo, event::Event, XidGenerator, XID};
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
@@ -35,7 +36,7 @@ pub struct BasicDisplay<Conn> {
     pub(crate) connection: Option<Conn>,
 
     /// The setup received from the server.
-    pub(crate) setup: Setup,
+    pub(crate) setup: StaticSetup,
 
     /// Whether or not the "bigreq" system has been enabled, which expands the number of permitted bytes to send
     /// across the request. For more information, see the following webpage.
@@ -127,7 +128,9 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
-        let (setup, xid) = this.connection.as_mut().unwrap().establish(auth_info)?;
+        let mut conn = this.connection.take().unwrap();
+        let (setup, xid) = conn.establish(auth_info)?;
+        this.connection = Some(conn);
 
         this.max_request_len = (setup.maximum_request_length as usize).saturating_mul(4);
 
@@ -170,7 +173,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
 
 impl<Conn> DisplayBase for BasicDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
 

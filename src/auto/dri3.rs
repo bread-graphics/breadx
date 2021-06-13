@@ -708,18 +708,18 @@ impl Request for GetSupportedModifiersRequest {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("DRI3");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetSupportedModifiersReply;
+    type Reply = GetSupportedModifiersReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetSupportedModifiersReply {
+pub struct GetSupportedModifiersReply<'a, 'b> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub window_modifiers: Vec<Card64>,
-    pub screen_modifiers: Vec<Card64>,
+    pub window_modifiers: Cow<'a, [Card64]>,
+    pub screen_modifiers: Cow<'b, [Card64]>,
 }
-impl GetSupportedModifiersReply {}
-impl AsByteSequence for GetSupportedModifiersReply {
+impl<'a, 'b> GetSupportedModifiersReply<'a, 'b> {}
+impl<'a, 'b> AsByteSequence for GetSupportedModifiersReply<'a, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -754,11 +754,11 @@ impl AsByteSequence for GetSupportedModifiersReply {
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (window_modifiers, block_len): (Vec<Card64>, usize) =
+        let (window_modifiers, block_len): (Cow<'_, [Card64]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card64>());
-        let (screen_modifiers, block_len): (Vec<Card64>, usize) =
+        let (screen_modifiers, block_len): (Cow<'_, [Card64]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card64>());
@@ -795,7 +795,7 @@ impl AsByteSequence for GetSupportedModifiersReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PixmapFromBuffersRequest {
+pub struct PixmapFromBuffersRequest<'c> {
     pub req_type: u8,
     pub length: u16,
     pub pixmap: Pixmap,
@@ -813,10 +813,10 @@ pub struct PixmapFromBuffersRequest {
     pub depth: Card8,
     pub bpp: Card8,
     pub modifier: Card64,
-    pub buffers: Vec<Fd>,
+    pub buffers: Cow<'c, [Fd]>,
 }
-impl PixmapFromBuffersRequest {}
-impl AsByteSequence for PixmapFromBuffersRequest {
+impl<'c> PixmapFromBuffersRequest<'c> {}
+impl<'c> AsByteSequence for PixmapFromBuffersRequest<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -889,7 +889,7 @@ impl AsByteSequence for PixmapFromBuffersRequest {
         index += 2;
         let (modifier, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (buffers, block_len): (Vec<Fd>, usize) =
+        let (buffers, block_len): (Cow<'_, [Fd]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fd>());
@@ -947,7 +947,7 @@ impl AsByteSequence for PixmapFromBuffersRequest {
             }
     }
 }
-impl Request for PixmapFromBuffersRequest {
+impl<'c> Request for PixmapFromBuffersRequest<'c> {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("DRI3");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -999,10 +999,10 @@ impl Request for BuffersFromPixmapRequest {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("DRI3");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = BuffersFromPixmapReply;
+    type Reply = BuffersFromPixmapReply<'static, 'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct BuffersFromPixmapReply {
+pub struct BuffersFromPixmapReply<'d, 'e, 'f> {
     pub reply_type: u8,
     pub nfd: Card8,
     pub sequence: u16,
@@ -1012,12 +1012,12 @@ pub struct BuffersFromPixmapReply {
     pub modifier: Card64,
     pub depth: Card8,
     pub bpp: Card8,
-    pub strides: Vec<Card32>,
-    pub offsets: Vec<Card32>,
-    pub buffers: Vec<Fd>,
+    pub strides: Cow<'d, [Card32]>,
+    pub offsets: Cow<'e, [Card32]>,
+    pub buffers: Cow<'f, [Fd]>,
 }
-impl BuffersFromPixmapReply {}
-impl AsByteSequence for BuffersFromPixmapReply {
+impl<'d, 'e, 'f> BuffersFromPixmapReply<'d, 'e, 'f> {}
+impl<'d, 'e, 'f> AsByteSequence for BuffersFromPixmapReply<'d, 'e, 'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1067,15 +1067,15 @@ impl AsByteSequence for BuffersFromPixmapReply {
         let (bpp, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 6;
-        let (strides, block_len): (Vec<Card32>, usize) =
+        let (strides, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (nfd as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (offsets, block_len): (Vec<Card32>, usize) =
+        let (offsets, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (nfd as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (buffers, block_len): (Vec<Fd>, usize) =
+        let (buffers, block_len): (Cow<'_, [Fd]>, usize) =
             vector_from_bytes(&bytes[index..], (nfd as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fd>());

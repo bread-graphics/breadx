@@ -100,7 +100,7 @@ fn main() {
                 gc_params.foreground = Some(red_clr);
                 gc.change(&mut conn, gc_params.clone()).unwrap();
 
-                gc.draw_lines(
+                gc.draw_lines::<'_, _, _, &[Segment]>(
                     &mut conn,
                     window,
                     &[

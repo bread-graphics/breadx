@@ -686,10 +686,10 @@ impl Request for GetCursorImageRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetCursorImageReply;
+    type Reply = GetCursorImageReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCursorImageReply {
+pub struct GetCursorImageReply<'a> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -700,10 +700,10 @@ pub struct GetCursorImageReply {
     pub xhot: Card16,
     pub yhot: Card16,
     pub cursor_serial: Card32,
-    pub cursor_image: Vec<Card32>,
+    pub cursor_image: Cow<'a, [Card32]>,
 }
-impl GetCursorImageReply {}
-impl AsByteSequence for GetCursorImageReply {
+impl<'a> GetCursorImageReply<'a> {}
+impl<'a> AsByteSequence for GetCursorImageReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -750,7 +750,7 @@ impl AsByteSequence for GetCursorImageReply {
         let (cursor_serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (cursor_image, block_len): (Vec<Card32>, usize) = vector_from_bytes(
+        let (cursor_image, block_len): (Cow<'_, [Card32]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((width as usize) * (height as usize)) as usize,
         )?;
@@ -816,14 +816,14 @@ impl XidType for Region {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateRegionRequest {
+pub struct CreateRegionRequest<'b> {
     pub req_type: u8,
     pub length: u16,
     pub region: Region,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'b, [Rectangle]>,
 }
-impl CreateRegionRequest {}
-impl AsByteSequence for CreateRegionRequest {
+impl<'b> CreateRegionRequest<'b> {}
+impl<'b> AsByteSequence for CreateRegionRequest<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -847,7 +847,7 @@ impl AsByteSequence for CreateRegionRequest {
         index += sz;
         let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -870,7 +870,7 @@ impl AsByteSequence for CreateRegionRequest {
         }
     }
 }
-impl Request for CreateRegionRequest {
+impl<'b> Request for CreateRegionRequest<'b> {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1150,14 +1150,14 @@ impl Request for DestroyRegionRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetRegionRequest {
+pub struct SetRegionRequest<'c> {
     pub req_type: u8,
     pub length: u16,
     pub region: Region,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'c, [Rectangle]>,
 }
-impl SetRegionRequest {}
-impl AsByteSequence for SetRegionRequest {
+impl<'c> SetRegionRequest<'c> {}
+impl<'c> AsByteSequence for SetRegionRequest<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1181,7 +1181,7 @@ impl AsByteSequence for SetRegionRequest {
         index += sz;
         let (region, sz): (Region, usize) = <Region>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -1204,7 +1204,7 @@ impl AsByteSequence for SetRegionRequest {
         }
     }
 }
-impl Request for SetRegionRequest {
+impl<'c> Request for SetRegionRequest<'c> {
     const OPCODE: u8 = 11;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1677,18 +1677,18 @@ impl Request for FetchRegionRequest {
     const OPCODE: u8 = 19;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = FetchRegionReply;
+    type Reply = FetchRegionReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FetchRegionReply {
+pub struct FetchRegionReply<'d> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub extents: Rectangle,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'d, [Rectangle]>,
 }
-impl FetchRegionReply {}
-impl AsByteSequence for FetchRegionReply {
+impl<'d> FetchRegionReply<'d> {}
+impl<'d> AsByteSequence for FetchRegionReply<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1717,7 +1717,7 @@ impl AsByteSequence for FetchRegionReply {
         let (extents, sz): (Rectangle, usize) = <Rectangle>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) / (2)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -1965,14 +1965,14 @@ impl Request for SetPictureClipRegionRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetCursorNameRequest {
+pub struct SetCursorNameRequest<'e> {
     pub req_type: u8,
     pub length: u16,
     pub cursor: Cursor,
-    pub name: String,
+    pub name: Cow<'e, str>,
 }
-impl SetCursorNameRequest {}
-impl AsByteSequence for SetCursorNameRequest {
+impl<'e> SetCursorNameRequest<'e> {}
+impl<'e> AsByteSequence for SetCursorNameRequest<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2001,7 +2001,8 @@ impl AsByteSequence for SetCursorNameRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -2029,7 +2030,7 @@ impl AsByteSequence for SetCursorNameRequest {
             }
     }
 }
-impl Request for SetCursorNameRequest {
+impl<'e> Request for SetCursorNameRequest<'e> {
     const OPCODE: u8 = 23;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2081,18 +2082,18 @@ impl Request for GetCursorNameRequest {
     const OPCODE: u8 = 24;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetCursorNameReply;
+    type Reply = GetCursorNameReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCursorNameReply {
+pub struct GetCursorNameReply<'f> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub atom: Atom,
-    pub name: String,
+    pub name: Cow<'f, str>,
 }
-impl GetCursorNameReply {}
-impl AsByteSequence for GetCursorNameReply {
+impl<'f> GetCursorNameReply<'f> {}
+impl<'f> AsByteSequence for GetCursorNameReply<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2124,7 +2125,8 @@ impl AsByteSequence for GetCursorNameReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 18;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -2195,10 +2197,10 @@ impl Request for GetCursorImageAndNameRequest {
     const OPCODE: u8 = 25;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetCursorImageAndNameReply;
+    type Reply = GetCursorImageAndNameReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetCursorImageAndNameReply {
+pub struct GetCursorImageAndNameReply<'g, 'h> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -2210,11 +2212,11 @@ pub struct GetCursorImageAndNameReply {
     pub yhot: Card16,
     pub cursor_serial: Card32,
     pub cursor_atom: Atom,
-    pub cursor_image: Vec<Card32>,
-    pub name: String,
+    pub cursor_image: Cow<'g, [Card32]>,
+    pub name: Cow<'h, str>,
 }
-impl GetCursorImageAndNameReply {}
-impl AsByteSequence for GetCursorImageAndNameReply {
+impl<'g, 'h> GetCursorImageAndNameReply<'g, 'h> {}
+impl<'g, 'h> AsByteSequence for GetCursorImageAndNameReply<'g, 'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2270,13 +2272,14 @@ impl AsByteSequence for GetCursorImageAndNameReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (cursor_image, block_len): (Vec<Card32>, usize) = vector_from_bytes(
+        let (cursor_image, block_len): (Cow<'_, [Card32]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((width as usize) * (height as usize)) as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -2380,14 +2383,14 @@ impl Request for ChangeCursorRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeCursorByNameRequest {
+pub struct ChangeCursorByNameRequest<'i> {
     pub req_type: u8,
     pub length: u16,
     pub src: Cursor,
-    pub name: String,
+    pub name: Cow<'i, str>,
 }
-impl ChangeCursorByNameRequest {}
-impl AsByteSequence for ChangeCursorByNameRequest {
+impl<'i> ChangeCursorByNameRequest<'i> {}
+impl<'i> AsByteSequence for ChangeCursorByNameRequest<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2416,7 +2419,8 @@ impl AsByteSequence for ChangeCursorByNameRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -2444,7 +2448,7 @@ impl AsByteSequence for ChangeCursorByNameRequest {
             }
     }
 }
-impl Request for ChangeCursorByNameRequest {
+impl<'i> Request for ChangeCursorByNameRequest<'i> {
     const OPCODE: u8 = 27;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2649,7 +2653,7 @@ impl XidType for Barrier {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreatePointerBarrierRequest {
+pub struct CreatePointerBarrierRequest<'j> {
     pub req_type: u8,
     pub length: u16,
     pub barrier: Barrier,
@@ -2659,10 +2663,10 @@ pub struct CreatePointerBarrierRequest {
     pub x2: Card16,
     pub y2: Card16,
     pub directions: BarrierDirections,
-    pub devices: Vec<Card16>,
+    pub devices: Cow<'j, [Card16]>,
 }
-impl CreatePointerBarrierRequest {}
-impl AsByteSequence for CreatePointerBarrierRequest {
+impl<'j> CreatePointerBarrierRequest<'j> {}
+impl<'j> AsByteSequence for CreatePointerBarrierRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2710,7 +2714,7 @@ impl AsByteSequence for CreatePointerBarrierRequest {
         index += 2;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (devices, block_len): (Vec<Card16>, usize) =
+        let (devices, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
@@ -2751,7 +2755,7 @@ impl AsByteSequence for CreatePointerBarrierRequest {
             }
     }
 }
-impl Request for CreatePointerBarrierRequest {
+impl<'j> Request for CreatePointerBarrierRequest<'j> {
     const OPCODE: u8 = 31;
     const EXTENSION: Option<&'static str> = Some("XFIXES");
     const REPLY_EXPECTS_FDS: bool = false;

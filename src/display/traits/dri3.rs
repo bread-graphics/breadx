@@ -125,8 +125,8 @@ pub trait DisplayDri3Ext: Display {
             ..
         } = self.resolve_request(tok)?;
         Ok(Modifiers {
-            window: window_modifiers,
-            screen: screen_modifiers,
+            window: window_modifiers.into(),
+            screen: screen_modifiers.into(),
         })
     }
 
@@ -161,7 +161,7 @@ pub trait DisplayDri3Ext: Display {
             offset1: offsets[1],
             offset2: offsets[2],
             offset3: offsets[3],
-            buffers: fds,
+            buffers: fds.into(),
             ..Default::default()
         })?;
         Ok(xid)
@@ -358,8 +358,8 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
                          screen_modifiers,
                          ..
                      }| Modifiers {
-                        window: window_modifiers,
-                        screen: screen_modifiers,
+                        window: window_modifiers.into_owned(),
+                        screen: screen_modifiers.into_owned(),
                     },
                 )
             },
@@ -402,7 +402,7 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
             offset1: offsets[1],
             offset2: offsets[2],
             offset3: offsets[3],
-            buffers: fds,
+            buffers: fds.into(),
             ..Default::default()
         };
         self.exchange_xid_async(Box::new(move |xid| {
@@ -518,4 +518,5 @@ pub trait AsyncDisplayDri3Ext: AsyncDisplay {
     }
 }
 
+#[cfg(feature = "async")]
 impl<D: AsyncDisplay + ?Sized> AsyncDisplayDri3Ext for D {}

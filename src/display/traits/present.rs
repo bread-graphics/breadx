@@ -126,7 +126,7 @@ pub trait DisplayPresentExt: Display {
             target_msc,
             divisor,
             remainder,
-            notifies,
+            notifies: notifies.into(),
             ..Default::default()
         })
     }
@@ -256,7 +256,7 @@ pub trait AsyncDisplayPresentExt: AsyncDisplay {
             target_msc,
             divisor,
             remainder,
-            notifies,
+            notifies: notifies.into(),
             ..Default::default()
         })
     }

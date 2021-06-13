@@ -9,9 +9,12 @@ use crate::{
     display::prelude::*,
     Display, GcParameters,
 };
+use alloc::borrow::Cow;
 
 #[cfg(feature = "async")]
 use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendRequestFuture};
+#[cfg(feature = "async")]
+use alloc::vec;
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 
@@ -51,23 +54,33 @@ impl Gcontext {
 
     /// Request to draw a line.
     #[inline]
-    fn poly_segment_request(self, drawable: Drawable, line: &[Segment]) -> PolySegmentRequest {
+    fn poly_segment_request(
+        self,
+        drawable: Drawable,
+        segments: Cow<'_, [Segment]>,
+    ) -> PolySegmentRequest<'_> {
         PolySegmentRequest {
             drawable,
             gc: self,
-            segments: line.to_vec(),
+            segments,
             ..Default::default()
         }
     }
 
     /// Draw a set of lines.
     #[inline]
-    pub fn draw_lines<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_lines<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Lines: Into<Cow<'a, [Segment]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
-        line: &[Segment],
+        lines: Lines,
     ) -> crate::Result {
+        let line = lines.into();
         if line.is_empty() {
             return Ok(());
         }
@@ -78,13 +91,22 @@ impl Gcontext {
     /// Draw a set of lines, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_lines_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_lines_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Lines: Into<Cow<'b, [Segment]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
-        line: &[Segment],
+        lines: Lines,
     ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolySegmentRequest>>
+    where
+        'b: 'a,
     {
+        let line = lines.into();
         match line.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -103,19 +125,21 @@ impl Gcontext {
         target: Target,
         line: Segment,
     ) -> crate::Result {
-        self.draw_lines(dpy, target, &[line])
+        let line = [line];
+        let line: &[Segment] = &line;
+        self.draw_lines(dpy, target, line)
     }
 
     /// Draw a singular line, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_line_async<Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_line_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
         self,
-        dpy: &mut Dpy,
+        dpy: &'a mut Dpy,
         target: Target,
         line: Segment,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolySegmentRequest> {
-        match self.draw_lines_async(dpy, target, &[line]) {
+    ) -> ExchangeRequestFuture<'a, Dpy, PolySegmentRequest<'a>> {
+        match self.draw_lines_async(dpy, target, vec![line]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
         }
@@ -126,24 +150,30 @@ impl Gcontext {
     fn poly_rectangle_request(
         self,
         target: Drawable,
-        rectangles: &[Rectangle],
-    ) -> PolyRectangleRequest {
+        rectangles: Cow<'_, [Rectangle]>,
+    ) -> PolyRectangleRequest<'_> {
         PolyRectangleRequest {
             drawable: target,
             gc: self,
-            rectangles: rectangles.to_vec(),
+            rectangles,
             ..Default::default()
         }
     }
 
     /// Draw one or more rectangles to the screen.
     #[inline]
-    pub fn draw_rectangles<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_rectangles<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Rects: Into<Cow<'a, [Rectangle]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
-        rectangles: &[Rectangle],
+        rectangles: Rects,
     ) -> crate::Result<()> {
+        let rectangles = rectangles.into();
         if rectangles.is_empty() {
             return Ok(());
         }
@@ -154,13 +184,20 @@ impl Gcontext {
     /// Draw one or more rectangles to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_rectangles_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_rectangles_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Rects: Into<Cow<'b, [Rectangle]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
-        rectangles: &[Rectangle],
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyRectangleRequest>>
+        rectangles: Rects,
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyRectangleRequest<'b>>>
     {
+        let rectangles = rectangles.into();
         match rectangles.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -180,7 +217,8 @@ impl Gcontext {
         target: Target,
         rectangle: Rectangle,
     ) -> crate::Result<()> {
-        self.draw_rectangles(dpy, target, &[rectangle])
+        let rectangle: &[Rectangle] = &[rectangle];
+        self.draw_rectangles(dpy, target, rectangle)
     }
 
     /// Draw a rectangle to the screen, async redox.
@@ -191,8 +229,8 @@ impl Gcontext {
         dpy: &mut Dpy,
         target: Target,
         rectangle: Rectangle,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolyRectangleRequest> {
-        match self.draw_rectangles_async(dpy, target, &[rectangle]) {
+    ) -> ExchangeRequestFuture<'_, Dpy, PolyRectangleRequest<'static>> {
+        match self.draw_rectangles_async(dpy, target, vec![rectangle]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
         }
@@ -200,23 +238,29 @@ impl Gcontext {
 
     /// Arc drawing request.
     #[inline]
-    fn poly_arc_request(self, target: Drawable, arcs: &[Arc]) -> PolyArcRequest {
+    fn poly_arc_request(self, target: Drawable, arcs: Cow<'_, [Arc]>) -> PolyArcRequest<'_> {
         PolyArcRequest {
             drawable: target,
             gc: self,
-            arcs: arcs.to_vec(),
+            arcs,
             ..Default::default()
         }
     }
 
     /// Draw one or more arcs to the screen.
     #[inline]
-    pub fn draw_arcs<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arcs<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Arcs: Into<Cow<'a, [Arc]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
-        arcs: &[Arc],
+        arcs: Arcs,
     ) -> crate::Result {
+        let arcs = arcs.into();
         if arcs.is_empty() {
             return Ok(());
         }
@@ -227,12 +271,22 @@ impl Gcontext {
     /// Draw one or more arcs to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_arcs_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arcs_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Arcs: Into<Cow<'b, [Arc]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
-        arcs: &[Arc],
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyArcRequest>> {
+        arcs: Arcs,
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyArcRequest<'b>>>
+    where
+        'b: 'a,
+    {
+        let arcs = arcs.into();
         match arcs.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -251,19 +305,23 @@ impl Gcontext {
         target: Target,
         arc: Arc,
     ) -> crate::Result {
-        self.draw_arcs(dpy, target, &[arc])
+        let arc: &[Arc] = &[arc];
+        self.draw_arcs(dpy, target, arc)
     }
 
     /// Draw an arc to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_arc_async<Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arc_async<'a, 'b, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
         self,
-        dpy: &mut Dpy,
+        dpy: &'a mut Dpy,
         target: Target,
         arc: Arc,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolyArcRequest> {
-        match self.draw_arcs_async(dpy, target, &[arc]) {
+    ) -> ExchangeRequestFuture<'a, Dpy, PolyArcRequest<'b>>
+    where
+        'b: 'a,
+    {
+        match self.draw_arcs_async(dpy, target, vec![arc]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
         }
@@ -276,28 +334,34 @@ impl Gcontext {
         drawable: Drawable,
         shape: PolyShape,
         mode: CoordMode,
-        points: &[Point],
-    ) -> FillPolyRequest {
+        points: Cow<'_, [Point]>,
+    ) -> FillPolyRequest<'_> {
         FillPolyRequest {
             drawable,
             gc: self,
             shape,
             coordinate_mode: mode,
-            points: points.to_vec(),
+            points,
             ..Default::default()
         }
     }
 
     /// Fill a polygon specified by the given points.
     #[inline]
-    pub fn fill_polygon<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_polygon<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Pts: Into<Cow<'a, [Point]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
         shape: PolyShape,
         coordinate_mode: CoordMode,
-        points: &[Point],
+        points: Pts,
     ) -> crate::Result {
+        let points = points.into();
         if points.is_empty() {
             return Ok(());
         }
@@ -308,14 +372,24 @@ impl Gcontext {
     /// Fill a polygon specified by the given points, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn fill_polygon_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_polygon_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Pts: Into<Cow<'b, [Point]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
         shape: PolyShape,
         coordinate_mode: CoordMode,
-        points: &[Point],
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, FillPolyRequest>> {
+        points: Pts,
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, FillPolyRequest>>
+    where
+        'b: 'a,
+    {
+        let points = points.into();
         match points.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -336,24 +410,30 @@ impl Gcontext {
     fn poly_fill_rectangle_request(
         self,
         drawable: Drawable,
-        rectangles: &[Rectangle],
-    ) -> PolyFillRectangleRequest {
+        rectangles: Cow<'_, [Rectangle]>,
+    ) -> PolyFillRectangleRequest<'_> {
         PolyFillRectangleRequest {
             drawable,
             gc: self,
-            rectangles: rectangles.to_vec(),
+            rectangles,
             ..Default::default()
         }
     }
 
     /// Fill a set of one or more rectangles.
     #[inline]
-    pub fn fill_rectangles<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_rectangles<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Rects: Into<Cow<'a, [Rectangle]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
-        rectangles: &[Rectangle],
+        rectangles: Rects,
     ) -> crate::Result {
+        let rectangles = rectangles.into();
         if rectangles.is_empty() {
             return Ok(());
         }
@@ -364,13 +444,22 @@ impl Gcontext {
     /// Fill a set of one or more rectangles, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn fill_rectangles_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_rectangles_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Rects: Into<Cow<'b, [Rectangle]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
-        rectangles: &[Rectangle],
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyFillRectangleRequest>>
-    {
+        rectangles: Rects,
+    ) -> EitherFuture<
+        Ready<crate::Result>,
+        ExchangeRequestFuture<'a, Dpy, PolyFillRectangleRequest<'b>>,
+    > {
+        let rectangles = rectangles.into();
         match rectangles.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -391,7 +480,8 @@ impl Gcontext {
         target: Target,
         rectangle: Rectangle,
     ) -> crate::Result {
-        self.fill_rectangles(dpy, target, &[rectangle])
+        let rectangle: &[Rectangle] = &[rectangle];
+        self.fill_rectangles(dpy, target, rectangle)
     }
 
     /// Fill a single rectangle, async redox.
@@ -403,7 +493,7 @@ impl Gcontext {
         target: Target,
         rectangle: Rectangle,
     ) -> ExchangeRequestFuture<'_, Dpy, PolyFillRectangleRequest> {
-        match self.fill_rectangles_async(dpy, target, &[rectangle]) {
+        match self.fill_rectangles_async(dpy, target, vec![rectangle]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
         }
@@ -411,23 +501,33 @@ impl Gcontext {
 
     /// Request to fill a series of arcs.
     #[inline]
-    fn poly_fill_arc_request(self, drawable: Drawable, arcs: &[Arc]) -> PolyFillArcRequest {
+    fn poly_fill_arc_request(
+        self,
+        drawable: Drawable,
+        arcs: Cow<'_, [Arc]>,
+    ) -> PolyFillArcRequest<'_> {
         PolyFillArcRequest {
             drawable,
             gc: self,
-            arcs: arcs.to_vec(),
+            arcs,
             ..Default::default()
         }
     }
 
     /// Fill a set of one or more arcs.
     #[inline]
-    pub fn fill_arcs<Dpy: Display + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_arcs<
+        'a,
+        Dpy: Display + ?Sized,
+        Target: Into<Drawable>,
+        Arcs: Into<Cow<'a, [Arc]>>,
+    >(
         self,
         dpy: &mut Dpy,
         target: Target,
-        arcs: &[Arc],
+        arcs: Arcs,
     ) -> crate::Result {
+        let arcs = arcs.into();
         if arcs.is_empty() {
             return Ok(());
         }
@@ -438,13 +538,20 @@ impl Gcontext {
     /// Fill a set of one or more arcs, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn fill_arcs_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn fill_arcs_async<
+        'a,
+        'b,
+        Dpy: AsyncDisplay + ?Sized,
+        Target: Into<Drawable>,
+        Arcs: Into<Cow<'b, [Arc]>>,
+    >(
         self,
         dpy: &'a mut Dpy,
         target: Target,
-        arcs: &[Arc],
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyFillArcRequest>>
+        arcs: Arcs,
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyFillArcRequest<'b>>>
     {
+        let arcs = arcs.into();
         match arcs.is_empty() {
             true => EitherFuture::Left {
                 future: future::ready(Ok(())),
@@ -463,7 +570,8 @@ impl Gcontext {
         target: Target,
         arc: Arc,
     ) -> crate::Result {
-        self.fill_arcs(dpy, target, &[arc])
+        let arc: &[Arc] = &[arc];
+        self.fill_arcs(dpy, target, arc)
     }
 
     /// Fill an arc, async redox.
@@ -474,8 +582,8 @@ impl Gcontext {
         dpy: &mut Dpy,
         target: Target,
         arc: Arc,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolyFillArcRequest> {
-        match self.fill_arcs_async(dpy, target, &[arc]) {
+    ) -> ExchangeRequestFuture<'_, Dpy, PolyFillArcRequest<'static>> {
+        match self.fill_arcs_async(dpy, target, vec![arc]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
         }

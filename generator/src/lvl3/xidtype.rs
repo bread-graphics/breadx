@@ -2,9 +2,10 @@
 
 use super::{
     syn_util::{item_field, str_to_exprpath},
-    Asb, ExprWrapper, InputParameter, Method, ParameterUsage, RStruct, Trait, Type as Lvl3Type,
+    Asb, ExprWrapper, InputParameter, Method, ParameterUsage, RStruct, StructureItem, Trait,
+    TraitSpecifics, Type as Lvl3Type,
 };
-use crate::lvl2::{Field, StructureItem, Type, XidType};
+use crate::lvl2::{Field, StructureItem as Lvl2StructureItem, Type, XidType};
 
 impl From<XidType> for RStruct {
     #[inline]
@@ -27,15 +28,16 @@ impl From<XidType> for RStruct {
             ],
             fds: vec![],
             is_transparent: true,
-            fields: vec![StructureItem::Field(Field {
+            fields: vec![StructureItem::from_lvl2(Lvl2StructureItem::Field(Field {
                 name: "xid".into(),
                 ty: Type::BasicType("XID".into()),
                 ..Default::default()
-            })],
+            }))],
             methods: vec![],
             other_impl_items: vec![],
             traits: vec![],
             asb: Asb::none(),
+            lifetimes: vec![],
         };
 
         // it needs a const. method for initialization of constants
@@ -53,9 +55,12 @@ impl From<XidType> for RStruct {
         method.statements = vec![super::CreateXidTypeStatement.into()];
         rstr.methods.push(method);
 
-        rstr.traits.push(Trait::Xid);
-        rstr.traits
-            .extend(from_impls.into_iter().map(|f| Trait::FromXid(f.unwrap())));
+        rstr.traits.push(TraitSpecifics::Xid.into());
+        rstr.traits.extend(
+            from_impls
+                .into_iter()
+                .map(|f| TraitSpecifics::FromXid(f.unwrap()).into()),
+        );
 
         rstr
     }

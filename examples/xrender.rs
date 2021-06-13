@@ -1,8 +1,8 @@
 // MIT/Apache2 License
 
 use breadx::{
-    prelude::*,
     event::Event,
+    prelude::*,
     render::{
         double_to_fixed, Color, Linefix, PictOp, Picture, Pointfix, RenderDisplay, StandardFormat,
         Trapezoid,
@@ -48,6 +48,12 @@ fn main() -> Result {
     // create a picture on top of the window
     let pic = conn.create_picture(window, window_format, Default::default())?;
     let mask = conn.create_picture(window, window_format, Default::default())?;
+    let rect: &[Rectangle] = &[Rectangle {
+        x: 0,
+        y: 0,
+        width,
+        height,
+    }];
     mask.fill_rectangles(
         &mut conn,
         PictOp::Src,
@@ -57,12 +63,7 @@ fn main() -> Result {
             blue: 0,
             alpha: 0xFFFF,
         },
-        &[Rectangle {
-            x: 0,
-            y: 0,
-            width,
-            height,
-        }],
+        rect,
     )?;
 
     // create a linear gradient
@@ -114,7 +115,7 @@ fn main() -> Result {
         &colors,
     )?;
     let radial_gradient = conn.create_radial_gradient(
-        center.clone(), 
+        center.clone(),
         center.clone(),
         0,
         200 << 16,

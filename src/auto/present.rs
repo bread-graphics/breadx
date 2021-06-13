@@ -159,7 +159,7 @@ impl AsByteSequence for QueryVersionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PixmapRequest {
+pub struct PixmapRequest<'a> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
@@ -176,10 +176,10 @@ pub struct PixmapRequest {
     pub target_msc: Card64,
     pub divisor: Card64,
     pub remainder: Card64,
-    pub notifies: Vec<Notify>,
+    pub notifies: Cow<'a, [Notify]>,
 }
-impl PixmapRequest {}
-impl AsByteSequence for PixmapRequest {
+impl<'a> PixmapRequest<'a> {}
+impl<'a> AsByteSequence for PixmapRequest<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -244,7 +244,7 @@ impl AsByteSequence for PixmapRequest {
         index += sz;
         let (remainder, sz): (Card64, usize) = <Card64>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (notifies, block_len): (Vec<Notify>, usize) =
+        let (notifies, block_len): (Cow<'_, [Notify]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Notify>());
@@ -298,7 +298,7 @@ impl AsByteSequence for PixmapRequest {
             }
     }
 }
-impl Request for PixmapRequest {
+impl<'a> Request for PixmapRequest<'a> {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("Present");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -1279,76 +1279,4 @@ impl AsByteSequence for GenericEvent {
 }
 impl crate::auto::Event for GenericEvent {
     const OPCODE: u8 = 0;
-}
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct IdleNotifyEvent {
-    pub event_type: u8,
-    pub sequence: u16,
-    pub event: Event,
-    pub window: Window,
-    pub serial: Card32,
-    pub pixmap: Pixmap,
-    pub idle_fence: Fence,
-}
-impl IdleNotifyEvent {}
-impl AsByteSequence for IdleNotifyEvent {
-    #[inline]
-    fn as_bytes(&self, bytes: &mut [u8]) -> usize {
-        let mut index: usize = 0;
-        index += self.event_type.as_bytes(&mut bytes[index..]);
-        index += 2;
-        index += self.sequence.as_bytes(&mut bytes[index..]);
-        index += self.event.as_bytes(&mut bytes[index..]);
-        index += self.window.as_bytes(&mut bytes[index..]);
-        index += self.serial.as_bytes(&mut bytes[index..]);
-        index += self.pixmap.as_bytes(&mut bytes[index..]);
-        index += self.idle_fence.as_bytes(&mut bytes[index..]);
-        index
-    }
-    #[inline]
-    fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
-        let mut index: usize = 0;
-        log::trace!("Deserializing IdleNotifyEvent from byte buffer");
-        let (event_type, sz): (u8, usize) = <u8>::from_bytes(&bytes[index..])?;
-        index += sz;
-        index += 2;
-        let (sequence, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (event, sz): (Event, usize) = <Event>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (window, sz): (Window, usize) = <Window>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (serial, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (pixmap, sz): (Pixmap, usize) = <Pixmap>::from_bytes(&bytes[index..])?;
-        index += sz;
-        let (idle_fence, sz): (Fence, usize) = <Fence>::from_bytes(&bytes[index..])?;
-        index += sz;
-        Some((
-            IdleNotifyEvent {
-                event_type: event_type,
-                sequence: sequence,
-                event: event,
-                window: window,
-                serial: serial,
-                pixmap: pixmap,
-                idle_fence: idle_fence,
-            },
-            index,
-        ))
-    }
-    #[inline]
-    fn size(&self) -> usize {
-        self.event_type.size()
-            + 2
-            + self.sequence.size()
-            + self.event.size()
-            + self.window.size()
-            + self.serial.size()
-            + self.pixmap.size()
-            + self.idle_fence.size()
-    }
-}
-impl crate::auto::Event for IdleNotifyEvent {
-    const OPCODE: u8 = 2;
 }

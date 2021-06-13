@@ -72,7 +72,7 @@ fn prepare_xy_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
         && (total_xoffset == 0 && (image.depth() == 1 || image.height() == req.height as usize))
         || (image.depth() == 1 && (src_y + req.height as usize) < image.height())
     {
-        req.data = src_data.to_vec();
+        req.data = Cow::Owned(src_data.to_vec());
         return;
     }
 
@@ -103,7 +103,7 @@ fn prepare_xy_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
             );
         });
 
-    req.data = buffer;
+    req.data = Cow::Owned(buffer);
 }
 
 /// Prepare a request with a `ZImage`
@@ -150,10 +150,10 @@ fn prepare_z_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
         && (src_x == 0 || (src_y + req.height as usize) < image.height())
     {
         req.data = match src_data {
-            Cow::Borrowed(src_data) => src_data[..length].to_vec(),
+            Cow::Borrowed(src_data) => Cow::Owned(src_data[..length].to_vec()),
             Cow::Owned(mut src_data) => {
                 src_data.truncate(length);
-                src_data
+                Cow::Owned(src_data)
             }
         };
 
@@ -214,7 +214,7 @@ fn prepare_z_image<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
         }
     }
 
-    req.data = buffer;
+    req.data = Cow::Owned(buffer);
 }
 
 /// Generate a series of requests for a sub-part of an image.
@@ -233,7 +233,7 @@ fn put_sub_image_req<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]>>(
     height: usize,
     dest_bits_per_pixel: usize,
     dest_scanline_pad: usize,
-) -> Vec<PutImageRequest> {
+) -> Vec<PutImageRequest<'static>> {
     // Base Case: Width and height are zero. We can just return an empty vector.
     if width == 0 || height == 0 {
         return vec![];
@@ -381,7 +381,7 @@ pub(crate) fn put_image_req<Dpy: DisplayBase + ?Sized, Data: Deref<Target = [u8]
     dest_y: isize,
     mut width: usize,
     mut height: usize,
-) -> Vec<PutImageRequest> {
+) -> Vec<PutImageRequest<'static>> {
     let src_x: usize = match src_x {
         x_offset if x_offset < 0 => {
             width = width.saturating_sub(usize::try_from(-x_offset).unwrap());

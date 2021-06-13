@@ -2,7 +2,7 @@
 
 use super::{
     syn_util::{int_litexpr_int, pub_vis, str_to_path},
-    Asb, SizeSumPart, Statement, SumOfSizes, ToSyn, Trait, Type,
+    Asb, SizeSumPart, Statement, SumOfSizes, ToSyn, Trait, TraitSpecifics, Type,
 };
 use crate::lvl2::TrueEnum;
 use proc_macro2::{Span, TokenStream};
@@ -59,12 +59,11 @@ impl ToSyn for REnum {
         });
 
         let name = self.name.clone();
-        let asb = self.asb.to_syn_item(&name);
+        let asb = self.asb.to_syn_item(&name, &[]);
+        let ts: Trait = TraitSpecifics::EnumDefault(self.variants.get(0).unwrap().0.clone()).into();
         iter::once(s)
             .chain(asb.into_iter())
-            .chain(
-                Trait::EnumDefault(self.variants.get(0).unwrap().0.clone()).to_syn_item(&self.name),
-            )
+            .chain(ts.to_syn_item(&self.name))
             .collect()
     }
 }

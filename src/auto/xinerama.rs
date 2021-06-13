@@ -618,17 +618,17 @@ impl Request for QueryScreensRequest {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("XINERAMA");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryScreensReply;
+    type Reply = QueryScreensReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryScreensReply {
+pub struct QueryScreensReply<'a> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub screen_info: Vec<ScreenInfo>,
+    pub screen_info: Cow<'a, [ScreenInfo]>,
 }
-impl QueryScreensReply {}
-impl AsByteSequence for QueryScreensReply {
+impl<'a> QueryScreensReply<'a> {}
+impl<'a> AsByteSequence for QueryScreensReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -657,7 +657,7 @@ impl AsByteSequence for QueryScreensReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (screen_info, block_len): (Vec<ScreenInfo>, usize) =
+        let (screen_info, block_len): (Cow<'_, [ScreenInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ScreenInfo>());

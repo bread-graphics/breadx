@@ -62,6 +62,11 @@ pub mod prelude {
     pub use super::{Display, DisplayBase, DisplayExt};
 }
 
+/// A `Setup` where all of its lists are guaranteed to live forever (i.e. it owns all of its lists).
+pub type StaticSetup = Setup<'static, 'static, 'static, 'static, 'static>;
+/// A `Screen` where all of its lists are guaranteed to live forever (i.e. it owns all of its lists).
+pub type StaticScreen = Screen<'static, 'static>;
+
 pub(crate) const EXT_KEY_SIZE: usize = 24;
 
 /// This trait represents a connection to the X11 server. Most operations in `breadx` revolve around an object
@@ -80,7 +85,7 @@ pub(crate) const EXT_KEY_SIZE: usize = 24;
 /// Objects implementing this trait should further implement `Display` or `AsyncDisplay`,
 pub trait DisplayBase {
     /// Get the `Setup` object that defines the X11 connection.
-    fn setup(&self) -> &Setup;
+    fn setup(&self) -> &StaticSetup;
 
     /// Get the default screen index.
     fn default_screen_index(&self) -> usize;
@@ -195,13 +200,13 @@ pub trait DisplayBase {
 
     /// Get the list of screens in this display.
     #[inline]
-    fn screens(&self) -> &[Screen] {
+    fn screens(&self) -> &[StaticScreen] {
         &self.setup().roots
     }
 
     /// Get the default screen in this display.
     #[inline]
-    fn default_screen(&self) -> &Screen {
+    fn default_screen(&self) -> &StaticScreen {
         &self.setup().roots[self.default_screen_index()]
     }
 
@@ -270,7 +275,7 @@ pub trait DisplayBase {
 // So references to a Display can be used as a Display
 impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         (**self).setup()
     }
 
@@ -505,7 +510,7 @@ pub trait DisplayExt {
 
     /// Send a request to the server and immediately resolve for its reply.
     #[inline]
-    fn exchange_request<R: Request + 'static>(&mut self, request: R) -> crate::Result<R::Reply>
+    fn exchange_request<R: Request>(&mut self, request: R) -> crate::Result<R::Reply>
     where
         R::Reply: Default,
     {

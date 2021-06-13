@@ -267,12 +267,12 @@ impl AsByteSequence for Pictvisual {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Pictdepth {
+pub struct Pictdepth<'a> {
     pub depth: Card8,
-    pub visuals: Vec<Pictvisual>,
+    pub visuals: Cow<'a, [Pictvisual]>,
 }
-impl Pictdepth {}
-impl AsByteSequence for Pictdepth {
+impl<'a> Pictdepth<'a> {}
+impl<'a> AsByteSequence for Pictdepth<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -295,7 +295,7 @@ impl AsByteSequence for Pictdepth {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (visuals, block_len): (Vec<Pictvisual>, usize) =
+        let (visuals, block_len): (Cow<'_, [Pictvisual]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Pictvisual>());
@@ -317,12 +317,12 @@ impl AsByteSequence for Pictdepth {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Pictscreen {
+pub struct Pictscreen<'c, 'b> {
     pub fallback: Pictformat,
-    pub depths: Vec<Pictdepth>,
+    pub depths: Cow<'c, [Pictdepth<'b>]>,
 }
-impl Pictscreen {}
-impl AsByteSequence for Pictscreen {
+impl<'c, 'b> Pictscreen<'c, 'b> {}
+impl<'c, 'b> AsByteSequence for Pictscreen<'c, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -330,7 +330,7 @@ impl AsByteSequence for Pictscreen {
         index += self.fallback.as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.depths, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Pictdepth>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Pictdepth<'b>>());
         index
     }
     #[inline]
@@ -341,10 +341,10 @@ impl AsByteSequence for Pictscreen {
         index += sz;
         let (fallback, sz): (Pictformat, usize) = <Pictformat>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (depths, block_len): (Vec<Pictdepth>, usize) =
+        let (depths, block_len): (Cow<'_, [Pictdepth<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Pictdepth>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Pictdepth<'b>>());
         Some((
             Pictscreen {
                 fallback: fallback,
@@ -357,7 +357,7 @@ impl AsByteSequence for Pictscreen {
     fn size(&self) -> usize {
         ::core::mem::size_of::<Card32>() + self.fallback.size() + {
             let block_len: usize = self.depths.iter().map(|i| i.size()).sum();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Pictdepth>());
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Pictdepth<'b>>());
             block_len + pad
         }
     }
@@ -822,21 +822,21 @@ impl Request for QueryPictFormatsRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryPictFormatsReply;
+    type Reply = QueryPictFormatsReply<'static, 'static, 'static, 'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryPictFormatsReply {
+pub struct QueryPictFormatsReply<'d, 'g, 'e, 'f, 'h> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub num_depths: Card32,
     pub num_visuals: Card32,
-    pub formats: Vec<Pictforminfo>,
-    pub screens: Vec<Pictscreen>,
-    pub subpixels: Vec<Card32>,
+    pub formats: Cow<'d, [Pictforminfo]>,
+    pub screens: Cow<'g, [Pictscreen<'e, 'f>]>,
+    pub subpixels: Cow<'h, [Card32]>,
 }
-impl QueryPictFormatsReply {}
-impl AsByteSequence for QueryPictFormatsReply {
+impl<'d, 'g, 'e, 'f, 'h> QueryPictFormatsReply<'d, 'g, 'e, 'f, 'h> {}
+impl<'d, 'g, 'e, 'f, 'h> AsByteSequence for QueryPictFormatsReply<'d, 'g, 'e, 'f, 'h> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -855,7 +855,7 @@ impl AsByteSequence for QueryPictFormatsReply {
         index += buffer_pad(block_len, ::core::mem::align_of::<Pictforminfo>());
         let block_len: usize = vector_as_bytes(&self.screens, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Pictscreen>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Pictscreen<'e, 'f>>());
         let block_len: usize = vector_as_bytes(&self.subpixels, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -883,15 +883,15 @@ impl AsByteSequence for QueryPictFormatsReply {
         let (len2, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (formats, block_len): (Vec<Pictforminfo>, usize) =
+        let (formats, block_len): (Cow<'_, [Pictforminfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Pictforminfo>());
-        let (screens, block_len): (Vec<Pictscreen>, usize) =
+        let (screens, block_len): (Cow<'_, [Pictscreen<'_, '_>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Pictscreen>());
-        let (subpixels, block_len): (Vec<Card32>, usize) =
+        index += buffer_pad(block_len, ::core::mem::align_of::<Pictscreen<'e, 'f>>());
+        let (subpixels, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -928,7 +928,8 @@ impl AsByteSequence for QueryPictFormatsReply {
             }
             + {
                 let block_len: usize = self.screens.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Pictscreen>());
+                let pad: usize =
+                    buffer_pad(block_len, ::core::mem::align_of::<Pictscreen<'e, 'f>>());
                 block_len + pad
             }
             + {
@@ -984,17 +985,17 @@ impl Request for QueryPictIndexValuesRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryPictIndexValuesReply;
+    type Reply = QueryPictIndexValuesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryPictIndexValuesReply {
+pub struct QueryPictIndexValuesReply<'i> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub values: Vec<Indexvalue>,
+    pub values: Cow<'i, [Indexvalue]>,
 }
-impl QueryPictIndexValuesReply {}
-impl AsByteSequence for QueryPictIndexValuesReply {
+impl<'i> QueryPictIndexValuesReply<'i> {}
+impl<'i> AsByteSequence for QueryPictIndexValuesReply<'i> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1023,7 +1024,7 @@ impl AsByteSequence for QueryPictIndexValuesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (values, block_len): (Vec<Indexvalue>, usize) =
+        let (values, block_len): (Cow<'_, [Indexvalue]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Indexvalue>());
@@ -1824,16 +1825,16 @@ impl Request for ChangePictureRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetPictureClipRectanglesRequest {
+pub struct SetPictureClipRectanglesRequest<'j> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
     pub clip_x_origin: Int16,
     pub clip_y_origin: Int16,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'j, [Rectangle]>,
 }
-impl SetPictureClipRectanglesRequest {}
-impl AsByteSequence for SetPictureClipRectanglesRequest {
+impl<'j> SetPictureClipRectanglesRequest<'j> {}
+impl<'j> AsByteSequence for SetPictureClipRectanglesRequest<'j> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1863,7 +1864,7 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
         index += sz;
         let (clip_y_origin, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -1894,7 +1895,7 @@ impl AsByteSequence for SetPictureClipRectanglesRequest {
             }
     }
 }
-impl Request for SetPictureClipRectanglesRequest {
+impl<'j> Request for SetPictureClipRectanglesRequest<'j> {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2203,7 +2204,7 @@ impl Default for PictOp {
 }
 pub const PICTURE_NONE: Picture = <Picture>::const_from_xid(0);
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TrapezoidsRequest {
+pub struct TrapezoidsRequest<'k> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -2212,10 +2213,10 @@ pub struct TrapezoidsRequest {
     pub mask_format: Pictformat,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub traps: Vec<Trapezoid>,
+    pub traps: Cow<'k, [Trapezoid]>,
 }
-impl TrapezoidsRequest {}
-impl AsByteSequence for TrapezoidsRequest {
+impl<'k> TrapezoidsRequest<'k> {}
+impl<'k> AsByteSequence for TrapezoidsRequest<'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2256,7 +2257,7 @@ impl AsByteSequence for TrapezoidsRequest {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (traps, block_len): (Vec<Trapezoid>, usize) =
+        let (traps, block_len): (Cow<'_, [Trapezoid]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Trapezoid>());
@@ -2294,14 +2295,14 @@ impl AsByteSequence for TrapezoidsRequest {
             }
     }
 }
-impl Request for TrapezoidsRequest {
+impl<'k> Request for TrapezoidsRequest<'k> {
     const OPCODE: u8 = 10;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TrianglesRequest {
+pub struct TrianglesRequest<'l> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -2310,10 +2311,10 @@ pub struct TrianglesRequest {
     pub mask_format: Pictformat,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub triangles: Vec<Triangle>,
+    pub triangles: Cow<'l, [Triangle]>,
 }
-impl TrianglesRequest {}
-impl AsByteSequence for TrianglesRequest {
+impl<'l> TrianglesRequest<'l> {}
+impl<'l> AsByteSequence for TrianglesRequest<'l> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2354,7 +2355,7 @@ impl AsByteSequence for TrianglesRequest {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (triangles, block_len): (Vec<Triangle>, usize) =
+        let (triangles, block_len): (Cow<'_, [Triangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Triangle>());
@@ -2392,14 +2393,14 @@ impl AsByteSequence for TrianglesRequest {
             }
     }
 }
-impl Request for TrianglesRequest {
+impl<'l> Request for TrianglesRequest<'l> {
     const OPCODE: u8 = 11;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TriStripRequest {
+pub struct TriStripRequest<'m> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -2408,10 +2409,10 @@ pub struct TriStripRequest {
     pub mask_format: Pictformat,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub points: Vec<Pointfix>,
+    pub points: Cow<'m, [Pointfix]>,
 }
-impl TriStripRequest {}
-impl AsByteSequence for TriStripRequest {
+impl<'m> TriStripRequest<'m> {}
+impl<'m> AsByteSequence for TriStripRequest<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2452,7 +2453,7 @@ impl AsByteSequence for TriStripRequest {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (points, block_len): (Vec<Pointfix>, usize) =
+        let (points, block_len): (Cow<'_, [Pointfix]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Pointfix>());
@@ -2490,14 +2491,14 @@ impl AsByteSequence for TriStripRequest {
             }
     }
 }
-impl Request for TriStripRequest {
+impl<'m> Request for TriStripRequest<'m> {
     const OPCODE: u8 = 12;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct TriFanRequest {
+pub struct TriFanRequest<'n> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -2506,10 +2507,10 @@ pub struct TriFanRequest {
     pub mask_format: Pictformat,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub points: Vec<Pointfix>,
+    pub points: Cow<'n, [Pointfix]>,
 }
-impl TriFanRequest {}
-impl AsByteSequence for TriFanRequest {
+impl<'n> TriFanRequest<'n> {}
+impl<'n> AsByteSequence for TriFanRequest<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2550,7 +2551,7 @@ impl AsByteSequence for TriFanRequest {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (points, block_len): (Vec<Pointfix>, usize) =
+        let (points, block_len): (Cow<'_, [Pointfix]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Pointfix>());
@@ -2588,7 +2589,7 @@ impl AsByteSequence for TriFanRequest {
             }
     }
 }
-impl Request for TriFanRequest {
+impl<'n> Request for TriFanRequest<'n> {
     const OPCODE: u8 = 13;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -2749,17 +2750,17 @@ impl Request for FreeGlyphSetRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AddGlyphsRequest {
+pub struct AddGlyphsRequest<'o, 'p, 'q> {
     pub req_type: u8,
     pub length: u16,
     pub glyphset: Glyphset,
     pub glyphs_len: Card32,
-    pub glyphids: Vec<Card32>,
-    pub glyphs: Vec<Glyphinfo>,
-    pub data: Vec<Byte>,
+    pub glyphids: Cow<'o, [Card32]>,
+    pub glyphs: Cow<'p, [Glyphinfo]>,
+    pub data: Cow<'q, [Byte]>,
 }
-impl AddGlyphsRequest {}
-impl AsByteSequence for AddGlyphsRequest {
+impl<'o, 'p, 'q> AddGlyphsRequest<'o, 'p, 'q> {}
+impl<'o, 'p, 'q> AsByteSequence for AddGlyphsRequest<'o, 'p, 'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2792,15 +2793,15 @@ impl AsByteSequence for AddGlyphsRequest {
         index += sz;
         let (glyphs_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphids, block_len): (Vec<Card32>, usize) =
+        let (glyphids, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (glyphs_len as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (glyphs, block_len): (Vec<Glyphinfo>, usize) =
+        let (glyphs, block_len): (Cow<'_, [Glyphinfo]>, usize) =
             vector_from_bytes(&bytes[index..], (glyphs_len as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Glyphinfo>());
-        let (data, block_len): (Vec<Byte>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -2841,21 +2842,21 @@ impl AsByteSequence for AddGlyphsRequest {
             }
     }
 }
-impl Request for AddGlyphsRequest {
+impl<'o, 'p, 'q> Request for AddGlyphsRequest<'o, 'p, 'q> {
     const OPCODE: u8 = 20;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FreeGlyphsRequest {
+pub struct FreeGlyphsRequest<'r> {
     pub req_type: u8,
     pub length: u16,
     pub glyphset: Glyphset,
-    pub glyphs: Vec<Glyph>,
+    pub glyphs: Cow<'r, [Glyph]>,
 }
-impl FreeGlyphsRequest {}
-impl AsByteSequence for FreeGlyphsRequest {
+impl<'r> FreeGlyphsRequest<'r> {}
+impl<'r> AsByteSequence for FreeGlyphsRequest<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2879,7 +2880,7 @@ impl AsByteSequence for FreeGlyphsRequest {
         index += sz;
         let (glyphset, sz): (Glyphset, usize) = <Glyphset>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphs, block_len): (Vec<Glyph>, usize) =
+        let (glyphs, block_len): (Cow<'_, [Glyph]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Glyph>());
@@ -2902,14 +2903,14 @@ impl AsByteSequence for FreeGlyphsRequest {
         }
     }
 }
-impl Request for FreeGlyphsRequest {
+impl<'r> Request for FreeGlyphsRequest<'r> {
     const OPCODE: u8 = 22;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CompositeGlyphs8Request {
+pub struct CompositeGlyphs8Request<'s> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -2919,10 +2920,10 @@ pub struct CompositeGlyphs8Request {
     pub glyphset: Glyphset,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub glyphcmds: Vec<Byte>,
+    pub glyphcmds: Cow<'s, [Byte]>,
 }
-impl CompositeGlyphs8Request {}
-impl AsByteSequence for CompositeGlyphs8Request {
+impl<'s> CompositeGlyphs8Request<'s> {}
+impl<'s> AsByteSequence for CompositeGlyphs8Request<'s> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -2966,7 +2967,7 @@ impl AsByteSequence for CompositeGlyphs8Request {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphcmds, block_len): (Vec<Byte>, usize) =
+        let (glyphcmds, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -3006,14 +3007,14 @@ impl AsByteSequence for CompositeGlyphs8Request {
             }
     }
 }
-impl Request for CompositeGlyphs8Request {
+impl<'s> Request for CompositeGlyphs8Request<'s> {
     const OPCODE: u8 = 23;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CompositeGlyphs16Request {
+pub struct CompositeGlyphs16Request<'t> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -3023,10 +3024,10 @@ pub struct CompositeGlyphs16Request {
     pub glyphset: Glyphset,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub glyphcmds: Vec<Byte>,
+    pub glyphcmds: Cow<'t, [Byte]>,
 }
-impl CompositeGlyphs16Request {}
-impl AsByteSequence for CompositeGlyphs16Request {
+impl<'t> CompositeGlyphs16Request<'t> {}
+impl<'t> AsByteSequence for CompositeGlyphs16Request<'t> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3070,7 +3071,7 @@ impl AsByteSequence for CompositeGlyphs16Request {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphcmds, block_len): (Vec<Byte>, usize) =
+        let (glyphcmds, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -3110,14 +3111,14 @@ impl AsByteSequence for CompositeGlyphs16Request {
             }
     }
 }
-impl Request for CompositeGlyphs16Request {
+impl<'t> Request for CompositeGlyphs16Request<'t> {
     const OPCODE: u8 = 24;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CompositeGlyphs32Request {
+pub struct CompositeGlyphs32Request<'u> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
@@ -3127,10 +3128,10 @@ pub struct CompositeGlyphs32Request {
     pub glyphset: Glyphset,
     pub src_x: Int16,
     pub src_y: Int16,
-    pub glyphcmds: Vec<Byte>,
+    pub glyphcmds: Cow<'u, [Byte]>,
 }
-impl CompositeGlyphs32Request {}
-impl AsByteSequence for CompositeGlyphs32Request {
+impl<'u> CompositeGlyphs32Request<'u> {}
+impl<'u> AsByteSequence for CompositeGlyphs32Request<'u> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3174,7 +3175,7 @@ impl AsByteSequence for CompositeGlyphs32Request {
         index += sz;
         let (src_y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (glyphcmds, block_len): (Vec<Byte>, usize) =
+        let (glyphcmds, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -3214,23 +3215,23 @@ impl AsByteSequence for CompositeGlyphs32Request {
             }
     }
 }
-impl Request for CompositeGlyphs32Request {
+impl<'u> Request for CompositeGlyphs32Request<'u> {
     const OPCODE: u8 = 25;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FillRectanglesRequest {
+pub struct FillRectanglesRequest<'v> {
     pub req_type: u8,
     pub length: u16,
     pub op: PictOp,
     pub dst: Picture,
     pub color: Color,
-    pub rects: Vec<Rectangle>,
+    pub rects: Cow<'v, [Rectangle]>,
 }
-impl FillRectanglesRequest {}
-impl AsByteSequence for FillRectanglesRequest {
+impl<'v> FillRectanglesRequest<'v> {}
+impl<'v> AsByteSequence for FillRectanglesRequest<'v> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3262,7 +3263,7 @@ impl AsByteSequence for FillRectanglesRequest {
         index += sz;
         let (color, sz): (Color, usize) = <Color>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rects, block_len): (Vec<Rectangle>, usize) =
+        let (rects, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -3294,7 +3295,7 @@ impl AsByteSequence for FillRectanglesRequest {
             }
     }
 }
-impl Request for FillRectanglesRequest {
+impl<'v> Request for FillRectanglesRequest<'v> {
     const OPCODE: u8 = 26;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3546,18 +3547,18 @@ impl Request for QueryFiltersRequest {
     const OPCODE: u8 = 29;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryFiltersReply;
+    type Reply = QueryFiltersReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryFiltersReply {
+pub struct QueryFiltersReply<'w, 'x> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub aliases: Vec<Card16>,
-    pub filters: Vec<Str>,
+    pub aliases: Cow<'w, [Card16]>,
+    pub filters: Cow<'x, [String]>,
 }
-impl QueryFiltersReply {}
-impl AsByteSequence for QueryFiltersReply {
+impl<'w, 'x> QueryFiltersReply<'w, 'x> {}
+impl<'w, 'x> AsByteSequence for QueryFiltersReply<'w, 'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3573,7 +3574,7 @@ impl AsByteSequence for QueryFiltersReply {
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
         let block_len: usize = vector_as_bytes(&self.filters, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String>());
         index
     }
     #[inline]
@@ -3592,14 +3593,14 @@ impl AsByteSequence for QueryFiltersReply {
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (aliases, block_len): (Vec<Card16>, usize) =
+        let (aliases, block_len): (Cow<'_, [Card16]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (filters, block_len): (Vec<Str>, usize) =
+        let (filters, block_len): (Cow<'_, [String]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String>());
         Some((
             QueryFiltersReply {
                 reply_type: reply_type,
@@ -3627,21 +3628,21 @@ impl AsByteSequence for QueryFiltersReply {
             }
             + {
                 let block_len: usize = self.filters.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetPictureFilterRequest {
+pub struct SetPictureFilterRequest<'y, 'z> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
-    pub filter: String,
-    pub values: Vec<Fixed>,
+    pub filter: Cow<'y, str>,
+    pub values: Cow<'z, [Fixed]>,
 }
-impl SetPictureFilterRequest {}
-impl AsByteSequence for SetPictureFilterRequest {
+impl<'y, 'z> SetPictureFilterRequest<'y, 'z> {}
+impl<'y, 'z> AsByteSequence for SetPictureFilterRequest<'y, 'z> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3673,11 +3674,11 @@ impl AsByteSequence for SetPictureFilterRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (filter, block_len): (String, usize) =
+        let (filter, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (values, block_len): (Vec<Fixed>, usize) =
+        let (values, block_len): (Cow<'_, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
@@ -3712,7 +3713,7 @@ impl AsByteSequence for SetPictureFilterRequest {
             }
     }
 }
-impl Request for SetPictureFilterRequest {
+impl<'y, 'z> Request for SetPictureFilterRequest<'y, 'z> {
     const OPCODE: u8 = 30;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3754,14 +3755,14 @@ impl AsByteSequence for Animcursorelt {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateAnimCursorRequest {
+pub struct CreateAnimCursorRequest<'ab> {
     pub req_type: u8,
     pub length: u16,
     pub cid: Cursor,
-    pub cursors: Vec<Animcursorelt>,
+    pub cursors: Cow<'ab, [Animcursorelt]>,
 }
-impl CreateAnimCursorRequest {}
-impl AsByteSequence for CreateAnimCursorRequest {
+impl<'ab> CreateAnimCursorRequest<'ab> {}
+impl<'ab> AsByteSequence for CreateAnimCursorRequest<'ab> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3785,7 +3786,7 @@ impl AsByteSequence for CreateAnimCursorRequest {
         index += sz;
         let (cid, sz): (Cursor, usize) = <Cursor>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (cursors, block_len): (Vec<Animcursorelt>, usize) =
+        let (cursors, block_len): (Cow<'_, [Animcursorelt]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Animcursorelt>());
@@ -3808,7 +3809,7 @@ impl AsByteSequence for CreateAnimCursorRequest {
         }
     }
 }
-impl Request for CreateAnimCursorRequest {
+impl<'ab> Request for CreateAnimCursorRequest<'ab> {
     const OPCODE: u8 = 31;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -3877,16 +3878,16 @@ impl AsByteSequence for Trap {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AddTrapsRequest {
+pub struct AddTrapsRequest<'bb> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
     pub x_off: Int16,
     pub y_off: Int16,
-    pub traps: Vec<Trap>,
+    pub traps: Cow<'bb, [Trap]>,
 }
-impl AddTrapsRequest {}
-impl AsByteSequence for AddTrapsRequest {
+impl<'bb> AddTrapsRequest<'bb> {}
+impl<'bb> AsByteSequence for AddTrapsRequest<'bb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -3916,7 +3917,7 @@ impl AsByteSequence for AddTrapsRequest {
         index += sz;
         let (y_off, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (traps, block_len): (Vec<Trap>, usize) =
+        let (traps, block_len): (Cow<'_, [Trap]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Trap>());
@@ -3947,7 +3948,7 @@ impl AsByteSequence for AddTrapsRequest {
             }
     }
 }
-impl Request for AddTrapsRequest {
+impl<'bb> Request for AddTrapsRequest<'bb> {
     const OPCODE: u8 = 32;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
@@ -4007,18 +4008,18 @@ impl Request for CreateSolidFillRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateLinearGradientRequest {
+pub struct CreateLinearGradientRequest<'cb, 'db> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
     pub p1: Pointfix,
     pub p2: Pointfix,
     pub num_stops: Card32,
-    pub stops: Vec<Fixed>,
-    pub colors: Vec<Color>,
+    pub stops: Cow<'cb, [Fixed]>,
+    pub colors: Cow<'db, [Color]>,
 }
-impl CreateLinearGradientRequest {}
-impl AsByteSequence for CreateLinearGradientRequest {
+impl<'cb, 'db> CreateLinearGradientRequest<'cb, 'db> {}
+impl<'cb, 'db> AsByteSequence for CreateLinearGradientRequest<'cb, 'db> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4054,11 +4055,11 @@ impl AsByteSequence for CreateLinearGradientRequest {
         index += sz;
         let (num_stops, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (stops, block_len): (Vec<Fixed>, usize) =
+        let (stops, block_len): (Cow<'_, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
-        let (colors, block_len): (Vec<Color>, usize) =
+        let (colors, block_len): (Cow<'_, [Color]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Color>());
@@ -4097,14 +4098,14 @@ impl AsByteSequence for CreateLinearGradientRequest {
             }
     }
 }
-impl Request for CreateLinearGradientRequest {
+impl<'cb, 'db> Request for CreateLinearGradientRequest<'cb, 'db> {
     const OPCODE: u8 = 34;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateRadialGradientRequest {
+pub struct CreateRadialGradientRequest<'eb, 'fb> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
@@ -4113,11 +4114,11 @@ pub struct CreateRadialGradientRequest {
     pub inner_radius: Fixed,
     pub outer_radius: Fixed,
     pub num_stops: Card32,
-    pub stops: Vec<Fixed>,
-    pub colors: Vec<Color>,
+    pub stops: Cow<'eb, [Fixed]>,
+    pub colors: Cow<'fb, [Color]>,
 }
-impl CreateRadialGradientRequest {}
-impl AsByteSequence for CreateRadialGradientRequest {
+impl<'eb, 'fb> CreateRadialGradientRequest<'eb, 'fb> {}
+impl<'eb, 'fb> AsByteSequence for CreateRadialGradientRequest<'eb, 'fb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4159,11 +4160,11 @@ impl AsByteSequence for CreateRadialGradientRequest {
         index += sz;
         let (num_stops, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (stops, block_len): (Vec<Fixed>, usize) =
+        let (stops, block_len): (Cow<'_, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
-        let (colors, block_len): (Vec<Color>, usize) =
+        let (colors, block_len): (Cow<'_, [Color]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Color>());
@@ -4206,25 +4207,25 @@ impl AsByteSequence for CreateRadialGradientRequest {
             }
     }
 }
-impl Request for CreateRadialGradientRequest {
+impl<'eb, 'fb> Request for CreateRadialGradientRequest<'eb, 'fb> {
     const OPCODE: u8 = 35;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateConicalGradientRequest {
+pub struct CreateConicalGradientRequest<'gb, 'hb> {
     pub req_type: u8,
     pub length: u16,
     pub picture: Picture,
     pub center: Pointfix,
     pub angle: Fixed,
     pub num_stops: Card32,
-    pub stops: Vec<Fixed>,
-    pub colors: Vec<Color>,
+    pub stops: Cow<'gb, [Fixed]>,
+    pub colors: Cow<'hb, [Color]>,
 }
-impl CreateConicalGradientRequest {}
-impl AsByteSequence for CreateConicalGradientRequest {
+impl<'gb, 'hb> CreateConicalGradientRequest<'gb, 'hb> {}
+impl<'gb, 'hb> AsByteSequence for CreateConicalGradientRequest<'gb, 'hb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4260,11 +4261,11 @@ impl AsByteSequence for CreateConicalGradientRequest {
         index += sz;
         let (num_stops, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (stops, block_len): (Vec<Fixed>, usize) =
+        let (stops, block_len): (Cow<'_, [Fixed]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fixed>());
-        let (colors, block_len): (Vec<Color>, usize) =
+        let (colors, block_len): (Cow<'_, [Color]>, usize) =
             vector_from_bytes(&bytes[index..], (num_stops as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Color>());
@@ -4303,7 +4304,7 @@ impl AsByteSequence for CreateConicalGradientRequest {
             }
     }
 }
-impl Request for CreateConicalGradientRequest {
+impl<'gb, 'hb> Request for CreateConicalGradientRequest<'gb, 'hb> {
     const OPCODE: u8 = 36;
     const EXTENSION: Option<&'static str> = Some("RENDER");
     const REPLY_EXPECTS_FDS: bool = false;

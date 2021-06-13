@@ -309,20 +309,20 @@ impl Request for ConnectRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("DRI2");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ConnectReply;
+    type Reply = ConnectReply<'static, 'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ConnectReply {
+pub struct ConnectReply<'a, 'b, 'c> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub driver_name_length: Card32,
-    pub driver_name: String,
-    pub alignment_pad: Vec<Void>,
-    pub device_name: String,
+    pub driver_name: Cow<'a, str>,
+    pub alignment_pad: Cow<'b, [Void]>,
+    pub device_name: Cow<'c, str>,
 }
-impl ConnectReply {}
-impl AsByteSequence for ConnectReply {
+impl<'a, 'b, 'c> ConnectReply<'a, 'b, 'c> {}
+impl<'a, 'b, 'c> AsByteSequence for ConnectReply<'a, 'b, 'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -360,18 +360,18 @@ impl AsByteSequence for ConnectReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 16;
-        let (driver_name, block_len): (String, usize) =
+        let (driver_name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], (driver_name_length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        let (alignment_pad, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (alignment_pad, block_len): (Cow<'_, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((((driver_name_length as usize) + (3)) & (!(3))) - (driver_name_length as usize))
                 as usize,
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Void>());
-        let (device_name, block_len): (String, usize) =
+        let (device_name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -646,15 +646,15 @@ impl Request for DestroyDrawableRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetBuffersRequest {
+pub struct GetBuffersRequest<'d> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub count: Card32,
-    pub attachments: Vec<Card32>,
+    pub attachments: Cow<'d, [Card32]>,
 }
-impl GetBuffersRequest {}
-impl AsByteSequence for GetBuffersRequest {
+impl<'d> GetBuffersRequest<'d> {}
+impl<'d> AsByteSequence for GetBuffersRequest<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -681,7 +681,7 @@ impl AsByteSequence for GetBuffersRequest {
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attachments, block_len): (Vec<Card32>, usize) =
+        let (attachments, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -705,23 +705,23 @@ impl AsByteSequence for GetBuffersRequest {
         }
     }
 }
-impl Request for GetBuffersRequest {
+impl<'d> Request for GetBuffersRequest<'d> {
     const OPCODE: u8 = 5;
     const EXTENSION: Option<&'static str> = Some("DRI2");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetBuffersReply;
+    type Reply = GetBuffersReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetBuffersReply {
+pub struct GetBuffersReply<'e> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub width: Card32,
     pub height: Card32,
-    pub buffers: Vec<Dri2Buffer>,
+    pub buffers: Cow<'e, [Dri2Buffer]>,
 }
-impl GetBuffersReply {}
-impl AsByteSequence for GetBuffersReply {
+impl<'e> GetBuffersReply<'e> {}
+impl<'e> AsByteSequence for GetBuffersReply<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -756,7 +756,7 @@ impl AsByteSequence for GetBuffersReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (buffers, block_len): (Vec<Dri2Buffer>, usize) =
+        let (buffers, block_len): (Cow<'_, [Dri2Buffer]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());
@@ -901,15 +901,15 @@ impl AsByteSequence for CopyRegionReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetBuffersWithFormatRequest {
+pub struct GetBuffersWithFormatRequest<'f> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub count: Card32,
-    pub attachments: Vec<AttachFormat>,
+    pub attachments: Cow<'f, [AttachFormat]>,
 }
-impl GetBuffersWithFormatRequest {}
-impl AsByteSequence for GetBuffersWithFormatRequest {
+impl<'f> GetBuffersWithFormatRequest<'f> {}
+impl<'f> AsByteSequence for GetBuffersWithFormatRequest<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -936,7 +936,7 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         index += sz;
         let (count, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (attachments, block_len): (Vec<AttachFormat>, usize) =
+        let (attachments, block_len): (Cow<'_, [AttachFormat]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<AttachFormat>());
@@ -960,23 +960,23 @@ impl AsByteSequence for GetBuffersWithFormatRequest {
         }
     }
 }
-impl Request for GetBuffersWithFormatRequest {
+impl<'f> Request for GetBuffersWithFormatRequest<'f> {
     const OPCODE: u8 = 7;
     const EXTENSION: Option<&'static str> = Some("DRI2");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetBuffersWithFormatReply;
+    type Reply = GetBuffersWithFormatReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetBuffersWithFormatReply {
+pub struct GetBuffersWithFormatReply<'g> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub width: Card32,
     pub height: Card32,
-    pub buffers: Vec<Dri2Buffer>,
+    pub buffers: Cow<'g, [Dri2Buffer]>,
 }
-impl GetBuffersWithFormatReply {}
-impl AsByteSequence for GetBuffersWithFormatReply {
+impl<'g> GetBuffersWithFormatReply<'g> {}
+impl<'g> AsByteSequence for GetBuffersWithFormatReply<'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1011,7 +1011,7 @@ impl AsByteSequence for GetBuffersWithFormatReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (buffers, block_len): (Vec<Dri2Buffer>, usize) =
+        let (buffers, block_len): (Cow<'_, [Dri2Buffer]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Dri2Buffer>());

@@ -1,19 +1,24 @@
 // MIT/Apache2 License
 
-use super::syn_util::{int_litexpr_int, str_to_pathseg, str_to_ty};
+use super::{
+    get_mapped_lifetime, lifetime,
+    syn_util::{int_litexpr_int, str_to_pathseg, str_to_ty},
+};
 use crate::lvl2::Type as Lvl2Type;
 use proc_macro2::Span;
 use std::{borrow::Cow, iter};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Type {
     /// Ordinary type.
     Basic(Cow<'static, str>),
     /// A path-based type.
     Path { owner: Box<str>, name: Box<str> },
+    /// Ordinary type, but with lifetimes.
+    HasLifetime(Cow<'static, str>, Vec<String>),
     /// Array type.
     Array(Box<Type>, u64),
-    /// Vector type.
+    /// Vector type. Should only be used for the Fd list.
     Vector(Box<Type>),
     /// TinyVec type.
     TinyVec(Box<Type>, u64),
@@ -27,6 +32,17 @@ pub enum Type {
     Ref(Box<Type>, bool, Option<&'static str>),
     /// Slice of a type.
     Slice(Box<Type>),
+    /// Cow type; contained combined with lifetime.
+    Cow(Box<Type>, String),
+}
+
+impl Default for Type {
+    #[inline]
+    fn default() -> Self {
+        Self::Basic(Cow::Borrowed(
+            "ThisShouldntHappenSinceTypeDefaultShouldAlwaysBeOverwritten",
+        ))
+    }
 }
 
 impl Type {
@@ -64,6 +80,32 @@ impl Type {
                         str_to_pathseg(name),
                     ]
                     .into_iter()
+                    .collect(),
+                },
+            }),
+            Self::HasLifetime(name, lifetimes) => syn::Type::Path(syn::TypePath {
+                qself: None,
+                path: syn::Path {
+                    leading_colon: None,
+                    segments: iter::once(syn::PathSegment {
+                        ident: syn::Ident::new(name, Span::call_site()),
+                        arguments: syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments {
+                                colon2_token: None,
+                                lt_token: Default::default(),
+                                args: lifetimes
+                                    .into_iter()
+                                    .map(|lifetime| {
+                                        syn::GenericArgument::Lifetime(syn::Lifetime {
+                                            apostrophe: Span::call_site(),
+                                            ident: syn::Ident::new(lifetime, Span::call_site()),
+                                        })
+                                    })
+                                    .collect(),
+                                gt_token: Default::default(),
+                            },
+                        ),
+                    })
                     .collect(),
                 },
             }),
@@ -120,6 +162,32 @@ impl Type {
                 bracket_token: Default::default(),
                 elem: Box::new(r.to_syn_ty()),
             }),
+            Self::Cow(ty, lifetime) => syn::Type::Path(syn::TypePath {
+                qself: None,
+                path: syn::Path {
+                    leading_colon: None,
+                    segments: iter::once(syn::PathSegment {
+                        ident: syn::Ident::new("Cow", Span::call_site()),
+                        arguments: syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments {
+                                colon2_token: None,
+                                lt_token: Default::default(),
+                                args: vec![
+                                    syn::GenericArgument::Lifetime(syn::Lifetime {
+                                        apostrophe: Span::call_site(),
+                                        ident: syn::Ident::new(&lifetime, Span::call_site()),
+                                    }),
+                                    syn::GenericArgument::Type(ty.to_syn_ty()),
+                                ]
+                                .into_iter()
+                                .collect(),
+                                gt_token: Default::default(),
+                            },
+                        ),
+                    })
+                    .collect(),
+                },
+            }),
         }
     }
 
@@ -127,8 +195,26 @@ impl Type {
     #[inline]
     pub fn from_lvl2(ty: Lvl2Type) -> Self {
         match ty {
-            Lvl2Type::BasicType(bt) => Self::from_name(bt.into_owned()),
-            Lvl2Type::Array(at, asize) => Self::Array(Box::new(Type::Basic(at)), asize),
+            Lvl2Type::BasicType(bt) => {
+                let lifetimes = get_mapped_lifetime(&bt);
+                match lifetimes {
+                    0 => Self::from_name(bt.into_owned()),
+                    _ => Self::HasLifetime(bt, (0..lifetimes).map(|_| lifetime()).collect()),
+                }
+            }
+            Lvl2Type::Array(at, asize) => {
+                let lifetimes = get_mapped_lifetime(&at);
+                match lifetimes {
+                    0 => Self::Array(Box::new(Type::Basic(at)), asize),
+                    _ => Self::Array(
+                        Box::new(Self::HasLifetime(
+                            at,
+                            (0..lifetimes).map(|_| lifetime()).collect(),
+                        )),
+                        asize,
+                    ),
+                }
+            }
         }
     }
 }

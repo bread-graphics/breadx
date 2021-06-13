@@ -545,12 +545,12 @@ impl Default for VisualClass {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Depth {
+pub struct Depth<'a> {
     pub depth: Card8,
-    pub visuals: Vec<Visualtype>,
+    pub visuals: Cow<'a, [Visualtype]>,
 }
-impl Depth {}
-impl AsByteSequence for Depth {
+impl<'a> Depth<'a> {}
+impl<'a> AsByteSequence for Depth<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -573,7 +573,7 @@ impl AsByteSequence for Depth {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (visuals, block_len): (Vec<Visualtype>, usize) =
+        let (visuals, block_len): (Cow<'_, [Visualtype]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Visualtype>());
@@ -595,7 +595,7 @@ impl AsByteSequence for Depth {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Screen {
+pub struct Screen<'c, 'b> {
     pub root: Window,
     pub default_colormap: Colormap,
     pub white_pixel: Card32,
@@ -611,10 +611,10 @@ pub struct Screen {
     pub backing_stores: BackingStore,
     pub save_unders: bool,
     pub root_depth: Card8,
-    pub allowed_depths: Vec<Depth>,
+    pub allowed_depths: Cow<'c, [Depth<'b>]>,
 }
-impl Screen {}
-impl AsByteSequence for Screen {
+impl<'c, 'b> Screen<'c, 'b> {}
+impl<'c, 'b> AsByteSequence for Screen<'c, 'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -636,7 +636,7 @@ impl AsByteSequence for Screen {
         index += (self.allowed_depths.len() as Card8).as_bytes(&mut bytes[index..]);
         let block_len: usize = vector_as_bytes(&self.allowed_depths, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Depth>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Depth<'b>>());
         index
     }
     #[inline]
@@ -677,10 +677,10 @@ impl AsByteSequence for Screen {
         index += sz;
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (allowed_depths, block_len): (Vec<Depth>, usize) =
+        let (allowed_depths, block_len): (Cow<'_, [Depth<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Depth>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Depth<'b>>());
         Some((
             Screen {
                 root: root,
@@ -723,7 +723,7 @@ impl AsByteSequence for Screen {
             + ::core::mem::size_of::<Card8>()
             + {
                 let block_len: usize = self.allowed_depths.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Depth>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Depth<'b>>());
                 block_len + pad
             }
     }
@@ -1279,15 +1279,15 @@ impl Default for BackingStore {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetupRequest {
+pub struct SetupRequest<'d, 'e> {
     pub byte_order: Card8,
     pub protocol_major_version: Card16,
     pub protocol_minor_version: Card16,
-    pub authorization_protocol_name: String,
-    pub authorization_protocol_data: Vec<Card8>,
+    pub authorization_protocol_name: Cow<'d, str>,
+    pub authorization_protocol_data: Cow<'e, [Card8]>,
 }
-impl SetupRequest {}
-impl AsByteSequence for SetupRequest {
+impl<'d, 'e> SetupRequest<'d, 'e> {}
+impl<'d, 'e> AsByteSequence for SetupRequest<'d, 'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1324,11 +1324,11 @@ impl AsByteSequence for SetupRequest {
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (authorization_protocol_name, block_len): (String, usize) =
+        let (authorization_protocol_name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (authorization_protocol_data, block_len): (Vec<Card8>, usize) =
+        let (authorization_protocol_data, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -1369,15 +1369,15 @@ impl AsByteSequence for SetupRequest {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetupFailed {
+pub struct SetupFailed<'f> {
     pub status: Card8,
     pub protocol_major_version: Card16,
     pub protocol_minor_version: Card16,
     pub length: Card16,
-    pub reason: String,
+    pub reason: Cow<'f, str>,
 }
-impl SetupFailed {}
-impl AsByteSequence for SetupFailed {
+impl<'f> SetupFailed<'f> {}
+impl<'f> AsByteSequence for SetupFailed<'f> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1405,7 +1405,7 @@ impl AsByteSequence for SetupFailed {
         index += sz;
         let (length, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (reason, block_len): (String, usize) =
+        let (reason, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1435,13 +1435,13 @@ impl AsByteSequence for SetupFailed {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetupAuthenticate {
+pub struct SetupAuthenticate<'g> {
     pub status: Card8,
     pub length: Card16,
-    pub reason: String,
+    pub reason: Cow<'g, str>,
 }
-impl SetupAuthenticate {}
-impl AsByteSequence for SetupAuthenticate {
+impl<'g> SetupAuthenticate<'g> {}
+impl<'g> AsByteSequence for SetupAuthenticate<'g> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1462,7 +1462,7 @@ impl AsByteSequence for SetupAuthenticate {
         index += 5;
         let (length, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (reason, block_len): (String, usize) =
+        let (reason, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -1485,7 +1485,7 @@ impl AsByteSequence for SetupAuthenticate {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Setup {
+pub struct Setup<'h, 'i, 'l, 'j, 'k> {
     pub status: Card8,
     pub protocol_major_version: Card16,
     pub protocol_minor_version: Card16,
@@ -1501,12 +1501,12 @@ pub struct Setup {
     pub bitmap_format_scanline_pad: Card8,
     pub min_keycode: Keycode,
     pub max_keycode: Keycode,
-    pub vendor: String,
-    pub pixmap_formats: Vec<Format>,
-    pub roots: Vec<Screen>,
+    pub vendor: Cow<'h, str>,
+    pub pixmap_formats: Cow<'i, [Format]>,
+    pub roots: Cow<'l, [Screen<'j, 'k>]>,
 }
-impl Setup {}
-impl AsByteSequence for Setup {
+impl<'h, 'i, 'l, 'j, 'k> Setup<'h, 'i, 'l, 'j, 'k> {}
+impl<'h, 'i, 'l, 'j, 'k> AsByteSequence for Setup<'h, 'i, 'l, 'j, 'k> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1542,7 +1542,7 @@ impl AsByteSequence for Setup {
         index += buffer_pad(block_len, ::core::mem::align_of::<Format>());
         let block_len: usize = vector_as_bytes(&self.roots, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Screen>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Screen<'j, 'k>>());
         index
     }
     #[inline]
@@ -1591,18 +1591,18 @@ impl AsByteSequence for Setup {
         let (max_keycode, sz): (Keycode, usize) = <Keycode>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 4;
-        let (vendor, block_len): (String, usize) =
+        let (vendor, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
-        let (pixmap_formats, block_len): (Vec<Format>, usize) =
+        let (pixmap_formats, block_len): (Cow<'_, [Format]>, usize) =
             vector_from_bytes(&bytes[index..], len2 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Format>());
-        let (roots, block_len): (Vec<Screen>, usize) =
+        let (roots, block_len): (Cow<'_, [Screen<'_, '_>]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Screen>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Screen<'j, 'k>>());
         Some((
             Setup {
                 status: status,
@@ -1661,7 +1661,7 @@ impl AsByteSequence for Setup {
             }
             + {
                 let block_len: usize = self.roots.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Screen>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Screen<'j, 'k>>());
                 block_len + pad
             }
     }
@@ -4652,19 +4652,19 @@ impl Request for QueryTreeRequest {
     const OPCODE: u8 = 15;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryTreeReply;
+    type Reply = QueryTreeReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryTreeReply {
+pub struct QueryTreeReply<'m> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub root: Window,
     pub parent: Window,
-    pub children: Vec<Window>,
+    pub children: Cow<'m, [Window]>,
 }
-impl QueryTreeReply {}
-impl AsByteSequence for QueryTreeReply {
+impl<'m> QueryTreeReply<'m> {}
+impl<'m> AsByteSequence for QueryTreeReply<'m> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4699,7 +4699,7 @@ impl AsByteSequence for QueryTreeReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 14;
-        let (children, block_len): (Vec<Window>, usize) =
+        let (children, block_len): (Cow<'_, [Window]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Window>());
@@ -4733,14 +4733,14 @@ impl AsByteSequence for QueryTreeReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct InternAtomRequest {
+pub struct InternAtomRequest<'n> {
     pub req_type: u8,
     pub only_if_exists: bool,
     pub length: u16,
-    pub name: String,
+    pub name: Cow<'n, str>,
 }
-impl InternAtomRequest {}
-impl AsByteSequence for InternAtomRequest {
+impl<'n> InternAtomRequest<'n> {}
+impl<'n> AsByteSequence for InternAtomRequest<'n> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4767,7 +4767,8 @@ impl AsByteSequence for InternAtomRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -4794,7 +4795,7 @@ impl AsByteSequence for InternAtomRequest {
             }
     }
 }
-impl Request for InternAtomRequest {
+impl<'n> Request for InternAtomRequest<'n> {
     const OPCODE: u8 = 16;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -4893,17 +4894,17 @@ impl Request for GetAtomNameRequest {
     const OPCODE: u8 = 17;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetAtomNameReply;
+    type Reply = GetAtomNameReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetAtomNameReply {
+pub struct GetAtomNameReply<'o> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub name: String,
+    pub name: Cow<'o, str>,
 }
-impl GetAtomNameReply {}
-impl AsByteSequence for GetAtomNameReply {
+impl<'o> GetAtomNameReply<'o> {}
+impl<'o> AsByteSequence for GetAtomNameReply<'o> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -4932,7 +4933,8 @@ impl AsByteSequence for GetAtomNameReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -4961,7 +4963,7 @@ impl AsByteSequence for GetAtomNameReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangePropertyRequest {
+pub struct ChangePropertyRequest<'p> {
     pub req_type: u8,
     pub mode: PropMode,
     pub length: u16,
@@ -4970,10 +4972,10 @@ pub struct ChangePropertyRequest {
     pub ty: Atom,
     pub format: Card8,
     pub data_len: Card32,
-    pub data: Vec<Void>,
+    pub data: Cow<'p, [Void]>,
 }
-impl ChangePropertyRequest {}
-impl AsByteSequence for ChangePropertyRequest {
+impl<'p> ChangePropertyRequest<'p> {}
+impl<'p> AsByteSequence for ChangePropertyRequest<'p> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5012,7 +5014,7 @@ impl AsByteSequence for ChangePropertyRequest {
         index += 3;
         let (data_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (data, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (data, block_len): (Cow<'_, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             (((data_len as usize) * (format as usize)) / (8)) as usize,
         )?;
@@ -5051,7 +5053,7 @@ impl AsByteSequence for ChangePropertyRequest {
             }
     }
 }
-impl Request for ChangePropertyRequest {
+impl<'p> Request for ChangePropertyRequest<'p> {
     const OPCODE: u8 = 18;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -5219,10 +5221,10 @@ impl Request for GetPropertyRequest {
     const OPCODE: u8 = 20;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPropertyReply;
+    type Reply = GetPropertyReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPropertyReply {
+pub struct GetPropertyReply<'q> {
     pub reply_type: u8,
     pub format: Card8,
     pub sequence: u16,
@@ -5230,10 +5232,10 @@ pub struct GetPropertyReply {
     pub ty: Atom,
     pub bytes_after: Card32,
     pub value_len: Card32,
-    pub value: Vec<Void>,
+    pub value: Cow<'q, [Void]>,
 }
-impl GetPropertyReply {}
-impl AsByteSequence for GetPropertyReply {
+impl<'q> GetPropertyReply<'q> {}
+impl<'q> AsByteSequence for GetPropertyReply<'q> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5269,7 +5271,7 @@ impl AsByteSequence for GetPropertyReply {
         let (value_len, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (value, block_len): (Vec<Void>, usize) = vector_from_bytes(
+        let (value, block_len): (Cow<'_, [Void]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((value_len as usize) * ((format as usize) / (8))) as usize,
         )?;
@@ -5381,17 +5383,17 @@ impl Request for ListPropertiesRequest {
     const OPCODE: u8 = 21;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListPropertiesReply;
+    type Reply = ListPropertiesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListPropertiesReply {
+pub struct ListPropertiesReply<'r> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub atoms: Vec<Atom>,
+    pub atoms: Cow<'r, [Atom]>,
 }
-impl ListPropertiesReply {}
-impl AsByteSequence for ListPropertiesReply {
+impl<'r> ListPropertiesReply<'r> {}
+impl<'r> AsByteSequence for ListPropertiesReply<'r> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -5420,7 +5422,7 @@ impl AsByteSequence for ListPropertiesReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (atoms, block_len): (Vec<Atom>, usize) =
+        let (atoms, block_len): (Cow<'_, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -7290,17 +7292,17 @@ impl Request for GetMotionEventsRequest {
     const OPCODE: u8 = 39;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetMotionEventsReply;
+    type Reply = GetMotionEventsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetMotionEventsReply {
+pub struct GetMotionEventsReply<'s> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub events: Vec<Timecoord>,
+    pub events: Cow<'s, [Timecoord]>,
 }
-impl GetMotionEventsReply {}
-impl AsByteSequence for GetMotionEventsReply {
+impl<'s> GetMotionEventsReply<'s> {}
+impl<'s> AsByteSequence for GetMotionEventsReply<'s> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7329,7 +7331,7 @@ impl AsByteSequence for GetMotionEventsReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (events, block_len): (Vec<Timecoord>, usize) =
+        let (events, block_len): (Cow<'_, [Timecoord]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Timecoord>());
@@ -7869,14 +7871,14 @@ impl AsByteSequence for QueryKeymapReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct OpenFontRequest {
+pub struct OpenFontRequest<'t> {
     pub req_type: u8,
     pub length: u16,
     pub fid: Font,
-    pub name: String,
+    pub name: Cow<'t, str>,
 }
-impl OpenFontRequest {}
-impl AsByteSequence for OpenFontRequest {
+impl<'t> OpenFontRequest<'t> {}
+impl<'t> AsByteSequence for OpenFontRequest<'t> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -7905,7 +7907,8 @@ impl AsByteSequence for OpenFontRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -7933,7 +7936,7 @@ impl AsByteSequence for OpenFontRequest {
             }
     }
 }
-impl Request for OpenFontRequest {
+impl<'t> Request for OpenFontRequest<'t> {
     const OPCODE: u8 = 45;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -8128,10 +8131,10 @@ impl Request for QueryFontRequest {
     const OPCODE: u8 = 47;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryFontReply;
+    type Reply = QueryFontReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryFontReply {
+pub struct QueryFontReply<'u, 'v> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -8146,11 +8149,11 @@ pub struct QueryFontReply {
     pub all_chars_exist: bool,
     pub font_ascent: Int16,
     pub font_descent: Int16,
-    pub properties: Vec<Fontprop>,
-    pub char_infos: Vec<Charinfo>,
+    pub properties: Cow<'u, [Fontprop]>,
+    pub char_infos: Cow<'v, [Charinfo]>,
 }
-impl QueryFontReply {}
-impl AsByteSequence for QueryFontReply {
+impl<'u, 'v> QueryFontReply<'u, 'v> {}
+impl<'u, 'v> AsByteSequence for QueryFontReply<'u, 'v> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8218,11 +8221,11 @@ impl AsByteSequence for QueryFontReply {
         index += sz;
         let (len1, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (properties, block_len): (Vec<Fontprop>, usize) =
+        let (properties, block_len): (Cow<'_, [Fontprop]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fontprop>());
-        let (char_infos, block_len): (Vec<Charinfo>, usize) =
+        let (char_infos, block_len): (Cow<'_, [Charinfo]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Charinfo>());
@@ -8312,14 +8315,14 @@ impl Default for FontDraw {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryTextExtentsRequest {
+pub struct QueryTextExtentsRequest<'w> {
     pub req_type: u8,
     pub font: Fontable,
     pub length: u16,
-    pub string: Vec<Char2b>,
+    pub string: Cow<'w, [Char2b]>,
 }
-impl QueryTextExtentsRequest {}
-impl AsByteSequence for QueryTextExtentsRequest {
+impl<'w> QueryTextExtentsRequest<'w> {}
+impl<'w> AsByteSequence for QueryTextExtentsRequest<'w> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8341,7 +8344,7 @@ impl AsByteSequence for QueryTextExtentsRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (Vec<Char2b>, usize) =
+        let (string, block_len): (Cow<'_, [Char2b]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Char2b>());
@@ -8364,7 +8367,7 @@ impl AsByteSequence for QueryTextExtentsRequest {
         }
     }
 }
-impl Request for QueryTextExtentsRequest {
+impl<'w> Request for QueryTextExtentsRequest<'w> {
     const OPCODE: u8 = 48;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -8461,11 +8464,11 @@ impl AsByteSequence for QueryTextExtentsReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Str {
-    pub name: String,
+pub struct String<'x> {
+    pub name: Cow<'x, str>,
 }
-impl Str {}
-impl AsByteSequence for Str {
+impl<'x> String<'x> {}
+impl<'x> AsByteSequence for String<'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8478,13 +8481,14 @@ impl AsByteSequence for Str {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing Str from byte buffer");
+        log::trace!("Deserializing String from byte buffer");
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        Some((Str { name: name }, index))
+        Some((String { name: name }, index))
     }
     #[inline]
     fn size(&self) -> usize {
@@ -8496,14 +8500,14 @@ impl AsByteSequence for Str {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListFontsRequest {
+pub struct ListFontsRequest<'y> {
     pub req_type: u8,
     pub length: u16,
     pub max_names: Card16,
-    pub pattern: String,
+    pub pattern: Cow<'y, str>,
 }
-impl ListFontsRequest {}
-impl AsByteSequence for ListFontsRequest {
+impl<'y> ListFontsRequest<'y> {}
+impl<'y> AsByteSequence for ListFontsRequest<'y> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8530,7 +8534,7 @@ impl AsByteSequence for ListFontsRequest {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pattern, block_len): (String, usize) =
+        let (pattern, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -8558,21 +8562,21 @@ impl AsByteSequence for ListFontsRequest {
             }
     }
 }
-impl Request for ListFontsRequest {
+impl<'y> Request for ListFontsRequest<'y> {
     const OPCODE: u8 = 49;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListFontsReply;
+    type Reply = ListFontsReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListFontsReply {
+pub struct ListFontsReply<'ab, 'z> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub names: Vec<Str>,
+    pub names: Cow<'ab, [String<'z>]>,
 }
-impl ListFontsReply {}
-impl AsByteSequence for ListFontsReply {
+impl<'ab, 'z> ListFontsReply<'ab, 'z> {}
+impl<'ab, 'z> AsByteSequence for ListFontsReply<'ab, 'z> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8584,7 +8588,7 @@ impl AsByteSequence for ListFontsReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.names, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
         index
     }
     #[inline]
@@ -8601,10 +8605,10 @@ impl AsByteSequence for ListFontsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (names, block_len): (Vec<Str>, usize) =
+        let (names, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
         Some((
             ListFontsReply {
                 reply_type: reply_type,
@@ -8625,20 +8629,20 @@ impl AsByteSequence for ListFontsReply {
             + 22
             + {
                 let block_len: usize = self.names.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListFontsWithInfoRequest {
+pub struct ListFontsWithInfoRequest<'bb> {
     pub req_type: u8,
     pub length: u16,
     pub max_names: Card16,
-    pub pattern: String,
+    pub pattern: Cow<'bb, str>,
 }
-impl ListFontsWithInfoRequest {}
-impl AsByteSequence for ListFontsWithInfoRequest {
+impl<'bb> ListFontsWithInfoRequest<'bb> {}
+impl<'bb> AsByteSequence for ListFontsWithInfoRequest<'bb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8665,7 +8669,7 @@ impl AsByteSequence for ListFontsWithInfoRequest {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pattern, block_len): (String, usize) =
+        let (pattern, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -8693,14 +8697,14 @@ impl AsByteSequence for ListFontsWithInfoRequest {
             }
     }
 }
-impl Request for ListFontsWithInfoRequest {
+impl<'bb> Request for ListFontsWithInfoRequest<'bb> {
     const OPCODE: u8 = 50;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListFontsWithInfoReply;
+    type Reply = ListFontsWithInfoReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListFontsWithInfoReply {
+pub struct ListFontsWithInfoReply<'cb, 'db> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -8716,11 +8720,11 @@ pub struct ListFontsWithInfoReply {
     pub font_ascent: Int16,
     pub font_descent: Int16,
     pub replies_hint: Card32,
-    pub properties: Vec<Fontprop>,
-    pub name: String,
+    pub properties: Cow<'cb, [Fontprop]>,
+    pub name: Cow<'db, str>,
 }
-impl ListFontsWithInfoReply {}
-impl AsByteSequence for ListFontsWithInfoReply {
+impl<'cb, 'db> ListFontsWithInfoReply<'cb, 'db> {}
+impl<'cb, 'db> AsByteSequence for ListFontsWithInfoReply<'cb, 'db> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8789,11 +8793,12 @@ impl AsByteSequence for ListFontsWithInfoReply {
         index += sz;
         let (replies_hint, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (properties, block_len): (Vec<Fontprop>, usize) =
+        let (properties, block_len): (Cow<'_, [Fontprop]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Fontprop>());
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -8852,13 +8857,13 @@ impl AsByteSequence for ListFontsWithInfoReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetFontPathRequest {
+pub struct SetFontPathRequest<'fb, 'eb> {
     pub req_type: u8,
     pub length: u16,
-    pub font: Vec<Str>,
+    pub font: Cow<'fb, [String<'eb>]>,
 }
-impl SetFontPathRequest {}
-impl AsByteSequence for SetFontPathRequest {
+impl<'fb, 'eb> SetFontPathRequest<'fb, 'eb> {}
+impl<'fb, 'eb> AsByteSequence for SetFontPathRequest<'fb, 'eb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8869,7 +8874,7 @@ impl AsByteSequence for SetFontPathRequest {
         index += 2;
         let block_len: usize = vector_as_bytes(&self.font, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
         index
     }
     #[inline]
@@ -8884,10 +8889,10 @@ impl AsByteSequence for SetFontPathRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (font, block_len): (Vec<Str>, usize) =
+        let (font, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
         Some((
             SetFontPathRequest {
                 req_type: req_type,
@@ -8901,12 +8906,12 @@ impl AsByteSequence for SetFontPathRequest {
     fn size(&self) -> usize {
         self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card16>() + 2 + {
             let block_len: usize = self.font.iter().map(|i| i.size()).sum();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
             block_len + pad
         }
     }
 }
-impl Request for SetFontPathRequest {
+impl<'fb, 'eb> Request for SetFontPathRequest<'fb, 'eb> {
     const OPCODE: u8 = 51;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -8953,17 +8958,17 @@ impl Request for GetFontPathRequest {
     const OPCODE: u8 = 52;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetFontPathReply;
+    type Reply = GetFontPathReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetFontPathReply {
+pub struct GetFontPathReply<'hb, 'gb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub path: Vec<Str>,
+    pub path: Cow<'hb, [String<'gb>]>,
 }
-impl GetFontPathReply {}
-impl AsByteSequence for GetFontPathReply {
+impl<'hb, 'gb> GetFontPathReply<'hb, 'gb> {}
+impl<'hb, 'gb> AsByteSequence for GetFontPathReply<'hb, 'gb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8975,7 +8980,7 @@ impl AsByteSequence for GetFontPathReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.path, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
         index
     }
     #[inline]
@@ -8992,10 +8997,10 @@ impl AsByteSequence for GetFontPathReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (path, block_len): (Vec<Str>, usize) =
+        let (path, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
         Some((
             GetFontPathReply {
                 reply_type: reply_type,
@@ -9016,7 +9021,7 @@ impl AsByteSequence for GetFontPathReply {
             + 22
             + {
                 let block_len: usize = self.path.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
                 block_len + pad
             }
     }
@@ -10410,15 +10415,15 @@ impl Request for CopyGcRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetDashesRequest {
+pub struct SetDashesRequest<'ib> {
     pub req_type: u8,
     pub length: u16,
     pub gc: Gcontext,
     pub dash_offset: Card16,
-    pub dashes: Vec<Card8>,
+    pub dashes: Cow<'ib, [Card8]>,
 }
-impl SetDashesRequest {}
-impl AsByteSequence for SetDashesRequest {
+impl<'ib> SetDashesRequest<'ib> {}
+impl<'ib> AsByteSequence for SetDashesRequest<'ib> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10448,7 +10453,7 @@ impl AsByteSequence for SetDashesRequest {
         index += sz;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (dashes, block_len): (Vec<Card8>, usize) =
+        let (dashes, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -10478,24 +10483,24 @@ impl AsByteSequence for SetDashesRequest {
             }
     }
 }
-impl Request for SetDashesRequest {
+impl<'ib> Request for SetDashesRequest<'ib> {
     const OPCODE: u8 = 58;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetClipRectanglesRequest {
+pub struct SetClipRectanglesRequest<'jb> {
     pub req_type: u8,
     pub ordering: ClipOrdering,
     pub length: u16,
     pub gc: Gcontext,
     pub clip_x_origin: Int16,
     pub clip_y_origin: Int16,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'jb, [Rectangle]>,
 }
-impl SetClipRectanglesRequest {}
-impl AsByteSequence for SetClipRectanglesRequest {
+impl<'jb> SetClipRectanglesRequest<'jb> {}
+impl<'jb> AsByteSequence for SetClipRectanglesRequest<'jb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10526,7 +10531,7 @@ impl AsByteSequence for SetClipRectanglesRequest {
         index += sz;
         let (clip_y_origin, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -10558,7 +10563,7 @@ impl AsByteSequence for SetClipRectanglesRequest {
             }
     }
 }
-impl Request for SetClipRectanglesRequest {
+impl<'jb> Request for SetClipRectanglesRequest<'jb> {
     const OPCODE: u8 = 59;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -10930,16 +10935,16 @@ impl Request for CopyPlaneRequest {
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyPointRequest {
+pub struct PolyPointRequest<'kb> {
     pub req_type: u8,
     pub coordinate_mode: CoordMode,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub points: Vec<Point>,
+    pub points: Cow<'kb, [Point]>,
 }
-impl PolyPointRequest {}
-impl AsByteSequence for PolyPointRequest {
+impl<'kb> PolyPointRequest<'kb> {}
+impl<'kb> AsByteSequence for PolyPointRequest<'kb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -10967,7 +10972,7 @@ impl AsByteSequence for PolyPointRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (points, block_len): (Vec<Point>, usize) =
+        let (points, block_len): (Cow<'_, [Point]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Point>());
@@ -10997,7 +11002,7 @@ impl AsByteSequence for PolyPointRequest {
             }
     }
 }
-impl Request for PolyPointRequest {
+impl<'kb> Request for PolyPointRequest<'kb> {
     const OPCODE: u8 = 64;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -11035,16 +11040,16 @@ impl Default for CoordMode {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyLineRequest {
+pub struct PolyLineRequest<'lb> {
     pub req_type: u8,
     pub coordinate_mode: CoordMode,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub points: Vec<Point>,
+    pub points: Cow<'lb, [Point]>,
 }
-impl PolyLineRequest {}
-impl AsByteSequence for PolyLineRequest {
+impl<'lb> PolyLineRequest<'lb> {}
+impl<'lb> AsByteSequence for PolyLineRequest<'lb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11072,7 +11077,7 @@ impl AsByteSequence for PolyLineRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (points, block_len): (Vec<Point>, usize) =
+        let (points, block_len): (Cow<'_, [Point]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Point>());
@@ -11102,7 +11107,7 @@ impl AsByteSequence for PolyLineRequest {
             }
     }
 }
-impl Request for PolyLineRequest {
+impl<'lb> Request for PolyLineRequest<'lb> {
     const OPCODE: u8 = 65;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -11154,15 +11159,15 @@ impl AsByteSequence for Segment {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolySegmentRequest {
+pub struct PolySegmentRequest<'mb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub segments: Vec<Segment>,
+    pub segments: Cow<'mb, [Segment]>,
 }
-impl PolySegmentRequest {}
-impl AsByteSequence for PolySegmentRequest {
+impl<'mb> PolySegmentRequest<'mb> {}
+impl<'mb> AsByteSequence for PolySegmentRequest<'mb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11189,7 +11194,7 @@ impl AsByteSequence for PolySegmentRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (segments, block_len): (Vec<Segment>, usize) =
+        let (segments, block_len): (Cow<'_, [Segment]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Segment>());
@@ -11213,22 +11218,22 @@ impl AsByteSequence for PolySegmentRequest {
         }
     }
 }
-impl Request for PolySegmentRequest {
+impl<'mb> Request for PolySegmentRequest<'mb> {
     const OPCODE: u8 = 66;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyRectangleRequest {
+pub struct PolyRectangleRequest<'nb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'nb, [Rectangle]>,
 }
-impl PolyRectangleRequest {}
-impl AsByteSequence for PolyRectangleRequest {
+impl<'nb> PolyRectangleRequest<'nb> {}
+impl<'nb> AsByteSequence for PolyRectangleRequest<'nb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11255,7 +11260,7 @@ impl AsByteSequence for PolyRectangleRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -11279,22 +11284,22 @@ impl AsByteSequence for PolyRectangleRequest {
         }
     }
 }
-impl Request for PolyRectangleRequest {
+impl<'nb> Request for PolyRectangleRequest<'nb> {
     const OPCODE: u8 = 67;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyArcRequest {
+pub struct PolyArcRequest<'ob> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub arcs: Vec<Arc>,
+    pub arcs: Cow<'ob, [Arc]>,
 }
-impl PolyArcRequest {}
-impl AsByteSequence for PolyArcRequest {
+impl<'ob> PolyArcRequest<'ob> {}
+impl<'ob> AsByteSequence for PolyArcRequest<'ob> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11321,7 +11326,7 @@ impl AsByteSequence for PolyArcRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (arcs, block_len): (Vec<Arc>, usize) =
+        let (arcs, block_len): (Cow<'_, [Arc]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Arc>());
@@ -11345,24 +11350,24 @@ impl AsByteSequence for PolyArcRequest {
         }
     }
 }
-impl Request for PolyArcRequest {
+impl<'ob> Request for PolyArcRequest<'ob> {
     const OPCODE: u8 = 68;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FillPolyRequest {
+pub struct FillPolyRequest<'pb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub shape: PolyShape,
     pub coordinate_mode: CoordMode,
-    pub points: Vec<Point>,
+    pub points: Cow<'pb, [Point]>,
 }
-impl FillPolyRequest {}
-impl AsByteSequence for FillPolyRequest {
+impl<'pb> FillPolyRequest<'pb> {}
+impl<'pb> AsByteSequence for FillPolyRequest<'pb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11397,7 +11402,7 @@ impl AsByteSequence for FillPolyRequest {
         let (coordinate_mode, sz): (CoordMode, usize) = <CoordMode>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (points, block_len): (Vec<Point>, usize) =
+        let (points, block_len): (Cow<'_, [Point]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Point>());
@@ -11431,7 +11436,7 @@ impl AsByteSequence for FillPolyRequest {
             }
     }
 }
-impl Request for FillPolyRequest {
+impl<'pb> Request for FillPolyRequest<'pb> {
     const OPCODE: u8 = 69;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -11471,15 +11476,15 @@ impl Default for PolyShape {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyFillRectangleRequest {
+pub struct PolyFillRectangleRequest<'qb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub rectangles: Vec<Rectangle>,
+    pub rectangles: Cow<'qb, [Rectangle]>,
 }
-impl PolyFillRectangleRequest {}
-impl AsByteSequence for PolyFillRectangleRequest {
+impl<'qb> PolyFillRectangleRequest<'qb> {}
+impl<'qb> AsByteSequence for PolyFillRectangleRequest<'qb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11506,7 +11511,7 @@ impl AsByteSequence for PolyFillRectangleRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (rectangles, block_len): (Vec<Rectangle>, usize) =
+        let (rectangles, block_len): (Cow<'_, [Rectangle]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rectangle>());
@@ -11530,22 +11535,22 @@ impl AsByteSequence for PolyFillRectangleRequest {
         }
     }
 }
-impl Request for PolyFillRectangleRequest {
+impl<'qb> Request for PolyFillRectangleRequest<'qb> {
     const OPCODE: u8 = 70;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyFillArcRequest {
+pub struct PolyFillArcRequest<'rb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
-    pub arcs: Vec<Arc>,
+    pub arcs: Cow<'rb, [Arc]>,
 }
-impl PolyFillArcRequest {}
-impl AsByteSequence for PolyFillArcRequest {
+impl<'rb> PolyFillArcRequest<'rb> {}
+impl<'rb> AsByteSequence for PolyFillArcRequest<'rb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11572,7 +11577,7 @@ impl AsByteSequence for PolyFillArcRequest {
         index += sz;
         let (gc, sz): (Gcontext, usize) = <Gcontext>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (arcs, block_len): (Vec<Arc>, usize) =
+        let (arcs, block_len): (Cow<'_, [Arc]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Arc>());
@@ -11596,14 +11601,14 @@ impl AsByteSequence for PolyFillArcRequest {
         }
     }
 }
-impl Request for PolyFillArcRequest {
+impl<'rb> Request for PolyFillArcRequest<'rb> {
     const OPCODE: u8 = 71;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PutImageRequest {
+pub struct PutImageRequest<'sb> {
     pub req_type: u8,
     pub format: ImageFormat,
     pub length: u16,
@@ -11615,10 +11620,10 @@ pub struct PutImageRequest {
     pub dst_y: Int16,
     pub left_pad: Card8,
     pub depth: Card8,
-    pub data: Vec<Byte>,
+    pub data: Cow<'sb, [Byte]>,
 }
-impl PutImageRequest {}
-impl AsByteSequence for PutImageRequest {
+impl<'sb> PutImageRequest<'sb> {}
+impl<'sb> AsByteSequence for PutImageRequest<'sb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11666,7 +11671,7 @@ impl AsByteSequence for PutImageRequest {
         let (depth, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (data, block_len): (Vec<Byte>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -11709,7 +11714,7 @@ impl AsByteSequence for PutImageRequest {
             }
     }
 }
-impl Request for PutImageRequest {
+impl<'sb> Request for PutImageRequest<'sb> {
     const OPCODE: u8 = 72;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -11830,19 +11835,19 @@ impl Request for GetImageRequest {
     const OPCODE: u8 = 73;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetImageReply;
+    type Reply = GetImageReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetImageReply {
+pub struct GetImageReply<'tb> {
     pub reply_type: u8,
     pub depth: Card8,
     pub sequence: u16,
     pub length: u32,
     pub visual: Visualid,
-    pub data: Vec<Byte>,
+    pub data: Cow<'tb, [Byte]>,
 }
-impl GetImageReply {}
-impl AsByteSequence for GetImageReply {
+impl<'tb> GetImageReply<'tb> {}
+impl<'tb> AsByteSequence for GetImageReply<'tb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11872,7 +11877,7 @@ impl AsByteSequence for GetImageReply {
         let (visual, sz): (Visualid, usize) = <Visualid>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (data, block_len): (Vec<Byte>, usize) =
+        let (data, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize) * (4)) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -11904,17 +11909,17 @@ impl AsByteSequence for GetImageReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyText8Request {
+pub struct PolyText8Request<'ub> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub x: Int16,
     pub y: Int16,
-    pub items: Vec<Byte>,
+    pub items: Cow<'ub, [Byte]>,
 }
-impl PolyText8Request {}
-impl AsByteSequence for PolyText8Request {
+impl<'ub> PolyText8Request<'ub> {}
+impl<'ub> AsByteSequence for PolyText8Request<'ub> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -11947,7 +11952,7 @@ impl AsByteSequence for PolyText8Request {
         index += sz;
         let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (items, block_len): (Vec<Byte>, usize) =
+        let (items, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -11980,24 +11985,24 @@ impl AsByteSequence for PolyText8Request {
             }
     }
 }
-impl Request for PolyText8Request {
+impl<'ub> Request for PolyText8Request<'ub> {
     const OPCODE: u8 = 74;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct PolyText16Request {
+pub struct PolyText16Request<'vb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub x: Int16,
     pub y: Int16,
-    pub items: Vec<Byte>,
+    pub items: Cow<'vb, [Byte]>,
 }
-impl PolyText16Request {}
-impl AsByteSequence for PolyText16Request {
+impl<'vb> PolyText16Request<'vb> {}
+impl<'vb> AsByteSequence for PolyText16Request<'vb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12030,7 +12035,7 @@ impl AsByteSequence for PolyText16Request {
         index += sz;
         let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (items, block_len): (Vec<Byte>, usize) =
+        let (items, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -12063,24 +12068,24 @@ impl AsByteSequence for PolyText16Request {
             }
     }
 }
-impl Request for PolyText16Request {
+impl<'vb> Request for PolyText16Request<'vb> {
     const OPCODE: u8 = 75;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ImageText8Request {
+pub struct ImageText8Request<'wb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub x: Int16,
     pub y: Int16,
-    pub string: String,
+    pub string: Cow<'wb, str>,
 }
-impl ImageText8Request {}
-impl AsByteSequence for ImageText8Request {
+impl<'wb> ImageText8Request<'wb> {}
+impl<'wb> AsByteSequence for ImageText8Request<'wb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12114,7 +12119,7 @@ impl AsByteSequence for ImageText8Request {
         index += sz;
         let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (String, usize) =
+        let (string, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
@@ -12147,24 +12152,24 @@ impl AsByteSequence for ImageText8Request {
             }
     }
 }
-impl Request for ImageText8Request {
+impl<'wb> Request for ImageText8Request<'wb> {
     const OPCODE: u8 = 76;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ImageText16Request {
+pub struct ImageText16Request<'xb> {
     pub req_type: u8,
     pub length: u16,
     pub drawable: Drawable,
     pub gc: Gcontext,
     pub x: Int16,
     pub y: Int16,
-    pub string: Vec<Char2b>,
+    pub string: Cow<'xb, [Char2b]>,
 }
-impl ImageText16Request {}
-impl AsByteSequence for ImageText16Request {
+impl<'xb> ImageText16Request<'xb> {}
+impl<'xb> AsByteSequence for ImageText16Request<'xb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12198,7 +12203,7 @@ impl AsByteSequence for ImageText16Request {
         index += sz;
         let (y, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (string, block_len): (Vec<Char2b>, usize) =
+        let (string, block_len): (Cow<'_, [Char2b]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Char2b>());
@@ -12231,7 +12236,7 @@ impl AsByteSequence for ImageText16Request {
             }
     }
 }
-impl Request for ImageText16Request {
+impl<'xb> Request for ImageText16Request<'xb> {
     const OPCODE: u8 = 77;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -12577,17 +12582,17 @@ impl Request for ListInstalledColormapsRequest {
     const OPCODE: u8 = 83;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListInstalledColormapsReply;
+    type Reply = ListInstalledColormapsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListInstalledColormapsReply {
+pub struct ListInstalledColormapsReply<'yb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub cmaps: Vec<Colormap>,
+    pub cmaps: Cow<'yb, [Colormap]>,
 }
-impl ListInstalledColormapsReply {}
-impl AsByteSequence for ListInstalledColormapsReply {
+impl<'yb> ListInstalledColormapsReply<'yb> {}
+impl<'yb> AsByteSequence for ListInstalledColormapsReply<'yb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12616,7 +12621,7 @@ impl AsByteSequence for ListInstalledColormapsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (cmaps, block_len): (Vec<Colormap>, usize) =
+        let (cmaps, block_len): (Cow<'_, [Colormap]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Colormap>());
@@ -12790,14 +12795,14 @@ impl AsByteSequence for AllocColorReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AllocNamedColorRequest {
+pub struct AllocNamedColorRequest<'zb> {
     pub req_type: u8,
     pub length: u16,
     pub cmap: Colormap,
-    pub name: String,
+    pub name: Cow<'zb, str>,
 }
-impl AllocNamedColorRequest {}
-impl AsByteSequence for AllocNamedColorRequest {
+impl<'zb> AllocNamedColorRequest<'zb> {}
+impl<'zb> AsByteSequence for AllocNamedColorRequest<'zb> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -12826,7 +12831,8 @@ impl AsByteSequence for AllocNamedColorRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -12854,7 +12860,7 @@ impl AsByteSequence for AllocNamedColorRequest {
             }
     }
 }
-impl Request for AllocNamedColorRequest {
+impl<'zb> Request for AllocNamedColorRequest<'zb> {
     const OPCODE: u8 = 85;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -13011,18 +13017,18 @@ impl Request for AllocColorCellsRequest {
     const OPCODE: u8 = 86;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = AllocColorCellsReply;
+    type Reply = AllocColorCellsReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AllocColorCellsReply {
+pub struct AllocColorCellsReply<'ac, 'bc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub pixels: Vec<Card32>,
-    pub masks: Vec<Card32>,
+    pub pixels: Cow<'ac, [Card32]>,
+    pub masks: Cow<'bc, [Card32]>,
 }
-impl AllocColorCellsReply {}
-impl AsByteSequence for AllocColorCellsReply {
+impl<'ac, 'bc> AllocColorCellsReply<'ac, 'bc> {}
+impl<'ac, 'bc> AsByteSequence for AllocColorCellsReply<'ac, 'bc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13057,11 +13063,11 @@ impl AsByteSequence for AllocColorCellsReply {
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (pixels, block_len): (Vec<Card32>, usize) =
+        let (pixels, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
-        let (masks, block_len): (Vec<Card32>, usize) =
+        let (masks, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -13173,20 +13179,20 @@ impl Request for AllocColorPlanesRequest {
     const OPCODE: u8 = 87;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = AllocColorPlanesReply;
+    type Reply = AllocColorPlanesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct AllocColorPlanesReply {
+pub struct AllocColorPlanesReply<'cc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub red_mask: Card32,
     pub green_mask: Card32,
     pub blue_mask: Card32,
-    pub pixels: Vec<Card32>,
+    pub pixels: Cow<'cc, [Card32]>,
 }
-impl AllocColorPlanesReply {}
-impl AsByteSequence for AllocColorPlanesReply {
+impl<'cc> AllocColorPlanesReply<'cc> {}
+impl<'cc> AsByteSequence for AllocColorPlanesReply<'cc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13226,7 +13232,7 @@ impl AsByteSequence for AllocColorPlanesReply {
         let (blue_mask, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 8;
-        let (pixels, block_len): (Vec<Card32>, usize) =
+        let (pixels, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -13263,15 +13269,15 @@ impl AsByteSequence for AllocColorPlanesReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct FreeColorsRequest {
+pub struct FreeColorsRequest<'dc> {
     pub req_type: u8,
     pub length: u16,
     pub cmap: Colormap,
     pub plane_mask: Card32,
-    pub pixels: Vec<Card32>,
+    pub pixels: Cow<'dc, [Card32]>,
 }
-impl FreeColorsRequest {}
-impl AsByteSequence for FreeColorsRequest {
+impl<'dc> FreeColorsRequest<'dc> {}
+impl<'dc> AsByteSequence for FreeColorsRequest<'dc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13298,7 +13304,7 @@ impl AsByteSequence for FreeColorsRequest {
         index += sz;
         let (plane_mask, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixels, block_len): (Vec<Card32>, usize) =
+        let (pixels, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -13327,7 +13333,7 @@ impl AsByteSequence for FreeColorsRequest {
             }
     }
 }
-impl Request for FreeColorsRequest {
+impl<'dc> Request for FreeColorsRequest<'dc> {
     const OPCODE: u8 = 88;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -13508,14 +13514,14 @@ impl core::ops::BitXor for ColorFlag {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct StoreColorsRequest {
+pub struct StoreColorsRequest<'ec> {
     pub req_type: u8,
     pub length: u16,
     pub cmap: Colormap,
-    pub items: Vec<Coloritem>,
+    pub items: Cow<'ec, [Coloritem]>,
 }
-impl StoreColorsRequest {}
-impl AsByteSequence for StoreColorsRequest {
+impl<'ec> StoreColorsRequest<'ec> {}
+impl<'ec> AsByteSequence for StoreColorsRequest<'ec> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13539,7 +13545,7 @@ impl AsByteSequence for StoreColorsRequest {
         index += sz;
         let (cmap, sz): (Colormap, usize) = <Colormap>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (items, block_len): (Vec<Coloritem>, usize) =
+        let (items, block_len): (Cow<'_, [Coloritem]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Coloritem>());
@@ -13562,23 +13568,23 @@ impl AsByteSequence for StoreColorsRequest {
         }
     }
 }
-impl Request for StoreColorsRequest {
+impl<'ec> Request for StoreColorsRequest<'ec> {
     const OPCODE: u8 = 89;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
     type Reply = ();
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct StoreNamedColorRequest {
+pub struct StoreNamedColorRequest<'fc> {
     pub req_type: u8,
     pub flags: ColorFlag,
     pub length: u16,
     pub cmap: Colormap,
     pub pixel: Card32,
-    pub name: String,
+    pub name: Cow<'fc, str>,
 }
-impl StoreNamedColorRequest {}
-impl AsByteSequence for StoreNamedColorRequest {
+impl<'fc> StoreNamedColorRequest<'fc> {}
+impl<'fc> AsByteSequence for StoreNamedColorRequest<'fc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13611,7 +13617,8 @@ impl AsByteSequence for StoreNamedColorRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -13642,7 +13649,7 @@ impl AsByteSequence for StoreNamedColorRequest {
             }
     }
 }
-impl Request for StoreNamedColorRequest {
+impl<'fc> Request for StoreNamedColorRequest<'fc> {
     const OPCODE: u8 = 90;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -13691,14 +13698,14 @@ impl AsByteSequence for Rgb {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryColorsRequest {
+pub struct QueryColorsRequest<'gc> {
     pub req_type: u8,
     pub length: u16,
     pub cmap: Colormap,
-    pub pixels: Vec<Card32>,
+    pub pixels: Cow<'gc, [Card32]>,
 }
-impl QueryColorsRequest {}
-impl AsByteSequence for QueryColorsRequest {
+impl<'gc> QueryColorsRequest<'gc> {}
+impl<'gc> AsByteSequence for QueryColorsRequest<'gc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13722,7 +13729,7 @@ impl AsByteSequence for QueryColorsRequest {
         index += sz;
         let (cmap, sz): (Colormap, usize) = <Colormap>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (pixels, block_len): (Vec<Card32>, usize) =
+        let (pixels, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], ((length as usize * 4) - index) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -13745,21 +13752,21 @@ impl AsByteSequence for QueryColorsRequest {
         }
     }
 }
-impl Request for QueryColorsRequest {
+impl<'gc> Request for QueryColorsRequest<'gc> {
     const OPCODE: u8 = 91;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = QueryColorsReply;
+    type Reply = QueryColorsReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryColorsReply {
+pub struct QueryColorsReply<'hc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub colors: Vec<Rgb>,
+    pub colors: Cow<'hc, [Rgb]>,
 }
-impl QueryColorsReply {}
-impl AsByteSequence for QueryColorsReply {
+impl<'hc> QueryColorsReply<'hc> {}
+impl<'hc> AsByteSequence for QueryColorsReply<'hc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13788,7 +13795,7 @@ impl AsByteSequence for QueryColorsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (colors, block_len): (Vec<Rgb>, usize) =
+        let (colors, block_len): (Cow<'_, [Rgb]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Rgb>());
@@ -13818,14 +13825,14 @@ impl AsByteSequence for QueryColorsReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct LookupColorRequest {
+pub struct LookupColorRequest<'ic> {
     pub req_type: u8,
     pub length: u16,
     pub cmap: Colormap,
-    pub name: String,
+    pub name: Cow<'ic, str>,
 }
-impl LookupColorRequest {}
-impl AsByteSequence for LookupColorRequest {
+impl<'ic> LookupColorRequest<'ic> {}
+impl<'ic> AsByteSequence for LookupColorRequest<'ic> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -13854,7 +13861,8 @@ impl AsByteSequence for LookupColorRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -13882,7 +13890,7 @@ impl AsByteSequence for LookupColorRequest {
             }
     }
 }
-impl Request for LookupColorRequest {
+impl<'ic> Request for LookupColorRequest<'ic> {
     const OPCODE: u8 = 92;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -14485,13 +14493,13 @@ impl Default for QueryShapeOf {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct QueryExtensionRequest {
+pub struct QueryExtensionRequest<'jc> {
     pub req_type: u8,
     pub length: u16,
-    pub name: String,
+    pub name: Cow<'jc, str>,
 }
-impl QueryExtensionRequest {}
-impl AsByteSequence for QueryExtensionRequest {
+impl<'jc> QueryExtensionRequest<'jc> {}
+impl<'jc> AsByteSequence for QueryExtensionRequest<'jc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14517,7 +14525,8 @@ impl AsByteSequence for QueryExtensionRequest {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (name, block_len): (String, usize) = string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (name, block_len): (Cow<'_, str>, usize) =
+            string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
         Some((
@@ -14538,7 +14547,7 @@ impl AsByteSequence for QueryExtensionRequest {
         }
     }
 }
-impl Request for QueryExtensionRequest {
+impl<'jc> Request for QueryExtensionRequest<'jc> {
     const OPCODE: u8 = 98;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -14654,17 +14663,17 @@ impl Request for ListExtensionsRequest {
     const OPCODE: u8 = 99;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListExtensionsReply;
+    type Reply = ListExtensionsReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListExtensionsReply {
+pub struct ListExtensionsReply<'lc, 'kc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub names: Vec<Str>,
+    pub names: Cow<'lc, [String<'kc>]>,
 }
-impl ListExtensionsReply {}
-impl AsByteSequence for ListExtensionsReply {
+impl<'lc, 'kc> ListExtensionsReply<'lc, 'kc> {}
+impl<'lc, 'kc> AsByteSequence for ListExtensionsReply<'lc, 'kc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14675,7 +14684,7 @@ impl AsByteSequence for ListExtensionsReply {
         index += 24;
         let block_len: usize = vector_as_bytes(&self.names, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
         index
     }
     #[inline]
@@ -14691,10 +14700,10 @@ impl AsByteSequence for ListExtensionsReply {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (names, block_len): (Vec<Str>, usize) =
+        let (names, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
         Some((
             ListExtensionsReply {
                 reply_type: reply_type,
@@ -14714,22 +14723,22 @@ impl AsByteSequence for ListExtensionsReply {
             + 24
             + {
                 let block_len: usize = self.names.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
                 block_len + pad
             }
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeKeyboardMappingRequest {
+pub struct ChangeKeyboardMappingRequest<'mc> {
     pub req_type: u8,
     pub keycode_count: Card8,
     pub length: u16,
     pub first_keycode: Keycode,
     pub keysyms_per_keycode: Card8,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'mc, [Keysym]>,
 }
-impl ChangeKeyboardMappingRequest {}
-impl AsByteSequence for ChangeKeyboardMappingRequest {
+impl<'mc> ChangeKeyboardMappingRequest<'mc> {}
+impl<'mc> AsByteSequence for ChangeKeyboardMappingRequest<'mc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14759,7 +14768,7 @@ impl AsByteSequence for ChangeKeyboardMappingRequest {
         let (keysyms_per_keycode, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (keysyms, block_len): (Vec<Keysym>, usize) = vector_from_bytes(
+        let (keysyms, block_len): (Cow<'_, [Keysym]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycode_count as usize) * (keysyms_per_keycode as usize)) as usize,
         )?;
@@ -14792,7 +14801,7 @@ impl AsByteSequence for ChangeKeyboardMappingRequest {
             }
     }
 }
-impl Request for ChangeKeyboardMappingRequest {
+impl<'mc> Request for ChangeKeyboardMappingRequest<'mc> {
     const OPCODE: u8 = 100;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -14853,18 +14862,18 @@ impl Request for GetKeyboardMappingRequest {
     const OPCODE: u8 = 101;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetKeyboardMappingReply;
+    type Reply = GetKeyboardMappingReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetKeyboardMappingReply {
+pub struct GetKeyboardMappingReply<'nc> {
     pub reply_type: u8,
     pub keysyms_per_keycode: Byte,
     pub sequence: u16,
     pub length: u32,
-    pub keysyms: Vec<Keysym>,
+    pub keysyms: Cow<'nc, [Keysym]>,
 }
-impl GetKeyboardMappingReply {}
-impl AsByteSequence for GetKeyboardMappingReply {
+impl<'nc> GetKeyboardMappingReply<'nc> {}
+impl<'nc> AsByteSequence for GetKeyboardMappingReply<'nc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -14891,7 +14900,7 @@ impl AsByteSequence for GetKeyboardMappingReply {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (keysyms, block_len): (Vec<Keysym>, usize) =
+        let (keysyms, block_len): (Cow<'_, [Keysym]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Keysym>());
@@ -15935,15 +15944,15 @@ impl AsByteSequence for GetScreenSaverReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ChangeHostsRequest {
+pub struct ChangeHostsRequest<'oc> {
     pub req_type: u8,
     pub mode: HostMode,
     pub length: u16,
     pub family: Family,
-    pub address: Vec<Byte>,
+    pub address: Cow<'oc, [Byte]>,
 }
-impl ChangeHostsRequest {}
-impl AsByteSequence for ChangeHostsRequest {
+impl<'oc> ChangeHostsRequest<'oc> {}
+impl<'oc> AsByteSequence for ChangeHostsRequest<'oc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -15973,7 +15982,7 @@ impl AsByteSequence for ChangeHostsRequest {
         index += 1;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (address, block_len): (Vec<Byte>, usize) =
+        let (address, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Byte>());
@@ -16003,7 +16012,7 @@ impl AsByteSequence for ChangeHostsRequest {
             }
     }
 }
-impl Request for ChangeHostsRequest {
+impl<'oc> Request for ChangeHostsRequest<'oc> {
     const OPCODE: u8 = 109;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -16078,12 +16087,12 @@ impl Default for Family {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Host {
+pub struct Host<'pc> {
     pub family: Family,
-    pub address: Vec<Byte>,
+    pub address: Cow<'pc, [Byte]>,
 }
-impl Host {}
-impl AsByteSequence for Host {
+impl<'pc> Host<'pc> {}
+impl<'pc> AsByteSequence for Host<'pc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16104,7 +16113,7 @@ impl AsByteSequence for Host {
         index += 1;
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (address, block_len): (Vec<Byte>, usize) =
+        let (address, block_len): (Cow<'_, [Byte]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
@@ -16166,18 +16175,18 @@ impl Request for ListHostsRequest {
     const OPCODE: u8 = 110;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListHostsReply;
+    type Reply = ListHostsReply<'static, 'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListHostsReply {
+pub struct ListHostsReply<'rc, 'qc> {
     pub reply_type: u8,
     pub mode: AccessControl,
     pub sequence: u16,
     pub length: u32,
-    pub hosts: Vec<Host>,
+    pub hosts: Cow<'rc, [Host<'qc>]>,
 }
-impl ListHostsReply {}
-impl AsByteSequence for ListHostsReply {
+impl<'rc, 'qc> ListHostsReply<'rc, 'qc> {}
+impl<'rc, 'qc> AsByteSequence for ListHostsReply<'rc, 'qc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16189,7 +16198,7 @@ impl AsByteSequence for ListHostsReply {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.hosts, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Host>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Host<'qc>>());
         index
     }
     #[inline]
@@ -16207,10 +16216,10 @@ impl AsByteSequence for ListHostsReply {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (hosts, block_len): (Vec<Host>, usize) =
+        let (hosts, block_len): (Cow<'_, [Host<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Host>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<Host<'qc>>());
         Some((
             ListHostsReply {
                 reply_type: reply_type,
@@ -16232,7 +16241,7 @@ impl AsByteSequence for ListHostsReply {
             + 22
             + {
                 let block_len: usize = self.hosts.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Host>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Host<'qc>>());
                 block_len + pad
             }
     }
@@ -16471,15 +16480,15 @@ impl Default for Kill {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct RotatePropertiesRequest {
+pub struct RotatePropertiesRequest<'sc> {
     pub req_type: u8,
     pub length: u16,
     pub window: Window,
     pub delta: Int16,
-    pub atoms: Vec<Atom>,
+    pub atoms: Cow<'sc, [Atom]>,
 }
-impl RotatePropertiesRequest {}
-impl AsByteSequence for RotatePropertiesRequest {
+impl<'sc> RotatePropertiesRequest<'sc> {}
+impl<'sc> AsByteSequence for RotatePropertiesRequest<'sc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16509,7 +16518,7 @@ impl AsByteSequence for RotatePropertiesRequest {
         index += sz;
         let (delta, sz): (Int16, usize) = <Int16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (atoms, block_len): (Vec<Atom>, usize) =
+        let (atoms, block_len): (Cow<'_, [Atom]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Atom>());
@@ -16539,7 +16548,7 @@ impl AsByteSequence for RotatePropertiesRequest {
             }
     }
 }
-impl Request for RotatePropertiesRequest {
+impl<'sc> Request for RotatePropertiesRequest<'sc> {
     const OPCODE: u8 = 114;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -16623,13 +16632,13 @@ impl Default for ScreenSaver {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetPointerMappingRequest {
+pub struct SetPointerMappingRequest<'tc> {
     pub req_type: u8,
     pub length: u16,
-    pub map: Vec<Card8>,
+    pub map: Cow<'tc, [Card8]>,
 }
-impl SetPointerMappingRequest {}
-impl AsByteSequence for SetPointerMappingRequest {
+impl<'tc> SetPointerMappingRequest<'tc> {}
+impl<'tc> AsByteSequence for SetPointerMappingRequest<'tc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16651,7 +16660,7 @@ impl AsByteSequence for SetPointerMappingRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (map, block_len): (Vec<Card8>, usize) =
+        let (map, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -16673,7 +16682,7 @@ impl AsByteSequence for SetPointerMappingRequest {
         }
     }
 }
-impl Request for SetPointerMappingRequest {
+impl<'tc> Request for SetPointerMappingRequest<'tc> {
     const OPCODE: u8 = 116;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -16798,17 +16807,17 @@ impl Request for GetPointerMappingRequest {
     const OPCODE: u8 = 117;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetPointerMappingReply;
+    type Reply = GetPointerMappingReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetPointerMappingReply {
+pub struct GetPointerMappingReply<'uc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub map: Vec<Card8>,
+    pub map: Cow<'uc, [Card8]>,
 }
-impl GetPointerMappingReply {}
-impl AsByteSequence for GetPointerMappingReply {
+impl<'uc> GetPointerMappingReply<'uc> {}
+impl<'uc> AsByteSequence for GetPointerMappingReply<'uc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16835,7 +16844,7 @@ impl AsByteSequence for GetPointerMappingReply {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (map, block_len): (Vec<Card8>, usize) =
+        let (map, block_len): (Cow<'_, [Card8]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card8>());
@@ -16864,14 +16873,14 @@ impl AsByteSequence for GetPointerMappingReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct SetModifierMappingRequest {
+pub struct SetModifierMappingRequest<'vc> {
     pub req_type: u8,
     pub keycodes_per_modifier: Card8,
     pub length: u16,
-    pub keycodes: Vec<Keycode>,
+    pub keycodes: Cow<'vc, [Keycode]>,
 }
-impl SetModifierMappingRequest {}
-impl AsByteSequence for SetModifierMappingRequest {
+impl<'vc> SetModifierMappingRequest<'vc> {}
+impl<'vc> AsByteSequence for SetModifierMappingRequest<'vc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -16893,7 +16902,7 @@ impl AsByteSequence for SetModifierMappingRequest {
         index += sz;
         let (length, sz): (u16, usize) = <u16>::from_bytes(&bytes[index..])?;
         index += sz;
-        let (keycodes, block_len): (Vec<Keycode>, usize) = vector_from_bytes(
+        let (keycodes, block_len): (Cow<'_, [Keycode]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycodes_per_modifier as usize) * (8)) as usize,
         )?;
@@ -16918,7 +16927,7 @@ impl AsByteSequence for SetModifierMappingRequest {
         }
     }
 }
-impl Request for SetModifierMappingRequest {
+impl<'vc> Request for SetModifierMappingRequest<'vc> {
     const OPCODE: u8 = 118;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
@@ -17010,18 +17019,18 @@ impl Request for GetModifierMappingRequest {
     const OPCODE: u8 = 119;
     const EXTENSION: Option<&'static str> = None;
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = GetModifierMappingReply;
+    type Reply = GetModifierMappingReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct GetModifierMappingReply {
+pub struct GetModifierMappingReply<'wc> {
     pub reply_type: u8,
     pub keycodes_per_modifier: Card8,
     pub sequence: u16,
     pub length: u32,
-    pub keycodes: Vec<Keycode>,
+    pub keycodes: Cow<'wc, [Keycode]>,
 }
-impl GetModifierMappingReply {}
-impl AsByteSequence for GetModifierMappingReply {
+impl<'wc> GetModifierMappingReply<'wc> {}
+impl<'wc> AsByteSequence for GetModifierMappingReply<'wc> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -17048,7 +17057,7 @@ impl AsByteSequence for GetModifierMappingReply {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (keycodes, block_len): (Vec<Keycode>, usize) = vector_from_bytes(
+        let (keycodes, block_len): (Cow<'_, [Keycode]>, usize) = vector_from_bytes(
             &bytes[index..],
             ((keycodes_per_modifier as usize) * (8)) as usize,
         )?;

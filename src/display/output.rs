@@ -5,7 +5,7 @@ use super::{
     RequestInfo, RequestWorkaround, EXT_KEY_SIZE,
 };
 use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace};
-use alloc::string::ToString;
+use alloc::borrow::Cow;
 use core::mem;
 
 #[cfg(feature = "async")]
@@ -134,7 +134,7 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
     );
 
     let qer = QueryExtensionRequest {
-        name: extension.to_string(),
+        name: Cow::Borrowed(extension),
         ..Default::default()
     };
 

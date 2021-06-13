@@ -5,10 +5,9 @@ use mutex::Mutex;
 
 use super::{
     input, output, BasicDisplay, Connection, Display, DisplayBase, PendingItem, RequestInfo,
-    EXT_KEY_SIZE,
+    StaticSetup, EXT_KEY_SIZE,
 };
 use crate::{
-    auto::xproto::Setup,
     event::Event,
     xid::{AtomicXidGenerator, XID},
 };
@@ -74,7 +73,7 @@ pub struct SyncDisplay<Conn> {
     io_lock: Mutex,
 
     // setup from the server
-    setup: Setup,
+    setup: StaticSetup,
 
     // xid generator
     xid: AtomicXidGenerator,
@@ -167,7 +166,7 @@ impl<Conn> From<BasicDisplay<Conn>> for SyncDisplay<Conn> {
 
 impl<Conn> DisplayBase for SyncDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
 
@@ -395,7 +394,7 @@ impl<Conn: AsyncConnection + Unpin> AsyncDisplay for SyncDisplay<Conn> {
 
 impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         &self.setup
     }
 

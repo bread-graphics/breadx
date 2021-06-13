@@ -11,6 +11,7 @@ use crate::{
     },
     display::{Display, DisplayExt},
 };
+use alloc::borrow::Cow;
 
 #[cfg(feature = "async")]
 use crate::display::{AsyncDisplay, AsyncDisplayExt};
@@ -165,18 +166,19 @@ impl Picture {
 
     /// Fill a series of solid color rectangles on this surface.
     #[inline]
-    pub fn fill_rectangles<Dpy: Display + ?Sized>(
+    pub fn fill_rectangles<'a, Dpy: Display + ?Sized, Rects: Into<Cow<'a, [Rectangle]>>>(
         self,
         display: &mut Dpy,
         op: PictOp,
         color: Color,
-        rects: &[Rectangle],
+        rects: Rects,
     ) -> crate::Result {
+        let rects = rects.into();
         display.exchange_request(FillRectanglesRequest {
             dst: self,
             op,
             color,
-            rects: rects.to_vec(),
+            rects,
             ..Default::default()
         })
     }
@@ -184,19 +186,23 @@ impl Picture {
     /// Fill a series of solid color rectangles on this surface, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn fill_rectangles_async<Dpy: AsyncDisplay + ?Sized>(
+    pub async fn fill_rectangles_async<
+        'a,
+        Dpy: AsyncDisplay + ?Sized,
+        Rects: Into<Cow<'a, [Rectangle]>>,
+    >(
         self,
         display: &mut Dpy,
         op: PictOp,
         color: Color,
-        rects: &[Rectangle],
+        rects: Rects,
     ) -> crate::Result {
         display
             .exchange_request_async(FillRectanglesRequest {
                 dst: self,
                 op,
                 color,
-                rects: rects.to_vec(),
+                rects: rects.into(),
                 ..Default::default()
             })
             .await
@@ -225,7 +231,7 @@ impl Picture {
 
     /// Draw a set of trapezoids.
     #[inline]
-    pub fn trapezoids<Dpy: Display + ?Sized>(
+    pub fn trapezoids<'a, Dpy: Display + ?Sized, Tzds: Into<Cow<'a, [Trapezoid]>>>(
         self,
         display: &mut Dpy,
         op: PictOp,
@@ -233,7 +239,7 @@ impl Picture {
         mask_format: Pictformat,
         srcx: i16,
         srcy: i16,
-        trapezoids: &[Trapezoid],
+        trapezoids: Tzds,
     ) -> crate::Result {
         display.exchange_request(TrapezoidsRequest {
             src,
@@ -242,7 +248,7 @@ impl Picture {
             mask_format,
             src_x: srcx,
             src_y: srcy,
-            traps: trapezoids.to_vec(),
+            traps: trapezoids.into(),
             ..Default::default()
         })
     }
@@ -250,7 +256,11 @@ impl Picture {
     /// Draw a set of trapezoids, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub async fn trapezoids_async<Dpy: AsyncDisplay + ?Sized>(
+    pub async fn trapezoids_async<
+        'a,
+        Dpy: AsyncDisplay + ?Sized,
+        Tzds: Into<Cow<'a, [Trapezoid]>>,
+    >(
         self,
         display: &mut Dpy,
         op: PictOp,
@@ -258,7 +268,7 @@ impl Picture {
         mask_format: Pictformat,
         srcx: i16,
         srcy: i16,
-        trapezoids: &[Trapezoid],
+        trapezoids: Tzds,
     ) -> crate::Result {
         display
             .exchange_request_async(TrapezoidsRequest {
@@ -268,7 +278,7 @@ impl Picture {
                 mask_format,
                 src_x: srcx,
                 src_y: srcy,
-                traps: trapezoids.to_vec(),
+                traps: trapezoids.into(),
                 ..Default::default()
             })
             .await

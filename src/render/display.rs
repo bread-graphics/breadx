@@ -13,12 +13,12 @@ use crate::{
     },
     display::{
         generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem, RequestInfo,
-        EXT_KEY_SIZE,
+        StaticSetup, EXT_KEY_SIZE,
     },
     event::Event,
     BreadError, XID,
 };
-use alloc::boxed::Box;
+use alloc::{borrow::Cow, boxed::Box};
 use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
@@ -30,7 +30,7 @@ use core::task::{Context, Poll};
 #[derive(Debug)]
 pub struct RenderDisplay<Dpy: ?Sized> {
     formats: Box<[Pictforminfo]>,
-    screens: Box<[Pictscreen]>,
+    screens: Box<[Pictscreen<'static, 'static>]>,
     subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
@@ -156,35 +156,35 @@ impl<Dpy> RenderDisplay<Dpy> {
     }
 
     #[inline]
-    fn create_linear_gradient_request(
+    fn create_linear_gradient_request<'a, 'b>(
         pid: Picture,
         p1: Pointfix,
         p2: Pointfix,
-        stops: &[Fixed],
-        colors: &[Color],
-    ) -> CreateLinearGradientRequest {
+        stops: Cow<'a, [Fixed]>,
+        colors: Cow<'b, [Color]>,
+    ) -> CreateLinearGradientRequest<'a, 'b> {
         assert_eq!(stops.len(), colors.len());
         CreateLinearGradientRequest {
             picture: pid,
             p1,
             p2,
             num_stops: stops.len() as u32,
-            stops: stops.to_vec(),
-            colors: colors.to_vec(),
+            stops,
+            colors,
             ..Default::default()
         }
     }
 
     #[inline]
-    fn create_radial_gradient_request(
+    fn create_radial_gradient_request<'a, 'b>(
         pid: Picture,
         inner: Pointfix,
         outer: Pointfix,
         inner_radius: Fixed,
         outer_radius: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
-    ) -> CreateRadialGradientRequest {
+        stops: Cow<'a, [Fixed]>,
+        colors: Cow<'b, [Color]>,
+    ) -> CreateRadialGradientRequest<'a, 'b> {
         assert_eq!(stops.len(), colors.len());
         CreateRadialGradientRequest {
             picture: pid,
@@ -193,28 +193,28 @@ impl<Dpy> RenderDisplay<Dpy> {
             inner_radius,
             outer_radius,
             num_stops: stops.len() as u32,
-            stops: stops.to_vec(),
-            colors: colors.to_vec(),
+            stops,
+            colors,
             ..Default::default()
         }
     }
 
     #[inline]
-    fn create_conical_gradient_request(
+    fn create_conical_gradient_request<'a, 'b>(
         pid: Picture,
         center: Pointfix,
         angle: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
-    ) -> CreateConicalGradientRequest {
+        stops: Cow<'a, [Fixed]>,
+        colors: Cow<'b, [Color]>,
+    ) -> CreateConicalGradientRequest<'a, 'b> {
         assert_eq!(stops.len(), colors.len());
         CreateConicalGradientRequest {
             picture: pid,
             center,
             angle,
             num_stops: stops.len() as u32,
-            stops: stops.to_vec(),
-            colors: colors.to_vec(),
+            stops,
+            colors,
             ..Default::default()
         }
     }
@@ -233,7 +233,7 @@ pub enum StandardFormat {
 
 struct XrenderInfo {
     formats: Box<[Pictforminfo]>,
-    screens: Box<[Pictscreen]>,
+    screens: Box<[Pictscreen<'static, 'static>]>,
     subpixels: Box<[u32]>,
     major_version: u32,
     minor_version: u32,
@@ -241,7 +241,7 @@ struct XrenderInfo {
 
 impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         self.inner.setup()
     }
 
@@ -350,7 +350,7 @@ where
     &'a Dpy: DisplayBase,
 {
     #[inline]
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &StaticSetup {
         self.inner.setup()
     }
 
@@ -565,9 +565,9 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
             Ok(XrenderInfo {
                 major_version,
                 minor_version,
-                formats: formats.into_boxed_slice(),
-                screens: screens.into_boxed_slice(),
-                subpixels: subpixels.into_boxed_slice(),
+                formats: formats.into_owned().into_boxed_slice(),
+                screens: screens.into_owned().into_boxed_slice(),
+                subpixels: subpixels.into_owned().into_boxed_slice(),
             })
         }
 
@@ -608,29 +608,39 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
 
     /// Create a new linear gradient.
     #[inline]
-    pub fn create_linear_gradient(
+    pub fn create_linear_gradient<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         p1: Pointfix,
         p2: Pointfix,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
-        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
+        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops.into(), colors.into());
         self.exchange_request(clgr)?;
         Ok(pic)
     }
 
     /// Create a new radial gradient.
     #[inline]
-    pub fn create_radial_gradient(
+    pub fn create_radial_gradient<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         inner: Pointfix,
         outer: Pointfix,
         inner_radius: Fixed,
         outer_radius: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
         let crgr = Self::create_radial_gradient_request(
@@ -639,23 +649,29 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
             outer,
             inner_radius,
             outer_radius,
-            stops,
-            colors,
+            stops.into(),
+            colors.into(),
         );
         self.exchange_request(crgr)?;
         Ok(pic)
     }
 
     #[inline]
-    pub fn create_conical_gradient(
+    pub fn create_conical_gradient<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         center: Pointfix,
         angle: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
-        let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
+        let ccgr =
+            Self::create_conical_gradient_request(pic, center, angle, stops.into(), colors.into());
         self.exchange_request(ccgr)?;
         Ok(pic)
     }
@@ -702,9 +718,9 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
             Ok(XrenderInfo {
                 major_version,
                 minor_version,
-                formats: formats.into_boxed_slice(),
-                screens: screens.into_boxed_slice(),
-                subpixels: subpixels.into_boxed_slice(),
+                formats: formats.into_owned().into_boxed_slice(),
+                screens: screens.into_owned().into_boxed_slice(),
+                subpixels: subpixels.into_owned().into_boxed_slice(),
             })
         }
 
@@ -745,29 +761,39 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
 
     /// Create a new linear gradient, async redox.
     #[inline]
-    pub async fn create_linear_gradient_async(
+    pub async fn create_linear_gradient_async<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         p1: Pointfix,
         p2: Pointfix,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
-        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops, colors);
+        let clgr = Self::create_linear_gradient_request(pic, p1, p2, stops.into(), colors.into());
         self.exchange_request_async(clgr).await?;
         Ok(pic)
     }
 
     /// Create a new radial gradient, async redox.
     #[inline]
-    pub async fn create_radial_gradient_async(
+    pub async fn create_radial_gradient_async<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         inner: Pointfix,
         outer: Pointfix,
         inner_radius: Fixed,
         outer_radius: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
         let crgr = Self::create_radial_gradient_request(
@@ -776,23 +802,29 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
             outer,
             inner_radius,
             outer_radius,
-            stops,
-            colors,
+            stops.into(),
+            colors.into(),
         );
         self.exchange_request_async(crgr).await?;
         Ok(pic)
     }
 
     #[inline]
-    pub async fn create_conical_gradient_async(
+    pub async fn create_conical_gradient_async<
+        'a,
+        'b,
+        Stops: Into<Cow<'a, [Fixed]>>,
+        Colors: Into<Cow<'b, [Color]>>,
+    >(
         &mut self,
         center: Pointfix,
         angle: Fixed,
-        stops: &[Fixed],
-        colors: &[Color],
+        stops: Stops,
+        colors: Colors,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
-        let ccgr = Self::create_conical_gradient_request(pic, center, angle, stops, colors);
+        let ccgr =
+            Self::create_conical_gradient_request(pic, center, angle, stops.into(), colors.into());
         self.exchange_request_async(ccgr).await?;
         Ok(pic)
     }

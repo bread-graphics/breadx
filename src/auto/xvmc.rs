@@ -293,17 +293,17 @@ impl Request for ListSurfaceTypesRequest {
     const OPCODE: u8 = 1;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListSurfaceTypesReply;
+    type Reply = ListSurfaceTypesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListSurfaceTypesReply {
+pub struct ListSurfaceTypesReply<'a> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub surfaces: Vec<SurfaceInfo>,
+    pub surfaces: Cow<'a, [SurfaceInfo]>,
 }
-impl ListSurfaceTypesReply {}
-impl AsByteSequence for ListSurfaceTypesReply {
+impl<'a> ListSurfaceTypesReply<'a> {}
+impl<'a> AsByteSequence for ListSurfaceTypesReply<'a> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -332,7 +332,7 @@ impl AsByteSequence for ListSurfaceTypesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (surfaces, block_len): (Vec<SurfaceInfo>, usize) =
+        let (surfaces, block_len): (Cow<'_, [SurfaceInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<SurfaceInfo>());
@@ -440,20 +440,20 @@ impl Request for CreateContextRequest {
     const OPCODE: u8 = 2;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateContextReply;
+    type Reply = CreateContextReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateContextReply {
+pub struct CreateContextReply<'b> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
     pub width_actual: Card16,
     pub height_actual: Card16,
     pub flags_return: Card32,
-    pub priv_data: Vec<Card32>,
+    pub priv_data: Cow<'b, [Card32]>,
 }
-impl CreateContextReply {}
-impl AsByteSequence for CreateContextReply {
+impl<'b> CreateContextReply<'b> {}
+impl<'b> AsByteSequence for CreateContextReply<'b> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -488,7 +488,7 @@ impl AsByteSequence for CreateContextReply {
         let (flags_return, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (priv_data, block_len): (Vec<Card32>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -625,17 +625,17 @@ impl Request for CreateSurfaceRequest {
     const OPCODE: u8 = 4;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateSurfaceReply;
+    type Reply = CreateSurfaceReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateSurfaceReply {
+pub struct CreateSurfaceReply<'c> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub priv_data: Vec<Card32>,
+    pub priv_data: Cow<'c, [Card32]>,
 }
-impl CreateSurfaceReply {}
-impl AsByteSequence for CreateSurfaceReply {
+impl<'c> CreateSurfaceReply<'c> {}
+impl<'c> AsByteSequence for CreateSurfaceReply<'c> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -661,7 +661,7 @@ impl AsByteSequence for CreateSurfaceReply {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (priv_data, block_len): (Vec<Card32>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -805,10 +805,10 @@ impl Request for CreateSubpictureRequest {
     const OPCODE: u8 = 6;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = CreateSubpictureReply;
+    type Reply = CreateSubpictureReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct CreateSubpictureReply {
+pub struct CreateSubpictureReply<'d> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
@@ -817,10 +817,10 @@ pub struct CreateSubpictureReply {
     pub num_palette_entries: Card16,
     pub entry_bytes: Card16,
     pub component_order: [Card8; 4],
-    pub priv_data: Vec<Card32>,
+    pub priv_data: Cow<'d, [Card32]>,
 }
-impl CreateSubpictureReply {}
-impl AsByteSequence for CreateSubpictureReply {
+impl<'d> CreateSubpictureReply<'d> {}
+impl<'d> AsByteSequence for CreateSubpictureReply<'d> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -861,7 +861,7 @@ impl AsByteSequence for CreateSubpictureReply {
         let (component_order, sz): ([Card8; 4], usize) = <[Card8; 4]>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 12;
-        let (priv_data, block_len): (Vec<Card32>, usize) =
+        let (priv_data, block_len): (Cow<'_, [Card32]>, usize) =
             vector_from_bytes(&bytes[index..], (length as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card32>());
@@ -998,17 +998,17 @@ impl Request for ListSubpictureTypesRequest {
     const OPCODE: u8 = 8;
     const EXTENSION: Option<&'static str> = Some("XVideo-MotionCompensation");
     const REPLY_EXPECTS_FDS: bool = false;
-    type Reply = ListSubpictureTypesReply;
+    type Reply = ListSubpictureTypesReply<'static>;
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct ListSubpictureTypesReply {
+pub struct ListSubpictureTypesReply<'e> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub types: Vec<ImageFormatInfo>,
+    pub types: Cow<'e, [ImageFormatInfo]>,
 }
-impl ListSubpictureTypesReply {}
-impl AsByteSequence for ListSubpictureTypesReply {
+impl<'e> ListSubpictureTypesReply<'e> {}
+impl<'e> AsByteSequence for ListSubpictureTypesReply<'e> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -1037,7 +1037,7 @@ impl AsByteSequence for ListSubpictureTypesReply {
         let (len0, sz): (Card32, usize) = <Card32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 20;
-        let (types, block_len): (Vec<ImageFormatInfo>, usize) =
+        let (types, block_len): (Cow<'_, [ImageFormatInfo]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<ImageFormatInfo>());

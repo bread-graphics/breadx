@@ -2,9 +2,10 @@
 
 use super::{
     syn_util::{item_field, pub_vis, str_to_path, str_to_ty},
-    Asb, InputParameter, Method, ParameterUsage, RStruct, SizeSumPart, SumOfSizes, Trait, Type,
+    Asb, Field, InputParameter, Method, ParameterUsage, RStruct, SizeSumPart, StructureItem,
+    SumOfSizes, Trait, TraitSpecifics, Type,
 };
-use crate::lvl2::{Bitflags, Field, StructureItem, Type as Lvl2Type};
+use crate::lvl2::Bitflags;
 use heck::ShoutySnakeCase;
 use proc_macro2::Span;
 use std::{iter, rc::Rc};
@@ -34,18 +35,19 @@ pub fn bitflags_to_lvl3(bitflags: Bitflags) -> Vec<RStruct> {
         is_transparent: true,
         fields: vec![StructureItem::Field(Field {
             name: "inner".to_string(),
-            ty: underlying.clone(),
+            ty: Type::from_lvl2(underlying.clone()),
             ..Default::default()
         })],
         methods: Vec::with_capacity(bits.len() * 2),
         other_impl_items: Vec::with_capacity(bits.len() + 1),
         traits: vec![
-            Trait::BitflagsNot(name.clone().into_boxed_str()),
-            Trait::BitflagsAnd(name.clone().into_boxed_str()),
-            Trait::BitflagsOr(name.clone().into_boxed_str()),
-            Trait::BitflagsXor(name.clone().into_boxed_str()),
+            TraitSpecifics::BitflagsNot(name.clone().into_boxed_str()).into(),
+            TraitSpecifics::BitflagsAnd(name.clone().into_boxed_str()).into(),
+            TraitSpecifics::BitflagsOr(name.clone().into_boxed_str()).into(),
+            TraitSpecifics::BitflagsXor(name.clone().into_boxed_str()).into(),
         ],
         asb: Default::default(),
+        lifetimes: vec![],
     };
 
     // iterate over the bits
