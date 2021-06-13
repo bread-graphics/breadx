@@ -4,7 +4,7 @@ use super::{
     bigreq, input, output, Connection, Display, DisplayBase, PendingItem, RequestInfo, StaticSetup,
     EXT_KEY_SIZE,
 };
-use crate::{auth_info::AuthInfo, event::Event, XidGenerator, XID};
+use crate::{auth_info::AuthInfo, event::Event, log_trace, XidGenerator, XID};
 use alloc::{borrow::Cow, collections::VecDeque};
 use core::num::NonZeroU32;
 use hashbrown::HashMap;
@@ -206,6 +206,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
 
     #[inline]
     fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
+        log_trace!("Adding pending item for {}: {:?}", req_id, &item);
         #[cfg(feature = "async")]
         {
             if let PendingItem::Request(ref pereq) = item {
@@ -224,6 +225,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
 
     #[inline]
     fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem> {
+        log_trace!("Removing pending item for {}", req_id);
         #[cfg(feature = "async")]
         self.workarounders.retain(|&r| r != req_id);
         self.pending_items.remove(&req_id)
