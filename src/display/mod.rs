@@ -165,8 +165,14 @@ pub trait DisplayBase {
     /// Take a pending request from this display.
     #[inline]
     fn take_pending_request(&mut self, req_id: u16) -> Option<PendingRequest> {
-        self.take_pending_item(req_id)
-            .and_then(PendingItem::request)
+        match self.take_pending_item(req_id) {
+            Some(PendingItem::Request(req)) => Some(req),
+            Some(other) => {
+                self.add_pending_item(req_id, other);
+                None
+            }
+            None => None,
+        }
     }
 
     /// Insert a pending reply into this display.
@@ -178,7 +184,14 @@ pub trait DisplayBase {
     /// Take a pending reply from this display.
     #[inline]
     fn take_pending_reply(&mut self, req_id: u16) -> Option<PendingReply> {
-        self.take_pending_item(req_id).and_then(PendingItem::reply)
+        match self.take_pending_item(req_id) {
+            Some(PendingItem::Reply(repl)) => Some(repl),
+            Some(other) => {
+                self.add_pending_item(req_id, other);
+                None
+            }
+            None => None,
+        }
     }
 
     /// Insert a pending error into this display.
@@ -192,6 +205,10 @@ pub trait DisplayBase {
     fn check_for_pending_error(&mut self, req_id: u16) -> crate::Result {
         match self.take_pending_item(req_id) {
             Some(PendingItem::Error(err)) => Err(err),
+            Some(other) => {
+                self.add_pending_item(req_id, other);
+                Ok(())
+            }
             _ => Ok(()),
         }
     }

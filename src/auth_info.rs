@@ -70,7 +70,10 @@ impl AuthInfo {
                 log::warn!("Name was not valid UTF-8, doing substitution.");
                 let mut name = e.into_bytes();
                 name.retain(|b| *b < 128);
-                String::from_utf8(name).unwrap()
+                match String::from_utf8(name) {
+                    Ok(name) => name,
+                    Err(_) => return None,
+                }
             }
         };
         let data = counted_string(&mut cursor)?;
@@ -141,6 +144,11 @@ impl AuthInfo {
     /// TODO: match up display ID
     #[inline]
     pub(crate) fn get() -> Self {
+        if cfg!(test) {
+            // keep it deterministic for tests
+            return Default::default();
+        }
+
         if let Some(mut v) = Self::from_xauthority() {
             if v.is_empty() {
                 Default::default()
@@ -156,6 +164,11 @@ impl AuthInfo {
     #[cfg(feature = "async")]
     #[inline]
     pub(crate) async fn get_async() -> Self {
+        if cfg!(test) {
+            // keep it deterministic for tests
+            return Default::default();
+        }
+
         match Self::from_xauthority_async().await {
             Some(mut v) => {
                 if v.is_empty() {

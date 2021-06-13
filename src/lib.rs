@@ -19,7 +19,7 @@
 //! * **Simple** - `breadx` tries to be as easy to understand as possible. Its API is well-documented, and
 //!                it is accessible to both veteran X programmers and people who've never used it before.
 //!
-//! In addition, `breadx` implements Rust's new `async` system to allow it to be a part of a greater whole
+//! In addition, `breadx` implements Rust's `async` system to allow it to be a part of a greater whole
 //! when it comes to large, complex systems running on the async runtime. It also implements the standard
 //! `log` logging facade for easy debugging.
 //!
@@ -57,7 +57,7 @@
 //!             Default::default() // additional properties
 //!         )?;
 //!
-//!     // map the window and set its title
+//!     // map the window (e.g. display it) and set its title
 //!     window.map(&mut conn)?;
 //!     window.set_title(&mut conn, "Hello World!")?;
 //!
@@ -101,7 +101,11 @@
 //!                     image.
 //! * `sync-display` - Enables the `SyncDisplay` struct, which allows usage of the display in thread-safe
 //!                    contexts. However, it does require importing more dependencies (although some of these
-//!                    dependencies overlap with those of the `async` feature).
+//!                    dependencies overlap with those of the `async` feature), and technically violates the
+//!                    "lock-free" idea of `breadx`, since `SyncDisplay` does require a mutex to function.
+//!
+//! In addition, `breadx` has a feature for each officially supported X11 extension. Use the extension's name as
+//! a feature, or use the `all-extensions` feature to enable every extension.
 
 #![deny(deprecated)]
 #![forbid(unsafe_code)]
