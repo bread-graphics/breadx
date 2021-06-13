@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+#[cfg(feature = "render")]
 use breadx::{
     event::Event,
     prelude::*,
@@ -9,8 +10,10 @@ use breadx::{
     },
     DisplayConnection, EventMask, GcParameters, Rectangle, Result,
 };
+#[cfg(feature = "render")]
 use std::{env, process};
 
+#[cfg(feature = "render")]
 fn main() -> Result {
     env_logger::init();
 
@@ -162,4 +165,9 @@ fn main() -> Result {
     conical_gradient.free(&mut conn)?;
 
     Ok(())
+}
+
+#[cfg(not(feature = "render"))]
+fn main() {
+    println!("xrender example requires the 'render' feature");
 }

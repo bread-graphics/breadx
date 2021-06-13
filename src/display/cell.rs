@@ -33,9 +33,9 @@ use core::{
 /// async users should be aware that the connection is protected by a re-entrancy lock that will panic if two
 /// I/O operations (e.g. sending two requests at once, or sending a request and then waiting) are attempted
 /// at once.
-/// 
+///
 /// # Connection Poisoning
-/// 
+///
 /// `CellDisplay` uses largely the same connection poisoning semantics that `BasicDisplay` does.
 ///
 /// # Construction
@@ -55,7 +55,7 @@ use core::{
 /// form to use [`BasicDisplay`]. However, if interior mutability is necessary, `CellDisplay` is preferred over
 /// `RefCell<BasicDisplay>`. If thread safety is needed, either a [`SyncDisplay`] or a `Mutex<BasicDisplay>` may
 /// be used.
-/// 
+///
 /// [`BasicDisplay`]: struct.BasicDisplay.html
 /// [`SyncDisplay`]: struct.SyncDisplay.html
 #[derive(Debug)]

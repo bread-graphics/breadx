@@ -30,7 +30,7 @@ use std::os::unix::net as unet;
 /// This is a wrapper around the connection created by `DisplayConnection::create()`. It implements
 /// `Connection` for a variety of connections that X11 usually transmits itself over, and should be the
 /// connection most users of `breadx` end up using.
-/// 
+///
 /// For Unix systems, this is an enum around either a TCP stream or a Unix socket. For other systems, it should
 /// be a no-op wrapper around a TCP stream. X11 communications take place over both of these types of streams.
 pub enum NameConnection {

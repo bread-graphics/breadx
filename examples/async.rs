@@ -5,18 +5,24 @@
 // Note: I use smol here, as it is a). my personal favorite async runtime in the Rust ecosystem at the
 //       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
 //       use tokio, async-std, or an executor-less system here as well without much headache.
+#[cfg(feature = "async")]
 use breadx::{
     prelude::*, auto::xproto::ExposeEvent, rgb, AsyncDisplayConnection, Event, EventMask, GcParameters, Rectangle,
 };
+#[cfg(feature = "async")]
 use easy_parallel::Parallel;
+#[cfg(feature = "async")]
 use futures_lite::{future, FutureExt, StreamExt};
+#[cfg(feature = "async")]
 use smol::{
     channel::{unbounded, Receiver, Sender},
     Executor, Timer,
 };
+#[cfg(feature = "async")]
 use std::{env, mem, time::Duration};
 
 // coroutine base: wait 3 seconds, generate three random numbers, and send them down the channel
+#[cfg(feature = "async")]
 #[inline]
 async fn rng(sender: Sender<[u8; 3]>) {
     let mut timer = Timer::interval(Duration::from_secs(3));
@@ -42,6 +48,7 @@ async fn rng(sender: Sender<[u8; 3]>) {
 }
 
 // coroutine base: set up an X connection and, given the receiver channel, change color based on its result
+#[cfg(feature = "async")]
 #[inline]
 async fn x_process(receiver: Receiver<[u8; 3]>) -> breadx::Result<()> {
     /// Are we processing events, or are we processing what we get from the channel?
@@ -168,6 +175,7 @@ async fn x_process(receiver: Receiver<[u8; 3]>) -> breadx::Result<()> {
 }
 
 // async entry point
+#[cfg(feature = "async")]
 async fn entry(ex: &Executor<'_>) -> breadx::Result<()> {
     let (sender, receiver) = unbounded::<[u8; 3]>();
 
@@ -180,6 +188,7 @@ async fn entry(ex: &Executor<'_>) -> breadx::Result<()> {
     x11_res
 }
 
+#[cfg(feature = "async")]
 fn main() -> breadx::Result<()> {
     env::set_var("RUST_LOG", "breadx=trace");
     env_logger::init();
@@ -196,4 +205,9 @@ fn main() -> breadx::Result<()> {
             res
         })
         .1
+}
+
+#[cfg(not(feature = "async"))]
+fn main() {
+    println!("async example requires the 'async' feature to be enabled");
 }
