@@ -14,7 +14,7 @@ use crate::{
     },
     display::{generate_xid, prelude::*, Display, RequestCookie},
 };
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 use core::convert::TryInto;
 
 #[cfg(feature = "async")]
@@ -43,24 +43,24 @@ pub struct Configs {
     pub properties: Vec<u32>,
 }
 
-impl From<GetVisualConfigsReply> for Configs {
+impl<'a> From<GetVisualConfigsReply<'a>> for Configs {
     #[inline]
-    fn from(gvcr: GetVisualConfigsReply) -> Self {
+    fn from(gvcr: GetVisualConfigsReply<'a>) -> Self {
         Self {
             num_configs: gvcr.num_visuals,
             num_properties_per_config: gvcr.num_properties,
-            properties: gvcr.property_list,
+            properties: gvcr.property_list.into_owned(),
         }
     }
 }
 
-impl From<GetFbConfigsReply> for Configs {
+impl<'a> From<GetFbConfigsReply<'a>> for Configs {
     #[inline]
-    fn from(fbcr: GetFbConfigsReply) -> Self {
+    fn from(fbcr: GetFbConfigsReply<'a>) -> Self {
         Self {
             num_configs: fbcr.num_fb_configs,
             num_properties_per_config: fbcr.num_properties,
-            properties: fbcr.property_list,
+            properties: fbcr.property_list.into_owned(),
         }
     }
 }
@@ -72,8 +72,8 @@ fn create_context_attribs_arb_request(
     screen: usize,
     share_list: Context,
     is_direct: bool,
-    attribs: Vec<u32>,
-) -> CreateContextAttribsArbRequest {
+    attribs: Cow<'_, [u32]>,
+) -> CreateContextAttribsArbRequest<'_> {
     let attribs_len: u32 = attribs.len().try_into().expect("usize dont fit 2");
     CreateContextAttribsArbRequest {
         context,
@@ -168,21 +168,26 @@ pub trait DisplayGlxExt: Display {
     #[inline]
     fn get_drawable_properties_immediate(&mut self, drawable: Drawable) -> crate::Result<Vec<u32>> {
         let tok = self.get_drawable_properties(drawable)?;
-        Ok(self.resolve_request(tok)?.attribs)
+        Ok(self.resolve_request(tok)?.attribs.into_owned())
     }
 
     #[inline]
-    fn create_context_attribs_arb(
+    fn create_context_attribs_arb<'a, Attribs: Into<Cow<'a, [u32]>>>(
         &mut self,
         fbconfig: Fbconfig,
         screen: usize,
         share_list: Context,
         is_direct: bool,
-        attribs: Vec<u32>,
+        attribs: Attribs,
     ) -> crate::Result<Context> {
         let xid = Context::const_from_xid(generate_xid(self)?);
         self.exchange_request(create_context_attribs_arb_request(
-            xid, fbconfig, screen, share_list, is_direct, attribs,
+            xid,
+            fbconfig,
+            screen,
+            share_list,
+            is_direct,
+            attribs.into(),
         ))?;
         Ok(xid)
     }
@@ -325,32 +330,35 @@ pub trait AsyncDisplayGlxExt: AsyncDisplay {
                 drawable,
                 ..Default::default()
             }),
-            |repl| repl.map(|repl| repl.attribs),
+            |repl| repl.map(|repl| repl.attribs.into()),
         )
     }
 
     #[inline]
-    fn create_context_attribs_arb_async(
-        &mut self,
+    fn create_context_attribs_arb_async<'a, 'b, Attribs: Into<Cow<'b, [u32]>>>(
+        &'a mut self,
         fbconfig: Fbconfig,
         screen: usize,
         share_list: Context,
         is_direct: bool,
-        attribs: Vec<u32>,
+        attribs: Attribs,
     ) -> ExchangeXidFuture<
-        '_,
+        'a,
         Self,
-        CreateContextAttribsArbRequest,
+        CreateContextAttribsArbRequest<'b>,
         Context,
-        BoxedFnOnce<Context, CreateContextAttribsArbRequest>,
-    > {
+        BoxedFnOnce<Context, CreateContextAttribsArbRequest<'b>>,
+    >
+    where
+        'b: 'a,
+    {
         let mut cccaar = create_context_attribs_arb_request(
             Context::const_from_xid(0),
             fbconfig,
             screen,
             share_list,
             is_direct,
-            attribs,
+            attribs.into().into_owned().into(),
         );
         self.exchange_xid_async(Box::new(move |cid| {
             cccaar.context = cid;

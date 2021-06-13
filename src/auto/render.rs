@@ -3555,7 +3555,7 @@ pub struct QueryFiltersReply<'w, 'x> {
     pub sequence: u16,
     pub length: u32,
     pub aliases: Cow<'w, [Card16]>,
-    pub filters: Cow<'x, [Str]>,
+    pub filters: Cow<'x, [String]>,
 }
 impl<'w, 'x> QueryFiltersReply<'w, 'x> {}
 impl<'w, 'x> AsByteSequence for QueryFiltersReply<'w, 'x> {
@@ -3574,7 +3574,7 @@ impl<'w, 'x> AsByteSequence for QueryFiltersReply<'w, 'x> {
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
         let block_len: usize = vector_as_bytes(&self.filters, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String>());
         index
     }
     #[inline]
@@ -3597,10 +3597,10 @@ impl<'w, 'x> AsByteSequence for QueryFiltersReply<'w, 'x> {
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<Card16>());
-        let (filters, block_len): (Cow<'_, [Str]>, usize) =
+        let (filters, block_len): (Cow<'_, [String]>, usize) =
             vector_from_bytes(&bytes[index..], len1 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String>());
         Some((
             QueryFiltersReply {
                 reply_type: reply_type,
@@ -3628,7 +3628,7 @@ impl<'w, 'x> AsByteSequence for QueryFiltersReply<'w, 'x> {
             }
             + {
                 let block_len: usize = self.filters.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String>());
                 block_len + pad
             }
     }

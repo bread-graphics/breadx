@@ -93,8 +93,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let re = Regex::new(r"\bBool\b").unwrap();
     let output_pr2 = re.replace_all(&output_pre_regex, "bool");
 
-    let re = Regex::new(r"\bStr<(.*)>").unwrap();
-    //let output_pr3 = re.replace_all(&output_pr2, 
+    let re = Regex::new(r"\bStr\b").unwrap();
+    let output = re.replace_all(&output_pr2, "String");
+
+    // monkey patch
+    let re = Regex::new(r"\bPixmap<'.>\b").unwrap();
+    println!("There are {} matches", re.find_iter(&output).count());
+    let output2 = re.replace_all(&output, "Pixmap");
+    let re = Regex::new(r"IdleNotifyEvent<'.>").unwrap();
+    let output3 = re.replace_all(&output2, "IdleNotifyEvent");
+    let re = Regex::new(r"impl<'.> IdleNotifyEvent").unwrap();
+    let output4 = re.replace_all(&output3, "impl IdleNotifyEvent");
+    let re = Regex::new(r"impl<'.> AsByteSequence for IdleNotifyEvent").unwrap();
+    let output5 = re.replace_all(&output4, "impl AsByteSequence for IdleNotifyEvent");
 
     write!(
         outfile,
@@ -106,11 +117,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 use super::prelude::*;
 
 {}",
-        output
+        output5
     )?;
 
     Ok(())
 }
-
-#[inline]
-pub fn any_field_length(_fields: &[lvl2::StructureItem]) {}

@@ -14,6 +14,8 @@ use alloc::borrow::Cow;
 #[cfg(feature = "async")]
 use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendRequestFuture};
 #[cfg(feature = "async")]
+use alloc::vec;
+#[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 
 impl Gcontext {
@@ -101,6 +103,8 @@ impl Gcontext {
         target: Target,
         lines: Lines,
     ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolySegmentRequest>>
+    where
+        'b: 'a,
     {
         let line = lines.into();
         match line.is_empty() {
@@ -129,12 +133,12 @@ impl Gcontext {
     /// Draw a singular line, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_line_async<Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_line_async<'a, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
         self,
-        dpy: &mut Dpy,
+        dpy: &'a mut Dpy,
         target: Target,
         line: Segment,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolySegmentRequest<'static>> {
+    ) -> ExchangeRequestFuture<'a, Dpy, PolySegmentRequest<'a>> {
         match self.draw_lines_async(dpy, target, vec![line]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
@@ -278,7 +282,10 @@ impl Gcontext {
         dpy: &'a mut Dpy,
         target: Target,
         arcs: Arcs,
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyArcRequest>> {
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, PolyArcRequest<'b>>>
+    where
+        'b: 'a,
+    {
         let arcs = arcs.into();
         match arcs.is_empty() {
             true => EitherFuture::Left {
@@ -305,12 +312,15 @@ impl Gcontext {
     /// Draw an arc to the screen, async redox.
     #[cfg(feature = "async")]
     #[inline]
-    pub fn draw_arc_async<Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
+    pub fn draw_arc_async<'a, 'b, Dpy: AsyncDisplay + ?Sized, Target: Into<Drawable>>(
         self,
-        dpy: &mut Dpy,
+        dpy: &'a mut Dpy,
         target: Target,
         arc: Arc,
-    ) -> ExchangeRequestFuture<'_, Dpy, PolyArcRequest<'static>> {
+    ) -> ExchangeRequestFuture<'a, Dpy, PolyArcRequest<'b>>
+    where
+        'b: 'a,
+    {
         match self.draw_arcs_async(dpy, target, vec![arc]) {
             EitherFuture::Right { future } => future,
             EitherFuture::Left { .. } => unreachable!(),
@@ -375,7 +385,10 @@ impl Gcontext {
         shape: PolyShape,
         coordinate_mode: CoordMode,
         points: Pts,
-    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, FillPolyRequest>> {
+    ) -> EitherFuture<Ready<crate::Result>, ExchangeRequestFuture<'a, Dpy, FillPolyRequest>>
+    where
+        'b: 'a,
+    {
         let points = points.into();
         match points.is_empty() {
             true => EitherFuture::Left {

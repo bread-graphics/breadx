@@ -171,6 +171,7 @@ OF THIS SOFTWARE.
     <field type="CARD64" name="msc" />
   </event>
 
+<!-- todo: this is broke, lol - seagull
   <event name="IdleNotify" number="2" xge="true">
     <pad bytes="2"/>
     <field type="EVENT" name="event" />
@@ -180,7 +181,6 @@ OF THIS SOFTWARE.
     <field type="FENCE" name="idle_fence" />
   </event>
 
-<!-- todo: this is broke, lol - seagull
   <event name="RedirectNotify" number="3" xge="true">
     <required_start_align align="8" />
     <field type="BOOL" name="update_window"/>

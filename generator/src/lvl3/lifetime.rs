@@ -22,13 +22,21 @@ pub fn set_mapped_lifetime(name: &str, lifetimes: usize) {
         .map
         .insert(name.to_string(), lifetimes)
     {
-        panic!()
+        if name != "Pixmap" {
+            panic!()
+        } else {
+            log::warn!("Created pixmap...");
+        }
     }
 }
 
 static LIFETIME_MAP: Lazy<Mutex<MapWrapper>> = Lazy::new(|| {
     Mutex::new(MapWrapper {
-        map: HashMap::new(),
+        map: {
+            let mut map = HashMap::new();
+            map.insert("Pixmap".to_string(), 0);
+            map
+        },
     })
 });
 

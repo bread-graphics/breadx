@@ -25,14 +25,14 @@ pub enum PutImageFuture<'a, D: ?Sized, I: IntoIterator> {
     #[doc(hidden)]
     PollingRequests {
         remaining: I::IntoIter,
-        inner: SendRequestFuture<'a, D, PutImageRequest>,
-        tokens: Vec<RequestCookie<PutImageRequest>>,
+        inner: SendRequestFuture<'a, D, PutImageRequest<'static>>,
+        tokens: Vec<RequestCookie<PutImageRequest<'static>>>,
     },
     /// We have sent all the requests, now collect them.
     #[doc(hidden)]
     ResolvingRequests {
-        tokens: VecIter<RequestCookie<PutImageRequest>>,
-        inner: ResolveRequestFuture<'a, D, PutImageRequest>,
+        tokens: VecIter<RequestCookie<PutImageRequest<'static>>>,
+        inner: ResolveRequestFuture<'a, D, PutImageRequest<'static>>,
     },
     /// Edge case: no requests, but we are complete... or we've error'd out.
     #[doc(hidden)]
@@ -46,7 +46,7 @@ impl<'a, D: ?Sized, I: IntoIterator> PutImageFuture<'a, D, I> {
     }
 }
 
-impl<'a, D: AsyncDisplay + ?Sized, I: IntoIterator<Item = PutImageRequest> + Unpin> Future
+impl<'a, D: AsyncDisplay + ?Sized, I: IntoIterator<Item = PutImageRequest<'static>> + Unpin> Future
     for PutImageFuture<'a, D, I>
 where
     I::IntoIter: Unpin,

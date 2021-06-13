@@ -291,7 +291,7 @@ impl SendBuffer {
                                             {
                                                 let qer = RequestInfo::from_request(
                                                     QueryExtensionRequest {
-                                                        name: String::from(extension),
+                                                        name: extension.into(),
                                                         ..Default::default()
                                                     },
                                                     display.bigreq_enabled(),

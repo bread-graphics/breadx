@@ -764,7 +764,7 @@ pub struct ListInputDevicesReply<'e, 'g, 'f, 'h> {
     pub devices_len: Card8,
     pub devices: Cow<'e, [DeviceInfo]>,
     pub infos: Cow<'g, [InputInfo<'f>]>,
-    pub names: Cow<'h, [Str]>,
+    pub names: Cow<'h, [String]>,
 }
 impl<'e, 'g, 'f, 'h> ListInputDevicesReply<'e, 'g, 'f, 'h> {}
 impl<'e, 'g, 'f, 'h> AsByteSequence for ListInputDevicesReply<'e, 'g, 'f, 'h> {
@@ -816,7 +816,7 @@ impl<'e, 'g, 'f, 'h> AsByteSequence for ListInputDevicesReply<'e, 'g, 'f, 'h> {
         )?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<InputInfo<'f>>());
-        let (names, block_len): (Cow<'_, [Str]>, usize) =
+        let (names, block_len): (Cow<'_, [String]>, usize) =
             vector_from_bytes(&bytes[index..], (devices_len as usize) as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);

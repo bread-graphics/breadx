@@ -259,8 +259,6 @@ impl Lvl2State {
 
                         se.extend(se2);
 
-                        crate::any_field_length(&fields2);
-
                         Some(Box::new(Struct {
                             name: name.to_camel_case().into_boxed_str(),
                             brief,

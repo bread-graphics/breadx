@@ -4,6 +4,7 @@ use super::{create_setup, AsyncConnection};
 use crate::{
     auth_info::AuthInfo,
     auto::{xproto::Setup, AsByteSequence},
+    display::StaticSetup,
     xid::XidGenerator,
 };
 use alloc::{boxed::Box, vec};
@@ -69,7 +70,7 @@ fn setup_bytes(auth_info: AuthInfo) -> TinyVec<[u8; 32]> {
 }
 
 impl<'a, C: AsyncConnection + Unpin + ?Sized> Future for EstablishConnectionFuture<'a, C> {
-    type Output = crate::Result<(Setup, XidGenerator)>;
+    type Output = crate::Result<(StaticSetup, XidGenerator)>;
 
     #[inline]
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {

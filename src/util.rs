@@ -37,7 +37,7 @@ pub(crate) fn expand_or_truncate_to_length<A: Array<Item = u8>>(tv: &mut TinyVec
 
 /// Type alias for a boxed, sendable `FnOnce` that takes an `A` and returns a `B`.
 #[cfg(feature = "async")]
-pub(crate) type BoxedFnOnce<A, B> = Box<dyn FnOnce(A) -> B + Send + 'static>;
+pub(crate) type BoxedFnOnce<A, B> = Box<dyn FnOnce(A) -> B + Send>;
 
 /// Byte reversal table, copied from Xlib.
 pub const REVERSE_BYTES: [u8; 0x100] = [

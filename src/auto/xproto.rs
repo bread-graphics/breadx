@@ -8464,11 +8464,11 @@ impl AsByteSequence for QueryTextExtentsReply {
     }
 }
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub struct Str<'x> {
+pub struct String<'x> {
     pub name: Cow<'x, str>,
 }
-impl<'x> Str<'x> {}
-impl<'x> AsByteSequence for Str<'x> {
+impl<'x> String<'x> {}
+impl<'x> AsByteSequence for String<'x> {
     #[inline]
     fn as_bytes(&self, bytes: &mut [u8]) -> usize {
         let mut index: usize = 0;
@@ -8481,14 +8481,14 @@ impl<'x> AsByteSequence for Str<'x> {
     #[inline]
     fn from_bytes(bytes: &[u8]) -> Option<(Self, usize)> {
         let mut index: usize = 0;
-        log::trace!("Deserializing Str from byte buffer");
+        log::trace!("Deserializing String from byte buffer");
         let (len0, sz): (Card8, usize) = <Card8>::from_bytes(&bytes[index..])?;
         index += sz;
         let (name, block_len): (Cow<'_, str>, usize) =
             string_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, ::core::mem::align_of::<c_char>());
-        Some((Str { name: name }, index))
+        Some((String { name: name }, index))
     }
     #[inline]
     fn size(&self) -> usize {
@@ -8573,7 +8573,7 @@ pub struct ListFontsReply<'ab, 'z> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub names: Cow<'ab, [Str<'z>]>,
+    pub names: Cow<'ab, [String<'z>]>,
 }
 impl<'ab, 'z> ListFontsReply<'ab, 'z> {}
 impl<'ab, 'z> AsByteSequence for ListFontsReply<'ab, 'z> {
@@ -8588,7 +8588,7 @@ impl<'ab, 'z> AsByteSequence for ListFontsReply<'ab, 'z> {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.names, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'z>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
         index
     }
     #[inline]
@@ -8605,10 +8605,10 @@ impl<'ab, 'z> AsByteSequence for ListFontsReply<'ab, 'z> {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (names, block_len): (Cow<'_, [Str<'_>]>, usize) =
+        let (names, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'z>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
         Some((
             ListFontsReply {
                 reply_type: reply_type,
@@ -8629,7 +8629,7 @@ impl<'ab, 'z> AsByteSequence for ListFontsReply<'ab, 'z> {
             + 22
             + {
                 let block_len: usize = self.names.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str<'z>>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'z>>());
                 block_len + pad
             }
     }
@@ -8860,7 +8860,7 @@ impl<'cb, 'db> AsByteSequence for ListFontsWithInfoReply<'cb, 'db> {
 pub struct SetFontPathRequest<'fb, 'eb> {
     pub req_type: u8,
     pub length: u16,
-    pub font: Cow<'fb, [Str<'eb>]>,
+    pub font: Cow<'fb, [String<'eb>]>,
 }
 impl<'fb, 'eb> SetFontPathRequest<'fb, 'eb> {}
 impl<'fb, 'eb> AsByteSequence for SetFontPathRequest<'fb, 'eb> {
@@ -8874,7 +8874,7 @@ impl<'fb, 'eb> AsByteSequence for SetFontPathRequest<'fb, 'eb> {
         index += 2;
         let block_len: usize = vector_as_bytes(&self.font, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'eb>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
         index
     }
     #[inline]
@@ -8889,10 +8889,10 @@ impl<'fb, 'eb> AsByteSequence for SetFontPathRequest<'fb, 'eb> {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (font, block_len): (Cow<'_, [Str<'_>]>, usize) =
+        let (font, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'eb>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
         Some((
             SetFontPathRequest {
                 req_type: req_type,
@@ -8906,7 +8906,7 @@ impl<'fb, 'eb> AsByteSequence for SetFontPathRequest<'fb, 'eb> {
     fn size(&self) -> usize {
         self.req_type.size() + 1 + self.length.size() + ::core::mem::size_of::<Card16>() + 2 + {
             let block_len: usize = self.font.iter().map(|i| i.size()).sum();
-            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str<'eb>>());
+            let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'eb>>());
             block_len + pad
         }
     }
@@ -8965,7 +8965,7 @@ pub struct GetFontPathReply<'hb, 'gb> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub path: Cow<'hb, [Str<'gb>]>,
+    pub path: Cow<'hb, [String<'gb>]>,
 }
 impl<'hb, 'gb> GetFontPathReply<'hb, 'gb> {}
 impl<'hb, 'gb> AsByteSequence for GetFontPathReply<'hb, 'gb> {
@@ -8980,7 +8980,7 @@ impl<'hb, 'gb> AsByteSequence for GetFontPathReply<'hb, 'gb> {
         index += 22;
         let block_len: usize = vector_as_bytes(&self.path, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'gb>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
         index
     }
     #[inline]
@@ -8997,10 +8997,10 @@ impl<'hb, 'gb> AsByteSequence for GetFontPathReply<'hb, 'gb> {
         let (len0, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 22;
-        let (path, block_len): (Cow<'_, [Str<'_>]>, usize) =
+        let (path, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'gb>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
         Some((
             GetFontPathReply {
                 reply_type: reply_type,
@@ -9021,7 +9021,7 @@ impl<'hb, 'gb> AsByteSequence for GetFontPathReply<'hb, 'gb> {
             + 22
             + {
                 let block_len: usize = self.path.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str<'gb>>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'gb>>());
                 block_len + pad
             }
     }
@@ -14670,7 +14670,7 @@ pub struct ListExtensionsReply<'lc, 'kc> {
     pub reply_type: u8,
     pub sequence: u16,
     pub length: u32,
-    pub names: Cow<'lc, [Str<'kc>]>,
+    pub names: Cow<'lc, [String<'kc>]>,
 }
 impl<'lc, 'kc> ListExtensionsReply<'lc, 'kc> {}
 impl<'lc, 'kc> AsByteSequence for ListExtensionsReply<'lc, 'kc> {
@@ -14684,7 +14684,7 @@ impl<'lc, 'kc> AsByteSequence for ListExtensionsReply<'lc, 'kc> {
         index += 24;
         let block_len: usize = vector_as_bytes(&self.names, &mut bytes[index..]);
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'kc>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
         index
     }
     #[inline]
@@ -14700,10 +14700,10 @@ impl<'lc, 'kc> AsByteSequence for ListExtensionsReply<'lc, 'kc> {
         let (length, sz): (u32, usize) = <u32>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 24;
-        let (names, block_len): (Cow<'_, [Str<'_>]>, usize) =
+        let (names, block_len): (Cow<'_, [String<'_>]>, usize) =
             vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
-        index += buffer_pad(block_len, ::core::mem::align_of::<Str<'kc>>());
+        index += buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
         Some((
             ListExtensionsReply {
                 reply_type: reply_type,
@@ -14723,7 +14723,7 @@ impl<'lc, 'kc> AsByteSequence for ListExtensionsReply<'lc, 'kc> {
             + 24
             + {
                 let block_len: usize = self.names.iter().map(|i| i.size()).sum();
-                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<Str<'kc>>());
+                let pad: usize = buffer_pad(block_len, ::core::mem::align_of::<String<'kc>>());
                 block_len + pad
             }
     }
