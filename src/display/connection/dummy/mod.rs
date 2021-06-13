@@ -6,7 +6,7 @@
 mod setup;
 
 use super::Connection;
-use crate::{display::StaticSetup, auto::{AsByteSequence, xproto::{SetupRequest, Setup}}};
+use crate::{display::{BasicDisplay, StaticSetup}, auto::{AsByteSequence, xproto::{SetupRequest, Setup}}};
 use alloc::collections::VecDeque;
 use core::iter;
 use tinyvec::TinyVec;
@@ -82,6 +82,14 @@ impl DummyConnection {
         });
         this.reply(default_setup());
         this
+    }
+}
+
+impl BasicDisplay<DummyConnection> {
+    /// Create a new `BasicDisplay` based on a dummy connection.
+    #[inline]
+    pub fn dummy() -> Self {
+        Self::from_connection(DummyConnection::new()).expect("Failed to create dummy display")
     }
 }
 
