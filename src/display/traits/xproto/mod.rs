@@ -9,22 +9,22 @@ use crate::{
         ChangePointerControlRequest, ChangeWindowAttributesRequest, CloseDown, Colormap,
         ColormapAlloc, CreateColormapRequest, CreateCursorRequest, CreateGcRequest,
         CreateWindowRequest, Cursor, Cw, Drawable, EventMask, FillRule, FillStyle, Font,
-        ForceScreenSaverRequest, Gc, Gcontext, GetKeyboardMappingReply, GetKeyboardMappingRequest,
-        GetModifierMappingReply, GetModifierMappingRequest, GrabServerRequest, Gravity, Gx,
-        InternAtomRequest, JoinStyle, Kb, Keycode, Keysym, LedMode, LineStyle, Pixmap,
-        QueryExtensionRequest, ScreenSaver, SendEventRequest, SetAccessControlRequest,
-        SetCloseDownModeRequest, SubwindowMode, Timestamp, UngrabServerRequest, Visualid, Window,
-        WindowClass,
+        ForceScreenSaverRequest, Gc, Gcontext, GetAtomNameRequest, GetKeyboardMappingReply,
+        GetKeyboardMappingRequest, GetModifierMappingReply, GetModifierMappingRequest,
+        GrabServerRequest, Gravity, Gx, InternAtomRequest, JoinStyle, Kb, Keycode, Keysym, LedMode,
+        LineStyle, Pixmap, QueryExtensionRequest, ScreenSaver, SendEventRequest,
+        SetAccessControlRequest, SetCloseDownModeRequest, SubwindowMode, Timestamp,
+        UngrabServerRequest, Visualid, Window, WindowClass,
     },
     display::{generate_xid, Display, RequestCookie},
     Event, Extension,
 };
-use alloc::{borrow::Cow, boxed::Box};
+use alloc::{borrow::Cow, boxed::Box, string::String};
 use cty::c_char;
 
 #[cfg(feature = "async")]
 use crate::{
-    auto::xproto::{InternAtomReply, QueryExtensionReply},
+    auto::xproto::{GetAtomNameReply, InternAtomReply, QueryExtensionReply},
     display::{
         futures::{ExchangeRequestFuture, ExchangeXidFuture, MapFuture, SendRequestFuture},
         AsyncDisplay,
@@ -537,6 +537,7 @@ pub trait DisplayXprotoExt: Display {
         self.exchange_request(ckcr)
     }
 
+    /// Rings the bell on the keyboard.
     #[inline]
     fn bell(&mut self, percent: i8) -> crate::Result {
         self.exchange_request(BellRequest {
@@ -545,6 +546,7 @@ pub trait DisplayXprotoExt: Display {
         })
     }
 
+    /// Sets the access control for the display.
     #[inline]
     fn set_access_control(&mut self, mode: AccessControl) -> crate::Result {
         self.exchange_request(SetAccessControlRequest {
@@ -553,6 +555,7 @@ pub trait DisplayXprotoExt: Display {
         })
     }
 
+    /// Change the active pointer grab.
     #[inline]
     fn change_active_pointer_grab(
         &mut self,
@@ -563,6 +566,7 @@ pub trait DisplayXprotoExt: Display {
         self.exchange_request(change_active_pointer_grab_request(event_mask, cursor, time))
     }
 
+    /// Set the close down mode.
     #[inline]
     fn set_close_down_mode(&mut self, mode: CloseDown) -> crate::Result {
         self.exchange_request(SetCloseDownModeRequest {
@@ -571,6 +575,7 @@ pub trait DisplayXprotoExt: Display {
         })
     }
 
+    /// Change variables for the pointer.
     #[inline]
     fn change_pointer_control(
         &mut self,
@@ -611,6 +616,7 @@ pub trait DisplayXprotoExt: Display {
         Ok(cid)
     }
 
+    /// Force the screen to go to screensaver.
     #[inline]
     fn force_screensaver(&mut self, mode: ScreenSaver) -> crate::Result {
         self.exchange_request(ForceScreenSaverRequest {
@@ -683,6 +689,25 @@ pub trait DisplayXprotoExt: Display {
     #[inline]
     fn ungrab_server(&mut self) -> crate::Result {
         self.exchange_request(UngrabServerRequest::default())
+    }
+
+    /// Get the name of an atom.
+    #[inline]
+    fn atom_name(&mut self, atom: Atom) -> crate::Result<RequestCookie<GetAtomNameRequest>> {
+        self.send_request(GetAtomNameRequest {
+            atom,
+            ..Default::default()
+        })
+    }
+
+    /// Get the name of an atom, resolving immedaitely.
+    #[inline]
+    fn atom_name_immediate(&mut self, atom: Atom) -> crate::Result<String> {
+        self.exchange_request(GetAtomNameRequest {
+            atom,
+            ..Default::default()
+        })
+        .map(|ganr| ganr.name.into_owned())
     }
 }
 
@@ -1058,6 +1083,33 @@ pub trait AsyncDisplayXprotoExt: AsyncDisplay {
     #[inline]
     fn ungrab_server_async(&mut self) -> ExchangeRequestFuture<'_, Self, UngrabServerRequest> {
         self.exchange_request_async(UngrabServerRequest::default())
+    }
+
+    /// Get the name of an atom, async redox.
+    #[inline]
+    fn atom_name_async(&mut self, atom: Atom) -> SendRequestFuture<'_, Self, GetAtomNameRequest> {
+        self.send_request_async(GetAtomNameRequest {
+            atom,
+            ..Default::default()
+        })
+    }
+
+    /// Get the name of an atom, resolving immediately, async redox
+    #[inline]
+    fn atom_name_immediate_async(
+        &mut self,
+        atom: Atom,
+    ) -> MapFuture<
+        ExchangeRequestFuture<'_, Self, GetAtomNameRequest>,
+        fn(GetAtomNameReply) -> String,
+    > {
+        MapFuture::run(
+            self.exchange_request_async(GetAtomNameRequest {
+                atom,
+                ..Default::default()
+            }),
+            |ganr| ganr.name.into_owned(),
+        )
     }
 }
 
