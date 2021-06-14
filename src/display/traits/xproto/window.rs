@@ -11,19 +11,21 @@ pub use crate::{
             Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, Cursor,
             DeletePropertyRequest, DestroySubwindowsRequest, DestroyWindowRequest, EventMask,
             Gcontext, GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest,
-            Gravity, MapState, MapWindowRequest, PropMode, SetMode, StackMode, Timestamp,
-            UnmapWindowRequest, Visualid, Window, WindowClass, ATOM_WM_NAME,
+            Gravity, MapState, MapSubwindowsRequest, MapWindowRequest, PropMode, QueryTreeReply,
+            QueryTreeRequest, ReparentWindowRequest, SetMode, StackMode, Timestamp,
+            UnmapSubwindowsRequest, UnmapWindowRequest, Visualid, Window, WindowClass,
+            ATOM_WM_NAME, GetPropertyRequest,
         },
         AsByteSequence,
     },
     display::{prelude::*, Connection, Display, DisplayExt, RequestCookie, WindowParameters},
     xid::XidType,
 };
-use alloc::{borrow::Cow, string::ToString, vec::Vec};
+use alloc::{borrow::Cow, string::ToString, vec::Vec, boxed::Box};
 use core::{iter, mem};
 
 #[cfg(feature = "async")]
-use crate::display::{traits::AsyncDisplayDrawableExt, AsyncDisplay};
+use crate::display::{traits::AsyncDisplayDrawableExt, AsyncDisplay, futures::SendRequestFuture};
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 
@@ -118,6 +120,34 @@ pub struct WindowGeometry {
     pub border_width: u16,
 }
 
+/// Information regarding a window's family tree.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+pub struct TreeInformation {
+    /// Root window, i.e. the screen the window exists on.
+    pub root: Window,
+    /// Parent window.
+    pub parent: Window,
+    /// All of the window's children.
+    pub children: Box<[Window]>,
+}
+
+impl<'a> From<QueryTreeReply<'a>> for TreeInformation {
+    #[inline]
+    fn from(qtr: QueryTreeReply) -> Self {
+        let QueryTreeReply {
+            root,
+            parent,
+            children,
+            ..
+        } = qtr;
+        Self {
+            root,
+            parent,
+            children: children.into_owned().into_boxed_slice(),
+        }
+    }
+}
+
 impl Window {
     /// Map this window to the screen.
     #[inline]
@@ -157,6 +187,47 @@ impl Window {
             ..Default::default()
         })
         .await
+    }
+
+    /// Get a property of this window.
+    #[inline]
+    pub fn get_property<Dpy: Display + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+        property: Atom,
+        ty: PropertyType,
+        delete: bool,
+    ) -> crate::Result<RequestCookie<GetPropertyRequest>> {
+        dpy.send_request(GetPropertyRequest {
+            window: self,
+            property,
+            ty: Atom::const_from_xid(ty as u32),
+            long_offset: 0,
+            long_length: core::mem::size_of::<usize>() as u32,
+            delete,
+            ..Default::default()
+        })
+    }
+
+    /// Get a property of this window, resolving immediately.
+    #[inline]
+    pub fn get_property_immediate<Dpy: Display + ?Sized, T: AsByteSequence>(
+        self,
+        dpy: &mut Dpy,
+        property: Atom,
+        ty: PropertyType,
+        delete: bool,
+    ) -> crate::Result<Option<T>> {
+        dpy.exchange_request(GetPropertyRequest {
+            window: self,
+            property,
+            ty: Atom::const_from_xid(ty as u32),
+            long_offset: 0,
+            long_length: core::mem::size_of::<usize>() as u32,
+            delete,
+            ..Default::default()
+        })
+        .map(|gpr| T::from_bytes(&gpr.value).map(|(x, _)| x))
     }
 
     /// Request struct to change the property of a window.
@@ -599,6 +670,7 @@ impl Window {
         }
     }
 
+    /// Change the save set for this window.
     #[inline]
     pub fn change_save_set<Dpy: Display + ?Sized>(
         self,
@@ -608,6 +680,7 @@ impl Window {
         dpy.exchange_request(self.change_save_set_request(mode))
     }
 
+    /// Change the save set for this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn change_save_set_async<Dpy: AsyncDisplay + ?Sized>(
@@ -700,6 +773,7 @@ impl Window {
         }
     }
 
+    /// Circulate this window.
     #[inline]
     pub fn circulate<Dpy: Display + ?Sized>(
         self,
@@ -709,6 +783,7 @@ impl Window {
         dpy.exchange_request(self.circulate_window_request(direction))
     }
 
+    /// Circulate this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn circulate_async<Dpy: AsyncDisplay + ?Sized>(
@@ -802,6 +877,7 @@ impl Window {
         }
     }
 
+    /// Convert a selection in this window.
     #[inline]
     pub fn convert_selection<Dpy: Display + ?Sized>(
         self,
@@ -814,6 +890,7 @@ impl Window {
         dpy.exchange_request(self.convert_selection_request(selection, target, property, time))
     }
 
+    /// Convert a selection in this window, async redox.
     #[cfg(feature = "async")]
     #[inline]
     pub async fn convert_selection_async<Dpy: AsyncDisplay + ?Sized>(
@@ -930,6 +1007,187 @@ impl Window {
             },
         )
         .await
+    }
+
+    /// Change this window's parent and set its position within the parent.
+    #[inline]
+    pub fn reparent<Dpy: Display + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+        parent: Window,
+        x: i16,
+        y: i16,
+    ) -> crate::Result {
+        dpy.exchange_request(ReparentWindowRequest {
+            window: self,
+            parent,
+            x,
+            y,
+            ..Default::default()
+        })
+    }
+
+    /// Change this window's parent and set its position within the parent, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn reparent_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+        parent: Window,
+        x: i16,
+        y: i16,
+    ) -> crate::Result {
+        dpy.exchange_request_async(ReparentWindowRequest {
+            window: self,
+            parent,
+            x,
+            y,
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Map this window's subwindows.
+    #[inline]
+    pub fn map_subwindows<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+        dpy.exchange_request(MapSubwindowsRequest {
+            window: self,
+            ..Default::default()
+        })
+    }
+
+    /// Map this window's subwindows, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn map_subwindows_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result {
+        dpy.exchange_request_async(MapSubwindowsRequest {
+            window: self,
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Unmap this window's subwindows.
+    #[inline]
+    pub fn unmap_subwindows<Dpy: Display + ?Sized>(self, dpy: &mut Dpy) -> crate::Result {
+        dpy.exchange_request(UnmapSubwindowsRequest {
+            window: self,
+            ..Default::default()
+        })
+    }
+
+    /// Unmap this window's subwindows, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn unmap_subwindows_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result {
+        dpy.exchange_request_async(UnmapSubwindowsRequest {
+            window: self,
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Query information regarding this window's family tree.
+    #[inline]
+    pub fn query_tree<Dpy: Display + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result<RequestCookie<QueryTreeRequest>> {
+        dpy.send_request(QueryTreeRequest {
+            window: self,
+            ..Default::default()
+        })
+    }
+
+    /// Query information regarding this window's family tree and resolve immediately.
+    #[inline]
+    pub fn query_tree_immediate<Dpy: Display + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result<TreeInformation> {
+        dpy.exchange_request(QueryTreeRequest {
+            window: self,
+            ..Default::default()
+        })
+        .map(|i| i.into())
+    }
+
+    /// Query information regarding this window's family tree, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_tree_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result<RequestCookie<QueryTreeRequest>> {
+        dpy.send_request_async(QueryTreeRequest {
+            window: self,
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Query information regarding this window's family tree and resolve immediately, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn query_tree_immediate_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+    ) -> crate::Result<TreeInformation> {
+        dpy.exchange_request_async(QueryTreeRequest {
+            window: self,
+            ..Default::default()
+        })
+        .await
+        .map(|i| i.into())
+    }
+
+    /// Get a property of this window, async redox
+    #[cfg(feature = "async")]
+    #[inline]
+    pub fn get_property_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        dpy: &mut Dpy,
+        property: Atom,
+        ty: PropertyType,
+        delete: bool,
+    ) -> SendRequestFuture<'_, Dpy, GetPropertyRequest> {
+        dpy.send_request_async(GetPropertyRequest {
+            window: self,
+            property,
+            ty: Atom::const_from_xid(ty as u32),
+            long_offset: 0,
+            long_length: core::mem::size_of::<usize>() as u32,
+            delete,
+            ..Default::default()
+        })
+    }
+
+    /// Get a property of this window, resolving immediately, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn get_property_immediate_async<Dpy: AsyncDisplay + ?Sized, T: AsByteSequence>(
+        self,
+        dpy: &mut Dpy,
+        property: Atom,
+        ty: PropertyType,
+        delete: bool,
+    ) -> crate::Result<Option<T>> {
+        dpy.exchange_request_async(GetPropertyRequest {
+            window: self,
+            property,
+            ty: Atom::const_from_xid(ty as u32),
+            long_offset: 0,
+            long_length: core::mem::size_of::<usize>() as u32,
+            delete,
+            ..Default::default()
+        }).await
+        .map(|gpr| T::from_bytes(&gpr.value).map(|(x, _)| x))
     }
 }
 
