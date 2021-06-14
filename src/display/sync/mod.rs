@@ -64,7 +64,8 @@ use spinning_top::Spinlock;
 ///
 /// Usage of `SyncDisplay` from a mutable reference is not recommended as, due to the synchronous primitives
 /// involved, mutable usage provides only marginal speedup as compared to immutable usage. If mutable usage is
-/// necessary, consider using the `BasicDisplay` structure instead, as it is thread-safe.
+/// necessary, consider using the `BasicDisplay` structure instead, as it is thread-safe and doesn't require
+/// any locking.
 #[derive(Debug)]
 pub struct SyncDisplay<Conn> {
     // the connection to the server

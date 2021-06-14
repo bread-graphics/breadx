@@ -6,23 +6,30 @@
 mod setup;
 
 use super::Connection;
-use crate::{display::StaticSetup, auto::{AsByteSequence, xproto::{SetupRequest, Setup}}};
-use alloc::collections::VecDeque;
+use crate::{
+    auto::{
+        xproto::{Setup, SetupRequest},
+        AsByteSequence,
+    },
+    display::{BasicDisplay, StaticSetup},
+    Fd,
+};
+use alloc::{borrow::Cow, collections::VecDeque, vec::Vec};
 use core::iter;
 use tinyvec::TinyVec;
 
 /// An imitation connection to a fake X11 server.
-/// 
+///
 /// In order to run doctests, we need to instantiate a connection to the X11 server. Unfortunately, this tends to
 /// be problematic, especially on computers without X servers (e.g. Windows computers or C.I. services). This
 /// connection is intended to ensure the utility methods on `Display` extension traits are actually doing what
 /// they say they are.
-/// 
+///
 /// This connection can `expect` to receive a certain request, or `reply` with a certain reply, event, or error.
 /// When bytes are sent across the connection, it compares them to the expected bytes, and panics if they do not
 /// match up. When bytes are requested from the connection, it `reply`s with the set bytes, or with zeroes if
 /// it is out of `reply` bytes.
-/// 
+///
 /// By using this, the only thing left to chance are the actual implementations of the connections themselves,
 /// but those can't actually be tested without an X server.
 #[derive(Debug)]
@@ -37,7 +44,10 @@ impl DummyConnection {
     /// Create a new `DummyConnection`, with none of the defaults.
     #[inline]
     pub fn with_no_defaults() -> Self {
-        Self { expected: VecDeque::new(), reply: VecDeque::new() }
+        Self {
+            expected: VecDeque::new(),
+            reply: VecDeque::new(),
+        }
     }
 
     /// Expect to see a certain sequence of bytes.
@@ -73,20 +83,59 @@ impl DummyConnection {
     #[inline]
     pub fn new() -> Self {
         let mut this = Self::with_no_defaults();
-        this.expect(SetupRequest {
-            byte_order: if cfg!(target_endian = "little") { b"l" } else { b"B" },
+        this.expects(SetupRequest {
+            byte_order: if cfg!(target_endian = "little") {
+                b'l'
+            } else {
+                b'B'
+            },
             protocol_major_version: 11,
             protocol_minor_version: 0,
             authorization_protocol_name: "".into(),
-            authorization_protocol_data: &[].into(),
+            authorization_protocol_data: Cow::Borrowed(&[]),
         });
-        this.reply(default_setup());
+        this.reply_bytes(default_setup());
         this
     }
 }
 
+impl Connection for DummyConnection {
+    #[inline]
+    fn send_packet(&mut self, bytes: &[u8], _fds: &mut Vec<Fd>) -> crate::Result {
+        for sent_byte in bytes.iter().copied() {
+            match self.expected.pop_front() {
+                Some(expected) => assert_eq!(sent_byte, expected),
+                _ => (),
+            }
+        }
+
+        Ok(())
+    }
+
+    #[inline]
+    fn read_packet(&mut self, bytes: &mut [u8], _fds: &mut Vec<Fd>) -> crate::Result {
+        for read_byte in bytes.iter_mut() {
+            *read_byte = match self.reply.pop_front() {
+                Some(reply) => reply,
+                None => 0,
+            };
+        }
+
+        Ok(())
+    }
+}
+
+impl BasicDisplay<DummyConnection> {
+    /// Create a new `BasicDisplay` based on a dummy connection.
+    #[inline]
+    pub fn dummy() -> Self {
+        Self::from_connection(DummyConnection::new(), 0, None)
+            .expect("Failed to create dummy display")
+    }
+}
+
 #[inline]
-fn default_setup() -> StaticSetup {
+fn default_setup() -> Vec<u8> {
     // close to the default setup on my system
     setup::default_setup()
 }

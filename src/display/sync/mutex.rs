@@ -87,7 +87,7 @@ impl Mutex {
             // in the course of waking all of the wakers, they will probably try to lock the mutex. if the mutex
             // is locked after a wake operation, there's no real need to keep waking more wakers, as they'll
             // just be wastefully added back onto the queue
-            while self.locked.load(Ordering::Acquire) {
+            while !self.locked.load(Ordering::Acquire) {
                 // if we can, wake a waker
                 match self.wakers.pop() {
                     Ok(waker) => waker.wake(),

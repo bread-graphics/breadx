@@ -25,16 +25,20 @@ use core::{
     task::{Context, Poll},
 };
 
-/// An implementor of [`Display`] and [`AsyncDisplay`] that uses [`Cell`] and [`RefCell`] in order to allow
-/// for immutable use of the `Display`. The primary downside is that it is not [`Sync`].
+/// An implementor of [`Display`] and [`AsyncDisplay`] that uses `Cell` and `RefCell` in order to allow
+/// for immutable use of the `Display`. The primary downside is that it is not `Sync`.
 ///
-/// This is useful in cases where the [`Display`] needs to be kept in an [`Rc`], thread-local [`OnceCell`],
+/// This is useful in cases where the [`Display`] needs to be kept in an `Rc`, thread-local `OnceCell`,
 /// reentrant mutex or any other place where one would only have an immutable reference to a `Display`. However,
 /// async users should be aware that the connection is protected by a re-entrancy lock that will panic if two
 /// I/O operations (e.g. sending two requests at once, or sending a request and then waiting) are attempted
 /// at once.
 ///
-/// ## Construction
+/// # Connection Poisoning
+///
+/// `CellDisplay` uses largely the same connection poisoning semantics that `BasicDisplay` does.
+///
+/// # Construction
 ///
 /// `CellDisplay` is constructed using the `Into` implementation for [`BasicDisplay`], e.g:
 ///
@@ -45,11 +49,15 @@ use core::{
 /// let display: CellDisplay<_> = display.into();
 /// ```
 ///
-/// ## Alternatives
+/// # Alternatives
 ///
 /// If you *can* restructure your program so that interior mutability is not required, it is considered better
-/// form to use `BasicDisplay`. However, if interior mutability is necessary, `CellDisplay` is preferred over
-/// `RefCell<BasicDisplay>`.
+/// form to use [`BasicDisplay`]. However, if interior mutability is necessary, `CellDisplay` is preferred over
+/// `RefCell<BasicDisplay>`. If thread safety is needed, either a [`SyncDisplay`] or a `Mutex<BasicDisplay>` may
+/// be used.
+///
+/// [`BasicDisplay`]: struct.BasicDisplay.html
+/// [`SyncDisplay`]: struct.SyncDisplay.html
 #[derive(Debug)]
 pub struct CellDisplay<Conn> {
     // the connection to the server

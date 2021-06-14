@@ -30,3 +30,6 @@ pub(crate) fn standard_fd_warning(fds: &mut Vec<crate::Fd>) {
         log::warn!("Cannot pass file descriptors into request on non-Unix operating systems.");
     }
 }
+
+#[cfg(test)]
+pub mod dummy;

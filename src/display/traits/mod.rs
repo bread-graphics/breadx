@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+//! Traits and objects used to give displays functionality.
 //#![allow(unused_qualifications)]
 
 mod xproto;
