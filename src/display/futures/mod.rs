@@ -17,6 +17,7 @@
 mod and_then;
 mod either;
 mod exchange_request;
+mod get_image;
 mod looping;
 mod map;
 mod put_image;
@@ -34,6 +35,7 @@ mod wait_for_special_event;
 pub use and_then::ExchangeXidFuture;
 pub use either::EitherFuture;
 pub use exchange_request::ExchangeRequestFuture;
+pub use get_image::GetImageFuture;
 pub use looping::{WaitLoopFuture, WaitLoopHandler};
 pub use map::MapFuture;
 pub use put_image::PutImageFuture;

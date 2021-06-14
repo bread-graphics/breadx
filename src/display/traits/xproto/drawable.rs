@@ -6,13 +6,13 @@
 use crate::{
     auto::xproto::{
         CopyAreaRequest, CopyPlaneRequest, CreatePixmapRequest, Drawable, GetGeometryReply,
-        GetGeometryRequest, Pixmap, Window,
+        GetGeometryRequest, GetImageRequest, ImageFormat, Pixmap, Window,
     },
     display::{generate_xid, prelude::*},
     image::{put::put_image_req, Image},
     Display, Gcontext, RequestCookie,
 };
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::{convert::TryInto, ops::Deref};
 
 #[cfg(feature = "async")]
@@ -20,14 +20,13 @@ use crate::{
     auto::xproto::PutImageRequest,
     display::{
         futures::{
-            ExchangeRequestFuture, ExchangeXidFuture, MapFuture, PutImageFuture, SendRequestFuture,
+            ExchangeRequestFuture, ExchangeXidFuture, GetImageFuture, MapFuture, PutImageFuture,
+            SendRequestFuture,
         },
         AsyncDisplay,
     },
     util::BoxedFnOnce,
 };
-#[cfg(feature = "async")]
-use alloc::boxed::Box;
 
 /// The return type of `drawable::get_geometry_immediate`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -136,6 +135,28 @@ fn create_pixmap_request(
         drawable,
         width,
         height,
+        ..Default::default()
+    }
+}
+
+#[inline]
+pub(crate) fn get_image_req(
+    drawable: Drawable,
+    x: isize,
+    y: isize,
+    width: usize,
+    height: usize,
+    plane_mask: usize,
+    format: ImageFormat,
+) -> GetImageRequest {
+    GetImageRequest {
+        drawable,
+        x: x as _,
+        y: y as _,
+        width: width as _,
+        height: height as _,
+        plane_mask: plane_mask as _,
+        format,
         ..Default::default()
     }
 }
@@ -298,6 +319,55 @@ pub trait DisplayDrawableExt: Display {
         gc.free(self)?;
         Ok(pixmap)
     }
+
+    /// Get an image from a region in this drawable.
+    #[inline]
+    fn get_image<Target: Into<Drawable>>(
+        &mut self,
+        target: Target,
+        x: isize,
+        y: isize,
+        width: usize,
+        height: usize,
+        plane_mask: usize,
+        format: ImageFormat,
+    ) -> crate::Result<RequestCookie<GetImageRequest>> {
+        self.send_request(get_image_req(
+            target.into(),
+            x,
+            y,
+            width,
+            height,
+            plane_mask,
+            format,
+        ))
+    }
+
+    /// Get an image from a region in this drawable, resolving immediately.
+    #[inline]
+    fn get_image_immediate<Target: Into<Drawable>>(
+        &mut self,
+        target: Target,
+        x: isize,
+        y: isize,
+        width: usize,
+        height: usize,
+        plane_mask: usize,
+        format: ImageFormat,
+    ) -> crate::Result<Image<Box<[u8]>>> {
+        let repl = self.exchange_request(get_image_req(
+            target.into(),
+            x,
+            y,
+            width,
+            height,
+            plane_mask,
+            format,
+        ))?;
+        Ok(Image::from_image_reply(
+            self, width, height, plane_mask, format, repl,
+        ))
+    }
 }
 
 impl<D: Display + ?Sized> DisplayDrawableExt for D {}
@@ -440,6 +510,44 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
         );
 
         PutImageFuture::run(self, reqs)
+    }
+
+    /// Get an image from a region in this drawable.
+    #[inline]
+    fn get_image_async<Target: Into<Drawable>>(
+        &mut self,
+        target: Target,
+        x: isize,
+        y: isize,
+        width: usize,
+        height: usize,
+        plane_mask: usize,
+        format: ImageFormat,
+    ) -> SendRequestFuture<'_, Self, GetImageRequest> {
+        self.send_request_async(get_image_req(
+            target.into(),
+            x,
+            y,
+            width,
+            height,
+            plane_mask,
+            format,
+        ))
+    }
+
+    /// Get an image from a region in this drawable, resolving immediately.
+    #[inline]
+    fn get_image_immediate_async<Target: Into<Drawable>>(
+        &mut self,
+        target: Target,
+        x: isize,
+        y: isize,
+        width: usize,
+        height: usize,
+        plane_mask: usize,
+        format: ImageFormat,
+    ) -> GetImageFuture<'_, Self> {
+        GetImageFuture::run(self, target.into(), x, y, width, height, plane_mask, format)
     }
 
     // TODO: too lazy to fix this
