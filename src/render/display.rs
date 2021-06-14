@@ -27,7 +27,7 @@ use crate::display::{AsyncDisplay, PollOr};
 use core::task::{Context, Poll};
 
 /// A wrapper around the `Display` that contains XRender-specific data.
-/// 
+///
 /// This wraps around any object that implements `Display` or `AsyncDisplay`, while keeping track of some
 /// Xrender-specific data. This not only implements `Display` and `AsyncDisplay`; its immutable references also
 /// implement `Display` and `AsyncDisplay` if the behavior is mirrored by the inner display.
