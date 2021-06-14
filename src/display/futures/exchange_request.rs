@@ -26,7 +26,7 @@ pub enum ExchangeRequestFuture<'a, D: ?Sized, R: Request> {
     ResolveRequest(ResolveRequestFuture<'a, D, R>),
     /// Request is complete.
     #[doc(hidden)]
-    Complete,
+    Complete(&'a mut D),
     /// Request has been dug out and replaced with a hole.
     #[doc(hidden)]
     Hole,
@@ -44,6 +44,16 @@ impl<'a, D: AsyncDisplay + ?Sized, R: Request> ExchangeRequestFuture<'a, D, R> {
     #[inline]
     pub(crate) fn run(display: &'a mut D, request: R) -> Self {
         Self::SendRequest(SendRequestFuture::run(display, request))
+    }
+
+    #[inline]
+    pub(crate) fn cannibalize(self) -> &'a mut D {
+        match self {
+            Self::SendRequest(srf) => srf.cannibalize(),
+            Self::ResolveRequest(rrf) => rrf.cannibalize(),
+            Self::Complete(dpy) => dpy,
+            Self::Hole => panic!("Cannot eat an empty hole"),
+        }
     }
 }
 
@@ -66,7 +76,7 @@ where
                     }
                     Poll::Ready(Err(e)) => {
                         result = Some(Poll::Ready(Err(e)));
-                        ExchangeRequestFuture::Complete
+                        ExchangeRequestFuture::Complete(srf.cannibalize())
                     }
                     Poll::Ready(Ok(tok)) => ExchangeRequestFuture::ResolveRequest(
                         ResolveRequestFuture::run(srf.cannibalize(), tok),
@@ -79,10 +89,10 @@ where
                     }
                     Poll::Ready(res) => {
                         result = Some(Poll::Ready(res));
-                        ExchangeRequestFuture::Complete
+                        ExchangeRequestFuture::Complete(rrf.cannibalize())
                     }
                 },
-                ExchangeRequestFuture::Complete => {
+                ExchangeRequestFuture::Complete(..) => {
                     panic!("Attempted to poll future after completion")
                 }
                 ExchangeRequestFuture::Hole => panic!("Cannot pole an empty hole"),
