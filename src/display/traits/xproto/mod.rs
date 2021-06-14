@@ -19,7 +19,7 @@ use crate::{
     display::{generate_xid, Display, RequestCookie},
     Event, Extension,
 };
-use alloc::{borrow::Cow, string::String, boxed::Box};
+use alloc::{borrow::Cow, boxed::Box, string::String};
 use cty::c_char;
 
 #[cfg(feature = "async")]

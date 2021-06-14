@@ -10,22 +10,22 @@ pub use crate::{
             ChangeWindowAttributesRequest, Circulate, CirculateWindowRequest, ClearAreaRequest,
             Colormap, ConfigWindow, ConfigureWindowRequest, ConvertSelectionRequest, Cursor,
             DeletePropertyRequest, DestroySubwindowsRequest, DestroyWindowRequest, EventMask,
-            Gcontext, GetGeometryRequest, GetWindowAttributesReply, GetWindowAttributesRequest,
-            Gravity, MapState, MapSubwindowsRequest, MapWindowRequest, PropMode, QueryTreeReply,
-            QueryTreeRequest, ReparentWindowRequest, SetMode, StackMode, Timestamp,
-            UnmapSubwindowsRequest, UnmapWindowRequest, Visualid, Window, WindowClass,
-            ATOM_WM_NAME, GetPropertyRequest,
+            Gcontext, GetGeometryRequest, GetPropertyRequest, GetWindowAttributesReply,
+            GetWindowAttributesRequest, Gravity, MapState, MapSubwindowsRequest, MapWindowRequest,
+            PropMode, QueryTreeReply, QueryTreeRequest, ReparentWindowRequest, SetMode, StackMode,
+            Timestamp, UnmapSubwindowsRequest, UnmapWindowRequest, Visualid, Window, WindowClass,
+            ATOM_WM_NAME,
         },
         AsByteSequence,
     },
     display::{prelude::*, Connection, Display, DisplayExt, RequestCookie, WindowParameters},
     xid::XidType,
 };
-use alloc::{borrow::Cow, string::ToString, vec::Vec, boxed::Box};
+use alloc::{borrow::Cow, boxed::Box, string::ToString, vec::Vec};
 use core::{iter, mem};
 
 #[cfg(feature = "async")]
-use crate::display::{traits::AsyncDisplayDrawableExt, AsyncDisplay, futures::SendRequestFuture};
+use crate::display::{futures::SendRequestFuture, traits::AsyncDisplayDrawableExt, AsyncDisplay};
 #[cfg(feature = "async")]
 use futures_lite::future::{self, Ready};
 
@@ -1186,7 +1186,8 @@ impl Window {
             long_length: core::mem::size_of::<usize>() as u32,
             delete,
             ..Default::default()
-        }).await
+        })
+        .await
         .map(|gpr| T::from_bytes(&gpr.value).map(|(x, _)| x))
     }
 }
