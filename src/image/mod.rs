@@ -8,7 +8,7 @@ pub(crate) mod fit;
 pub(crate) mod put;
 
 use crate::{
-    auto::xproto::{ImageFormat, ImageOrder, Visualtype},
+    auto::xproto::{GetImageReply, ImageFormat, ImageOrder, Visualtype},
     display::DisplayBase,
     util::{reverse_bytes, roundup},
 };
@@ -416,6 +416,51 @@ where
             bits_per_pixel: self.bits_per_pixel,
             bytes_per_line: self.bytes_per_line,
             data: self.data().into(),
+        }
+    }
+}
+
+impl Image<Box<[u8]>> {
+    /// Convert a `GetImageReply` into a new image.
+    #[inline]
+    pub fn from_image_reply<Dpy: DisplayBase + ?Sized>(
+        dpy: &mut Dpy,
+        width: usize,
+        height: usize,
+        plane_mask: usize,
+        format: ImageFormat,
+        reply: GetImageReply,
+    ) -> Self {
+        if format == ImageFormat::XyPixmap {
+            let depth = (plane_mask & (0xffff_ffff >> (32 - reply.depth))).count_ones();
+
+            Self::new(
+                dpy,
+                dpy.visual_id_to_visual(reply.visual),
+                depth as _,
+                format,
+                0,
+                reply.data.into_owned().into_boxed_slice(),
+                width,
+                height,
+                dpy.setup().bitmap_format_scanline_pad.into(),
+                None,
+            )
+            .unwrap()
+        } else {
+            Self::new(
+                dpy,
+                dpy.visual_id_to_visual(reply.visual),
+                reply.depth as _,
+                ImageFormat::ZPixmap,
+                0,
+                reply.data.into_owned().into_boxed_slice(),
+                width,
+                height,
+                dpy.get_scanline_pad(reply.depth as _) as _,
+                None,
+            )
+            .unwrap()
         }
     }
 }

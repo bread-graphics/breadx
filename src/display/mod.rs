@@ -361,6 +361,16 @@ pub trait DisplayBase {
             .find(|v| v.visual_id == id)
     }
 
+    /// Get the scanline pad for a certain depth.
+    #[inline]
+    fn get_scanline_pad(&self, depth: u8) -> usize {
+        self.setup()
+            .pixmap_formats
+            .iter()
+            .find(|f| f.depth == depth)
+            .map_or(self.setup().bitmap_format_scanline_pad, |f| f.scanline_pad) as _
+    }
+
     /// Get the depth of the specified visual ID.
     #[inline]
     fn depth_of_visual(&self, id: Visualid) -> Option<u8> {
