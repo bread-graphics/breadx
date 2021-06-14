@@ -47,6 +47,7 @@ pub use pixmap::*;
 pub use window::*;
 
 crate::create_paramaterizer! {
+    #[doc = "A set of parameters used to create or change a window."]
     pub struct WindowParameters : (Cw, CreateWindowRequest) {
         background_pixmap (set_back_pixmap,       background_pixmap):     Pixmap,
         background_pixel  (set_back_pixel,        background_pixel):      u32,
@@ -93,6 +94,7 @@ impl WindowParameters {
 }
 
 crate::create_paramaterizer! {
+    #[doc = "A set of parameters used to create or change a graphics context."]
     pub struct GcParameters : (Gc, CreateGcRequest) {
         function              (set_function,              function):              Gx,
         plane_mask            (set_plane_mask,            plane_mask):            u32,
@@ -121,6 +123,7 @@ crate::create_paramaterizer! {
 }
 
 crate::create_paramaterizer! {
+    #[doc = "A set of parameters used to create or change a keyboard control."]
     pub struct KbParameters : (Kb, ChangeKeyboardControlRequest) {
         key_click_percent (set_key_click_percent, key_click_percent): i32,
         bell_percent      (set_bell_percent,      bell_percent):      i32,
@@ -167,6 +170,7 @@ impl GcParameters {
     }
 }
 
+/// A mapping from keycodes to keysyms.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyboardMapping {
     pub keysyms_per_keycode: u8,
@@ -183,6 +187,7 @@ impl<'a> From<GetKeyboardMappingReply<'a>> for KeyboardMapping {
     }
 }
 
+/// A mapping from keycodes to modifiers.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ModifierMapping {
     pub keycodes_per_modifier: u8,
@@ -413,7 +418,7 @@ pub trait DisplayXprotoExt: Display {
         })
     }
 
-    /// Query for extension information, but resolve immediately. The `Error::ExtensionNotPresent` error is
+    /// Query for extension information, but resolve immediately. The `ExtensionNotPresent` error is
     /// returned when the extension is not found.
     #[inline]
     fn query_extension_immediate<'a, Name: Into<Cow<'a, str>>>(

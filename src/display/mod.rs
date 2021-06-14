@@ -1006,6 +1006,7 @@ impl<R: Request> fmt::Debug for RequestCookie<R> {
 impl<R: Request> RequestCookie<R> {
     /// Construct a `RequestCookie` from a sequence number. If the sequence number given if not associated with
     /// a reply of type `R::Reply`, it may cause errors down the line.
+    #[must_use]
     #[inline]
     pub fn from_sequence(sequence: u16) -> Self {
         Self {
@@ -1074,6 +1075,7 @@ pub enum PendingItem {
 
 impl PendingItem {
     /// Convert this into either a `PendingRequest` or `None`.
+    #[must_use]
     #[inline]
     pub fn request(self) -> Option<PendingRequest> {
         match self {
@@ -1083,6 +1085,7 @@ impl PendingItem {
     }
 
     /// Convert this into either a `PendingReply` or `None`.
+    #[must_use]
     #[inline]
     pub fn reply(self) -> Option<PendingReply> {
         match self {
@@ -1092,6 +1095,7 @@ impl PendingItem {
     }
 
     /// Convert this into either a `BreadError` or `None`.
+    #[must_use]
     #[inline]
     pub fn error(self) -> Option<BreadError> {
         match self {

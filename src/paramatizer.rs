@@ -5,10 +5,12 @@
 #[macro_export]
 macro_rules! create_paramaterizer {
     (
+        $(#[$meta: meta])*
         $vis: vis struct $sname: ident : ($flags: ident, $base: ident) {
             $($field: ident ($setter: ident, $var: ident) : $fty: ty),*
         }
     ) => {
+        $(#[$meta])*
         #[derive(Debug, Copy, Clone, Default, PartialEq)]
         $vis struct $sname {
             $(pub $field: Option<$fty>),*
