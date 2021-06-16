@@ -189,7 +189,7 @@ async fn entry(ex: &Executor<'_>) -> breadx::Result<()> {
     x11_res
 }
 
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", not(feature = "tokio-support")))]
 fn main() -> breadx::Result<()> {
     env::set_var("RUST_LOG", "breadx=trace");
     env_logger::init();
