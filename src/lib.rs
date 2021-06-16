@@ -103,6 +103,12 @@
 //!                    contexts. However, it does require importing more dependencies (although some of these
 //!                    dependencies overlap with those of the `async` feature), and technically violates the
 //!                    "lock-free" idea of `breadx`, since `SyncDisplay` does require a mutex to function.
+//! * `tokio-support` - In addition to adding implementations of the `AsyncConnection` trait to `tokio`'s
+//!                     `TcpStream` and `UnixStream`, this reimplements `NameConnection` in terms of these
+//!                     types, allowing this create to be utilized more effectively in a `tokio` runtime.
+//!
+//! (Note: By default, `breadx`'s async ecosystem is implemented in terms of the primitives underlying `smol` and
+//! `async-std`, so features for those are unnecessary).
 //!
 //! In addition, `breadx` has a feature for each officially supported X11 extension. Use the extension's name as
 //! a feature, or use the `all-extensions` feature to enable every extension.

@@ -208,3 +208,7 @@ unix_aware_async_connection_impl! { Async<UnixStream> }
 unix_aware_async_connection_impl! { &Async<TcpStream> }
 #[cfg(all(feature = "std", unix))]
 unix_aware_async_connection_impl! { &Async<UnixStream> }
+#[cfg(feature = "tokio-support")]
+unix_aware_async_connection_impl! { tokio::net::TcpStream }
+#[cfg(all(feature = "tokio-support", unix))]
+unix_aware_async_connection_impl! { tokio::net::UnixStream }

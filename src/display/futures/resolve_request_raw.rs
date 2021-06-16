@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{WaitLoopFuture, WaitLoopHandler};
-use crate::display::{AsyncDisplay, DisplayBase, PendingReply};
+use crate::display::{AsyncDisplay, PendingReply};
 
 /// The future returned by `AsyncDisplayExt::ResolveRequestRaw`.
 pub type ResolveRequestRawFuture<'a, D> = WaitLoopFuture<'a, D, ResolveRequestRawHandler>;

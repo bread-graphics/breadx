@@ -3,8 +3,9 @@
 // This example requires the "async" feature to be activated.
 
 // Note: I use smol here, as it is a). my personal favorite async runtime in the Rust ecosystem at the
-//       moment, and b). breadx is implemented in terms of its objects and executors. You should be able to
-//       use tokio, async-std, or an executor-less system here as well without much headache.
+//       moment, and b). breadx is implemented in terms of its objects. You should be able to
+//       use async-std or an executor-less system here as well without much headache. See the tokio example
+//       for an example on that.
 #[cfg(feature = "async")]
 use breadx::{
     prelude::*, auto::xproto::ExposeEvent, rgb, AsyncDisplayConnection, Event, EventMask, GcParameters, Rectangle,
@@ -207,7 +208,7 @@ fn main() -> breadx::Result<()> {
         .1
 }
 
-#[cfg(not(feature = "async"))]
+#[cfg(any(not(feature = "async"), feature = "tokio-support"))]
 fn main() {
-    println!("async example requires the 'async' feature to be enabled");
+    println!("async example requires the 'async' feature to be enabled without 'tokio-support'");
 }
