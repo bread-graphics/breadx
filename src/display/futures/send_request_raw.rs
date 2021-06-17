@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use crate::display::{AsyncDisplay, PendingReply, PendingRequest, PollOr, RequestInfo};
+use crate::display::{AsyncDisplay, PollOr, RequestInfo};
 use core::{
     future::Future,
     pin::Pin,

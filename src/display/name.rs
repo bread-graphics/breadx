@@ -15,11 +15,20 @@ use std::{env, net, path::Path};
 #[cfg(feature = "async")]
 use super::AsyncConnection;
 #[cfg(feature = "async")]
-use async_io::Async;
-#[cfg(feature = "async")]
 use core::task::{Context, Poll};
-#[cfg(feature = "async")]
+
+#[cfg(all(feature = "async", not(feature = "tokio-support")))]
+use async_io::Async;
+#[cfg(all(feature = "async", not(feature = "tokio-support")))]
 use std::net::ToSocketAddrs;
+
+#[cfg(all(feature = "async", feature = "tokio-support"))]
+use spinning_top::Spinlock;
+#[cfg(all(feature = "async", feature = "tokio-support"))]
+use tokio::net::TcpStream as TokioTcpStream;
+
+#[cfg(all(feature = "async", feature = "tokio-support", unix))]
+use tokio::net::UnixStream as TokioUnixStream;
 
 #[cfg(test)]
 use std::borrow::ToOwned;
@@ -96,11 +105,18 @@ impl<'a> Connection for &'a NameConnection {
 /// An async version of the [`NameConnection`] object. See `NameConnection`'s documentation for more information.
 #[cfg(feature = "async")]
 pub enum AsyncNameConnection {
+    #[cfg(not(feature = "tokio-support"))]
     #[doc(hidden)]
     Tcp(Async<net::TcpStream>),
-    #[cfg(unix)]
+    #[cfg(all(not(feature = "tokio-support"), unix))]
     #[doc(hidden)]
     Socket(Async<unet::UnixStream>),
+    #[cfg(feature = "tokio-support")]
+    #[doc(hidden)]
+    Tcp(Spinlock<TokioTcpStream>),
+    #[cfg(all(feature = "tokio-support", unix))]
+    #[doc(hidden)]
+    Socket(Spinlock<TokioUnixStream>),
 }
 
 #[cfg(feature = "async")]
@@ -114,9 +130,16 @@ impl AsyncConnection for AsyncNameConnection {
         bytes_sent: &mut usize,
     ) -> Poll<crate::Result> {
         match self {
+            #[cfg(not(feature = "tokio-support"))]
             AsyncNameConnection::Tcp(t) => t.poll_send_packet(bytes, fds, cx, bytes_sent),
-            #[cfg(unix)]
+            #[cfg(all(not(feature = "tokio-support"), unix))]
             AsyncNameConnection::Socket(s) => s.poll_send_packet(bytes, fds, cx, bytes_sent),
+            #[cfg(feature = "tokio-support")]
+            AsyncNameConnection::Tcp(t) => t.get_mut().poll_send_packet(bytes, fds, cx, bytes_sent),
+            #[cfg(all(feature = "tokio-support", unix))]
+            AsyncNameConnection::Socket(s) => {
+                s.get_mut().poll_send_packet(bytes, fds, cx, bytes_sent)
+            }
         }
     }
 
@@ -129,9 +152,16 @@ impl AsyncConnection for AsyncNameConnection {
         bytes_read: &mut usize,
     ) -> Poll<crate::Result> {
         match self {
+            #[cfg(not(feature = "tokio-support"))]
             AsyncNameConnection::Tcp(t) => t.poll_read_packet(bytes, fds, cx, bytes_read),
-            #[cfg(unix)]
+            #[cfg(all(not(feature = "tokio-support"), unix))]
             AsyncNameConnection::Socket(s) => s.poll_read_packet(bytes, fds, cx, bytes_read),
+            #[cfg(feature = "tokio-support")]
+            AsyncNameConnection::Tcp(t) => t.get_mut().poll_read_packet(bytes, fds, cx, bytes_read),
+            #[cfg(all(feature = "tokio-support", unix))]
+            AsyncNameConnection::Socket(s) => {
+                s.get_mut().poll_read_packet(bytes, fds, cx, bytes_read)
+            }
         }
     }
 }
@@ -147,15 +177,26 @@ impl<'a> AsyncConnection for &'a AsyncNameConnection {
         bytes_sent: &mut usize,
     ) -> Poll<crate::Result> {
         match self {
+            #[cfg(not(feature = "tokio-support"))]
             AsyncNameConnection::Tcp(ref t) => {
                 let mut t = t;
                 t.poll_send_packet(bytes, fds, cx, bytes_sent)
             }
-            #[cfg(unix)]
+            #[cfg(all(not(feature = "tokio-support"), unix))]
             AsyncNameConnection::Socket(ref s) => {
                 let mut s = s;
                 s.poll_send_packet(bytes, fds, cx, bytes_sent)
             }
+            #[cfg(feature = "tokio-support")]
+            AsyncNameConnection::Tcp(t) => t
+                .try_lock()
+                .expect("Tried to access tokio connection concurrently")
+                .poll_send_packet(bytes, fds, cx, bytes_sent),
+            #[cfg(all(feature = "tokio-support", unix))]
+            AsyncNameConnection::Socket(s) => s
+                .try_lock()
+                .expect("Tried to access tokio connection concurrently")
+                .poll_send_packet(bytes, fds, cx, bytes_sent),
         }
     }
 
@@ -168,15 +209,26 @@ impl<'a> AsyncConnection for &'a AsyncNameConnection {
         bytes_read: &mut usize,
     ) -> Poll<crate::Result> {
         match self {
+            #[cfg(not(feature = "tokio-support"))]
             AsyncNameConnection::Tcp(ref t) => {
                 let mut t = t;
                 t.poll_read_packet(bytes, fds, cx, bytes_read)
             }
-            #[cfg(unix)]
+            #[cfg(all(not(feature = "tokio-support"), unix))]
             AsyncNameConnection::Socket(ref s) => {
                 let mut s = s;
                 s.poll_read_packet(bytes, fds, cx, bytes_read)
             }
+            #[cfg(feature = "tokio-support")]
+            AsyncNameConnection::Tcp(t) => t
+                .try_lock()
+                .expect("Tried to access tokio connection concurrently")
+                .poll_send_packet(bytes, fds, cx, bytes_read),
+            #[cfg(all(feature = "tokio-support", unix))]
+            AsyncNameConnection::Socket(s) => s
+                .try_lock()
+                .expect("Tried to access tokio connection concurrently")
+                .poll_send_packet(bytes, fds, cx, bytes_read),
         }
     }
 }
@@ -433,37 +485,52 @@ impl<'a> XConnection<'a> {
     #[inline]
     async fn open_tcp_async(self) -> crate::Result<AsyncNameConnection> {
         let (host, port) = self.host_and_port();
-        let host = host.into_owned();
 
-        // try to connect to the server
-        let mut last_error: Option<crate::BreadError> = None;
-        let addrs =
-            blocking::unblock(move || ToSocketAddrs::to_socket_addrs(&(&*host, port))).await?;
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "tokio-support")] {
+                let conn = TokioTcpStream::connect(&(&*host, port)).await?;
+                Ok(AsyncNameConnection::Tcp(Spinlock::new(conn)))
+            } else {
+                let host = host.into_owned();
 
-        for addr in addrs {
-            let connection = match Async::<net::TcpStream>::connect(addr).await {
-                Ok(conn) => conn,
-                Err(e) => {
-                    last_error = Some(e.into());
-                    continue;
+                // try to connect to the server
+                let mut last_error: Option<crate::BreadError> = None;
+                let addrs =
+                    blocking::unblock(move || ToSocketAddrs::to_socket_addrs(&(&*host, port))).await?;
+
+                for addr in addrs {
+                    let connection = match Async::<net::TcpStream>::connect(addr).await {
+                        Ok(conn) => conn,
+                        Err(e) => {
+                            last_error = Some(e.into());
+                            continue;
+                        }
+                    };
+
+                   return Ok(AsyncNameConnection::Tcp(connection));
                 }
-            };
 
-            return Ok(AsyncNameConnection::Tcp(connection));
+                // could not connect to any of the addresses
+                Err(last_error.unwrap_or(crate::BreadError::StaticMsg(
+                    "Could not connect to any of the given addresses",
+                )))
+            }
         }
-
-        // could not connect to any of the addresses
-        Err(last_error.unwrap_or(crate::BreadError::StaticMsg(
-            "Could not connect to any of the given addresses",
-        )))
     }
 
     /// Open a socket file on Unix, async redox.
     #[cfg(all(feature = "async", unix))]
     async fn open_unix_async(self) -> crate::Result<AsyncNameConnection> {
         let fname = self.socket_filename()?;
-        let conn = Async::<unet::UnixStream>::connect(&*fname).await?;
-        Ok(AsyncNameConnection::Socket(conn))
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "tokio-support")] {
+                let conn = TokioUnixStream::connect(&*fname).await?;
+                Ok(AsyncNameConnection::Socket(Spinlock::new(conn)))
+            } else {
+                let conn = Async::<unet::UnixStream>::connect(&*fname).await?;
+                Ok(AsyncNameConnection::Socket(conn))
+            }
+        }
     }
 
     /// Open an asynchronous connection.

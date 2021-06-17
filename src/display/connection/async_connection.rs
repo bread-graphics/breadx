@@ -11,7 +11,7 @@ use core::task::{Context, Poll};
 use super::unix;
 use crate::Fd;
 use alloc::{boxed::Box, vec::Vec};
-use core::{future::Future, pin::Pin};
+use core::{convert::identity, future::Future, pin::Pin};
 
 #[cfg(all(feature = "std", not(unix)))]
 use futures_lite::{AsyncRead, AsyncWrite};
@@ -30,6 +30,9 @@ use super::standard_fd_warning;
 
 #[cfg(all(not(unix), feature = "std"))]
 use futures_lite::io::{AsyncReadExt, AsyncWriteExt};
+
+#[cfg(all(not(unix), feature = "tokio-support"))]
+use tokio_util::compat::{TokioAsyncReadCompatExt as _, TokioAsyncWriteCompatExt as _};
 
 /// Generic future for connections;
 pub type GenericConnFuture<'future, T = ()> =
@@ -208,3 +211,78 @@ unix_aware_async_connection_impl! { Async<UnixStream> }
 unix_aware_async_connection_impl! { &Async<TcpStream> }
 #[cfg(all(feature = "std", unix))]
 unix_aware_async_connection_impl! { &Async<UnixStream> }
+#[cfg(all(feature = "tokio-support", unix))]
+unix_aware_async_connection_impl! { tokio::net::UnixStream }
+
+#[cfg(feature = "tokio-support")]
+impl AsyncConnection for tokio::net::TcpStream {
+    #[inline]
+    fn poll_send_packet(
+        &mut self,
+        bytes: &[u8],
+        fds: &mut Vec<Fd>,
+        cx: &mut Context<'_>,
+        bytes_written: &mut usize,
+    ) -> Poll<crate::Result> {
+        cfg_if::cfg_if! {
+            if #[cfg(unix)] {
+                unix::poll_send_packet_unix(self, bytes, fds, cx, bytes_written)
+            } else {
+                standard_fd_warning(fds);
+                let mut bytes = bytes;
+                let mut this = self.compat();
+                while !bytes.is_empty() {
+                    match Pin::new(&mut this).poll_write(cx, bytes) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
+                        Poll::Ready(Ok(0)) => {
+                            let err: io::Error = io::ErrorKind::WriteZero.into();
+                            return Poll::Ready(Err(err.into()));
+                        }
+                        Poll::Ready(Ok(n)) => {
+                            bytes = &bytes[n..];
+                            *bytes_written += n;
+                        }
+                    }
+                }
+
+                Poll::Ready(Ok(()))
+            }
+        }
+    }
+
+    #[inline]
+    fn poll_read_packet(
+        &mut self,
+        bytes: &mut [u8],
+        fds: &mut Vec<Fd>,
+        cx: &mut Context<'_>,
+        bytes_read: &mut usize,
+    ) -> Poll<crate::Result> {
+        cfg_if::cfg_if! {
+            if #[cfg(unix)] {
+                unix::poll_read_packet_unix(self, bytes, fds, cx, bytes_read)
+            } else {
+                let _ = fds;
+                let mut bytes = bytes;
+                let mut this = self.compat();
+                while !bytes.is_empty() {
+                    match Pin::new(&mut this).poll_read(cx, bytes) {
+                        Poll::Pending => return Poll::Pending,
+                        Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
+                        Poll::Ready(Ok(0)) => {
+                            let err: io::Error = io::ErrorKind::UnexpectedEof.into();
+                            return Poll::Ready(Err(err.into()));
+                        }
+                        Poll::Ready(Ok(n)) => {
+                            bytes = &mut bytes[n..];
+                            *bytes_read += n;
+                        }
+                    }
+                }
+
+                Poll::Ready(Ok(()))
+            }
+        }
+    }
+}

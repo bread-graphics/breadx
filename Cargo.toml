@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["notgull <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Implementation of the X Window System Protocol"
@@ -25,6 +25,8 @@ memchr = { version = "2.3.3", default-features = false }
 pin-project-lite = { version = "0.2", optional = true }
 spinning_top = { version = "0.2", optional = true }
 tinyvec = { version = "1.1.0", features = ["alloc"] }
+tokio = { version = "1.7", features = ["net"], optional = true }
+tokio-util = { version = "0.6", features = ["compat"], optional = true }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.19.0"
@@ -43,6 +45,7 @@ async = ["std", "async-io", "blocking", "futures-lite", "pin-project-lite"]
 image-support = ["image", "std"]
 std = ["memchr/std"]
 sync-display = ["concurrent-queue", "dashmap", "spinning_top", "std"]
+tokio-support = ["async", "spinning_top", "tokio", "tokio-util"]
 
 # Extensions
 damage = ["fixes"]

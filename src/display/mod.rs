@@ -164,6 +164,9 @@ pub trait DisplayBase {
     /// Remove a `PendingItem` from this display's map. See `add_pending_item` for more information.
     fn take_pending_item(&mut self, req_id: u16) -> Option<PendingItem>;
 
+    /// Tell if there are any items currently in the queue.
+    fn has_pending_event(&self) -> bool;
+
     /// Push an event into this display's event queue.
     ///
     /// The display is expected to keep a queue of events that it receives whenever it runs `wait` or
@@ -403,6 +406,11 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
     #[inline]
     fn next_request_number(&mut self) -> u64 {
         (**self).next_request_number()
+    }
+
+    #[inline]
+    fn has_pending_event(&self) -> bool {
+        (**self).has_pending_event()
     }
 
     #[inline]

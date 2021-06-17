@@ -3,14 +3,10 @@
 //! Common async implementation functionality between our connection types.
 
 use super::{
-    decode_reply, input, output, AsyncConnection, AsyncDisplay, PendingReply, PendingRequest,
-    RequestInfo, RequestWorkaround,
+    decode_reply, input, output, AsyncConnection, AsyncDisplay, PendingReply, RequestInfo,
 };
-use crate::{
-    auto::xproto::{QueryExtensionReply, QueryExtensionRequest},
-    log_debug, log_trace, Fd,
-};
-use alloc::{string::String, vec, vec::Vec};
+use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace, Fd};
+use alloc::{vec, vec::Vec};
 use core::{
     iter, mem,
     task::{Context, Poll},

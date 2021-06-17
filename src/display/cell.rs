@@ -210,6 +210,10 @@ impl<Conn> DisplayBase for CellDisplay<Conn> {
             .replace(self.request_number.get().wrapping_add(1))
     }
     #[inline]
+    fn has_pending_event(&self) -> bool {
+        !self.inner.borrow().event_queue.is_empty()
+    }
+    #[inline]
     fn push_event(&mut self, event: Event) {
         self.inner.get_mut().event_queue.push_back(event);
     }
@@ -417,6 +421,10 @@ impl<'a, Conn> DisplayBase for &'a CellDisplay<Conn> {
     fn next_request_number(&mut self) -> u64 {
         self.request_number
             .replace(self.request_number.get().wrapping_add(1))
+    }
+    #[inline]
+    fn has_pending_event(&self) -> bool {
+        !self.inner.borrow().event_queue.is_empty()
     }
     #[inline]
     fn push_event(&mut self, event: Event) {

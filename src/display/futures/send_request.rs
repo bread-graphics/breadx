@@ -2,8 +2,8 @@
 
 use super::SendRequestRawFuture;
 use crate::{
-    display::{decode_reply, AsyncDisplay, PendingRequest, RequestCookie, RequestInfo},
-    log_trace, Request,
+    display::{AsyncDisplay, RequestCookie, RequestInfo},
+    Request,
 };
 use core::{
     future::Future,

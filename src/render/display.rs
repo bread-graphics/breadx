@@ -260,6 +260,11 @@ impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
     }
 
     #[inline]
+    fn has_pending_event(&self) -> bool {
+        self.inner.has_pending_event()
+    }
+
+    #[inline]
     fn push_event(&mut self, event: Event) {
         self.inner.push_event(event)
     }
@@ -366,6 +371,11 @@ where
     #[inline]
     fn next_request_number(&mut self) -> u64 {
         self.inner().next_request_number()
+    }
+
+    #[inline]
+    fn has_pending_event(&self) -> bool {
+        self.inner().has_pending_event()
     }
 
     #[inline]

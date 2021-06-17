@@ -82,7 +82,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
 
 /// For Unix stream types, we can use this function to send FDs.
 #[inline]
-pub fn send_packet_unix(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
+pub(crate) fn send_packet_unix(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> crate::Result {
     send_msg_packet(conn, data, fds).1?;
     Ok(())
 }
@@ -90,14 +90,14 @@ pub fn send_packet_unix(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> crate::R
 /// The same as the above function, but in polling form.
 #[cfg(feature = "async")]
 #[inline]
-pub fn poll_send_packet_unix<Conn: AsRawFd + Write + Unpin>(
-    conn: &Async<Conn>,
+pub(crate) fn poll_send_packet_unix<Conn: ConnSource>(
+    conn: &mut Conn,
     mut data: &[u8],
     fds: &mut Vec<Fd>,
     cx: &mut Context<'_>,
     bytes_read: &mut usize,
 ) -> Poll<crate::Result> {
-    let connfd = conn.as_raw_fd();
+    let connfd = conn.raw_fd();
     loop {
         // try to run until we encounter unwritability
         let (offset, res) = send_msg_packet(connfd, data, fds);
@@ -185,7 +185,7 @@ fn read_msg_packet(
 
 /// Read a packet, unix style.
 #[inline]
-pub fn read_packet_unix(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
+pub(crate) fn read_packet_unix(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result {
     let mut _total_read = 0;
     read_msg_packet(conn, data, fds, &mut _total_read)?;
     Ok(())
@@ -194,14 +194,14 @@ pub fn read_packet_unix(conn: RawFd, data: &mut [u8], fds: &mut Vec<Fd>) -> crat
 /// Read a packet, async redox.
 #[cfg(feature = "async")]
 #[inline]
-pub fn poll_read_packet_unix<Conn: AsRawFd + Read + Unpin>(
-    conn: &Async<Conn>,
+pub(crate) fn poll_read_packet_unix<Conn: ConnSource>(
+    conn: &mut Conn,
     data: &mut [u8],
     fds: &mut Vec<Fd>,
     cx: &mut Context<'_>,
     bytes_read: &mut usize,
 ) -> Poll<crate::Result> {
-    let connfd = conn.as_raw_fd();
+    let connfd = conn.raw_fd();
     loop {
         // try to read until we can't anymore
         match read_msg_packet(connfd, data, fds, bytes_read) {
@@ -215,5 +215,76 @@ pub fn poll_read_packet_unix<Conn: AsRawFd + Read + Unpin>(
             Poll::Ready(Ok(())) => { /* continue loop */ }
             Poll::Ready(Err(e)) => break Poll::Ready(Err(e.into())),
         }
+    }
+}
+
+#[cfg(feature = "async")]
+pub(crate) trait ConnSource {
+    fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
+    fn poll_writable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>>;
+    fn raw_fd(&mut self) -> RawFd;
+}
+
+#[cfg(feature = "async")]
+impl<Conn: AsRawFd + Read + Unpin> ConnSource for Async<Conn> {
+    #[inline]
+    fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Async::<Conn>::poll_readable(self, cx)
+    }
+    #[inline]
+    fn poll_writable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Async::<Conn>::poll_writable(self, cx)
+    }
+    #[inline]
+    fn raw_fd(&mut self) -> RawFd {
+        self.as_raw_fd()
+    }
+}
+
+#[cfg(feature = "async")]
+impl<Conn: AsRawFd + Read + Unpin> ConnSource for &Async<Conn> {
+    #[inline]
+    fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Async::<Conn>::poll_readable(self, cx)
+    }
+    #[inline]
+    fn poll_writable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Async::<Conn>::poll_writable(self, cx)
+    }
+    #[inline]
+    fn raw_fd(&mut self) -> RawFd {
+        self.as_raw_fd()
+    }
+}
+
+#[cfg(feature = "tokio-support")]
+impl ConnSource for tokio::net::TcpStream {
+    #[inline]
+    fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_read_ready(cx)
+    }
+    #[inline]
+    fn poll_writable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_write_ready(cx)
+    }
+    #[inline]
+    fn raw_fd(&mut self) -> RawFd {
+        self.as_raw_fd()
+    }
+}
+
+#[cfg(feature = "tokio-support")]
+impl ConnSource for tokio::net::UnixStream {
+    #[inline]
+    fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_read_ready(cx)
+    }
+    #[inline]
+    fn poll_writable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_write_ready(cx)
+    }
+    #[inline]
+    fn raw_fd(&mut self) -> RawFd {
+        self.as_raw_fd()
     }
 }

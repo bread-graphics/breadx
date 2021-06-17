@@ -3,13 +3,12 @@
 use super::{SendRequestRawFuture, WaitFuture};
 use crate::{
     auto::xproto::GetInputFocusRequest,
-    display::{output, AsyncDisplay, RequestInfo},
+    display::{AsyncDisplay, RequestInfo},
     log_debug, log_trace,
     util::take_mut,
 };
 use core::{
     future::Future,
-    mem,
     pin::Pin,
     task::{Context, Poll},
 };

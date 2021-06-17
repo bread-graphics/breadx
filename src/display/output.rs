@@ -8,9 +8,6 @@ use crate::{auto::xproto::QueryExtensionRequest, log_debug, log_trace};
 use alloc::borrow::Cow;
 use core::mem;
 
-#[cfg(feature = "async")]
-use super::AsyncConnection;
-
 #[inline]
 pub(crate) fn preprocess_request<D: DisplayBase + ?Sized>(
     display: &mut D,
