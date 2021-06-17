@@ -329,6 +329,11 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
     }
 
     #[inline]
+    fn has_pending_event(&self) -> bool {
+        !self.event_queue.is_empty()
+    }
+
+    #[inline]
     fn push_event(&mut self, event: Event) {
         self.event_queue.push_back(event)
     }

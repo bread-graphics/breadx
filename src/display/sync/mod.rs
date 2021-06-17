@@ -185,6 +185,11 @@ impl<Conn> DisplayBase for SyncDisplay<Conn> {
     }
 
     #[inline]
+    fn has_pending_event(&self) -> bool {
+        !self.event_queue.is_empty()
+    }
+
+    #[inline]
     fn push_event(&mut self, event: Event) {
         self.event_queue.push(event).ok();
     }
@@ -407,6 +412,11 @@ impl<'a, Conn> DisplayBase for &'a SyncDisplay<Conn> {
     #[inline]
     fn next_request_number(&mut self) -> u64 {
         self.request_number.fetch_add(1, Ordering::SeqCst)
+    }
+
+    #[inline]
+    fn has_pending_event(&self) -> bool {
+        !self.event_queue.is_empty()
     }
 
     #[inline]
