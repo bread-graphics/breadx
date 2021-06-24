@@ -151,6 +151,15 @@ impl fmt::Debug for ErrorCode {
 }
 
 #[cfg(feature = "std")]
-impl StdError for BreadError {}
+impl StdError for BreadError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            BreadError::StaticErr(e) => Some(e),
+            BreadError::Io(i) => Some(&*i),
+            _ => None,
+        }
+    }
+}
 
 pub type Result<Success = ()> = core::result::Result<Success, BreadError>;
