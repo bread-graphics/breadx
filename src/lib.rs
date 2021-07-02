@@ -192,8 +192,8 @@ pub trait Request: auto::AsByteSequence {
 }
 
 pub use auto::xproto::{
-    Arc, Atom, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap, Rectangle,
-    Segment, Setup, VisualClass, Visualid, Visualtype, Window, WindowClass,
+    Arc, Atom, Colormap, ColormapAlloc, Drawable, EventMask, Gcontext, ImageFormat, Pixmap,
+    Rectangle, Segment, Setup, VisualClass, Visualid, Visualtype, Window, WindowClass,
 };
 
 //#[path = "../tutorials/mod.rs"]

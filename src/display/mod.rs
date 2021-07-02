@@ -59,7 +59,10 @@ mod connection;
 
 pub mod traits;
 // "traits" contains some important types.
-pub use traits::{rgb, GcParameters, KeyboardMapping, WindowParameters};
+pub use traits::{
+    rgb, ColorAllocation, ConfigureWindowParameters, GcParameters, KeyboardMapping,
+    WindowParameters,
+};
 
 pub use basic::*;
 pub use cell::*;
