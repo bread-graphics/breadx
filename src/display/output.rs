@@ -158,6 +158,12 @@ pub(crate) fn get_ext_opcode<D: Display + ?Sized, C: Connection + ?Sized>(
     log_debug!("Found opcode for extension: {}", &repl.major_opcode);
     let key = str_to_key(extension);
     display.set_extension_opcode(key, repl.major_opcode);
+    log::info!(
+        "Loaded extension \"{}\" with first event {} and first error {}",
+        extension,
+        repl.first_event,
+        repl.first_error
+    );
     // TODO: first_event, first_error
     Ok(repl.major_opcode)
 }

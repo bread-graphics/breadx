@@ -7,14 +7,16 @@ use core::{cmp::Ordering, iter::FusedIterator};
 
 #[inline]
 pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> Vec<Trapezoid> {
-    edges_to_trapezoids(PolyEdges {
+    let traps = edges_to_trapezoids(PolyEdges {
         inner: Some(i.into_iter()),
         firstx: 0,
         firsty: 0,
         prevx: 0,
         prevy: 0,
         is_first_point: true,
-    })
+    });
+    log::debug!("Tesselated shape into {} trapezoids", traps.len());
+    traps
 }
 
 #[derive(Copy, Clone)]
@@ -158,9 +160,11 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
     let mut y = edges[0].y1;
     let mut next_y;
 
-    while !active.is_empty() || inactive < edges_len {
-        while inactive < edges_len {
-            let e = edges[inactive];
+    while !active.is_empty() || !edges.is_empty() {
+        log::trace!("Tesselation loop, y = {}", y);
+
+        while !edges.is_empty() {
+            let e = edges.remove(0);
             if e.y1 > y {
                 break;
             }
@@ -197,8 +201,10 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
             .min()
             .unwrap();
 
-        if inactive < edges_len && edges[inactive].y1 < next_y {
-            next_y = edges[inactive].y1;
+        if let Some(e) = edges.get(0) {
+            if e.y1 < next_y {
+                next_y = edges[inactive].y1;
+            }
         }
 
         // generate some trapezoids
@@ -221,7 +227,7 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
 
         y = next_y;
 
-        active.retain(|e| e.y2 <= y);
+        active.retain(|e| e.y2 > y);
     }
 
     trapezoids

@@ -621,6 +621,8 @@ impl<Dpy: Display + ?Sized> RenderDisplay<Dpy> {
         properties: PictureParameters,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
+        log::info!("Creating an XRender picture: {:?}", pic);
+
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
         self.send_request(cpr)?;
         Ok(pic)
