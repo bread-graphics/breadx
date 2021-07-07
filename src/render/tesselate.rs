@@ -227,7 +227,7 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Vec<Trapezoid> {
 
         y = next_y;
 
-        active.retain(|e| e.y2 > y);
+        active.retain(|e| e.y2 <= y);
     }
 
     trapezoids
