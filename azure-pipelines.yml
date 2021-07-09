@@ -58,14 +58,12 @@ jobs:
 #    - script: python ci/prepare_vm.py
 #      displayName: "Installing Required Packages"
 #      condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
-    - bash: cargo build
+    - bash: cargo test
       displayName: "Basic Test"
     - bash: cargo build --no-default-features
       displayName: "No-Std Build"
     - bash: cargo build --features async
-      displayName: "Async Test"
-    - bash: cargo build --all-features
-      displayName: "All Features Build"
+      displayName: "Async Build"
     - bash: cargo build --examples --all-features
       displayName: "Build Examples"
     - bash: cargo test --all-features

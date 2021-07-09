@@ -321,7 +321,7 @@ impl<'a> XConnection<'a> {
 
     /// Parse an `XConnection` from a name.
     pub fn parse(name: Option<Cow<'a, str>>) -> crate::Result<XConnection> {
-        let name = match name {
+        let mut name = match name {
             Some(name) => name,
             None => Cow::Owned(
                 env::var("DISPLAY").map_err(|_| crate::BreadError::UnableToParseConnection)?,
@@ -329,6 +329,8 @@ impl<'a> XConnection<'a> {
         };
 
         // check if it is a socket first
+        // we don't do this if we are testing, since tests can't be reliant on the host system
+        #[cfg(not(test))]
         let mut name = match Self::parse_from_socket(name) {
             Ok(sock) => return Ok(sock),
             Err(name) => name,

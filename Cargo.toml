@@ -32,6 +32,7 @@ tokio-util = { version = "0.6", features = ["compat"], optional = true }
 nix = "0.19.0"
 
 [dev-dependencies]
+approx = "0.5"
 easy-parallel = "3.1.0"
 env_logger = { version = "0.8.1", default-features = false, features = ["atty", "termcolor"] }
 fastrand = "1.4.0"

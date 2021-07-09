@@ -81,7 +81,7 @@ fn main() -> Result {
     )?;
 
     // create an arbitrary polygon and convert it to trapezoids
-    let t: Vec<Triangle> = tesselate_shape(vec![
+    let t: Vec<_> = tesselate_shape(vec![
         Pointfix {
             x: 250 << 16,
             y: 150 << 16,

@@ -14,6 +14,7 @@ use core::{
 #[inline]
 pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<Item = Triangle> {
     // Note: it is more efficient to ignore horizontal edges
+    // Note 2: The "trapezoids" request is given as deprecated, so we use triangles instead
     edges_to_trapezoids(
         PointsToEdges {
             inner: i.into_iter().fuse(),
@@ -27,6 +28,14 @@ pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<
 
 #[inline]
 fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
+    /// Tell if two `Fixed` values are equal within a margin of error.
+    #[inline]
+    fn eq_within_margin_of_error(lhs: Fixed, rhs: Fixed) -> bool {
+        const MARGIN_OF_ERROR: Fixed = 0xFF;
+
+        (lhs - rhs).abs() <= MARGIN_OF_ERROR
+    }
+
     let Trapezoid {
         top,
         bottom,
@@ -44,27 +53,25 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
 
     // figure out x and y intercept for the two lines
     let calc_intercept = move |x1, y1, x2, y2| {
-        // calculate inverse slope
-        let (x1, y1, x2, y2) = (
-            fixed_to_double(x1),
-            fixed_to_double(y1),
-            fixed_to_double(x2),
-            fixed_to_double(y2),
-        );
-        let inverse_slope = (x2 - x1) / (y2 - y1);
-
-        // calculate x at top and bottom
-        let top_x = inverse_slope * fixed_to_double(top);
-        let bottom_x = inverse_slope * fixed_to_double(bottom);
-
-        (double_to_fixed(top_x), double_to_fixed(bottom_x))
+        (
+            x_intercept_for_y(x1, y1, x2, y2, top),
+            x_intercept_for_y(x1, y2, x2, y2, bottom),
+        )
     };
 
     let (left_top_x, left_bottom_x) = calc_intercept(lx1, ly1, lx2, ly2);
     let (right_top_x, right_bottom_x) = calc_intercept(rx1, ry1, rx2, ry2);
 
+    let top_eq = eq_within_margin_of_error(left_top_x, right_top_x);
+    let bottom_eq = eq_within_margin_of_error(left_bottom_x, right_bottom_x);
+
+    if top_eq && bottom_eq {
+        // we just have a straight line. no need to render anything.
+        return Twice::empty();
+    }
+
     // if two of the x intercepts are the same, this is a triangle
-    if left_top_x == right_top_x {
+    if top_eq {
         return Twice::once(Triangle {
             p1: Pointfix {
                 x: left_top_x,
@@ -81,7 +88,7 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
         });
     }
 
-    if left_bottom_x == right_bottom_x {
+    if bottom_eq {
         return Twice::once(Triangle {
             p1: Pointfix {
                 x: left_top_x,
@@ -139,6 +146,14 @@ struct Twice<T> {
 
 impl<T> Twice<T> {
     #[inline]
+    fn empty() -> Twice<T> {
+        Twice {
+            first: None,
+            last: None,
+        }
+    }
+
+    #[inline]
     fn once(t: T) -> Twice<T> {
         Twice {
             first: Some(t),
@@ -170,6 +185,21 @@ impl<T> Iterator for Twice<T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let sz = self.first.is_none() as usize + self.last.is_none() as usize;
         (sz, Some(sz))
+    }
+
+    #[inline]
+    fn fold<B, F: FnMut(B, T) -> B>(mut self, init: B, mut f: F) -> B {
+        let mut accum = init;
+
+        if let Some(first) = self.first.take() {
+            accum = f(accum, first);
+        }
+
+        if let Some(last) = self.last.take() {
+            accum = f(accum, last);
+        }
+
+        accum
     }
 }
 
@@ -457,10 +487,7 @@ impl Edge {
 
     #[inline]
     fn compute_x(&mut self, y: Fixed) {
-        let dx = self.x2 - self.x1;
-        let ex = (y - self.y1) as f64 * (dx as f64);
-        let dy = self.y2 - self.y1;
-        self.current_x = self.x1 + ((ex / dy as f64) as Fixed);
+        self.current_x = x_intercept_for_y(self.x1, self.y1, self.x2, self.y2, y);
     }
 
     #[inline]
@@ -471,4 +498,85 @@ impl Edge {
         let b2 = other.x_intercept();
         double_to_fixed((b2 - b1) / (m2 - m1))
     }
+}
+
+/// Get the intercept of a line containing the points (`x1`, `y1`) and (`x2`, `y2`) and the horizontal line at
+/// `y`.
+#[inline]
+fn x_intercept_for_y(x1: Fixed, y1: Fixed, x2: Fixed, y2: Fixed, y: Fixed) -> Fixed {
+    let dx = x2 - x1;
+    let ex = (y - y1) as f64 * (dx as f64);
+    let dy = y2 - y1;
+    x1 + ((ex / dy as f64) as Fixed)
+}
+
+#[test]
+fn test_intercept_function() {
+    assert_eq!(
+        0,
+        x_intercept_for_y(-1 << 16, -1 << 16, 1 << 16, 1 << 16, 0)
+    );
+    assert_eq!(
+        1 << 16,
+        x_intercept_for_y(-1 << 16, -1 << 16, 1 << 16, 1 << 16, 1 << 16)
+    );
+    assert_eq!(
+        3 << 16,
+        x_intercept_for_y(
+            -1 << 16, 
+            -1 << 16,
+            1 << 16,
+            1 << 16,
+            3 << 16
+        )
+    );
+    assert_eq!(2 << 16, x_intercept_for_y(0, 6 << 16, 1 << 16, 3 << 16, 0));
+}
+
+#[test]
+fn rectangle_test() {
+    // the area of the resulting triangles should be equal to the area of the rectangle
+    let left = 50i32 << 16;
+    let right = 250i32 << 16;
+    let top = 100i32 << 16;
+    let bottom = 200i32 << 16;
+
+    let area = fixed_to_double(right - left) * fixed_to_double(bottom - top);
+
+    let triangles: Vec<_> = tesselate_shape(vec![
+        Pointfix { x: left, y: top },
+        Pointfix { x: right, y: top },
+        Pointfix {
+            x: right,
+            y: bottom,
+        },
+        Pointfix { x: left, y: bottom },
+    ])
+    .collect();
+
+    assert!(!triangles.is_empty());
+
+    approx::assert_abs_diff_eq!(
+        triangles.into_iter().map(area_of_triangle).sum::<f64>(),
+        area
+    );
+}
+
+/// Helper function to get the area of a triangle.
+#[cfg(test)]
+fn area_of_triangle(triangle: Triangle) -> f64 {
+    let Triangle {
+        p1: Pointfix { x: x1, y: y1 },
+        p2: Pointfix { x: x2, y: y2 },
+        p3: Pointfix { x: x3, y: y3 },
+    } = triangle;
+
+    let y1 = fixed_to_double(y1);
+    let y2 = fixed_to_double(y2);
+    let y3 = fixed_to_double(y3);
+    let a = fixed_to_double(x1) * (y2 - y3);
+    let b = fixed_to_double(x2) * (y3 - y1);
+    let c = fixed_to_double(x3) * (y1 - y2);
+
+    (a + b + c).abs() / 2.0
 }
