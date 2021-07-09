@@ -3,7 +3,6 @@
 #[cfg(feature = "render")]
 use breadx::{
     auto::xproto::{ExposeEvent, Rectangle},
-    keyboard::KeyboardState,
     prelude::*,
     render::{
         double_to_fixed, tesselate_shape, Color, Fixed, Linefix, PictOp, Picture, Pointfix,
@@ -33,8 +32,6 @@ fn main() -> Result {
 
     let wdw = conn.intern_atom_immediate("WM_DELETE_WINDOW", false)?;
     win.set_wm_protocols(&mut conn, &[wdw])?;
-
-    let mut keys = KeyboardState::new(&mut conn)?;
 
     let mut conn = RenderDisplay::new(conn, 0, 10).map_err(|(_, e)| e)?;
 
@@ -103,7 +100,9 @@ fn main() -> Result {
             x: 50 << 16,
             y: 100 << 16,
         },
-    ]);
+    ]).collect();
+
+    println!("Trapezoids: {:#?}", &t);
 
     loop {
         match conn.wait_for_event()? {
