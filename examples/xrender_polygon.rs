@@ -6,7 +6,7 @@ use breadx::{
     prelude::*,
     render::{
         double_to_fixed, tesselate_shape, Color, Fixed, Linefix, PictOp, Picture, Pointfix,
-        RenderDisplay, Trapezoid,
+        RenderDisplay, Trapezoid, Triangle,
     },
     DisplayConnection, Event, EventMask, Result,
 };
@@ -15,13 +15,15 @@ use breadx::{
 fn main() -> Result {
     env_logger::init();
 
+    let width = 600i32;
+    let height = 480i32;
     let mut conn = DisplayConnection::create(None, None)?;
     let win = conn.create_simple_window(
         conn.default_root(),
         0,
         0,
-        600,
-        480,
+        width as u16,
+        height as u16,
         0,
         conn.default_black_pixel(),
         conn.default_white_pixel(),
@@ -71,38 +73,39 @@ fn main() -> Result {
     let grad = conn.create_linear_gradient(
         Pointfix { x: 0, y: 0 },
         Pointfix {
-            x: 600 << 16,
-            y: 480 << 16,
+            x: width << 16,
+            y: height << 16,
         },
         stops,
         colors,
     )?;
 
     // create an arbitrary polygon and convert it to trapezoids
-    let t: Vec<Trapezoid> = tesselate_shape(vec![
+    let t: Vec<Triangle> = tesselate_shape(vec![
         Pointfix {
-            x: 150 << 16,
-            y: 50 << 16,
+            x: 250 << 16,
+            y: 150 << 16,
+        },
+        Pointfix {
+            x: 350 << 16,
+            y: 200 << 16,
+        },
+        Pointfix {
+            x: 300 << 16,
+            y: 250 << 16,
         },
         Pointfix {
             x: 250 << 16,
-            y: 100 << 16,
-        },
-        Pointfix {
-            x: 200 << 16,
-            y: 150 << 16,
+            y: 250 << 16,
         },
         Pointfix {
             x: 150 << 16,
-            y: 150 << 16,
+            y: 200 << 16,
         },
-        Pointfix {
-            x: 50 << 16,
-            y: 100 << 16,
-        },
-    ]).collect();
+    ])
+    .collect();
 
-    println!("Trapezoids: {:#?}", &t);
+    println!("Triangles: {:#?}", &t);
 
     loop {
         match conn.wait_for_event()? {
@@ -114,7 +117,7 @@ fn main() -> Result {
             Event::Expose(_) => {
                 pic.fill_rectangles(
                     &mut conn,
-                    PictOp::Src,
+                    PictOp::Over,
                     Color {
                         red: 0xFFFF,
                         green: 0xFFFF,
@@ -124,12 +127,12 @@ fn main() -> Result {
                     [Rectangle {
                         x: 0,
                         y: 0,
-                        width: 600,
-                        height: 480,
+                        width: width as _,
+                        height: height as _,
                     }]
                     .as_ref(),
                 )?;
-                pic.trapezoids(&mut conn, PictOp::Over, grad, window_format, 0, 0, &*t)?;
+                pic.triangles(&mut conn, PictOp::Over, grad, window_format, 0, 0, &*t)?;
             }
             _ => {}
         }

@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::{double_to_fixed, fixed_to_double};
-use crate::auto::render::{Fixed, Linefix, Pointfix, Trapezoid};
+use crate::auto::render::{Fixed, Linefix, Pointfix, Trapezoid, Triangle};
 use alloc::{collections::VecDeque, vec, vec::Vec};
 use core::{
     cmp::Ordering,
@@ -9,10 +9,10 @@ use core::{
     mem,
 };
 
-/// Tesselate a shape into a set of trapezoids. This function takes an iterator of points that represent a closed
-/// shape, and returns a semi-lazy iterator over the trapezoids.
+/// Tesselate a shape into a set of triangles. This function takes an iterator of points that represent a closed
+/// shape, and returns a semi-lazy iterator over the triangles.
 #[inline]
-pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<Item = Trapezoid> {
+pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<Item = Triangle> {
     // Note: it is more efficient to ignore horizontal edges
     edges_to_trapezoids(
         PointsToEdges {
@@ -22,7 +22,159 @@ pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<
         }
         .filter(|e| e.y1 != e.y2),
     )
+    .flat_map(trapezoid_to_triangles)
 }
+
+#[inline]
+fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
+    let Trapezoid {
+        top,
+        bottom,
+        left:
+            Linefix {
+                p1: Pointfix { x: lx1, y: ly1 },
+                p2: Pointfix { x: lx2, y: ly2 },
+            },
+        right:
+            Linefix {
+                p1: Pointfix { x: rx1, y: ry1 },
+                p2: Pointfix { x: rx2, y: ry2 },
+            },
+    } = t;
+
+    // figure out x and y intercept for the two lines
+    let calc_intercept = move |x1, y1, x2, y2| {
+        // calculate inverse slope
+        let (x1, y1, x2, y2) = (
+            fixed_to_double(x1),
+            fixed_to_double(y1),
+            fixed_to_double(x2),
+            fixed_to_double(y2),
+        );
+        let inverse_slope = (x2 - x1) / (y2 - y1);
+
+        // calculate x at top and bottom
+        let top_x = inverse_slope * fixed_to_double(top);
+        let bottom_x = inverse_slope * fixed_to_double(bottom);
+
+        (double_to_fixed(top_x), double_to_fixed(bottom_x))
+    };
+
+    let (left_top_x, left_bottom_x) = calc_intercept(lx1, ly1, lx2, ly2);
+    let (right_top_x, right_bottom_x) = calc_intercept(rx1, ry1, rx2, ry2);
+
+    // if two of the x intercepts are the same, this is a triangle
+    if left_top_x == right_top_x {
+        return Twice::once(Triangle {
+            p1: Pointfix {
+                x: left_top_x,
+                y: top,
+            },
+            p2: Pointfix {
+                x: right_bottom_x,
+                y: bottom,
+            },
+            p3: Pointfix {
+                x: left_bottom_x,
+                y: bottom,
+            },
+        });
+    }
+
+    if left_bottom_x == right_bottom_x {
+        return Twice::once(Triangle {
+            p1: Pointfix {
+                x: left_top_x,
+                y: top,
+            },
+            p2: Pointfix {
+                x: right_top_x,
+                y: top,
+            },
+            p3: Pointfix {
+                x: left_bottom_x,
+                y: bottom,
+            },
+        });
+    }
+
+    // otherwise, we need two triangles to express the trapezoid
+    Twice::twice(
+        Triangle {
+            p1: Pointfix {
+                x: left_top_x,
+                y: top,
+            },
+            p2: Pointfix {
+                x: right_top_x,
+                y: top,
+            },
+            p3: Pointfix {
+                x: left_bottom_x,
+                y: bottom,
+            },
+        },
+        Triangle {
+            p1: Pointfix {
+                x: right_top_x,
+                y: top,
+            },
+            p2: Pointfix {
+                x: left_bottom_x,
+                y: bottom,
+            },
+            p3: Pointfix {
+                x: right_bottom_x,
+                y: bottom,
+            },
+        },
+    )
+}
+
+/// One or two elements in an iterator.
+struct Twice<T> {
+    first: Option<T>,
+    last: Option<T>,
+}
+
+impl<T> Twice<T> {
+    #[inline]
+    fn once(t: T) -> Twice<T> {
+        Twice {
+            first: Some(t),
+            last: None,
+        }
+    }
+
+    #[inline]
+    fn twice(t1: T, t2: T) -> Twice<T> {
+        Twice {
+            first: Some(t1),
+            last: Some(t2),
+        }
+    }
+}
+
+impl<T> Iterator for Twice<T> {
+    type Item = T;
+
+    #[inline]
+    fn next(&mut self) -> Option<T> {
+        match self.first.take() {
+            Some(first) => Some(first),
+            None => self.last.take(),
+        }
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let sz = self.first.is_none() as usize + self.last.is_none() as usize;
+        (sz, Some(sz))
+    }
+}
+
+impl<T> FusedIterator for Twice<T> {}
+impl<T> ExactSizeIterator for Twice<T> {}
 
 #[inline]
 fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Trapezoids {

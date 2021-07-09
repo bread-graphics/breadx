@@ -11,7 +11,7 @@ pub use picture::*;
 pub use tesselate::*;
 
 pub use crate::auto::render::{
-    Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid,
+    Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid, Triangle,
 };
 
 impl Copy for Pointfix {}

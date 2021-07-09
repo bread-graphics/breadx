@@ -5,7 +5,7 @@ use crate::{
         render::{
             ChangePictureRequest, Color, CompositeRequest, Cp, CreatePictureRequest,
             FillRectanglesRequest, FreePictureRequest, PictOp, Pictformat, Picture, PolyEdge,
-            PolyMode, Repeat, Trapezoid, TrapezoidsRequest,
+            PolyMode, Repeat, Trapezoid, TrapezoidsRequest, Triangle, TrianglesRequest,
         },
         xproto::{Atom, Pixmap, Rectangle, SubwindowMode},
     },
@@ -253,6 +253,30 @@ impl Picture {
         })
     }
 
+    /// Draw a set of triangles.
+    #[inline]
+    pub fn triangles<'a, Dpy: Display + ?Sized, Trgs: Into<Cow<'a, [Triangle]>>>(
+        self,
+        display: &mut Dpy,
+        op: PictOp,
+        src: Picture,
+        mask_format: Pictformat,
+        srcx: i16,
+        srcy: i16,
+        triangles: Trgs,
+    ) -> crate::Result {
+        display.exchange_request(TrianglesRequest {
+            src,
+            dst: self,
+            op,
+            mask_format,
+            src_x: srcx,
+            src_y: srcy,
+            triangles: triangles.into(),
+            ..Default::default()
+        })
+    }
+
     /// Draw a set of trapezoids, async redox.
     #[cfg(feature = "async")]
     #[inline]
@@ -279,6 +303,37 @@ impl Picture {
                 src_x: srcx,
                 src_y: srcy,
                 traps: trapezoids.into(),
+                ..Default::default()
+            })
+            .await
+    }
+
+    /// Draw a set of triangles, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn triangles_async<
+        'a,
+        Dpy: AsyncDisplay + ?Sized,
+        Trgs: Into<Cow<'a, [Triangle]>>,
+    >(
+        self,
+        display: &mut Dpy,
+        op: PictOp,
+        src: Picture,
+        mask_format: Pictformat,
+        srcx: i16,
+        srcy: i16,
+        triangles: Trgs,
+    ) -> crate::Result {
+        display
+            .exchange_request_async(TrianglesRequest {
+                src,
+                dst: self,
+                op,
+                mask_format,
+                src_x: srcx,
+                src_y: srcy,
+                triangles: triangles.into(),
                 ..Default::default()
             })
             .await
