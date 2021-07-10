@@ -1,7 +1,10 @@
 // MIT/Apache2 License
 
 use super::{double_to_fixed, fixed_to_double};
-use crate::auto::render::{Fixed, Linefix, Pointfix, Trapezoid, Triangle};
+use crate::{
+    auto::render::{Fixed, Linefix, Pointfix, Trapezoid, Triangle},
+    log_trace,
+};
 use alloc::{collections::VecDeque, vec, vec::Vec};
 use core::{
     cmp::Ordering,
@@ -23,6 +26,7 @@ pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<
         }
         .filter(|e| e.y1 != e.y2),
     )
+    .inspect(|t| log_trace!("Generated trapezoid: {:#?}", t))
     .flat_map(trapezoid_to_triangles)
 }
 
@@ -52,26 +56,39 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
     } = t;
 
     // figure out x and y intercept for the two lines
-    let calc_intercept = move |x1, y1, x2, y2| {
-        (
-            x_intercept_for_y(x1, y1, x2, y2, top),
-            x_intercept_for_y(x1, y2, x2, y2, bottom),
-        )
-    };
+    let (left_top_x, left_bottom_x) = (
+        x_intercept_for_y(lx1, ly1, lx2, ly2, top),
+        x_intercept_for_y(lx1, ly1, lx2, ly2, bottom),
+    );
+    let (right_top_x, right_bottom_x) = (
+        x_intercept_for_y(rx1, ry1, rx2, ry2, top),
+        x_intercept_for_y(rx1, ry1, rx2, ry2, bottom),
+    );
 
-    let (left_top_x, left_bottom_x) = calc_intercept(lx1, ly1, lx2, ly2);
-    let (right_top_x, right_bottom_x) = calc_intercept(rx1, ry1, rx2, ry2);
+    log_trace!(
+        "left_top_x: {}, left_bottom_x: {}",
+        left_top_x,
+        left_bottom_x
+    );
+    log_trace!(
+        "right_top_x: {}, right_bottom_x: {}",
+        right_top_x,
+        right_bottom_x
+    );
 
     let top_eq = eq_within_margin_of_error(left_top_x, right_top_x);
     let bottom_eq = eq_within_margin_of_error(left_bottom_x, right_bottom_x);
 
     if top_eq && bottom_eq {
         // we just have a straight line. no need to render anything.
+        log_trace!("Found a straight line");
         return Twice::empty();
     }
 
     // if two of the x intercepts are the same, this is a triangle
     if top_eq {
+        log_trace!("Found a top-facing triangle");
+
         return Twice::once(Triangle {
             p1: Pointfix {
                 x: left_top_x,
@@ -89,6 +106,8 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
     }
 
     if bottom_eq {
+        log_trace!("Found a bottom-facing triangle");
+
         return Twice::once(Triangle {
             p1: Pointfix {
                 x: left_top_x,
@@ -106,6 +125,7 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
     }
 
     // otherwise, we need two triangles to express the trapezoid
+    log_trace!("Found a trapezoid that needs to be divided into two triangles");
     Twice::twice(
         Triangle {
             p1: Pointfix {
@@ -504,6 +524,14 @@ impl Edge {
 /// `y`.
 #[inline]
 fn x_intercept_for_y(x1: Fixed, y1: Fixed, x2: Fixed, y2: Fixed, y: Fixed) -> Fixed {
+    // fast paths
+    if y1 == y {
+        return x1;
+    }
+    if y2 == y {
+        return x2;
+    }
+
     let dx = x2 - x1;
     let ex = (y - y1) as f64 * (dx as f64);
     let dy = y2 - y1;
@@ -522,13 +550,7 @@ fn test_intercept_function() {
     );
     assert_eq!(
         3 << 16,
-        x_intercept_for_y(
-            -1 << 16, 
-            -1 << 16,
-            1 << 16,
-            1 << 16,
-            3 << 16
-        )
+        x_intercept_for_y(-1 << 16, -1 << 16, 1 << 16, 1 << 16, 3 << 16)
     );
     assert_eq!(2 << 16, x_intercept_for_y(0, 6 << 16, 1 << 16, 3 << 16, 0));
 }
