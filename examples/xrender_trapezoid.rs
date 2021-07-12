@@ -2,11 +2,15 @@
 
 #[cfg(feature = "render")]
 use breadx::{
-    auto::xproto::{ExposeEvent, Rectangle},
+    auto::{
+        render::Repeat,
+        xproto::{ExposeEvent, Rectangle},
+    },
     keyboard::KeyboardState,
     prelude::*,
     render::{
-        double_to_fixed, Color, Fixed, Linefix, PictOp, Picture, Pointfix, RenderDisplay, Trapezoid,
+        double_to_fixed, Color, Fixed, Linefix, PictOp, Picture, PictureParameters, Pointfix,
+        RenderDisplay, Trapezoid,
     },
     DisplayConnection, Event, EventMask, Result,
 };
@@ -97,14 +101,32 @@ fn main() -> Result {
             alpha: 0xFFFF,
         },
     ];
-    let grad = conn.create_linear_gradient(
-        Pointfix { x: 0, y: 0 },
-        Pointfix {
-            x: 600 << 16,
-            y: 480 << 16,
+    let geom = win.geometry_immediate(&mut conn)?;
+    let solid_p = conn.create_pixmap(win, 1, 1, geom.depth)?;
+    let solid = conn.create_picture(
+        solid_p,
+        window_format,
+        PictureParameters {
+            repeat: Some(Repeat::Normal),
+            ..Default::default()
         },
-        stops,
-        colors,
+    )?;
+    solid.fill_rectangles(
+        &mut conn,
+        PictOp::Over,
+        Color {
+            red: 0,
+            green: 0,
+            blue: 0,
+            alpha: 0xFFFF,
+        },
+        [Rectangle {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        }]
+        .as_ref(),
     )?;
 
     loop {
@@ -135,7 +157,7 @@ fn main() -> Result {
                 pic.trapezoids(
                     &mut conn,
                     PictOp::Over,
-                    grad,
+                    solid,
                     window_format,
                     0,
                     0,

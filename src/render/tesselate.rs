@@ -147,11 +147,11 @@ fn trapezoid_to_triangles(t: Trapezoid) -> Twice<Triangle> {
                 y: top,
             },
             p2: Pointfix {
-                x: left_bottom_x,
+                x: right_bottom_x,
                 y: bottom,
             },
             p3: Pointfix {
-                x: right_bottom_x,
+                x: left_bottom_x,
                 y: bottom,
             },
         },

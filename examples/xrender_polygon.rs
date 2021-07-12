@@ -2,12 +2,16 @@
 
 #[cfg(feature = "render")]
 use breadx::{
-    auto::xproto::{ExposeEvent, Rectangle},
+    auto::{
+        render::Repeat,
+        xproto::{ExposeEvent, Rectangle},
+    },
     keyboard::KeyboardState,
     prelude::*,
     render::{
-        fixed_to_double, double_to_fixed, tesselate_shape, Color, Fixed, Linefix, PictOp, Picture, Pointfix,
-        RenderDisplay, Trapezoid, Triangle, Pictformat,
+        double_to_fixed, fixed_to_double, tesselate_shape, Color, Fixed, Linefix, PictOp,
+        Pictformat, Picture, PictureParameters, Pointfix, RenderDisplay, Trapezoid, Triangle,
+        StandardFormat,
     },
     DisplayConnection, Event, EventMask, Result,
 };
@@ -16,26 +20,29 @@ use breadx::{
 use gluten_keyboard::Key;
 
 #[cfg(feature = "render")]
-use std::io::{prelude::*, self, stdout};
+use std::{
+    array::IntoIter,
+    io::{self, prelude::*, stdout},
+};
 
 #[cfg(feature = "render")]
 fn main() -> Result {
     env_logger::init();
 
-    let width = 600i32;
-    let height = 480i32;
+    let width = 600u16;
+    let height = 480u16;
     let mut conn = DisplayConnection::create(None, None)?;
     let win = conn.create_simple_window(
         conn.default_root(),
         0,
         0,
-        width as u16,
-        height as u16,
+        width,
+        height,
         0,
         conn.default_black_pixel(),
         conn.default_white_pixel(),
     )?;
-    win.set_title(&mut conn, "XRender Trapezoids")?;
+    win.set_title(&mut conn, "XRender Triangles")?;
     win.map(&mut conn)?;
     win.set_event_mask(&mut conn, EventMask::EXPOSURE | EventMask::KEY_PRESS)?;
 
@@ -52,6 +59,39 @@ fn main() -> Result {
     let window_format = conn.find_visual_format(visual).unwrap();
 
     let pic = conn.create_picture(win, window_format, Default::default())?;
+
+    let a8_format = conn.find_standard_format(StandardFormat::A8).unwrap();
+
+    // create a mask with the same dimensions as the window
+    let mask_pixmap = conn.create_pixmap(win, width, height, 8)?;
+    let mask = conn.create_picture(mask_pixmap, a8_format, Default::default())?;
+
+    // create a solid pixmap that only contains the color white
+    let solid_pixmap = conn.create_pixmap(win, 1, 1, 8)?;
+    let solid = conn.create_picture(
+        solid_pixmap,
+        a8_format,
+        PictureParameters {
+            repeat: Some(Repeat::Normal),
+            ..Default::default()
+        },
+    )?;
+    solid.fill_rectangles(
+        &mut conn,
+        PictOp::Src,
+        Color {
+            red: 0xFFFF,
+            green: 0xFFFF,
+            blue: 0xFFFF,
+            alpha: 0xFFFF,
+        },
+        vec![Rectangle {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        }],
+    )?;
 
     // create a brush
     let stops: &[Fixed] = &[
@@ -82,8 +122,8 @@ fn main() -> Result {
     let grad = conn.create_linear_gradient(
         Pointfix { x: 0, y: 0 },
         Pointfix {
-            x: width << 16,
-            y: height << 16,
+            x: (width as i32) << 16,
+            y: (height as i32) << 16,
         },
         stops,
         colors,
@@ -96,19 +136,43 @@ fn main() -> Result {
             y: double_to_fixed(100.0),
         },
         Pointfix {
-            x: double_to_fixed(200.0),
+            x: double_to_fixed(100.0),
             y: double_to_fixed(150.0),
         },
         Pointfix {
             x: double_to_fixed(150.0),
-            y: double_to_fixed(200.0),
+            y: double_to_fixed(250.0),
+        },
+        Pointfix {
+            x: double_to_fixed(200.0),
+            y: double_to_fixed(250.0),
+        },
+        Pointfix {
+            x: double_to_fixed(200.0),
+            y: double_to_fixed(150.0),
+        },
+        Pointfix {
+            x: double_to_fixed(250.0),
+            y: double_to_fixed(100.0),
+        },
+        Pointfix {
+            x: double_to_fixed(300.0),
+            y: double_to_fixed(150.0),
+        },
+        Pointfix {
+            x: double_to_fixed(300.0),
+            y: double_to_fixed(300.0),
+        },
+        Pointfix {
+            x: double_to_fixed(150.0),
+            y: double_to_fixed(450.0),
         },
         Pointfix {
             x: double_to_fixed(50.0),
-            y: double_to_fixed(200.0),
+            y: double_to_fixed(250.0),
         },
         Pointfix {
-            x: double_to_fixed(0.0),
+            x: double_to_fixed(50.0),
             y: double_to_fixed(150.0),
         },
     ])
@@ -126,20 +190,39 @@ fn main() -> Result {
                 }
             }
             Event::Expose(_) => {
+                // fill the window with white, and the mask with alpha
                 pic.fill_rectangles(
                     &mut conn,
                     PictOp::Over,
                     Color {
                         red: 0xFFFF,
                         green: 0xFFFF,
-                        blue: 0xFFFF,
+                        blue: 0xEEEE,
                         alpha: 0xFFFF,
                     },
                     [Rectangle {
                         x: 0,
                         y: 0,
-                        width: width as _,
-                        height: height as _,
+                        width,
+                        height,
+                    }]
+                    .as_ref(),
+                )?;
+
+                mask.fill_rectangles(
+                    &mut conn,
+                    PictOp::Over,
+                    Color {
+                        red: 0x0000,
+                        green: 0x0000,
+                        blue: 0x0000,
+                        alpha: 0x0000,
+                    },
+                    [Rectangle {
+                        x: 0,
+                        y: 0,
+                        width,
+                        height,
                     }]
                     .as_ref(),
                 )?;
@@ -148,8 +231,30 @@ fn main() -> Result {
                     &*t
                 } else {
                     std::slice::from_ref(&t[mode])
-                }; 
-                pic.triangles(&mut conn, PictOp::Over, grad, Pictformat::const_from_xid(0), 0, 0, t)?;
+                };
+                mask.triangles(
+                    &mut conn,
+                    PictOp::Over,
+                    solid,
+                    Pictformat::const_from_xid(0),
+                    0,
+                    0,
+                    t,
+                )?;
+                grad.composite(
+                    &mut conn,
+                    PictOp::Over,
+                    mask,
+                    pic,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    width,
+                    height,
+                )?;
             }
             Event::KeyPress(kp) => {
                 if let Some(Key::N) = keys.process_keycode(kp.detail, kp.state) {
@@ -189,7 +294,7 @@ fn dump_triangles(triangles: &[Triangle]) -> io::Result<()> {
     }
 
     let o = stdout();
-    let mut cout = o.lock();    
+    let mut cout = o.lock();
 
     writeln!(cout, "[")?;
 
