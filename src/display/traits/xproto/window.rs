@@ -26,8 +26,6 @@ use core::{iter, mem};
 
 #[cfg(feature = "async")]
 use crate::display::{futures::SendRequestFuture, traits::AsyncDisplayDrawableExt, AsyncDisplay};
-#[cfg(feature = "async")]
-use futures_lite::future::{self, Ready};
 
 // macro for retrieving an atom that might be cached in the display
 macro_rules! retrieve_atom {

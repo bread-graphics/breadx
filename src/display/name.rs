@@ -321,6 +321,7 @@ impl<'a> XConnection<'a> {
 
     /// Parse an `XConnection` from a name.
     pub fn parse(name: Option<Cow<'a, str>>) -> crate::Result<XConnection> {
+        #[allow(unused_mut)]
         let mut name = match name {
             Some(name) => name,
             None => Cow::Owned(

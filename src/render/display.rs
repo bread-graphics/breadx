@@ -22,7 +22,7 @@ use alloc::{borrow::Cow, boxed::Box};
 use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
-use crate::display::{AsyncDisplay, PollOr};
+use crate::display::{prelude::*, AsyncDisplay, PollOr};
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 
@@ -707,7 +707,7 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
         mut dpy: Dpy,
         client_major_version: u32,
         client_minor_version: u32,
-    ) -> Result<Self, (Dpy, crate::BreadError)> {
+    ) -> Result<Self, (Dpy, BreadError)> {
         #[inline]
         async fn xrender_info<Dpy: AsyncDisplay>(
             dpy: &mut Dpy,

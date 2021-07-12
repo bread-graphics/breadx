@@ -5,7 +5,7 @@ use crate::{
     auto::render::{Fixed, Linefix, Pointfix, Trapezoid, Triangle},
     log_trace,
 };
-use alloc::{collections::VecDeque, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 use core::{
     cmp::Ordering,
     iter::{Fuse, FusedIterator},
@@ -13,7 +13,16 @@ use core::{
 };
 
 /// Tesselate a shape into a set of triangles. This function takes an iterator of points that represent a closed
-/// shape, and returns a semi-lazy iterator over the triangles.
+/// shape, and returns a lazy iterator over the triangles.
+///
+/// # Notes
+///
+/// The given iterator is collected into a `Vec` before the real iterator is returned, as this algorithm relies
+/// on a sorted list of edges before it begins generating. It is impossible to sort data as in sorted order from
+/// the iterator proper (at least, until dtolnay released his newest crate), so keep this in mind for iterators
+/// that have side effects.
+///
+/// Also note that it is more efficient to use fused iterators with this function.
 #[inline]
 pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<Item = Triangle> {
     // Note: it is more efficient to ignore horizontal edges
@@ -26,7 +35,6 @@ pub fn tesselate_shape<I: IntoIterator<Item = Pointfix>>(i: I) -> impl Iterator<
         }
         .filter(|e| e.y1 != e.y2),
     )
-    .inspect(|t| log_trace!("Generated trapezoid: {:#?}", t))
     .flat_map(trapezoid_to_triangles)
 }
 
@@ -233,9 +241,10 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Trapezoids {
         // yields nothing
         return Trapezoids {
             y: 0,
+            last_y: 0,
             active: vec![],
             inactive: vec![],
-            queue: VecDeque::new(),
+            last_trapezoid: core::usize::MAX,
         };
     }
 
@@ -251,26 +260,38 @@ fn edges_to_trapezoids<I: IntoIterator<Item = Edge>>(i: I) -> Trapezoids {
 
     Trapezoids {
         y: edges.last().unwrap().y1,
+        last_y: 0,
         active: Vec::with_capacity(edges.len()),
         inactive: edges,
-        queue: VecDeque::new(),
+        last_trapezoid: core::usize::MAX,
     }
 }
 
 /// Given a set of edges, this iterates over them and produces trapezoids.
 struct Trapezoids {
+    // "active" edges. any edge in this list should intersect with the current scanline.
     active: Vec<Edge>,
+    // "inactive" edges. these edges have yet to be made active.
+    //
+    // this list is sorted in reverse y1 order. it should be sorted in non-reverse order, but sorting it in
+    // reverse order allows us to just pop off newly active edges, which should be a performance win
     inactive: Vec<Edge>,
+    // the current scanline we're operating on.
     y: Fixed,
-    queue: VecDeque<Trapezoid>,
+    // the former scanline we're operating on. combined with the current scanline, this forms the top and bottom
+    // of any potential trapezoids
+    last_y: Fixed,
+    // keeps track of the index of the active lines where we are.
+    last_trapezoid: usize,
 }
 
 impl Trapezoids {
-    /// Populates `queue` with trapezoids by running one cycle. Returns `false` if it short-circuited.
+    /// Populates `active` with the list of active edges, and sets `last_trapezoid` to zero. Returns false if it
+    /// was unable to do anything.
     #[inline]
-    fn populate_queue(&mut self) -> bool {
+    fn populate(&mut self) -> bool {
         log::debug!(
-            "Running populate_queue(). There are {} active elements and {} inactive elements",
+            "Running populate(). There are {} active elements and {} inactive elements",
             self.active.len(),
             self.inactive.len()
         );
@@ -332,32 +353,35 @@ impl Trapezoids {
             .min()
             .expect("Iteration should've ended by now");
 
-        // generate trapezoids; push into queue so we return them
-        self.queue
-            .extend(self.active.chunks_exact(2).map(move |es| {
-                let e1 = es[0];
-                let e2 = es[1];
-
-                Trapezoid {
-                    top: y,
-                    bottom: next_y,
-                    left: Linefix {
-                        p1: Pointfix { x: e1.x1, y: e1.y1 },
-                        p2: Pointfix { x: e1.x2, y: e1.y2 },
-                    },
-                    right: Linefix {
-                        p1: Pointfix { x: e2.x1, y: e2.y1 },
-                        p2: Pointfix { x: e2.x2, y: e2.y2 },
-                    },
-                }
-            }));
-
+        // set up variables for trapezoid generation
+        self.last_y = self.y;
         self.y = next_y;
-
-        // delete now-inactive edges
-        self.active.retain(move |e| e.y2 > next_y);
+        self.last_trapezoid = 0;
 
         true
+    }
+
+    // if we have any trapezoids left, this pops one
+    #[inline]
+    fn pop_trapezoid(&mut self) -> Trapezoid {
+        // take the first two active edges we haven't processed already and use them to create trapezoids
+        let last_trapezoid = self.last_trapezoid;
+        self.last_trapezoid += 2;
+        let e1 = self.active[last_trapezoid];
+        let e2 = self.active[last_trapezoid + 1];
+
+        return Trapezoid {
+            top: self.last_y,
+            bottom: self.y,
+            left: Linefix {
+                p1: Pointfix { x: e1.x1, y: e1.y1 },
+                p2: Pointfix { x: e1.x2, y: e1.y2 },
+            },
+            right: Linefix {
+                p1: Pointfix { x: e2.x1, y: e2.y1 },
+                p2: Pointfix { x: e2.x2, y: e2.y2 },
+            },
+        };
     }
 }
 
@@ -367,14 +391,22 @@ impl Iterator for Trapezoids {
     #[inline]
     fn next(&mut self) -> Option<Trapezoid> {
         loop {
-            // if there are any leftover trapezoids in the queue, return one
-            if let Some(trap) = self.queue.pop_front() {
-                return Some(trap);
-            }
+            // if last_trapezoid is greater than the length of the list of active edges, we need to generate more
+            // trapezoids
+            //
+            // the +1 here ensures we don't end up with odd edges
+            if self.last_trapezoid.saturating_add(1) >= self.active.len() {
+                // clean out now-inactive edges
+                let y = self.y;
+                self.active.retain(move |e| e.y2 > y);
 
-            // otherwise, try to generate some
-            if !self.populate_queue() {
-                return None;
+                // try to generate more edges
+                if !self.populate() {
+                    // we could not generate more active edges
+                    return None;
+                }
+            } else {
+                return Some(self.pop_trapezoid());
             }
         }
     }
@@ -384,16 +416,30 @@ impl Iterator for Trapezoids {
         (0, Some((self.active.len() + self.inactive.len()).pow(2)))
     }
 
-    // Implement fold(), since a lot of functions use it and we can do it a bit more efficiently.
-    // TODO: also implement try_fold() once the Try trait becomes stable
+    // Implement some adaptors that may make this function more efficient.
+    // Note that this iterator is put right into a flat_map(), which only implements custom fold() and try_fold()
+    // that call the underlying iterator. Normally I'd implement nth() here, but since FlatMap doesn't forward
+    // it it would not be used.
+    //
+    // TODO: implement try_fold() once the Try trait becomes stable
 
     #[inline]
-    fn fold<B, F: FnMut(B, Trapezoid) -> B>(mut self, init: B, f: F) -> B {
-        // populate the queue as much as we can
-        while self.populate_queue() {}
+    fn fold<B, F: FnMut(B, Trapezoid) -> B>(mut self, init: B, mut f: F) -> B {
+        let mut accum = init;
 
-        // drain the queue using the closure
-        self.queue.into_iter().fold(init, f)
+        loop {
+            // if we have any cached trapezoids, pop them and use them
+            while self.last_trapezoid.saturating_add(1) < self.active.len() {
+                accum = f(accum, self.pop_trapezoid());
+            }
+
+            // generate moar
+            let y = self.y;
+            self.active.retain(move |e| e.y2 > y);
+            if !self.populate() {
+                return accum;
+            }
+        }
     }
 }
 

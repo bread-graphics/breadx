@@ -9,7 +9,6 @@ use crate::{
 };
 use core::{
     future::Future,
-    mem,
     pin::Pin,
     task::{Context, Poll},
 };

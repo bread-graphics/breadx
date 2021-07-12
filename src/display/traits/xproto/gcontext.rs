@@ -12,7 +12,7 @@ use crate::{
 use alloc::borrow::Cow;
 
 #[cfg(feature = "async")]
-use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture, SendRequestFuture};
+use crate::display::{AsyncDisplay, EitherFuture, ExchangeRequestFuture};
 #[cfg(feature = "async")]
 use alloc::vec;
 #[cfg(feature = "async")]
