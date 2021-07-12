@@ -9,11 +9,11 @@ use crate::{
             Picture, Pictvisual, Pointfix, QueryPictFormatsReply, QueryPictFormatsRequest,
             QueryVersionReply, QueryVersionRequest,
         },
-        xproto::{Drawable, Setup, Visualtype},
+        xproto::{Drawable, Visualtype},
     },
     display::{
-        generate_xid, prelude::*, Display, DisplayBase, DisplayExt, PendingItem, RequestInfo,
-        StaticSetup, EXT_KEY_SIZE,
+        generate_xid, Display, DisplayBase, DisplayExt, PendingItem, RequestInfo, StaticSetup,
+        EXT_KEY_SIZE,
     },
     event::Event,
     BreadError, XID,
@@ -22,7 +22,7 @@ use alloc::{borrow::Cow, boxed::Box};
 use core::num::NonZeroU32;
 
 #[cfg(feature = "async")]
-use crate::display::{AsyncDisplay, PollOr};
+use crate::display::{prelude::*, AsyncDisplay, PollOr};
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 
@@ -41,7 +41,7 @@ pub struct RenderDisplay<Dpy: ?Sized> {
     inner: Dpy,
 }
 
-impl<Dpy> RenderDisplay<Dpy> {
+impl<Dpy: ?Sized> RenderDisplay<Dpy> {
     /// Get a reference to the inner object.
     #[inline]
     pub fn inner(&self) -> &Dpy {
@@ -53,13 +53,17 @@ impl<Dpy> RenderDisplay<Dpy> {
     pub fn inner_mut(&mut self) -> &mut Dpy {
         &mut self.inner
     }
+}
 
+impl<Dpy> RenderDisplay<Dpy> {
     /// Destroy this objet and return the inner display.
     #[inline]
     pub fn into_inner(self) -> Dpy {
         self.inner
     }
+}
 
+impl<Dpy: ?Sized> RenderDisplay<Dpy> {
     #[inline]
     fn fold_for_visformat<F: FnMut(&Pictvisual) -> bool>(&self, mut f: F) -> Option<Pictformat> {
         self.screens
@@ -243,7 +247,7 @@ struct XrenderInfo {
     minor_version: u32,
 }
 
-impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
+impl<Dpy: DisplayBase + ?Sized> DisplayBase for RenderDisplay<Dpy> {
     #[inline]
     fn setup(&self) -> &StaticSetup {
         self.inner.setup()
@@ -354,7 +358,7 @@ impl<Dpy: DisplayBase> DisplayBase for RenderDisplay<Dpy> {
     }
 }
 
-impl<'a, Dpy: DisplayBase> DisplayBase for &'a RenderDisplay<Dpy>
+impl<'a, Dpy: DisplayBase + ?Sized> DisplayBase for &'a RenderDisplay<Dpy>
 where
     &'a Dpy: DisplayBase,
 {
@@ -468,7 +472,7 @@ where
     }
 }
 
-impl<Dpy: Display> Display for RenderDisplay<Dpy> {
+impl<Dpy: Display + ?Sized> Display for RenderDisplay<Dpy> {
     #[inline]
     fn wait(&mut self) -> crate::Result {
         self.inner.wait()
@@ -480,7 +484,7 @@ impl<Dpy: Display> Display for RenderDisplay<Dpy> {
     }
 }
 
-impl<'a, Dpy: DisplayBase> Display for &'a RenderDisplay<Dpy>
+impl<'a, Dpy: DisplayBase + ?Sized> Display for &'a RenderDisplay<Dpy>
 where
     &'a Dpy: Display,
 {
@@ -496,7 +500,7 @@ where
 }
 
 #[cfg(feature = "async")]
-impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
+impl<Dpy: AsyncDisplay + ?Sized> AsyncDisplay for RenderDisplay<Dpy> {
     #[inline]
     fn poll_wait(&mut self, cx: &mut Context<'_>) -> Poll<crate::Result> {
         self.inner.poll_wait(cx)
@@ -518,7 +522,7 @@ impl<Dpy: AsyncDisplay> AsyncDisplay for RenderDisplay<Dpy> {
 }
 
 #[cfg(feature = "async")]
-impl<'a, Dpy: DisplayBase> AsyncDisplay for &'a RenderDisplay<Dpy>
+impl<'a, Dpy: DisplayBase + ?Sized> AsyncDisplay for &'a RenderDisplay<Dpy>
 where
     &'a Dpy: AsyncDisplay,
 {
@@ -605,7 +609,9 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
             subpixels,
         })
     }
+}
 
+impl<Dpy: Display + ?Sized> RenderDisplay<Dpy> {
     /// Create a new Picture.
     #[inline]
     pub fn create_picture<Target: Into<Drawable>>(
@@ -615,6 +621,8 @@ impl<Dpy: Display> RenderDisplay<Dpy> {
         properties: PictureParameters,
     ) -> crate::Result<Picture> {
         let pic = Picture::const_from_xid(generate_xid(self)?);
+        log::info!("Creating an XRender picture: {:?}", pic);
+
         let cpr = Self::create_picture_request(pic, target.into(), format, properties);
         self.send_request(cpr)?;
         Ok(pic)
@@ -699,7 +707,7 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
         mut dpy: Dpy,
         client_major_version: u32,
         client_minor_version: u32,
-    ) -> Result<Self, (Dpy, crate::BreadError)> {
+    ) -> Result<Self, (Dpy, BreadError)> {
         #[inline]
         async fn xrender_info<Dpy: AsyncDisplay>(
             dpy: &mut Dpy,
@@ -758,7 +766,10 @@ impl<Dpy: AsyncDisplay> RenderDisplay<Dpy> {
             subpixels,
         })
     }
+}
 
+#[cfg(feature = "async")]
+impl<Dpy: AsyncDisplay + ?Sized> RenderDisplay<Dpy> {
     /// Create a new Picture, async redox.
     #[inline]
     pub async fn create_picture_async<Target: Into<Drawable>>(

@@ -2,13 +2,12 @@
 
 use super::{ResolveRequestFuture, SendRequestFuture};
 use crate::{
-    display::{AsyncDisplay, RequestCookie},
+    display::AsyncDisplay,
     util::take_mut,
     Request,
 };
 use core::{
     future::Future,
-    mem,
     pin::Pin,
     task::{Context, Poll},
 };

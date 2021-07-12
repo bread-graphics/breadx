@@ -7,10 +7,14 @@ use alloc::vec;
 #[cfg(feature = "std")]
 use std::{env, fs::File, io::Read};
 
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", not(feature = "tokio-support")))]
 use blocking::{unblock, Unblock};
+
 #[cfg(feature = "async")]
 use futures_lite::{AsyncRead, AsyncReadExt};
+
+#[cfg(feature = "tokio-support")]
+use tokio_util::compat::TokioAsyncReadCompatExt as _;
 
 /// Information needed to authorize a user to use an X11 connection.
 #[derive(Default, Debug)]
@@ -135,9 +139,17 @@ impl AuthInfo {
     #[must_use]
     pub async fn from_xauthority_async() -> Option<Vec<Self>> {
         let fname = env::var_os("XAUTHORITY")?;
-        let file = unblock(move || File::open(&fname)).await.ok()?;
-        let mut file = Unblock::new(file);
-        Self::from_stream_async(&mut file).await
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "tokio-support")] {
+                let mut file = tokio::fs::File::open(&fname).await.ok()?.compat();
+                Self::from_stream_async(&mut file).await
+            } else {
+                let file = unblock(move || File::open(&fname)).await.ok()?;
+                let mut file = Unblock::new(file);
+                Self::from_stream_async(&mut file).await
+            }
+        }
     }
 
     /// Helper function to "get" an authorization info or return the default.

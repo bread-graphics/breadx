@@ -10,8 +10,7 @@ use core::task::{Context, Poll};
 #[cfg(all(feature = "std", unix))]
 use super::unix;
 use crate::Fd;
-use alloc::{boxed::Box, vec::Vec};
-use core::{convert::identity, future::Future, pin::Pin};
+use alloc::vec::Vec;
 
 #[cfg(all(feature = "std", not(unix)))]
 use futures_lite::{AsyncRead, AsyncWrite};
@@ -33,10 +32,6 @@ use futures_lite::io::{AsyncReadExt, AsyncWriteExt};
 
 #[cfg(all(not(unix), feature = "tokio-support"))]
 use tokio_util::compat::{TokioAsyncReadCompatExt as _, TokioAsyncWriteCompatExt as _};
-
-/// Generic future for connections;
-pub type GenericConnFuture<'future, T = ()> =
-    Pin<Box<dyn Future<Output = crate::Result<T>> + 'future>>;
 
 /// Asynchronous breadx connection.
 pub trait AsyncConnection {

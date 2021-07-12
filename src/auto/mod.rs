@@ -342,6 +342,8 @@ impl AsByteSequence for String {
 }
 
 pub mod bigreq;
+#[cfg(feature = "composite")]
+pub mod composite;
 #[cfg(feature = "damage")]
 pub mod damage;
 #[cfg(feature = "dpms")]

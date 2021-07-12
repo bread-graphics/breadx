@@ -11,7 +11,7 @@ pub use picture::*;
 pub use tesselate::*;
 
 pub use crate::auto::render::{
-    Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid,
+    Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid, Triangle,
 };
 
 impl Copy for Pointfix {}
@@ -19,7 +19,7 @@ impl Copy for Linefix {}
 impl Copy for Color {}
 impl Copy for Trapezoid {}
 
-const MULTIPLIER: f64 = 0xFFFF as f64;
+const MULTIPLIER: f64 = 65536.0;
 
 /// Convert a fixed point value to a 64-bit float.
 #[inline]

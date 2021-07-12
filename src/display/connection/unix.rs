@@ -17,7 +17,6 @@ use async_io::Async;
 use core::task::{Context, Poll};
 #[cfg(feature = "async")]
 use std::{
-    io::{Read, Write},
     os::unix::io::AsRawFd,
 };
 
@@ -226,7 +225,7 @@ pub(crate) trait ConnSource {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsRawFd + Read + Unpin> ConnSource for Async<Conn> {
+impl<Conn: AsRawFd + Unpin> ConnSource for Async<Conn> {
     #[inline]
     fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         Async::<Conn>::poll_readable(self, cx)
@@ -242,7 +241,7 @@ impl<Conn: AsRawFd + Read + Unpin> ConnSource for Async<Conn> {
 }
 
 #[cfg(feature = "async")]
-impl<Conn: AsRawFd + Read + Unpin> ConnSource for &Async<Conn> {
+impl<Conn: AsRawFd + Unpin> ConnSource for &Async<Conn> {
     #[inline]
     fn poll_readable(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         Async::<Conn>::poll_readable(self, cx)

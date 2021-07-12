@@ -8,7 +8,6 @@ use crate::{
 };
 use core::{
     future::Future,
-    marker::PhantomData,
     mem,
     pin::Pin,
     task::{Context, Poll},

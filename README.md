@@ -1,6 +1,6 @@
 # breadx
 
-[![Build Status](https://dev.azure.com/jtnunley01/gui-tools/_apis/build/status/notgull.breadx?branchName=master)](https://dev.azure.com/jtnunley01/gui-tools/_build/latest?definitionId=12&branchName=master) [![crates.io](https://img.shields.io/crates/v/breadx)](https://crates.io/crates/breadx) [![Docs](https://docs.rs/breadx/badge.svg)](https://docs.rs/breadx)
+[![Build Status](https://dev.azure.com/jtnunley01/gui-tools/_apis/build/status/bread-graphics.breadx?branchName=master)](https://dev.azure.com/jtnunley01/gui-tools/_build/latest?definitionId=19&branchName=master) [![crates.io](https://img.shields.io/crates/v/breadx)](https://crates.io/crates/breadx) [![Docs](https://docs.rs/breadx/badge.svg)](https://docs.rs/breadx)
 
 An implementation of the X Window System Protocol in Rust. 100% safe and (generally) mutex-free.
 

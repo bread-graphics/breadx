@@ -2,12 +2,11 @@
 
 use super::WaitFuture;
 use crate::{
-    display::{AsyncDisplay, PendingReply},
+    display::AsyncDisplay,
     util::take_mut,
 };
 use core::{
     future::Future,
-    mem,
     pin::Pin,
     task::{Context, Poll},
 };
