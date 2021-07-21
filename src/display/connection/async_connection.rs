@@ -12,6 +12,9 @@ use super::unix;
 use crate::Fd;
 use alloc::vec::Vec;
 
+#[cfg(not(unix))]
+use core::pin::Pin;
+
 #[cfg(all(feature = "std", not(unix)))]
 use futures_lite::{AsyncRead, AsyncWrite};
 #[cfg(all(feature = "std", not(unix)))]
