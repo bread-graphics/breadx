@@ -1,10 +1,7 @@
 // MIT/Apache2 License
 
 use super::WaitFuture;
-use crate::{
-    display::AsyncDisplay,
-    util::take_mut,
-};
+use crate::{display::AsyncDisplay, util::take_mut};
 use core::{
     future::Future,
     pin::Pin,

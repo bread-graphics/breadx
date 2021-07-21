@@ -5,7 +5,8 @@ use crate::{
         render::{
             ChangePictureRequest, Color, CompositeRequest, Cp, CreatePictureRequest,
             FillRectanglesRequest, FreePictureRequest, PictOp, Pictformat, Picture, PolyEdge,
-            PolyMode, Repeat, Trapezoid, TrapezoidsRequest, Triangle, TrianglesRequest,
+            PolyMode, Repeat, SetPictureTransformRequest, Transform, Trapezoid, TrapezoidsRequest,
+            Triangle, TrianglesRequest,
         },
         xproto::{Atom, Pixmap, Rectangle, SubwindowMode},
     },
@@ -334,6 +335,37 @@ impl Picture {
                 src_x: srcx,
                 src_y: srcy,
                 triangles: triangles.into(),
+                ..Default::default()
+            })
+            .await
+    }
+
+    /// Set this picture's transform.
+    #[inline]
+    pub fn set_transform<Dpy: Display + ?Sized>(
+        self,
+        display: &mut Dpy,
+        transform: Transform,
+    ) -> crate::Result {
+        display.exchange_request(SetPictureTransformRequest {
+            picture: self,
+            transform,
+            ..Default::default()
+        })
+    }
+
+    /// Set this picture's transform, async redox.
+    #[cfg(feature = "async")]
+    #[inline]
+    pub async fn set_transform_async<Dpy: AsyncDisplay + ?Sized>(
+        self,
+        display: &mut Dpy,
+        transform: Transform,
+    ) -> crate::Result {
+        display
+            .exchange_request_async(SetPictureTransformRequest {
+                picture: self,
+                transform,
                 ..Default::default()
             })
             .await

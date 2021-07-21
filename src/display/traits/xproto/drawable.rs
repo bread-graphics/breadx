@@ -484,8 +484,8 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
 
     /// Write an image to a drawable, async redox.
     #[inline]
-    fn put_image_async<Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
-        &mut self,
+    fn put_image_async<'a, Target: Into<Drawable>, Data: Deref<Target = [u8]>>(
+        &'a mut self,
         target: Target,
         gc: Gcontext,
         image: &Image<Data>,
@@ -495,7 +495,7 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
         dest_y: isize,
         width: usize,
         height: usize,
-    ) -> PutImageFuture<'_, Self, Vec<PutImageRequest>> {
+    ) -> PutImageFuture<'a, Self, Vec<PutImageRequest>> {
         let reqs = put_image_req(
             self,
             target.into(),

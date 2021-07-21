@@ -16,9 +16,7 @@ use async_io::Async;
 #[cfg(feature = "async")]
 use core::task::{Context, Poll};
 #[cfg(feature = "async")]
-use std::{
-    os::unix::io::AsRawFd,
-};
+use std::os::unix::io::AsRawFd;
 
 #[inline]
 fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::Result<()>) {
