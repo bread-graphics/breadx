@@ -495,7 +495,7 @@ pub trait AsyncDisplayDrawableExt: AsyncDisplay {
         dest_y: isize,
         width: usize,
         height: usize,
-    ) -> PutImageFuture<'a, Self, Vec<PutImageRequest>> {
+    ) -> PutImageFuture<'a, Self, Vec<PutImageRequest<'static>>> {
         let reqs = put_image_req(
             self,
             target.into(),
