@@ -13,11 +13,34 @@ pub use tesselate::*;
 pub use crate::auto::render::{
     Color, Fixed, Linefix, PictOp, Pictformat, Picture, Pointfix, Transform, Trapezoid, Triangle,
 };
+use core::{
+    cmp::Ordering,
+    hash::{Hash, Hasher},
+};
 
 impl Copy for Pointfix {}
 impl Copy for Linefix {}
 impl Copy for Color {}
 impl Copy for Trapezoid {}
+
+impl Eq for Color {}
+
+impl Ord for Color {
+    #[inline]
+    fn cmp(&self, other: &Color) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+impl Hash for Color {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u16(self.red);
+        state.write_u16(self.green);
+        state.write_u16(self.blue);
+        state.write_u16(self.alpha);
+    }
+}
 
 const MULTIPLIER: f64 = 65536.0;
 

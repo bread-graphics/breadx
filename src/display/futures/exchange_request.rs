@@ -1,11 +1,7 @@
 // MIT/Apache2 License
 
 use super::{ResolveRequestFuture, SendRequestFuture};
-use crate::{
-    display::AsyncDisplay,
-    util::take_mut,
-    Request,
-};
+use crate::{display::AsyncDisplay, util::take_mut, Request};
 use core::{
     future::Future,
     pin::Pin,
