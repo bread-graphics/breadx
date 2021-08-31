@@ -331,8 +331,8 @@ impl AsByteSequence for String {
         log::trace!("Deserializing string of unknown length");
 
         let end = match memchr::memrchr(0, bytes) {
-            Some(posn) => posn - 1,
-            None => bytes.len() - 1,
+            Some(posn) => posn,
+            None => bytes.len(),
         };
 
         let s = String::from_utf8_lossy(&bytes[..end]).to_string();
