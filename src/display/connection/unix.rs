@@ -66,7 +66,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
     let res = if fds.is_empty() {
         sendmsg_loop(conn, data, &[])
     } else {
-        let cmsgs = [ControlMessage::ScmRights(&fds)];
+        let cmsgs = [ControlMessage::ScmRights(fds)];
         sendmsg_loop(conn, data, &cmsgs)
     };
 

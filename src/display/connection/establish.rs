@@ -3,7 +3,10 @@
 use super::Connection;
 use crate::{
     auth_info::AuthInfo,
-    auto::{xproto::SetupRequest, AsByteSequence},
+    auto::{
+        xproto::{SetupAuthenticate, SetupFailed, SetupRequest},
+        AsByteSequence,
+    },
     display::StaticSetup,
     xid::XidGenerator,
     Fd,
@@ -65,17 +68,29 @@ pub(crate) fn establish_connection<C: Connection + ?Sized>(
     let mut bytes: TinyVec<[u8; 8]> = iter::repeat(0).take(8).collect();
     conn.read_packet(&mut bytes, &mut _fds)?;
 
-    // figure out whether or not it succeeded
-    match bytes[0] {
-        0 => return Err(crate::BreadError::FailedToConnect),
-        2 => return Err(crate::BreadError::FailedToAuthorize),
-        _ => (),
-    }
-
     // read in the rest of the setup
     let length = u16::from_ne_bytes([bytes[6], bytes[7]]) as usize * 4;
     bytes.extend(iter::repeat(0).take(length));
     conn.read_packet(&mut bytes[8..], &mut _fds)?;
+
+    // figure out if the setup failed
+    match bytes[0] {
+        0 => {
+            let failed = match SetupFailed::from_bytes(&bytes) {
+                Some(sf) => sf.0.reason.into_owned(),
+                None => "Unable to determine why connection failed".into(),
+            };
+            return Err(crate::BreadError::FailedToConnect(failed));
+        }
+        2 => {
+            let authenticate = match SetupAuthenticate::from_bytes(&bytes) {
+                Some(sa) => sa.0.reason.into_owned(),
+                None => "Unable to determine why connection didn't authenticate".into(),
+            };
+            return Err(crate::BreadError::FailedToAuthorize(authenticate));
+        }
+        _ => {}
+    }
 
     let (setup, _) =
         StaticSetup::from_bytes(&bytes).ok_or(crate::BreadError::BadObjectRead(Some("Setup")))?;

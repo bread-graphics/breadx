@@ -418,7 +418,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn push_event(&mut self, event: Event) {
-        (**self).push_event(event)
+        (**self).push_event(event);
     }
 
     #[inline]
@@ -433,7 +433,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn add_pending_item(&mut self, req_id: u16, item: PendingItem) {
-        (**self).add_pending_item(req_id, item)
+        (**self).add_pending_item(req_id, item);
     }
 
     #[inline]
@@ -448,7 +448,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn create_special_event_queue(&mut self, xid: XID) {
-        (**self).create_special_event_queue(xid)
+        (**self).create_special_event_queue(xid);
     }
 
     #[inline]
@@ -463,7 +463,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn delete_special_event_queue(&mut self, xid: XID) {
-        (**self).delete_special_event_queue(xid)
+        (**self).delete_special_event_queue(xid);
     }
 
     #[inline]
@@ -473,7 +473,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn set_checked(&mut self, checked: bool) {
-        (**self).set_checked(checked)
+        (**self).set_checked(checked);
     }
 
     #[inline]
@@ -493,7 +493,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn set_extension_opcode(&mut self, key: [u8; EXT_KEY_SIZE], opcode: u8) {
-        (**self).set_extension_opcode(key, opcode)
+        (**self).set_extension_opcode(key, opcode);
     }
 
     #[inline]
@@ -503,7 +503,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 
     #[inline]
     fn set_wm_protocols_atom(&mut self, a: NonZeroU32) {
-        (**self).set_wm_protocols_atom(a)
+        (**self).set_wm_protocols_atom(a);
     }
 }
 
@@ -575,6 +575,7 @@ pub trait Display: DisplayBase {
         gifr.discard_reply = true;
         let sequence = self.send_request_raw(gifr)?;
         // essentially a do/while loop
+        #[allow(clippy::blocks_in_if_conditions)]
         while {
             // run wait() until the simple request we sent shows up in the replies
             self.wait()?;

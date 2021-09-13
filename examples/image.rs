@@ -75,7 +75,7 @@ fn main() -> Result<(), BreadError> {
 
     // For each pixel in the image of Eisenhower, set the equivalent pixel in the X image
     eisenhower.pixels().for_each(|(x, y, pixel)| {
-        let p = rgb((pixel.0)[0], (pixel.0)[1], (pixel.0)[2]);
+        let mut p = rgb((pixel.0)[0], (pixel.0)[1], (pixel.0)[2]);
         image.set_pixel(x as _, y as _, p);
     });
 

@@ -21,7 +21,7 @@ pub(crate) fn no_swap(
 ) {
     if srcinc == destinc {
         // this operation should be vectorized
-        dest.copy_from_slice(source)
+        dest.copy_from_slice(source);
     } else {
         dest.chunks_mut(destinc)
             .zip(source.chunks(srcinc))
@@ -131,7 +131,7 @@ pub(crate) fn swap_four_bytes(
             if (half_order == ImageOrder::MsbFirst && linelen - length == 3)
                 || (half_order == ImageOrder::LsbFirst && linelen & 2 != 0)
             {
-                dest[length + 2] = source[length + 1]
+                dest[length + 2] = source[length + 1];
             }
             if let ImageOrder::LsbFirst = half_order {
                 dest[length + 3] = source[length];
@@ -182,7 +182,7 @@ pub(crate) fn swap_words(
             if (half_order == ImageOrder::MsbFirst && linelen - length == 3)
                 || (half_order == ImageOrder::LsbFirst && linelen & 2 != 0)
             {
-                dest[length + 3] = source[length + 1]
+                dest[length + 3] = source[length + 1];
             }
             if let ImageOrder::LsbFirst = half_order {
                 dest[length + 2] = source[length];
@@ -243,7 +243,7 @@ pub(crate) fn shift_nibbles_left(
                 .zip(source.windows(2).take(linelen))
                 .for_each(|(d, s)| {
                     *d = ((s[1] & 0x0F) << 4) | ((s[0] & 0xF0) >> 4);
-                })
+                });
         }
     };
 
@@ -268,7 +268,7 @@ pub(crate) fn swap_bits(
             d.iter_mut()
                 .take(linelen)
                 .zip(s.iter().take(linelen))
-                .for_each(|(d, s)| *d = REVERSE_BYTES[*s as usize])
+                .for_each(|(d, s)| *d = REVERSE_BYTES[*s as usize]);
         });
 }
 
