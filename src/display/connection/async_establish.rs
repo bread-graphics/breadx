@@ -3,7 +3,10 @@
 use super::{create_setup, AsyncConnection};
 use crate::{
     auth_info::AuthInfo,
-    auto::{xproto::Setup, AsByteSequence},
+    auto::{
+        xproto::{Setup, SetupAuthenticate, SetupFailed},
+        AsByteSequence,
+    },
     display::StaticSetup,
     xid::XidGenerator,
 };
@@ -148,19 +151,6 @@ impl<'a, C: AsyncConnection + Unpin + ?Sized> Future for EstablishConnectionFutu
                         Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
                         Poll::Ready(Ok(())) => {
                             if initial_eight_bytes {
-                                // figure out whether or not it succeeded
-                                match buffer[0] {
-                                    0 => {
-                                        return Poll::Ready(Err(crate::BreadError::FailedToConnect))
-                                    }
-                                    2 => {
-                                        return Poll::Ready(Err(
-                                            crate::BreadError::FailedToAuthorize,
-                                        ))
-                                    }
-                                    _ => (),
-                                }
-
                                 // read in the rest of the setup
                                 let length =
                                     u16::from_ne_bytes([buffer[6], buffer[7]]) as usize * 4;
@@ -173,6 +163,30 @@ impl<'a, C: AsyncConnection + Unpin + ?Sized> Future for EstablishConnectionFutu
                                     initial_eight_bytes: false,
                                 };
                             } else {
+                                // figure out if the setup failed
+                                match buffer[0] {
+                                    0 => {
+                                        let failed = match SetupFailed::from_bytes(&buffer) {
+                                            Some(sf) => sf.0.reason.into_owned(),
+                                            None => {
+                                                "Unable to determine why connection failed".into()
+                                            }
+                                        };
+                                        return Err(crate::BreadError::FailedToConnect(failed))
+                                            .into();
+                                    }
+                                    2 => {
+                                        let authenticate = match SetupAuthenticate::from_bytes(&buffer) {
+                                            Some(sa) => sa.0.reason.into_owned(),
+                                            None => "Unable to determine why connection didn't authenticate".into(),
+                                        };
+                                        return Err(crate::BreadError::FailedToAuthorize(
+                                            authenticate,
+                                        ))
+                                        .into();
+                                    }
+                                    _ => {}
+                                }
                                 let (setup, _) = match Setup::from_bytes(&buffer) {
                                     Some(s) => s,
                                     None => {

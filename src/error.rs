@@ -21,9 +21,9 @@ pub enum BreadError {
     #[cfg(feature = "std")]
     Io(Arc<IoError>),
     /// Unable to open connection to the X11 server.
-    FailedToConnect,
+    FailedToConnect(String),
     /// X11 server rejected our authorization.
-    FailedToAuthorize,
+    FailedToAuthorize(String),
     /// Object was unable to be parsed
     BadObjectRead(Option<&'static str>),
     /// Required extension was not present.
@@ -86,8 +86,8 @@ impl fmt::Display for BreadError {
             Self::StaticErr(e) => write!(f, "{}", e),
             Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
             Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
-            Self::FailedToConnect => f.write_str("Unable to connect to the X11 server"),
-            Self::FailedToAuthorize => f.write_str("Authorization was rejected by the X11 server"),
+            Self::FailedToConnect(reason) => write!(f, "Unable to connect to the X11 server: {}", reason),
+            Self::FailedToAuthorize(reason) => write!(f, "Authorization was rejected by the X11 server: {}", reason),
             Self::BadObjectRead(name) => write!(
                 f,
                 "Unable to read object of type from bytes: {}",

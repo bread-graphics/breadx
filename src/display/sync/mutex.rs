@@ -39,7 +39,7 @@ impl Mutex {
         // until we've successfully locked the mutex...
         while self
             .locked
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel)
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_err()
         {
             // park the current thread
@@ -60,7 +60,7 @@ impl Mutex {
         // try to lock the mutex
         match self
             .locked
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::AcqRel)
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
         {
             // if we do, great!
             Ok(_) => Poll::Ready(()),
@@ -81,7 +81,7 @@ impl Mutex {
         // unlock the mutex
         if self
             .locked
-            .compare_exchange(true, false, Ordering::AcqRel, Ordering::AcqRel)
+            .compare_exchange(true, false, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
             // in the course of waking all of the wakers, they will probably try to lock the mutex. if the mutex

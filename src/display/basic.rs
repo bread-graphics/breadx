@@ -335,7 +335,7 @@ impl<Conn> DisplayBase for BasicDisplay<Conn> {
 
     #[inline]
     fn push_event(&mut self, event: Event) {
-        self.event_queue.push_back(event)
+        self.event_queue.push_back(event);
     }
 
     #[inline]
