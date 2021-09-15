@@ -5,7 +5,7 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "std")]
 use alloc::vec;
 #[cfg(feature = "std")]
-use std::{env, fs::File, io::Read};
+use std::{env, fs::File, io::Read, path::PathBuf};
 
 #[cfg(all(feature = "async", not(feature = "tokio-support")))]
 use blocking::{unblock, Unblock};
@@ -128,7 +128,7 @@ impl AuthInfo {
     #[inline]
     #[must_use]
     pub fn from_xauthority() -> Option<Vec<Self>> {
-        let fname = env::var_os("XAUTHORITY")?;
+        let fname = xauthority_path()?;
         let mut file = File::open(&fname).ok()?;
         Self::from_stream(&mut file)
     }
@@ -138,7 +138,7 @@ impl AuthInfo {
     #[inline]
     #[must_use]
     pub async fn from_xauthority_async() -> Option<Vec<Self>> {
-        let fname = env::var_os("XAUTHORITY")?;
+        let fname = xauthority_path()?;
 
         cfg_if::cfg_if! {
             if #[cfg(feature = "tokio-support")] {
@@ -200,5 +200,19 @@ impl AuthInfo {
     #[inline]
     pub(crate) fn get() -> Self {
         Default::default()
+    }
+}
+
+
+#[cfg(feature = "std")]
+#[inline]
+fn xauthority_path() -> Option<PathBuf> {
+    match env::var_os("XAUTHORITY") {
+        Some(xauth) => Some(xauth.into()),
+        None => env::var_os("HOME").map(|home| {
+            let mut home: PathBuf = home.into();
+            home.push(".Xauthority");
+            home
+        }),
     }
 }
