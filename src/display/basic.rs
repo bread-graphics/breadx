@@ -241,7 +241,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     pub fn from_connection(
         connection: Conn,
         default_screen: usize,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
         let mut conn = this.connection.take().unwrap();
@@ -289,7 +289,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
     pub async fn from_connection_async(
         connection: Conn,
         default_screen: usize,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
         let (setup, xid) = this
@@ -576,8 +576,10 @@ impl DisplayConnection {
     /// # }
     /// ```
     #[inline]
-    pub fn create(name: Option<Cow<'_, str>>, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
-        let (connection, screen) = NameConnection::connect_internal(name)?;
+    pub fn create(name: Option<Cow<'_, str>>) -> crate::Result<Self> {
+        let (connection, screen, display) = NameConnection::connect_internal(name)?;
+        let (family, address) = connection.peer_addr()?;
+        let auth_info = AuthInfo::get(family, &address, display)?.unwrap_or_else(Default::default);
         Self::from_connection(connection, screen, auth_info)
     }
 }
@@ -589,9 +591,10 @@ impl AsyncDisplayConnection {
     #[inline]
     pub async fn create_async(
         name: Option<Cow<'_, str>>,
-        auth_info: Option<AuthInfo>,
     ) -> crate::Result<Self> {
-        let (connection, screen) = AsyncNameConnection::connect_internal_async(name).await?;
+        let (connection, screen, display) = AsyncNameConnection::connect_internal_async(name).await?;
+        let (family, address) = connection.peer_addr()?;
+        let auth_info = AuthInfo::get(family, &address, display)?.unwrap_or_else(Default::default);
         Self::from_connection_async(connection, screen, auth_info).await
     }
 }

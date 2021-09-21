@@ -22,12 +22,6 @@ use tinyvec::TinyVec;
 /// Future returned by `establish_async`.
 #[must_use = "futures do nothing unless polled or .awaited"]
 pub enum EstablishConnectionFuture<'a, C: ?Sized> {
-    /// We are currently trying to resolve for the `AuthInfo`.
-    #[doc(hidden)]
-    ResolvingAuthInfo {
-        conn: &'a mut C,
-        auth_info_get_future: Pin<Box<dyn Future<Output = AuthInfo> + Send + Sync>>,
-    },
     /// We are currently sending packets for the setup request.
     #[doc(hidden)]
     SendSetupRequest {
@@ -49,16 +43,10 @@ pub enum EstablishConnectionFuture<'a, C: ?Sized> {
 
 impl<'a, C: ?Sized> EstablishConnectionFuture<'a, C> {
     #[inline]
-    pub(crate) fn run(conn: &'a mut C, auth_info: Option<AuthInfo>) -> Self {
-        match auth_info {
-            None => EstablishConnectionFuture::ResolvingAuthInfo {
-                conn,
-                auth_info_get_future: Box::pin(AuthInfo::get_async()),
-            },
-            Some(auth) => EstablishConnectionFuture::SendSetupRequest {
-                conn,
-                bytes: setup_bytes(auth),
-            },
+    pub(crate) fn run(conn: &'a mut C, auth_info: AuthInfo) -> Self {
+        EstablishConnectionFuture::SendSetupRequest {
+            conn,
+            bytes: setup_bytes(auth_info),
         }
     }
 }
@@ -66,7 +54,7 @@ impl<'a, C: ?Sized> EstablishConnectionFuture<'a, C> {
 #[inline]
 fn setup_bytes(auth_info: AuthInfo) -> TinyVec<[u8; 32]> {
     let setup = create_setup(auth_info);
-    let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(setup.size()).collect();
+    let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(setup.size()).collect(); 
     let len = setup.as_bytes(&mut bytes);
     bytes.truncate(len);
     bytes
@@ -82,24 +70,6 @@ impl<'a, C: AsyncConnection + Unpin + ?Sized> Future for EstablishConnectionFutu
                 EstablishConnectionFuture::Complete => {
                     panic!("Attempted to poll future after completion")
                 }
-                EstablishConnectionFuture::ResolvingAuthInfo {
-                    conn,
-                    mut auth_info_get_future,
-                } => match auth_info_get_future.as_mut().poll(cx) {
-                    Poll::Pending => {
-                        *self = EstablishConnectionFuture::ResolvingAuthInfo {
-                            conn,
-                            auth_info_get_future,
-                        };
-                        return Poll::Pending;
-                    }
-                    Poll::Ready(auth_info) => {
-                        *self = EstablishConnectionFuture::SendSetupRequest {
-                            conn,
-                            bytes: setup_bytes(auth_info),
-                        };
-                    }
-                },
                 EstablishConnectionFuture::SendSetupRequest { conn, mut bytes } => {
                     let mut bytes_sent = 0;
                     let mut _fds = vec![];

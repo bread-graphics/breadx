@@ -54,7 +54,7 @@ pub(crate) fn finish_request<D: DisplayBase + ?Sized>(display: &mut D, mut pr: R
     log_debug!("Got sequence number {}", seq);
 
     if !pr.zero_sized_reply || display.checked() {
-        log::trace!(
+        log_trace!(
             "Request is neither zero-sized nor is the display not checked, so we expect a reply"
         );
         input::expect_reply(display, seq, flags);

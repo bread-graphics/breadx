@@ -22,7 +22,7 @@ use gluten_keyboard::Key;
 fn main() -> Result {
     env_logger::init();
 
-    let mut conn = DisplayConnection::create(None, None)?;
+    let mut conn = DisplayConnection::create(None)?;
     let win = conn.create_simple_window(
         conn.default_root(),
         0,

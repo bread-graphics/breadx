@@ -9,7 +9,7 @@ use std::{env, process};
 fn main() {
     env_logger::init();
 
-    let mut conn = DisplayConnection::create(None, None).unwrap();
+    let mut conn = DisplayConnection::create(None).unwrap();
 
     // create the event mask
     let event_mask = EventMask::EXPOSURE | EventMask::BUTTON_PRESS | EventMask::STRUCTURE_NOTIFY;

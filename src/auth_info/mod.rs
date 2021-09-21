@@ -1,5 +1,16 @@
 // MIT/Apache2 License
 
+// Note: a lot of the auth code is stolen from x11rb, thanks psychon!
+
+pub(crate) mod family;
+
+#[cfg(feature = "std")]
+mod file;
+#[cfg(feature = "std")]
+mod get;
+#[cfg(feature = "std")]
+mod reader;
+
 use alloc::{string::String, vec::Vec};
 
 #[cfg(feature = "std")]
@@ -19,7 +30,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt as _;
 /// Information needed to authorize a user to use an X11 connection.
 #[derive(Default, Debug)]
 pub struct AuthInfo {
-    pub name: String,
+    pub name: Vec<u8>,
     pub data: Vec<u8>,
 
     pub family: u16,
@@ -27,192 +38,65 @@ pub struct AuthInfo {
     pub number: Vec<u8>,
 }
 
-/// Helper: from a set of bytes, deserialize a "counted string"
-#[cfg(feature = "std")]
-#[inline]
-fn counted_string(bytes: &mut &[u8]) -> Option<Vec<u8>> {
-    if bytes.len() < 2 {
-        log::error!("Auth did not contain length bytes");
-        return None;
-    }
-
-    // read in the length
-    let length: [u8; 2] = [bytes[0], bytes[1]];
-    let length = u16::from_be_bytes(length) as usize;
-
-    if bytes.len() < 2 + length {
-        log::error!("Auth did not contain string bytes");
-        return None;
-    }
-
-    let res = (&bytes[2..length + 2]).to_vec();
-    *bytes = &bytes[length + 2..];
-    Some(res)
-}
-
-#[cfg(feature = "std")]
 impl AuthInfo {
-    /// Reads the auth info in from a buffer format.
+    /// Get an AuthInfo from the local Xauthority file.
     #[inline]
-    fn from_buffer(s: &mut &[u8]) -> Option<Self> {
-        if s.len() < 2 {
-            log::error!("Auth did not contain family bytes");
-            return None;
-        }
+    pub fn get(family: u16, address: &[u8], display: u16) -> crate::Result<Option<AuthInfo>> {
+        cfg_if::cfg_if! {
+            if #[cfg(any(test, not(feature = "std")))] {
+                Ok(None)
+            } else {
+                let f = match file::xauth_file().map(File::open) {
+                    Some(Ok(f)) => f,
+                    Some(Err(e)) => return Err(e.into()),
+                    None => return Ok(None),
+                };
 
-        // read in the family
-        let family: [u8; 2] = [s[0], s[1]];
-        let family = u16::from_be_bytes(family);
-
-        let mut cursor = &s[2..];
-        let address = counted_string(&mut cursor)?;
-        let number = counted_string(&mut cursor)?;
-        let name = match String::from_utf8(counted_string(&mut cursor)?) {
-            Ok(name) => name,
-            Err(e) => {
-                // try to replace non-utf8 bytes with utf-8 bytes
-                log::warn!("Name was not valid UTF-8, doing substitution.");
-                let mut name = e.into_bytes();
-                name.retain(|b| *b < 128);
-                match String::from_utf8(name) {
-                    Ok(name) => name,
-                    Err(_) => return None,
-                }
+                let a = get::get_auth(reader::auth_info_reader(f), family, address, display)?;
+                Ok(a)
             }
-        };
-        let data = counted_string(&mut cursor)?;
-
-        *s = &s[10 + address.len() + number.len() + name.len() + data.len()..];
-
-        Some(AuthInfo {
-            name,
-            data,
-            family,
-            address,
-            number,
-        })
-    }
-
-    /// Reads in several authorization informations from a buffer.
-    #[inline]
-    fn many_from_buffer(mut s: &[u8]) -> Option<Vec<Self>> {
-        let mut res = vec![];
-        while !s.is_empty() {
-            res.push(Self::from_buffer(&mut s)?);
         }
-        Some(res)
     }
 
-    /// Reads in the auth info from the given reading stream.
-    #[inline]
-    #[must_use]
-    pub fn from_stream<R: Read>(reader: &mut R) -> Option<Vec<Self>> {
-        let mut buffer = Vec::with_capacity(128);
-        let _ = reader.read_to_end(&mut buffer).ok()?;
-
-        Self::many_from_buffer(&buffer)
-    }
-
-    /// Reads in the auth info from the given reading stream, async redox.
+    /// Get an AuthInfo from the local XAuthority file.
     #[cfg(feature = "async")]
     #[inline]
-    #[must_use]
-    pub async fn from_stream_async<R: AsyncRead + Unpin>(reader: &mut R) -> Option<Vec<Self>> {
-        let mut buffer = Vec::with_capacity(128);
-        let _ = reader.read_to_end(&mut buffer).await.ok()?;
+    pub async fn get_async(
+        family: u16,
+        address: &[u8],
+        display: u16,
+    ) -> crate::Result<Option<AuthInfo>> {
+        if cfg!(test) {
+            return Ok(None);
+        }
 
-        Self::many_from_buffer(&buffer)
-    }
+        #[inline]
+        async fn inner<R: AsyncRead + Unpin>(
+            r: R,
+            family: u16,
+            address: &[u8],
+            display: u16,
+        ) -> crate::Result<Option<AuthInfo>> {
+            let a =
+                get::get_auth_async(reader::auth_info_reader_async(r), family, address, display)
+                    .await?;
+            Ok(a)
+        }
 
-    /// Reads in the auth info from the file specified by the `XAUTHORITY` environment variable.
-    #[inline]
-    #[must_use]
-    pub fn from_xauthority() -> Option<Vec<Self>> {
-        let fname = xauthority_path()?;
-        let mut file = File::open(&fname).ok()?;
-        Self::from_stream(&mut file)
-    }
-
-    /// Reads in the auth info from the file specified by the XAuthority variable, async redox.
-    #[cfg(feature = "async")]
-    #[inline]
-    #[must_use]
-    pub async fn from_xauthority_async() -> Option<Vec<Self>> {
-        let fname = xauthority_path()?;
+        let name = match file::xauth_file() {
+            Some(name) => name,
+            None => return Ok(None),
+        };
 
         cfg_if::cfg_if! {
             if #[cfg(feature = "tokio-support")] {
-                let mut file = tokio::fs::File::open(&fname).await.ok()?.compat();
-                Self::from_stream_async(&mut file).await
+                let file = tokio::fs::File::open(&name).await?.compat();
+                inner(file, family, address, display).await
             } else {
-                let file = unblock(move || File::open(&fname)).await.ok()?;
-                let mut file = Unblock::new(file);
-                Self::from_stream_async(&mut file).await
+                let file = unblock(move || File::open(&name)).await?;
+                let file = Unblock::new(file);
+                inner(file, family, address, display).await
             }
         }
-    }
-
-    /// Helper function to "get" an authorization info or return the default.
-    /// TODO: match up display ID
-    #[inline]
-    pub(crate) fn get() -> Self {
-        if cfg!(test) {
-            // keep it deterministic for tests
-            return Default::default();
-        }
-
-        if let Some(mut v) = Self::from_xauthority() {
-            if v.is_empty() {
-                Default::default()
-            } else {
-                v.remove(0)
-            }
-        } else {
-            log::error!("Failed to get AuthInfo from XAUTHORITY, using empty auth info");
-            Default::default()
-        }
-    }
-
-    #[cfg(feature = "async")]
-    #[inline]
-    pub(crate) async fn get_async() -> Self {
-        if cfg!(test) {
-            // keep it deterministic for tests
-            return Default::default();
-        }
-
-        match Self::from_xauthority_async().await {
-            Some(mut v) => {
-                if v.is_empty() {
-                    Default::default()
-                } else {
-                    v.remove(0)
-                }
-            }
-            None => Default::default(),
-        }
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl AuthInfo {
-    /// Helper function to "get" an authorization info or return the default.
-    #[inline]
-    pub(crate) fn get() -> Self {
-        Default::default()
-    }
-}
-
-
-#[cfg(feature = "std")]
-#[inline]
-fn xauthority_path() -> Option<PathBuf> {
-    match env::var_os("XAUTHORITY") {
-        Some(xauth) => Some(xauth.into()),
-        None => env::var_os("HOME").map(|home| {
-            let mut home: PathBuf = home.into();
-            home.push(".Xauthority");
-            home
-        }),
     }
 }

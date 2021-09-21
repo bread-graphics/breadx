@@ -28,7 +28,7 @@ pub trait Connection {
     #[inline]
     fn establish(
         &mut self,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> crate::Result<(StaticSetup, XidGenerator)> {
         establish_connection(self, auth_info)
     }

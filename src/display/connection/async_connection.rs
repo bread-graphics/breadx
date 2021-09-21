@@ -60,7 +60,7 @@ pub trait AsyncConnection {
     #[inline]
     fn establish_async(
         &mut self,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> EstablishConnectionFuture<'_, Self> {
         EstablishConnectionFuture::run(self, auth_info)
     }

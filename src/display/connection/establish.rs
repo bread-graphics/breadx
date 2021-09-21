@@ -50,12 +50,9 @@ pub(crate) fn create_setup(auth: AuthInfo) -> SetupRequest<'static, 'static> {
 #[inline]
 pub(crate) fn establish_connection<C: Connection + ?Sized>(
     conn: &mut C,
-    auth_info: Option<AuthInfo>,
+    auth_info: AuthInfo,
 ) -> crate::Result<(StaticSetup, XidGenerator)> {
-    let setup = create_setup(match auth_info {
-        Some(auth) => auth,
-        None => AuthInfo::get(),
-    });
+    let setup = create_setup(auth_info);
 
     // write setup request
     let mut _fds: Vec<Fd> = Vec::new();
