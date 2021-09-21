@@ -54,7 +54,7 @@ impl<'a, C: ?Sized> EstablishConnectionFuture<'a, C> {
 #[inline]
 fn setup_bytes(auth_info: AuthInfo) -> TinyVec<[u8; 32]> {
     let setup = create_setup(auth_info);
-    let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(setup.size()).collect(); 
+    let mut bytes: TinyVec<[u8; 32]> = iter::repeat(0).take(setup.size()).collect();
     let len = setup.as_bytes(&mut bytes);
     bytes.truncate(len);
     bytes

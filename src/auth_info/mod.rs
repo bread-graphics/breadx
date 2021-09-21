@@ -11,12 +11,12 @@ mod get;
 #[cfg(feature = "std")]
 mod reader;
 
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
 use alloc::vec;
 #[cfg(feature = "std")]
-use std::{env, fs::File, io::Read, path::PathBuf};
+use std::fs::File;
 
 #[cfg(all(feature = "async", not(feature = "tokio-support")))]
 use blocking::{unblock, Unblock};

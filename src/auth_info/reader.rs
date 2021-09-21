@@ -1,7 +1,13 @@
 // MIT/Apache2 License
 
 use super::AuthInfo;
-use std::{vec, vec::Vec, io::{self, Read, Seek}, boxed::Box, pin::Pin};
+use std::{
+    boxed::Box,
+    io::{self, Read},
+    pin::Pin,
+    vec,
+    vec::Vec,
+};
 
 #[cfg(feature = "async")]
 use futures_lite::{
@@ -77,11 +83,14 @@ fn read_short<R: Read>(r: &mut R) -> Result<u16, io::Error> {
 pub(crate) fn auth_info_reader_async<'a, R: AsyncRead + Unpin + 'a>(
     r: R,
 ) -> Pin<Box<dyn Stream<Item = Result<AuthInfo, io::Error>> + 'a>> {
-    let mut r = aio::BufReader::new(r);
-    Box::pin(stream::try_unfold((), move |()| async move {
-        read_auth_async(&mut r)
-            .await
-            .map(|opt| opt.map(|ai| (ai, ())))
+    let r = aio::BufReader::new(r);
+    Box::pin(stream::try_unfold(r, move |mut r| async move {
+        let res = read_auth_async(&mut r).await;
+        match res {
+            Ok(Some(a)) => Ok(Some((a, r))),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
+        }
     }))
 }
 

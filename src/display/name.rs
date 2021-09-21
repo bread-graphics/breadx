@@ -10,7 +10,11 @@ use crate::{auth_info::family, Fd};
 use alloc::{borrow::Cow, format, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
-use std::{env, net::{self, SocketAddr, Ipv4Addr}, path::Path};
+use std::{
+    env,
+    net::{self, Ipv4Addr, SocketAddr},
+    path::Path,
+};
 
 #[cfg(feature = "async")]
 use super::AsyncConnection;

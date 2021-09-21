@@ -1,5 +1,7 @@
 // MIT/Apache2 License
 
+#![allow(dead_code)]
+
 pub const INTERNET: u16 = 0;
 pub const DEC_NET: u16 = 1;
 pub const CHAOS: u16 = 2;

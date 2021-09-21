@@ -589,10 +589,9 @@ impl AsyncDisplayConnection {
     /// Create a new connection to the X server, given an optional name and authorization information, async
     /// redox. See `DisplayConnection::create()` for more information regarding this function.
     #[inline]
-    pub async fn create_async(
-        name: Option<Cow<'_, str>>,
-    ) -> crate::Result<Self> {
-        let (connection, screen, display) = AsyncNameConnection::connect_internal_async(name).await?;
+    pub async fn create_async(name: Option<Cow<'_, str>>) -> crate::Result<Self> {
+        let (connection, screen, display) =
+            AsyncNameConnection::connect_internal_async(name).await?;
         let (family, address) = connection.peer_addr()?;
         let auth_info = AuthInfo::get(family, &address, display)?.unwrap_or_else(Default::default);
         Self::from_connection_async(connection, screen, auth_info).await

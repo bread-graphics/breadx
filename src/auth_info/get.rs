@@ -26,7 +26,7 @@ pub(crate) fn get_auth(
         {
             ControlFlow::Break(Ok(entry))
         }
-        Ok(entry) => ControlFlow::Continue(()),
+        Ok(_) => ControlFlow::Continue(()),
         Err(e) => ControlFlow::Break(Err(e)),
     }) {
         ControlFlow::Break(Ok(b)) => Ok(Some(b)),
@@ -38,7 +38,7 @@ pub(crate) fn get_auth(
 #[cfg(feature = "async")]
 #[inline]
 pub(crate) async fn get_auth_async(
-    mut auths: impl Stream<Item = Result<AuthInfo, Error>>,
+    mut auths: impl Stream<Item = Result<AuthInfo, Error>> + Unpin,
     family: u16,
     address: &[u8],
     display: u16,
@@ -48,15 +48,15 @@ pub(crate) async fn get_auth_async(
 
     // TODO: use try_find() once it is stabilized
     match auths
-        .try_fold((), |(), entry| match entry {
+        .try_for_each(|entry| match entry {
             Ok(entry)
                 if addr_match(family, address, entry.family, &entry.address)
-                    && display_match(&entry.number, &display)
+                    && display_match(&entry.number, display.as_bytes())
                     && entry.name == b"MIT-MAGIC-COOKIE-1" =>
             {
                 Err(Ok(entry))
             }
-            Ok(entry) => Ok(()),
+            Ok(_) => Ok(()),
             Err(e) => Err(Err(e)),
         })
         .await
