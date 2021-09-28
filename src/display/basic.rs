@@ -167,7 +167,7 @@ impl<Conn> BasicDisplay<Conn> {
     /// ```rust,no_run
     /// use breadx::display::DisplayConnection;
     ///
-    /// let conn = DisplayConnection::create(None, None).unwrap();
+    /// let conn = DisplayConnection::create(None).unwrap();
     /// conn.connection();
     /// ```
     #[inline]
@@ -186,7 +186,7 @@ impl<Conn> BasicDisplay<Conn> {
     /// ```rust,no_run
     /// use breadx::display::DisplayConnection;
     ///
-    /// let mut conn = DisplayConnection::create(None, None).unwrap();
+    /// let mut conn = DisplayConnection::create(None).unwrap();
     /// conn.connection_mut();
     /// ```
     #[inline]
@@ -232,7 +232,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     )]
     #[cfg_attr(
         feature = "std",
-        doc = "let conn = BasicDisplay::from_connection(server, 0, None)?;"
+        doc = "let conn = BasicDisplay::from_connection(server, 0, Default::default())?;"
     )]
     #[cfg_attr(feature = "std", doc = "# Ok(())")]
     #[cfg_attr(feature = "std", doc = "# }")]
@@ -557,21 +557,19 @@ impl DisplayConnection {
     /// use breadx::DisplayConnection;
     ///
     /// # fn main() -> breadx::Result {
-    /// let conn = DisplayConnection::create(None, None)?;
+    /// let conn = DisplayConnection::create(None)?;
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// Connect to the server on display 3, using the authorization info read from a file.
+    /// Connect to the server on display 3.
     ///
     /// ```rust,no_run
-    /// use breadx::{AuthInfo, DisplayConnection};
+    /// use breadx::DisplayConnection;
     /// use std::fs::File;
     ///
-    /// # fn main() -> breadx::Result {
-    /// let mut file = File::open("my_auth_info.txt")?;
-    /// let mut auth_info = AuthInfo::from_stream(&mut file).expect("AuthInfo not found");
-    /// let conn = DisplayConnection::create(Some(":3".into()), Some(auth_info.remove(0)))?;
+    /// # fn main() -> breadx::Result { 
+    /// let conn = DisplayConnection::create(Some(":3".into()))?;
     /// # Ok(())
     /// # }
     /// ```
