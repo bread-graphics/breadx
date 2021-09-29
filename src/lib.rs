@@ -39,7 +39,7 @@
 //! fn main() -> Result<(), Box<dyn Error>> {
 //!     // open up the connection
 //!     // note that the connection must be mutable
-//!     let mut conn = DisplayConnection::create(None, None)?;
+//!     let mut conn = DisplayConnection::create(None)?;
 //!    
 //!     // create a 640x400 window.
 //!     let root = conn.default_screen().root;

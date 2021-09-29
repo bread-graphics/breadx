@@ -195,7 +195,7 @@ authorization from the authors.
     <field type="CARD16" name="authorization_protocol_name_len" />
     <field type="CARD16" name="authorization_protocol_data_len" />
     <pad bytes="2" />
-    <list type="char" name="authorization_protocol_name">
+    <list type="CARD8" name="authorization_protocol_name">
       <fieldref>authorization_protocol_name_len</fieldref>
     </list>
     <pad align="4" />

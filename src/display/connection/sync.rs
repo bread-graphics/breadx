@@ -26,10 +26,7 @@ pub trait Connection {
     fn read_packet(&mut self, bytes: &mut [u8], fds: &mut Vec<Fd>) -> crate::Result;
     /// Establish a setup using this connection.
     #[inline]
-    fn establish(
-        &mut self,
-        auth_info: Option<AuthInfo>,
-    ) -> crate::Result<(StaticSetup, XidGenerator)> {
+    fn establish(&mut self, auth_info: AuthInfo) -> crate::Result<(StaticSetup, XidGenerator)> {
         establish_connection(self, auth_info)
     }
 }

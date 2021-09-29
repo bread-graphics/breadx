@@ -1283,7 +1283,7 @@ pub struct SetupRequest<'d, 'e> {
     pub byte_order: Card8,
     pub protocol_major_version: Card16,
     pub protocol_minor_version: Card16,
-    pub authorization_protocol_name: Cow<'d, str>,
+    pub authorization_protocol_name: Cow<'d, [Card8]>,
     pub authorization_protocol_data: Cow<'e, [Card8]>,
 }
 impl<'d, 'e> SetupRequest<'d, 'e> {}
@@ -1299,7 +1299,7 @@ impl<'d, 'e> AsByteSequence for SetupRequest<'d, 'e> {
         index += (self.authorization_protocol_data.len() as Card16).as_bytes(&mut bytes[index..]);
         index += 2;
         let block_len: usize =
-            string_as_bytes(&self.authorization_protocol_name, &mut bytes[index..]);
+            vector_as_bytes(&self.authorization_protocol_name, &mut bytes[index..]);
         index += block_len;
         index += buffer_pad(block_len, 4);
         let block_len: usize =
@@ -1324,8 +1324,8 @@ impl<'d, 'e> AsByteSequence for SetupRequest<'d, 'e> {
         let (len1, sz): (Card16, usize) = <Card16>::from_bytes(&bytes[index..])?;
         index += sz;
         index += 2;
-        let (authorization_protocol_name, block_len): (Cow<'_, str>, usize) =
-            string_from_bytes(&bytes[index..], len0 as usize)?;
+        let (authorization_protocol_name, block_len): (Cow<'_, [Card8]>, usize) =
+            vector_from_bytes(&bytes[index..], len0 as usize)?;
         index += block_len;
         index += buffer_pad(block_len, 4);
         let (authorization_protocol_data, block_len): (Cow<'_, [Card8]>, usize) =
@@ -1353,7 +1353,11 @@ impl<'d, 'e> AsByteSequence for SetupRequest<'d, 'e> {
             + ::core::mem::size_of::<Card16>()
             + 2
             + {
-                let block_len: usize = self.authorization_protocol_name.len();
+                let block_len: usize = self
+                    .authorization_protocol_name
+                    .iter()
+                    .map(|i| i.size())
+                    .sum();
                 let pad: usize = buffer_pad(block_len, 4);
                 block_len + pad
             }

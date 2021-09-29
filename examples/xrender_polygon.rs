@@ -31,7 +31,7 @@ fn main() -> Result {
 
     let width = 600u16;
     let height = 480u16;
-    let mut conn = DisplayConnection::create(None, None)?;
+    let mut conn = DisplayConnection::create(None)?;
     let win = conn.create_simple_window(
         conn.default_root(),
         0,

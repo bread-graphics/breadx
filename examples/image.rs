@@ -33,7 +33,7 @@ fn main() -> Result<(), BreadError> {
     let height = eisenhower.height();
 
     // Open an X connection
-    let mut conn = DisplayConnection::create(None, None)?;
+    let mut conn = DisplayConnection::create(None)?;
 
     // Create a new window.
     let window = conn.create_simple_window(

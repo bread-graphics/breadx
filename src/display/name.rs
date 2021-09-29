@@ -6,11 +6,15 @@
 #![cfg(feature = "std")]
 
 use super::Connection;
-use crate::Fd;
+use crate::{auth_info::family, Fd};
 use alloc::{borrow::Cow, format, string::String, vec::Vec};
 use core::mem;
 use memchr::memrchr;
-use std::{env, net, path::Path};
+use std::{
+    env,
+    net::{self, Ipv4Addr, SocketAddr},
+    path::Path,
+};
 
 #[cfg(feature = "async")]
 use super::AsyncConnection;
@@ -48,6 +52,40 @@ pub enum NameConnection {
     #[cfg(unix)]
     #[doc(hidden)]
     Socket(unet::UnixStream),
+}
+
+impl NameConnection {
+    #[inline]
+    pub(crate) fn peer_addr(&self) -> crate::Result<(u16, Vec<u8>)> {
+        match self {
+            NameConnection::Tcp(stream) => {
+                let ip = match stream.peer_addr()? {
+                    SocketAddr::V4(addr) => *addr.ip(),
+                    SocketAddr::V6(addr) => {
+                        let ip = addr.ip();
+                        if ip.is_loopback() {
+                            Ipv4Addr::LOCALHOST
+                        } else if let Some(ip) = ip.to_ipv4() {
+                            ip
+                        } else {
+                            return Ok((family::INTERNET6, ip.octets().to_vec()));
+                        }
+                    }
+                };
+
+                if !ip.is_loopback() {
+                    return Ok((family::INTERNET, ip.octets().to_vec()));
+                }
+            }
+            _ => {}
+        }
+
+        let hostname = gethostname::gethostname()
+            .to_str()
+            .map(|name| name.as_bytes().to_vec())
+            .unwrap_or_else(Vec::new);
+        Ok((family::LOCAL, hostname))
+    }
 }
 
 impl Connection for NameConnection {
@@ -117,6 +155,50 @@ pub enum AsyncNameConnection {
     #[cfg(all(feature = "tokio-support", unix))]
     #[doc(hidden)]
     Socket(Spinlock<TokioUnixStream>),
+}
+
+#[cfg(feature = "async")]
+impl AsyncNameConnection {
+    #[inline]
+    pub(crate) fn peer_addr(&self) -> crate::Result<(u16, Vec<u8>)> {
+        match self {
+            AsyncNameConnection::Tcp(stream) => {
+                let peer_addr;
+                cfg_if::cfg_if! {
+                    if #[cfg(feature = "tokio-support")] {
+                        peer_addr = stream.try_lock().unwrap().peer_addr()?;
+                    } else {
+                        peer_addr = stream.get_ref().peer_addr()?;
+                    }
+                }
+
+                let ip = match peer_addr {
+                    SocketAddr::V4(addr) => *addr.ip(),
+                    SocketAddr::V6(addr) => {
+                        let ip = addr.ip();
+                        if ip.is_loopback() {
+                            Ipv4Addr::LOCALHOST
+                        } else if let Some(ip) = ip.to_ipv4() {
+                            ip
+                        } else {
+                            return Ok((family::INTERNET6, ip.octets().to_vec()));
+                        }
+                    }
+                };
+
+                if !ip.is_loopback() {
+                    return Ok((family::INTERNET, ip.octets().to_vec()));
+                }
+            }
+            _ => {}
+        }
+
+        let hostname = gethostname::gethostname()
+            .to_str()
+            .map(|name| name.as_bytes().to_vec())
+            .unwrap_or_else(Vec::new);
+        Ok((family::LOCAL, hostname))
+    }
 }
 
 #[cfg(feature = "async")]
@@ -572,10 +654,11 @@ impl NameConnection {
     #[inline]
     pub(crate) fn connect_internal(
         name: Option<Cow<'_, str>>,
-    ) -> crate::Result<(NameConnection, usize)> {
+    ) -> crate::Result<(NameConnection, usize, u16)> {
         let connection = XConnection::parse(name)?;
+        let display = connection.display;
         let screen = connection.screen;
-        Ok((connection.open()?, screen))
+        Ok((connection.open()?, screen, display))
     }
 }
 
@@ -586,10 +669,11 @@ impl AsyncNameConnection {
     #[cfg(feature = "async")]
     pub(crate) async fn connect_internal_async(
         name: Option<Cow<'_, str>>,
-    ) -> crate::Result<(AsyncNameConnection, usize)> {
+    ) -> crate::Result<(AsyncNameConnection, usize, u16)> {
         let connection = XConnection::parse(name)?;
+        let display = connection.display;
         let screen = connection.screen;
-        Ok((connection.open_async().await?, screen))
+        Ok((connection.open_async().await?, screen, display))
     }
 }
 

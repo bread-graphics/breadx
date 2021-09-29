@@ -7,7 +7,7 @@ fn main() -> breadx::Result {
     env::set_var("RUST_LOG", "breadx=info");
     env_logger::init();
 
-    let mut conn = DisplayConnection::create(None, None)?;
+    let mut conn = DisplayConnection::create(None)?;
     let window = conn.create_simple_window(
         conn.default_screen().root,
         0,

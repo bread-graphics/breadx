@@ -20,7 +20,7 @@ fn main() -> Result {
     let mut width = 500;
     let mut height = 500;
 
-    let mut conn = DisplayConnection::create(None, None)?;
+    let mut conn = DisplayConnection::create(None)?;
     let window = conn.create_simple_window(
         conn.default_root(),
         0,

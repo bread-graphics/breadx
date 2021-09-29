@@ -45,7 +45,7 @@ use core::{
 /// ```rust,no_run
 /// use breadx::display::{CellDisplay, DisplayConnection};
 ///
-/// let mut display = DisplayConnection::create(None, None).unwrap();
+/// let mut display = DisplayConnection::create(None).unwrap();
 /// let display: CellDisplay<_> = display.into();
 /// ```
 ///

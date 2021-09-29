@@ -64,7 +64,7 @@ async fn x_process(receiver: Receiver<[u8; 3]>) -> breadx::Result<()> {
 
     // create the connection through an async process
     // note that most of this is basically the same as examples/basic.rs, but with the "async" suffix
-    let mut conn = AsyncDisplayConnection::create_async(None, None).await?;
+    let mut conn = AsyncDisplayConnection::create_async(None).await?;
     let win = conn
         .create_simple_window_async(
             conn.default_screen().root,

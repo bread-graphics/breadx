@@ -167,7 +167,7 @@ impl<Conn> BasicDisplay<Conn> {
     /// ```rust,no_run
     /// use breadx::display::DisplayConnection;
     ///
-    /// let conn = DisplayConnection::create(None, None).unwrap();
+    /// let conn = DisplayConnection::create(None).unwrap();
     /// conn.connection();
     /// ```
     #[inline]
@@ -186,7 +186,7 @@ impl<Conn> BasicDisplay<Conn> {
     /// ```rust,no_run
     /// use breadx::display::DisplayConnection;
     ///
-    /// let mut conn = DisplayConnection::create(None, None).unwrap();
+    /// let mut conn = DisplayConnection::create(None).unwrap();
     /// conn.connection_mut();
     /// ```
     #[inline]
@@ -232,7 +232,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     )]
     #[cfg_attr(
         feature = "std",
-        doc = "let conn = BasicDisplay::from_connection(server, 0, None)?;"
+        doc = "let conn = BasicDisplay::from_connection(server, 0, Default::default())?;"
     )]
     #[cfg_attr(feature = "std", doc = "# Ok(())")]
     #[cfg_attr(feature = "std", doc = "# }")]
@@ -241,7 +241,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     pub fn from_connection(
         connection: Conn,
         default_screen: usize,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
         let mut conn = this.connection.take().unwrap();
@@ -280,7 +280,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
     /// # futures_lite::future::block_on(async {
     /// let server = blocking::unblock(|| TcpStream::connect("127.0.0.1:60000")).await?;
     /// let server = Async::new(server)?;
-    /// let conn = BasicDisplay::from_connection_async(server, 0, None).await?;
+    /// let conn = BasicDisplay::from_connection_async(server, 0, Default::default()).await?;
     /// # Ok(())
     /// # })
     /// # }
@@ -289,7 +289,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
     pub async fn from_connection_async(
         connection: Conn,
         default_screen: usize,
-        auth_info: Option<AuthInfo>,
+        auth_info: AuthInfo,
     ) -> crate::Result<Self> {
         let mut this = Self::from_connection_internal(connection, default_screen);
         let (setup, xid) = this
@@ -557,27 +557,27 @@ impl DisplayConnection {
     /// use breadx::DisplayConnection;
     ///
     /// # fn main() -> breadx::Result {
-    /// let conn = DisplayConnection::create(None, None)?;
+    /// let conn = DisplayConnection::create(None)?;
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// Connect to the server on display 3, using the authorization info read from a file.
+    /// Connect to the server on display 3.
     ///
     /// ```rust,no_run
-    /// use breadx::{AuthInfo, DisplayConnection};
+    /// use breadx::DisplayConnection;
     /// use std::fs::File;
     ///
     /// # fn main() -> breadx::Result {
-    /// let mut file = File::open("my_auth_info.txt")?;
-    /// let mut auth_info = AuthInfo::from_stream(&mut file).expect("AuthInfo not found");
-    /// let conn = DisplayConnection::create(Some(":3".into()), Some(auth_info.remove(0)))?;
+    /// let conn = DisplayConnection::create(Some(":3".into()))?;
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    pub fn create(name: Option<Cow<'_, str>>, auth_info: Option<AuthInfo>) -> crate::Result<Self> {
-        let (connection, screen) = NameConnection::connect_internal(name)?;
+    pub fn create(name: Option<Cow<'_, str>>) -> crate::Result<Self> {
+        let (connection, screen, display) = NameConnection::connect_internal(name)?;
+        let (family, address) = connection.peer_addr()?;
+        let auth_info = AuthInfo::get(family, &address, display)?.unwrap_or_else(Default::default);
         Self::from_connection(connection, screen, auth_info)
     }
 }
@@ -587,11 +587,11 @@ impl AsyncDisplayConnection {
     /// Create a new connection to the X server, given an optional name and authorization information, async
     /// redox. See `DisplayConnection::create()` for more information regarding this function.
     #[inline]
-    pub async fn create_async(
-        name: Option<Cow<'_, str>>,
-        auth_info: Option<AuthInfo>,
-    ) -> crate::Result<Self> {
-        let (connection, screen) = AsyncNameConnection::connect_internal_async(name).await?;
+    pub async fn create_async(name: Option<Cow<'_, str>>) -> crate::Result<Self> {
+        let (connection, screen, display) =
+            AsyncNameConnection::connect_internal_async(name).await?;
+        let (family, address) = connection.peer_addr()?;
+        let auth_info = AuthInfo::get(family, &address, display)?.unwrap_or_else(Default::default);
         Self::from_connection_async(connection, screen, auth_info).await
     }
 }
