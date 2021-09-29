@@ -56,7 +56,7 @@ use spinning_top::Spinlock;
 /// ```rust,no_run
 /// use breadx::display::{DisplayConnection, SyncDisplay};
 ///
-/// let conn = DisplayConnection::create(None, None).unwrap();
+/// let conn = DisplayConnection::create(None).unwrap();
 /// let conn: SyncDisplay<_> = conn.into();
 /// ```
 ///

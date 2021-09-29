@@ -280,7 +280,7 @@ impl<Conn: AsyncConnection + Unpin> BasicDisplay<Conn> {
     /// # futures_lite::future::block_on(async {
     /// let server = blocking::unblock(|| TcpStream::connect("127.0.0.1:60000")).await?;
     /// let server = Async::new(server)?;
-    /// let conn = BasicDisplay::from_connection_async(server, 0, None).await?;
+    /// let conn = BasicDisplay::from_connection_async(server, 0, Default::default()).await?;
     /// # Ok(())
     /// # })
     /// # }
