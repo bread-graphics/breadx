@@ -568,7 +568,7 @@ impl DisplayConnection {
     /// use breadx::DisplayConnection;
     /// use std::fs::File;
     ///
-    /// # fn main() -> breadx::Result { 
+    /// # fn main() -> breadx::Result {
     /// let conn = DisplayConnection::create(Some(":3".into()))?;
     /// # Ok(())
     /// # }
