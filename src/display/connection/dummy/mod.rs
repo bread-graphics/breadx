@@ -5,7 +5,7 @@ mod setup;
 use crate::{auto::xproto::QueryExtensionReply, auto::AsByteSequence, Connection, Fd, Request};
 use alloc::vec::Vec;
 use core::{array::IntoIter as ArrayIter, cmp, iter};
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 /// Expected transaction connection.
 ///
