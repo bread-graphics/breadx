@@ -10,7 +10,7 @@ use crate::{
     display::StaticSetup,
     xid::XidGenerator,
 };
-use alloc::{boxed::Box, vec};
+use alloc::vec;
 use core::{
     future::Future,
     iter, mem,

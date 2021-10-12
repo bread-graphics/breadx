@@ -2,9 +2,7 @@
 
 use super::AuthInfo;
 use std::{
-    boxed::Box,
     io::{self, Read},
-    pin::Pin,
     vec,
     vec::Vec,
 };
@@ -15,6 +13,8 @@ use futures_lite::{
     stream::{self, Stream},
     AsyncRead, AsyncReadExt,
 };
+#[cfg(feature = "async")]
+use std::{boxed::Box, pin::Pin};
 
 /// Create an iterator over the authorization information in an Authority file.
 #[inline]

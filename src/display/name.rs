@@ -13,8 +13,10 @@ use memchr::memrchr;
 use std::{
     env,
     net::{self, Ipv4Addr, SocketAddr},
-    path::Path,
 };
+
+#[cfg(not(test))]
+use std::path::Path;
 
 #[cfg(feature = "async")]
 use super::AsyncConnection;
@@ -361,6 +363,7 @@ struct XConnection<'a> {
 
 impl<'a> XConnection<'a> {
     // load the xconnection from a socket
+    #[cfg(not(test))]
     #[inline]
     fn parse_from_socket(name: Cow<'a, str>) -> Result<Self, Cow<'a, str>> {
         // if the name is a file path, use it as the host

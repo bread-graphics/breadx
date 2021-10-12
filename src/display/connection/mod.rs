@@ -32,4 +32,4 @@ pub(crate) fn standard_fd_warning(fds: &mut Vec<crate::Fd>) {
 }
 
 //#[cfg(test)]
-//pub mod dummy;
+pub mod dummy;
