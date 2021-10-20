@@ -31,5 +31,5 @@ pub(crate) fn standard_fd_warning(fds: &mut Vec<crate::Fd>) {
     }
 }
 
-#[cfg(all(test, feature="std"))]
+#[cfg(all(test, feature = "std"))]
 pub mod dummy;

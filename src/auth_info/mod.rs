@@ -65,36 +65,38 @@ impl AuthInfo {
         address: &[u8],
         display: u16,
     ) -> crate::Result<Option<AuthInfo>> {
-        if cfg!(test) {
-            return Ok(None);
-        }
-
-        #[inline]
-        async fn inner<R: AsyncRead + Unpin>(
-            r: R,
-            family: u16,
-            address: &[u8],
-            display: u16,
-        ) -> crate::Result<Option<AuthInfo>> {
-            let a =
-                get::get_auth_async(reader::auth_info_reader_async(r), family, address, display)
-                    .await?;
-            Ok(a)
-        }
-
-        let name = match file::xauth_file() {
-            Some(name) => name,
-            None => return Ok(None),
-        };
-
         cfg_if::cfg_if! {
-            if #[cfg(feature = "tokio-support")] {
-                let file = tokio::fs::File::open(&name).await?.compat();
-                inner(file, family, address, display).await
+            if #[cfg(test)] {
+                return Ok(None);
             } else {
-                let file = unblock(move || File::open(&name)).await?;
-                let file = Unblock::new(file);
-                inner(file, family, address, display).await
+                #[inline]
+                async fn inner<R: AsyncRead + Unpin>(
+                    r: R,
+                    family: u16,
+                    address: &[u8],
+                    display: u16,
+                ) -> crate::Result<Option<AuthInfo>> {
+                    let a =
+                        get::get_auth_async(reader::auth_info_reader_async(r), family, address, display)
+                            .await?;
+                    Ok(a)
+                }
+
+                let name = match file::xauth_file() {
+                    Some(name) => name,
+                    None => return Ok(None),
+                };
+
+                cfg_if::cfg_if! {
+                    if #[cfg(feature = "tokio-support")] {
+                        let file = tokio::fs::File::open(&name).await?.compat();
+                        inner(file, family, address, display).await
+                    } else {
+                        let file = unblock(move || File::open(&name)).await?;
+                        let file = Unblock::new(file);
+                        inner(file, family, address, display).await
+                    }
+                }
             }
         }
     }
