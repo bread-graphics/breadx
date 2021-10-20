@@ -4,7 +4,7 @@ use breadx::{
     prelude::*, event::Event, Arc, BreadError, DisplayConnection, EventMask, GcParameters, Segment,
     WindowClass, WindowParameters,
 };
-use std::{env, process};
+use std::process;
 
 fn main() {
     env_logger::init();
@@ -100,10 +100,10 @@ fn main() {
                 gc_params.foreground = Some(red_clr);
                 gc.change(&mut conn, gc_params.clone()).unwrap();
 
-                gc.draw_lines::<'_, _, _, &[Segment]>(
+                gc.draw_lines(
                     &mut conn,
                     window,
-                    &[
+                    &*[
                         Segment {
                             x1: 10,
                             y1: 10,
@@ -116,7 +116,7 @@ fn main() {
                             x2: 10,
                             y2: 150,
                         },
-                    ],
+                    ].as_ref(),
                 )
                 .unwrap();
 

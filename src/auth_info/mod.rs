@@ -4,25 +4,23 @@
 
 pub(crate) mod family;
 
-#[cfg(feature = "std")]
+#[cfg(all(not(test), feature = "std"))]
 mod file;
-#[cfg(feature = "std")]
+#[cfg(all(not(test), feature = "std"))]
 mod get;
-#[cfg(feature = "std")]
+#[cfg(all(not(test), feature = "std"))]
 mod reader;
 
 use alloc::vec::Vec;
 
-#[cfg(feature = "std")]
-use alloc::vec;
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(test)))]
 use std::fs::File;
 
 #[cfg(all(feature = "async", not(feature = "tokio-support")))]
 use blocking::{unblock, Unblock};
 
 #[cfg(feature = "async")]
-use futures_lite::{AsyncRead, AsyncReadExt};
+use futures_lite::AsyncRead;
 
 #[cfg(feature = "tokio-support")]
 use tokio_util::compat::TokioAsyncReadCompatExt as _;
@@ -44,6 +42,7 @@ impl AuthInfo {
     pub fn get(family: u16, address: &[u8], display: u16) -> crate::Result<Option<AuthInfo>> {
         cfg_if::cfg_if! {
             if #[cfg(any(test, not(feature = "std")))] {
+                let _ = (family, address, display);
                 Ok(None)
             } else {
                 let f = match file::xauth_file().map(File::open) {
@@ -66,36 +65,38 @@ impl AuthInfo {
         address: &[u8],
         display: u16,
     ) -> crate::Result<Option<AuthInfo>> {
-        if cfg!(test) {
-            return Ok(None);
-        }
-
-        #[inline]
-        async fn inner<R: AsyncRead + Unpin>(
-            r: R,
-            family: u16,
-            address: &[u8],
-            display: u16,
-        ) -> crate::Result<Option<AuthInfo>> {
-            let a =
-                get::get_auth_async(reader::auth_info_reader_async(r), family, address, display)
-                    .await?;
-            Ok(a)
-        }
-
-        let name = match file::xauth_file() {
-            Some(name) => name,
-            None => return Ok(None),
-        };
-
         cfg_if::cfg_if! {
-            if #[cfg(feature = "tokio-support")] {
-                let file = tokio::fs::File::open(&name).await?.compat();
-                inner(file, family, address, display).await
+            if #[cfg(test)] {
+                return Ok(None);
             } else {
-                let file = unblock(move || File::open(&name)).await?;
-                let file = Unblock::new(file);
-                inner(file, family, address, display).await
+                #[inline]
+                async fn inner<R: AsyncRead + Unpin>(
+                    r: R,
+                    family: u16,
+                    address: &[u8],
+                    display: u16,
+                ) -> crate::Result<Option<AuthInfo>> {
+                    let a =
+                        get::get_auth_async(reader::auth_info_reader_async(r), family, address, display)
+                            .await?;
+                    Ok(a)
+                }
+
+                let name = match file::xauth_file() {
+                    Some(name) => name,
+                    None => return Ok(None),
+                };
+
+                cfg_if::cfg_if! {
+                    if #[cfg(feature = "tokio-support")] {
+                        let file = tokio::fs::File::open(&name).await?.compat();
+                        inner(file, family, address, display).await
+                    } else {
+                        let file = unblock(move || File::open(&name)).await?;
+                        let file = Unblock::new(file);
+                        inner(file, family, address, display).await
+                    }
+                }
             }
         }
     }
