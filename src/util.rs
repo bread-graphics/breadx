@@ -11,16 +11,12 @@ use alloc::boxed::Box;
 #[cfg(all(unix, feature = "std"))]
 use nix::Error as NixError;
 #[cfg(all(unix, feature = "std"))]
-use std::io::{Error as IoError, ErrorKind};
+use std::io::Error as IoError;
 
 #[cfg(all(unix, feature = "std"))]
 #[inline]
 pub(crate) fn convert_nix_error(e: NixError) -> IoError {
-    match e {
-        NixError::Sys(errno) => errno.into(),
-        NixError::InvalidPath | NixError::InvalidUtf8 => IoError::new(ErrorKind::InvalidInput, e),
-        NixError::UnsupportedOperation => IoError::new(ErrorKind::Other, e),
-    }
+    e.into()
 }
 
 /// Expand or truncate a `TinyVec<[u8; N]>` so that its length becomes the given value.

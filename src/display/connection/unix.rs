@@ -55,7 +55,7 @@ fn send_msg_packet(conn: RawFd, data: &[u8], fds: &mut Vec<Fd>) -> (usize, io::R
                     // ensure we never send the file descriptors more than once
                     cmsgs = &[];
                 }
-                Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => (),
+                Err(nix::errno::Errno::EINTR) => (),
                 Err(e) => return (offset, Err(convert_nix_error(e))),
             }
         }
@@ -165,7 +165,7 @@ fn read_msg_packet(
                 datalen = data.len();
                 datavec = [IoVec::from_mut_slice(data)];
             }
-            Err(nix::Error::Sys(nix::errno::Errno::EINTR)) => {
+            Err(nix::errno::Errno::EINTR) => {
                 log::warn!("Interrupt occurred during read");
             }
             Err(e) => return Err(convert_nix_error(e)),
