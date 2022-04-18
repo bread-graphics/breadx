@@ -1,86 +1,18 @@
 [package]
 name = "breadx"
-version = "2.0.0"
+version = "0.1.0"
 authors = ["notgull <jtnunley01@gmail.com>"]
 edition = "2018"
-description = "Implementation of the X Window System Protocol"
-license = "MIT OR Apache-2.0"
-homepage = "https://github.com/notgull/breadx#readme"
-repository = "https://github.com/notgull/breadx"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-io = { version = "1.4.1", optional = true }
-blocking = { version = "1.0.2", optional = true }
-bytemuck = "1.4.1"
 cfg-if = "1"
-concurrent-queue = { version = "1.2", optional = true }
-dashmap = { version = "4", optional = true }
-cty = "0.2.1"
-futures-lite = { version = "1.11.2", optional = true }
-gethostname = { version = "0.2", optional = true }
-gluten-keyboard = "0.1.2"
-hashbrown = "0.9.1"
-image = { version = "0.23.12", default-features = false, optional = true }
-itoa = { version = "0.4", optional = true }
-log = "0.4"
-memchr = { version = "2.3.3", default-features = false }
-pin-project-lite = { version = "0.2", optional = true }
-spinning_top = { version = "0.2", optional = true }
-tinyvec = { version = "1.1.0", features = ["alloc"] }
-tokio = { version = "1.7", features = ["fs", "net"], optional = true }
-tokio-util = { version = "0.6", features = ["compat"], optional = true }
-
-[target.'cfg(unix)'.dependencies]
-nix = "0.19.0"
-
-[dev-dependencies]
-approx = "0.5"
-easy-parallel = "3.1.0"
-env_logger = { version = "0.8.1", default-features = false, features = ["atty", "termcolor"] }
-fastrand = "1.4.0"
-image = { version = "0.23.12", default-features = false, features = ["jpeg"] }
-simplelog = "0.10"
-smol = "1.2.5"
+nix = { version = "0.23", optional = true }
+socket2 = { version = "0.4", optional = true }
+x11rb-protocol = { git = "https://github.com/psychon/x11rb" }
 
 [features]
-# Optimizations and features
 default = ["std"]
-async = ["std", "async-io", "blocking", "futures-lite", "pin-project-lite"]
-image-support = ["image", "std"]
-std = ["gethostname", "itoa", "memchr/std"]
-sync-display = ["concurrent-queue", "dashmap", "spinning_top", "std"]
-tokio-support = ["async", "spinning_top", "tokio", "tokio-util"]
-
-# Extensions
-damage = ["fixes"]
-dpms = []
-dri2 = []
-dri3 = ["sync"]
-fixes = ["render", "shape"]
-ge = []
-glx = []
-input = ["fixes"]
-present = ["randr", "fixes", "sync"]
-print = []
-randr = ["render"]
-record = []
-render = []
-res = []
-screensaver = []
-selinux = []
-shape = []
-shm = []
-sync = []
-xevie = []
-xf86dri = []
-xf86vidmode = []
-xinerama = []
-xkb = []
-xtest = []
-xvmc = ["xv"]
-xv = ["shm"]
-all-extensions = ["damage", "dpms", "dri2", "dri3", "fixes", "ge", "glx", "input", "present", "print", "randr", "record", "render", "res", "screensaver", "selinux", "shape", "shm", "sync", "xevie", "xf86dri", "xf86vidmode", "xinerama", "xkb", "xtest", "xvmc", "xv"]
-
-[package.metadata.docs.rs]
-features = ["async", "all-extensions"]
-rustdoc-args = ["-Z", "unstable-options", "--extend-css", "tutorials/style.css"]
+std = ["nix"]
+async = ["std", "socket2"]

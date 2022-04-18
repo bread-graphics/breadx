@@ -1,165 +1,135 @@
 // MIT/Apache2 License
 
-//! This module provides structures used in error handling of `breadx` functions.
+use core::fmt;
 
-use alloc::{borrow::Cow, string::String, sync::Arc};
-use core::{convert::Infallible, fmt, ops::Deref};
-#[cfg(feature = "std")]
-use std::{error::Error as StdError, io::Error as IoError};
+cfg_std! {
+    use std::error::Error as StdError;
+    use std::io::Error as IoError;
+}
 
-/// The common error type returned by `breadx` functions.
-#[derive(Debug, Clone)]
-pub enum BreadError {
-    StaticMsg(&'static str),
-    Msg(String),
-    StaticErr(&'static BreadError),
-    /// Unable to parse connection name.
-    UnableToParseConnection,
-    /// Unable to open connection to X11 server.
-    UnableToOpenConnection,
-    /// IO Error
+cfg_std_unix! {
+    use nix::errno::Errno;
+}
+
+/// An error that may occur during operation.
+pub struct Error {
+    inner: Inner,
+}
+
+enum Inner {
+    /// We tried to run an operation that is not supported.
+    Unsupported(Unsupported),
+    /// We did something that has put the X11 connection into an invalid state.
+    ///
+    /// This is a signal to the connection to halt all operations.
+    InvalidState(InvalidState),
+    /// We could not parse the display.
+    CouldntParseDisplay,
+    /// An I/O error occurred.
     #[cfg(feature = "std")]
-    Io(Arc<IoError>),
-    /// Unable to open connection to the X11 server.
-    FailedToConnect(String),
-    /// X11 server rejected our authorization.
-    FailedToAuthorize(String),
-    /// Object was unable to be parsed
-    BadObjectRead(Option<&'static str>),
-    /// Required extension was not present.
-    ExtensionNotPresent(Cow<'static, str>),
-    /// Required request was not present.
-    NoMatchingRequest(u16),
-    /// An error propogated by the X11 server.
-    XProtocol {
-        error_code: ErrorCode,
-        minor_code: u8,
-        major_code: u8,
-        sequence: u16,
-    },
-    /// The X connection closed without telling us.
-    ClosedConnection,
-    /// Failed to load a library; exists for the benefit of breadglx
-    LoadLibraryFailed(&'static str),
+    Io(IoError),
 }
 
-impl BreadError {
-    #[inline]
-    pub(crate) fn from_x_error<T: Deref<Target = [u8]>>(bytes: T) -> Self {
-        let b = &*bytes;
-        let mut sequence: [u8; 2] = [0; 2];
-        sequence.copy_from_slice(&bytes[2..=3]);
-        let sequence = u16::from_ne_bytes(sequence);
-        let mut minor_code: [u8; 2] = [0; 2];
-        minor_code.copy_from_slice(&bytes[8..=9]);
-        let minor_code = u16::from_ne_bytes(minor_code);
-        Self::XProtocol {
-            error_code: ErrorCode(b[1]),
-            major_code: b[10],
-            minor_code: minor_code as _,
-            sequence,
+#[derive(Clone, Copy)]
+pub(crate) enum Unsupported {
+    Fds,
+    Socket,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum InvalidState {
+    FdsNotWritten,
+}
+
+impl Error {
+    pub(crate) fn invalid_state(is: InvalidState) -> Self {
+        Error {
+            inner: Inner::InvalidState(is),
+        }
+    }
+
+    pub(crate) fn unsupported(us: Unsupported) -> Self {
+        Error {
+            inner: Inner::Unsupported(us),
+        }
+    }
+
+    pub(crate) fn io(io: IoError) -> Self {
+        Error {
+            inner: Inner::Io(io),
+        }
+    }
+
+    pub(crate) fn couldnt_parse_display() -> Self {
+        Error {
+            inner: Inner::CouldntParseDisplay,
         }
     }
 }
 
-#[cfg(feature = "std")]
-impl From<IoError> for BreadError {
-    #[inline]
-    fn from(io: IoError) -> Self {
-        Self::Io(Arc::new(io))
+cfg_std_unix! {
+    impl Error {
+        pub(crate) fn nix(errno: Errno) -> Self {
+            Error::io(IoError::from_raw_os_error(errno as i32))
+        }
     }
 }
 
-impl From<Infallible> for BreadError {
-    #[inline]
-    fn from(_i: Infallible) -> Self {
-        panic!("Infallible")
-    }
-}
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use alloc::format;
 
-impl fmt::Display for BreadError {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::StaticMsg(m) => f.write_str(m),
-            Self::Msg(m) => f.write_str(m),
-            Self::StaticErr(e) => write!(f, "{}", e),
-            Self::UnableToParseConnection => f.write_str("Unable to parse X11 connection name"),
-            Self::UnableToOpenConnection => f.write_str("Unable to open connection to X11 server"),
-            Self::FailedToConnect(reason) => write!(f, "Unable to connect to the X11 server: {}", reason),
-            Self::FailedToAuthorize(reason) => write!(f, "Authorization was rejected by the X11 server: {}", reason),
-            Self::BadObjectRead(name) => write!(
-                f,
-                "Unable to read object of type from bytes: {}",
-                name.unwrap_or("Unknown")
-            ),
-            Self::NoMatchingRequest(seq) => write!(f, "Received reply with non-matching sequence {}", seq),
-            Self::ExtensionNotPresent(ext) => write!(f, "Extension was not found on X server: {}", ext),
-            Self::XProtocol {
-                error_code,
-                minor_code,
-                major_code,
-                sequence,
-            } => write!(
-                f,
-                "An X11 error of type {} occurred on a request of opcode {}:{} and sequence {}",
-                error_code, major_code, minor_code, sequence
-            ),
-            Self::ClosedConnection => f.write_str("The X connection closed without our end of the connection closing. Did you forget to listen for WM_DELTE_WINDOW?"),
-            Self::LoadLibraryFailed(l) => write!(f, "Failed to load library: {}", l),
+        let s = match self.inner {
+            Inner::Unsupported(ref e) => format!("Unsupported: {}", e),
+            Inner::InvalidState(ref e) => format!("InvalidState: {}", e),
+            Inner::CouldntParseDisplay => "CouldntParseDisplay".into(),
             #[cfg(feature = "std")]
-            Self::Io(i) => fmt::Display::fmt(&*i, f),
+            Inner::Io(ref e) => format!("{:?}", e),
+        };
+
+        f.debug_tuple("Error").field(&s).finish()
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.inner {
+            Inner::Unsupported(ref e) => write!(f, "attempted an unsupported operation: {}", e),
+            Inner::InvalidState(ref e) => write!(f, "entered an invalid state: {}", e),
+            Inner::CouldntParseDisplay => write!(f, "could not parse the DISPLAY string"),
+            #[cfg(feature = "std")]
+            Inner::Io(ref e) => write!(f, "{}", e),
         }
     }
 }
 
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct ErrorCode(pub u8);
-
-impl fmt::Display for ErrorCode {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self.0 {
-            1 => "Request",
-            2 => "Value",
-            3 => "Window",
-            4 => "Pixmap",
-            5 => "Atom",
-            6 => "Cursor",
-            7 => "Font",
-            8 => "Match",
-            9 => "Drawable",
-            10 => "Access",
-            11 => "Alloc",
-            12 => "Colormap",
-            13 => "GConext",
-            14 => "IDChoice",
-            15 => "Name",
-            16 => "Length",
-            17 => "Implementation",
-            id => return write!(f, "{}", id),
-        })
-    }
-}
-
-impl fmt::Debug for ErrorCode {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
-#[cfg(feature = "std")]
-impl StdError for BreadError {
-    #[inline]
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        match self {
-            BreadError::StaticErr(e) => Some(e),
-            BreadError::Io(i) => Some(&*i),
-            _ => None,
+impl fmt::Display for Unsupported {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Unsupported::Fds => write!(f, "file descriptors"),
+            Unsupported::Socket => write!(f, "unix sockets"),
         }
     }
 }
 
-pub type Result<Success = ()> = core::result::Result<Success, BreadError>;
+impl fmt::Display for InvalidState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            InvalidState::FdsNotWritten => write!(f, "file descriptors have not been written"),
+        }
+    }
+}
+
+cfg_std! {
+    impl StdError for Error {
+        fn source(&self) -> Option<&(dyn StdError + 'static)> {
+            match self.inner {
+                #[cfg(feature = "std")]
+                Inner::Io(ref e) => Some(e),
+                _ => None,
+            }
+        }
+    }
+}
+
+pub type Result<T = ()> = core::result::Result<T, Error>;
