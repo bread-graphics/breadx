@@ -4,23 +4,21 @@
 
 //! Defines the `NameConnection` type.
 
-use crate::connection::{Connection, IoSlice};
-use crate::{Error, Fd, Result, Unsupported};
+use crate::connection::{Connection, StdConnection};
+use crate::{Error, Fd, Result};
 
 use core::fmt;
 
-use std::net::TcpStream;
+use std::io::{IoSlice, IoSliceMut};
+use std::net::{Ipv4Addr, SocketAddr, TcpStream};
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use x11rb_protocol::parse_display::{parse_display, ConnectAddress, ParsedDisplay};
+use x11rb_protocol::xauth::Family;
 
 cfg_std_unix! {
     use crate::connection::SendmsgConnection;
-}
-
-cfg_async! {
-    mod nb_connect;
-    use nb_connect::nb_connect;
+    use std::os::unix::net::UnixStream;
 }
 
 /// A connection that can be derived from a parsed display name.
@@ -30,13 +28,13 @@ pub struct NameConnection {
 
 #[derive(Debug)]
 enum Inner {
-    Tcp(TcpStream),
+    Tcp(StdConnection<TcpStream>),
     #[cfg(unix)]
     Unix(SendmsgConnection),
 }
 
 impl fmt::Debug for NameConnection {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.inner, f)
     }
 }
@@ -49,8 +47,13 @@ impl NameConnection {
     /// This function blocks while it tries to connect to the server. Use the
     /// [`new_async`] function if you would like a non-blocking variant.
     pub fn new(name: Option<&str>) -> Result<Self> {
-        let parsed_display = parse_display(name).ok_or_else(|| Error::couldnt_parse_display())?;
+        let parsed_display =
+            parse_display(name).ok_or_else(|| Error::couldnt_parse_display(name.is_none()))?;
 
+        Self::from_parsed_display(parsed_display, name.is_none())
+    }
+
+    pub(crate) fn from_parsed_display(parsed_display: ParsedDisplay, is_env: bool) -> Result<Self> {
         // iterate over the potential connection types
         let mut error: Option<Error> = None;
 
@@ -82,13 +85,46 @@ impl NameConnection {
         }
 
         // failed to connect over all addresses; return the last error
-        Err(error.unwrap_or_else(|| Error::couldnt_parse_display()))
+        Err(error.unwrap_or_else(|| Error::couldnt_parse_display(is_env)))
     }
 
     pub(crate) fn from_tcp_stream(stream: TcpStream) -> Self {
         NameConnection {
-            inner: Inner::Tcp(stream),
+            inner: Inner::Tcp(stream.into()),
         }
+    }
+
+    /// Get the peer address for xauth.
+    pub(crate) fn get_address(&self) -> Result<(Family, Vec<u8>)> {
+        if let Inner::Tcp(ref connection) = self.inner {
+            let ip = match connection.peer_addr().map_err(Error::io)? {
+                SocketAddr::V4(ip) => *ip.ip(),
+                SocketAddr::V6(ip) => {
+                    // try to translate this to an IPv4 address
+                    let ip = *ip.ip();
+                    if ip.is_loopback() {
+                        Ipv4Addr::LOCALHOST
+                    } else if let Some(ip) = ip.to_ipv4() {
+                        ip
+                    } else {
+                        // just use the IPv6 address
+                        return Ok((Family::INTERNET6, ip.octets().to_vec()));
+                    }
+                }
+            };
+
+            // loopback case is handeled below
+            if !ip.is_loopback() {
+                return Ok((Family::INTERNET, ip.octets().to_vec()));
+            }
+        }
+
+        // connection is connected to our own computer,
+        // use the local hostname as the address
+        let hostname = gethostname::gethostname()
+            .into_string()
+            .map_or_else(|_| Vec::new(), String::into_bytes);
+        Ok((Family::LOCAL, hostname))
     }
 }
 
@@ -96,80 +132,141 @@ cfg_std_unix! {
     impl NameConnection {
         pub(crate) fn from_unix_stream(stream: UnixStream) -> Self {
             NameConnection {
-                inner: Inner::Unix(SendmsgConnection::from(stream)),
+                inner: Inner::Unix(stream.into()),
             }
         }
     }
 }
 
-cfg_async! {
-    impl NameConnection {
-        /// Create a `NameConnection`, established in a non-blocking manner.
-        pub async fn new_async(name: Option<&str>) -> Result<Self> {
-            let parsed_display = parse_display(name).ok_or_else(|| Error::couldnt_parse_display())?;
-
-            // iterate over the potential connection types
-            let mut error: Option<Error> = None;
-
-            for connect_address in parsed_display.connect_instruction() {
-                match nb_connect(connect_address) {
-                    Ok(s) => return Ok(s),
-                    Err(e) => { error = Some(e); }
-                }
+macro_rules! forward_impl {
+    (&$self: expr, $fn_name: ident, $($val: expr),*) => {
+        match ($self).inner {
+            Inner::Tcp(ref c) => {
+                #[allow(unused_mut)]
+                let mut c = c;
+                c.$fn_name($($val),*)
             }
-
-            // failed to connect over all addresses; return the last error
-            Err(error.unwrap_or_else(|| Error::couldnt_parse_display()))
+            #[cfg(unix)]
+            Inner::Unix(ref c) => {
+                #[allow(unused_mut)]
+                let mut c = c;
+                c.$fn_name($($val),*)
+            }
+        }
+    };
+    (&mut $self: expr, $fn_name: ident, $($val: expr),*) => {
+        match ($self).inner {
+            Inner::Tcp(ref mut c) => c.$fn_name($($val),*),
+            #[cfg(unix)]
+            Inner::Unix(ref mut c) => c.$fn_name($($val),*),
         }
     }
 }
 
 impl Connection for NameConnection {
-    fn write_slices_with_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        match &mut self.inner {
-            Inner::Tcp(tcp) => tcp.write_slices_with_fds(iov, fds),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.write_slices_with_fds(iov, fds),
-        }
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        forward_impl!(&mut self, send_slices_and_fds, slices, fds)
     }
 
-    fn write_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
-        match &mut self.inner {
-            Inner::Tcp(tcp) => tcp.write_slices(iov),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.write_slices(iov),
-        }
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&mut self, recv_slices_and_fds, slices, fds)
     }
 
-    fn write_slice(&mut self, buf: &[u8]) -> Result<usize> {
-        match &mut self.inner {
-            Inner::Tcp(tcp) => tcp.write_slice(buf),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.write_slice(buf),
-        }
+    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
+        forward_impl!(&mut self, send_slices, slices)
     }
 
-    fn is_write_vectored(&self) -> bool {
-        match &self.inner {
-            Inner::Tcp(tcp) => tcp.is_write_vectored(),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.is_write_vectored(),
-        }
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        forward_impl!(&mut self, send_slice, slice)
     }
 
-    fn read_to_buffer_with_fds(&mut self, buf: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
-        match &mut self.inner {
-            Inner::Tcp(tcp) => tcp.read_to_buffer_with_fds(buf, fds),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.read_to_buffer_with_fds(buf, fds),
-        }
+    fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+        forward_impl!(&mut self, recv_slice_and_fds, slice, fds)
+    }
+
+    fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+        forward_impl!(&mut self, recv_slice, slice)
     }
 
     fn flush(&mut self) -> Result<()> {
-        match &mut self.inner {
-            Inner::Tcp(tcp) => tcp.flush(),
-            #[cfg(unix)]
-            Inner::Unix(unix) => unix.flush(),
-        }
+        forward_impl!(&mut self, flush,)
+    }
+
+    fn shutdown(&self) -> Result<()> {
+        forward_impl!(&self, shutdown,)
+    }
+
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&mut self, non_blocking_recv_slice_and_fds, slice, fds)
+    }
+
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&mut self, non_blocking_recv_slices_and_fds, slices, fds)
+    }
+}
+
+impl Connection for &NameConnection {
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        forward_impl!(&self, send_slices_and_fds, slices, fds)
+    }
+
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&self, recv_slices_and_fds, slices, fds)
+    }
+
+    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
+        forward_impl!(&self, send_slices, slices)
+    }
+
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        forward_impl!(&self, send_slice, slice)
+    }
+
+    fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+        forward_impl!(&self, recv_slice_and_fds, slice, fds)
+    }
+
+    fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+        forward_impl!(&self, recv_slice, slice)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        forward_impl!(&self, flush,)
+    }
+
+    fn shutdown(&self) -> Result<()> {
+        forward_impl!(&self, shutdown,)
+    }
+
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&self, non_blocking_recv_slice_and_fds, slice, fds)
+    }
+
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        forward_impl!(&self, non_blocking_recv_slices_and_fds, slices, fds)
     }
 }

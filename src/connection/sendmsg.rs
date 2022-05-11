@@ -3,23 +3,30 @@
 #![cfg(unix)]
 
 use super::Connection;
+use crate::{Error, Fd, Result};
 
+use alloc::vec::Vec;
+
+use core::borrow::{Borrow, BorrowMut};
 use core::{fmt, mem};
+use std::io::{IoSlice, IoSliceMut, Read, Write};
 
 use nix::errno::Errno;
 use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags};
 
-use std::net::UnixStream;
 use std::os::unix::io::{AsRawFd, RawFd};
+use std::os::unix::net::UnixStream;
 
 /// A variant of the `UnixStream` connection that uses `sendmsg` to send data
 /// and `recvmsg` to receive it.
+///
+/// This connection supports file descriptor passing.
 pub struct SendmsgConnection {
     stream: UnixStream,
 }
 
 impl fmt::Debug for SendmsgConnection {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.stream, f)
     }
 }
@@ -78,25 +85,29 @@ impl SendmsgConnection {
     }
 
     /// Call `recvmsg` with the given `MsgFlags`.
-    pub fn recvmsg(&self, buffer: &mut [u8], fds: &mut Vec<Fd>, flags: MsgFlags) -> Result<usize> {
-        if buffer.is_empty() {
+    fn recvmsg(
+        &self,
+        iov: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+        flags: MsgFlags,
+    ) -> Result<usize> {
+        let span = tracing::trace_span!("recvmsg");
+        let _enter = span.enter();
+
+        if iov.is_empty() {
             return Ok(0);
         }
 
         let conn = self.stream.as_raw_fd();
-        let mut iov = [IoSliceMut::new(buffer)];
-
-        // TODO: nix 0.24 will use io slices from std
-        let iov = unsafe { std::mem::transmute(&mut iov) };
 
         let mut cmsg_space = nix::cmsg_space!([Fd; 32]);
 
         // run recvmsg
         let msg = loop {
-            match recvmsg(conn, iov, Some(&mut cmsg_space), flags) {
+            match recvmsg::<()>(conn, iov, Some(&mut cmsg_space), flags) {
                 Ok(n) => break n,
                 Err(Errno::EINTR) => continue,
-                Err(e) => return Error::nix(e),
+                Err(e) => return Err(Error::nix(e)),
             }
         };
 
@@ -108,64 +119,115 @@ impl SendmsgConnection {
                     ControlMessageOwned::ScmRights(rights) => Some(rights),
                     _ => None,
                 })
-                .flatten(),
+                .flatten()
+                .map(|fd| Fd::new(fd)),
         );
+
+        tracing::trace!("read {} bytes and {} fds", bytes_read, fds.len());
 
         Ok(bytes_read)
     }
-}
 
-impl Connection for SendmsgConnection {
-    fn write_slices_with_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        // TODO: nix 0.24 will use io slices from std
-        let iov = unsafe { std::mem::transmute(iov) };
+    /// Call the sendmsg() function for the socket.
+    fn sendmsg(&self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        let span = tracing::trace_span!("sendmsg");
+        let _enter = span.enter();
 
-        let fds = mem::take(fds);
-        let control_msg = [ControlMessage::ScmRights(&fds)];
+        if iov.is_empty() {
+            return Ok(0);
+        }
+
+        let our_fds = mem::take(fds);
+        let raw_fds = our_fds
+            .iter()
+            .map(|fd| fd.as_raw_fd())
+            .collect::<Vec<i32>>();
+        let control_msg = [ControlMessage::ScmRights(&raw_fds)];
         let conn = self.stream.as_raw_fd();
 
         // send the message
         loop {
-            match sendmsg(conn, iov, &control_msg, MsgFlags::empty()) {
-                Ok(n) => return Ok(n),
+            match sendmsg::<()>(conn, iov, &control_msg, MsgFlags::empty(), None) {
+                Ok(n) => {
+                    tracing::trace!("sent {} bytes and {} fds", n, our_fds.len());
+                    return Ok(n);
+                }
                 Err(Errno::EINTR) => continue,
-                Err(e) => return Error::nix(e),
+                Err(e) => {
+                    // return fds to prevent drop
+                    *fds = our_fds;
+                    return Err(Error::nix(e));
+                }
             }
         }
 
         // fds is dropped at the end here
     }
+}
 
-    fn write_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
-        // since we don't have file descriptors, we can just skip the
-        // special stuff and use write_vectored
-        self.stream.write_vectored(iov)
-    }
+// so we can duplicate the impl for owned and &
+macro_rules! impl_sendmsg_conn {
+    ($($inner: tt)*) => {
+        fn send_slices_and_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+            self.sendmsg(iov, fds)
+        }
 
-    fn write_slice(&mut self, buffer: &[u8]) -> Result<usize> {
-        // same as above
-        self.stream.write(buffer)
-    }
+        fn send_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
+            // since we don't have file descriptors, we can just skip the
+            // special stuff and use write_vectored
+            ($($inner)* self.stream).write_vectored(iov).map_err(Error::io)
+        }
 
-    fn is_write_vectored(&self) -> bool {
-        true
-    }
+        fn send_slice(&mut self, buffer: &[u8]) -> Result<usize> {
+            // same as above
+            ($($inner)* self.stream).write(buffer).map_err(Error::io)
+        }
 
-    fn read_to_buffer_with_fds(&mut self, buffer: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
-        self.recvmsg(buffer, fds, MsgFlags::empty())
-    }
+        fn recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            // use our recvmsg helper function
+            self.recvmsg(slices, fds, MsgFlags::empty())
+        }
 
-    fn flush(&mut self) -> Result<()> {
-        self.stream.flush()
+        fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+            let span = tracing::trace_span!("recv_slice");
+            let _enter = span.enter();
+
+            // just use the read() function
+            ($($inner)* self.stream).read(slice).map_err(Error::io)
+        }
+
+        fn flush(&mut self) -> Result<()> {
+            ($($inner)* self.stream).flush().map_err(Error::io)
+        }
+
+        fn non_blocking_recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            // use the recvmsg function with MSG_DONTWAIT
+            self.recvmsg(slices, fds, MsgFlags::MSG_DONTWAIT)
+        }
+
+        fn shutdown(&self) -> Result<()> {
+            let span = tracing::trace_span!("shutdown");
+            let _guard = span.enter();
+
+            self.stream
+                .shutdown(std::net::Shutdown::Both)
+                .map_err(Error::io)
+        }
     }
 }
 
-impl NbConnection for SendmsgConnection {
-    fn read_to_buffer_non_blocking(
-        &mut self,
-        buffer: &mut [u8],
-        fds: &mut Vec<Fd>,
-    ) -> Result<usize> {
-        self.recvmsg(buffer, fds, MsgFlags::MSG_DONTWAIT)
-    }
+impl Connection for SendmsgConnection {
+    impl_sendmsg_conn! { &mut }
+}
+
+impl Connection for &SendmsgConnection {
+    impl_sendmsg_conn! { & }
 }

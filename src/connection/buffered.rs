@@ -6,349 +6,686 @@ use alloc::vec::Vec;
 
 use core::cmp;
 use core::fmt;
+use core::fmt::Write;
+use core::ops::Range;
 
 use super::Connection;
-use crate::connection::IoSlice;
+use super::{new_io_slice, new_io_slice_mut};
+use crate::connection::{IoSlice, IoSliceMut};
 use crate::{Error, Fd, InvalidState, Result};
 
 // libxcb uses these values by default
 const DEFAULT_READ_CAPACITY: usize = 4096;
 const DEFAULT_WRITE_CAPACITY: usize = 16384;
 
-/// A wrapper around a [`Connection`] that buffers reads and writes.
-#[derive(Debug)]
+/// A wrapper around a [`Connection`] that buffers all of the I/O.
 pub struct BufConnection<C> {
-    // the object we are wrapping
+    /// The connection we're wrapping around.
     conn: C,
-
-    // the buffer for reads
-    read_buf: Buffer,
-
-    // the cursor into the read buffer that we've read to
-    read_cursor: usize,
-
-    // the buffer for writes
-    write_buf: Buffer,
+    /// The read buffer, containing data that has been read from the
+    /// connection but not yet returned to the caller.
+    read_buf: ReadBuffer,
+    /// The write buffer, containing data that has been written to the
+    /// connection but not yet flushed.
+    write_buf: WriteBuffer,
 }
 
-struct Buffer {
-    /// The bytes that we haven't written yet.
-    bytes: Box<[u8]>,
-    /// The number of bytes in `bytes` that are valid.
-    len: usize,
-    /// A list of file descriptors that we haven't sent yet.
+struct ReadBuffer {
+    /// The buffer of data that we've read from the connection.
+    buf: Box<[u8]>,
+    /// The position into the buffer that contains data to return
+    /// to the user.
+    ///
+    /// The lower bound is the position where the data that the user has
+    /// already read stops. The upper bound is where the data that we
+    /// haven't read to yet begins.
+    valid_range: Range<usize>,
+    /// The file descriptors that we have collected, but haven't yet
+    /// returned to the user.
     fds: Vec<Fd>,
 }
 
+struct WriteBuffer {
+    /// The buffer of data that we haven't wrote to the connection.
+    buf: Box<[u8]>,
+    /// The position into the buffer that contains actual writable
+    /// data.
+    ///
+    /// Every other byte should be considered uninitialized.
+    writable: usize,
+    /// The file descriptors that we have collected, but haven't yet
+    /// written to the connection.
+    fds: Vec<Fd>,
+}
+
+impl<C: Connection> From<C> for BufConnection<C> {
+    fn from(conn: C) -> Self {
+        Self::new(conn)
+    }
+}
+
 impl<C: Connection> BufConnection<C> {
-    /// Create a new `BufConnection`.
+    /// Create a new `BufConnection` from a given connection.
     pub fn new(conn: C) -> Self {
         Self::with_capacity(DEFAULT_READ_CAPACITY, DEFAULT_WRITE_CAPACITY, conn)
     }
 
-    /// Create a new `BufConnection` with a specified capacity.
+    /// Create a new `BufConnection` from a given connection, with
+    /// the given read and write capacities.
     pub fn with_capacity(read_capacity: usize, write_capacity: usize, conn: C) -> Self {
-        Self {
-            conn,
-            read_buf: Buffer::with_capacity(read_capacity),
-            read_cursor: 0,
-            write_buf: Buffer::with_capacity(write_capacity),
-        }
-    }
-
-    /// Get the inner connection.
-    pub fn get_ref(&self) -> &C {
-        &self.conn
-    }
-
-    /// Get the inner connection.
-    pub fn get_mut(&mut self) -> &mut C {
-        &mut self.conn
-    }
-
-    /// Get the amount of space we have left in our write buffer.
-    fn spare_write_capacity(&self) -> usize {
-        self.write_buf.spare_capacity()
-    }
-
-    /// Get the amount of space we have left in our read buffer.
-    fn spare_read_capacity(&self) -> usize {
-        self.read_buf.spare_capacity()
-    }
-
-    /// Flush the write buffer to the output.
-    fn flush_write_buffer(&mut self) -> Result<()> {
-        /// Ensures that the buffer is updated in one fell swoop.
-        struct Guard<'a> {
-            buffer: &'a mut Box<[u8]>,
-            len: &'a mut usize,
-            written: usize,
-        }
-
-        impl<'a> Guard<'a> {
-            fn remaining(&self) -> &[u8] {
-                &self.buffer[self.written..*self.len]
-            }
-
-            fn advance(&mut self, n: usize) {
-                self.written += n;
-            }
-
-            fn done(&self) -> bool {
-                self.written >= *self.len
-            }
-        }
-
-        impl<'a> Drop for Guard<'a> {
-            fn drop(&mut self) {
-                // update the length
-                *self.len = (*self.len).saturating_sub(self.written);
-            }
-        }
-
-        let mut guard = Guard {
-            buffer: &mut self.read_buf.bytes,
-            len: &mut self.read_buf.len,
-            written: 0,
+        let read_buf = ReadBuffer {
+            buf: vec![0; read_capacity].into_boxed_slice(),
+            valid_range: 0..0,
+            fds: Vec::new(),
         };
 
-        // write to the output
-        while !guard.done() {
-            #[cfg(not(feature = "std"))]
-            let iov = [guard.remaining()];
-            #[cfg(feature = "std")]
-            let iov = [IoSlice::new(guard.remaining())];
+        let write_buf = WriteBuffer {
+            buf: vec![0; write_capacity].into_boxed_slice(),
+            writable: 0,
+            fds: Vec::new(),
+        };
 
-            // write bytes to the output
-            let n = self
-                .conn
-                .write_slices_with_fds(&iov, &mut self.read_buf.fds)?;
-            guard.advance(n);
-        }
-
-        // return a normal error if file descriptors aren't written
-        if self.write_buf.fds.len() != 0 {
-            Err(Error::invalid_state(InvalidState::FdsNotWritten))
-        } else {
-            Ok(())
+        Self {
+            conn,
+            read_buf,
+            write_buf,
         }
     }
 
-    /// Write as much of the buffer as we can to the write buffer.
-    fn write_to_buf(&mut self, data: &[u8]) -> usize {
-        let available = self.spare_write_capacity();
-        let buffered = cmp::min(available, data.len());
+    /// Flush the `WriteBuffer` to the underlying connection.
+    ///
+    /// This will flush the `WriteBuffer` to the underlying connection,
+    /// and then clear the `WriteBuffer`.
+    ///
+    /// If the `WriteBuffer` is empty, this is a no-op.
+    ///
+    /// Returns the number of bytes written.
+    fn flush_write_buffer(&mut self) -> Result<usize> {
+        let mut nwritten = 0;
+        while nwritten < self.write_buf.writable {
+            // if we have file descriptors, make sure that we write
+            // those
+            let buffer = &self.write_buf.buf[nwritten..self.write_buf.writable];
+            if self.write_buf.fds.is_empty() {
+                nwritten += self.conn.send_slice(buffer)?;
+            } else {
+                nwritten += self
+                    .conn
+                    .send_slices_and_fds(&[new_io_slice(buffer)], &mut self.write_buf.fds)?;
+            }
+        }
 
-        // copy as much as we can into the buffer
-        let cur_len = self.write_buf.len;
-        self.write_buf.bytes[cur_len..cur_len + buffered].copy_from_slice(&data[..buffered]);
-
-        // update the length
-        self.write_buf.len += buffered;
-
-        buffered
+        self.write_buf.flush();
+        Ok(nwritten)
     }
 
-    fn write_slice_impl(&mut self, slice: &[u8], fds: &mut Vec<Fd>) -> Result<usize> {
-        // flush the buffer if we need to
-        if slice.len() > self.spare_write_capacity() {
+    /// Copy the slice of data into our write buffer.
+    fn copy_slice_to_buffer(&mut self, slice: &[u8]) -> Result<usize> {
+        let amt = cmp::min(self.write_buf.spare_capacity(), slice.len());
+
+        // use copy_from_slice to make the copy
+        let out = self.write_buf.empty_slice();
+        out[..amt].copy_from_slice(&slice[..amt]);
+
+        // update the write buffer
+        self.write_buf.advance(amt);
+
+        Ok(amt)
+    }
+
+    /// Implementation for send_slices_and_fds and send_slices.
+    ///
+    /// fds is a &mut Vec<Fd>, which means we can't split it up among
+    /// two functions. Therefore, write_handler handles both cases:
+    ///
+    /// - if we need to forward the slices, it will call with true
+    /// - if we just need to push fds, it will call with false
+    fn send_slices_impl(
+        &mut self,
+        slices: &[IoSlice<'_>],
+        write_handler: impl FnOnce(&mut Self, &[IoSlice<'_>], bool) -> Result<usize>,
+    ) -> Result<usize> {
+        // get the total length of the data we're going to write
+        let total_len = slices
+            .iter()
+            .map(|s| s.len())
+            .fold(0usize, |acc, len| acc.saturating_add(len));
+
+        let span = tracing::debug_span!(
+            "BufConnection::send_slices_impl",
+            num_slices = slices.len(),
+            total_len = total_len
+        );
+        let _enter = span.enter();
+
+        // if we can't fit it into the current buffer, flush it
+        if self.write_buf.spare_capacity() <= total_len {
+            tracing::trace!("flushing write buffer");
             self.flush_write_buffer()?;
         }
 
-        // forward to the write_slice impl if the slice doesn't fit
-        if slice.len() >= self.write_buf.capacity() {
-            if !fds.is_empty() {
-                // sigh, we have to vectorize it anyways
-                #[cfg(not(feature = "std"))]
-                let iov = [slice];
-                #[cfg(feature = "std")]
-                let iov = [IoSlice::new(slice)];
-
-                return self.conn.write_slices_with_fds(&iov, fds);
-            }
-
-            return self.conn.write_slice(slice);
+        // if the total length is larger than the buffer is, forward the
+        // impl to the underlying connection
+        if total_len > self.write_buf.capacity() {
+            // calling write_handler with "true" indicates we're doing
+            // a true write
+            tracing::debug!("write is too large for buffer, \
+            forwarding to inner impl");
+            return write_handler(self, slices, true);
         }
 
-        // write to buffer
-        self.write_buf.fds.append(fds);
-        Ok(self.write_to_buf(slice))
+        // write into our buffer and return
+        let mut nwritten = 0;
+        for slice in slices {
+            nwritten += self.copy_slice_to_buffer(slice)?;
+        }
+
+        tracing::trace!(
+            "wrote {} bytes to buffer",
+            nwritten
+        );
+
+        // if we have fds, copy them to the buffer
+        // calling write_handler with "false" indicates we're just
+        // pushing file descriptors into a buffer
+        write_handler(self, &[], false)?;
+
+        Ok(total_len)
     }
 
-    fn write_slices_impl(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        if self.conn.is_write_vectored() {
-            // take advantage of vectored writes
-            let total_len = iov
-                .iter()
-                .fold(0usize, |acc, slice| acc.saturating_add(slice.len()));
+    /// Copy from the read buffer into the given slice.
+    fn copy_into_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+        let amt = cmp::min(slice.len(), self.read_buf.readable_slice().len());
+        let buf = self.read_buf.readable_slice();
 
-            // flush the buffer if the write is too large for it
-            if total_len > self.spare_write_capacity() {
-                self.flush_write_buffer()?;
+        slice[..amt].copy_from_slice(&buf[..amt]);
+        self.read_buf.advance_read(amt);
+        Ok(amt)
+    }
+
+    /// Copy from the read buffer into the given I/O slices.
+    ///
+    /// Returns the number of bytes copied.
+    fn copy_into_slices(&mut self, slices: &mut [IoSliceMut<'_>]) -> Result<usize> {
+        let mut amt_copied = 0;
+
+        for slice in slices {
+            amt_copied += self.copy_into_slice(&mut *slice)?;
+        }
+
+        Ok(amt_copied)
+    }
+
+    fn recv_slices_impl(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+        mut read_handler: impl FnMut(&mut C, &mut [u8], &mut Vec<Fd>) -> Result<usize>,
+    ) -> Result<usize> {
+        // get the total length of the data we're going to read
+        let total_len = slices
+            .iter()
+            .map(|s| s.len())
+            .fold(0usize, |acc, len| acc.saturating_add(len));
+
+        let span = tracing::debug_span!(
+            "BufConnection::recv_slices_impl",
+            num_slices = slices.len(),
+            total_len = total_len,
+        );
+        let _enter = span.enter();
+
+        // if the amount that we need is not in the buffer, try to preform
+        // a read
+        if total_len > self.read_buf.readable() {
+            tracing::debug!(
+                "total length {} does not fit in buffer of size {}, \
+                forwarding to read_handler",
+                total_len,
+                self.read_buf.readable()
+            );
+
+            let amt = read_handler(
+                &mut self.conn,
+                &mut self.read_buf.buf[self.read_buf.valid_range.end..],
+                &mut self.read_buf.fds,
+            )?;
+            self.read_buf.advance_write(amt);
+        }
+
+        // copy the data into the slices
+        let amt_copied = self.copy_into_slices(slices)?;
+        fds.append(&mut self.read_buf.fds);
+
+        tracing::trace!(
+            "copied amt {} of {} bytes into buffer",
+            amt_copied,
+            total_len
+        );
+
+        Ok(amt_copied)
+    }
+
+    fn recv_slice_impl(
+        &mut self,
+        slice: &mut [u8],
+        fds: Option<&mut Vec<Fd>>,
+        mut read_handler: impl FnMut(&mut C, &mut [IoSliceMut<'_>], &mut Vec<Fd>) -> Result<usize>,
+    ) -> Result<usize> {
+        let span = tracing::debug_span!(
+            "BufConnection::recv_slice_impl",
+            len = slice.len(),
+        );
+        let _enter = span.enter();
+
+        // if the amount that we need is not in the buffer, try to preform
+        // a read
+        if slice.len() > self.read_buf.readable() {
+            tracing::debug!(
+                "total length {} does not fit in buffer of size {}, \
+                forwarding to read_handler",
+                slice.len(),
+                self.read_buf.readable()
+            );
+
+            // only logically possible if the buffer is empty
+            if self.read_buf.is_empty() {
+                tracing::trace!("attempting vectored read to fill both buffers at once");
+
+                // life hack: try reading into the user's slice and the buffer
+                // at the same time using a vectored read
+                let mut iov = [
+                    new_io_slice_mut(slice),
+                    new_io_slice_mut(&mut self.read_buf.buf[self.read_buf.valid_range.end..]),
+                ];
+                let amt = read_handler(&mut self.conn, &mut iov, &mut self.read_buf.fds)?;
+
+                // determine how many of each got written where
+                let buffer_bytes = amt.saturating_sub(slice.len());
+                let slice_bytes = amt - buffer_bytes;
+
+                tracing::trace!(
+                    buffer_bytes,
+                    slice_bytes,
+                );
+
+                self.read_buf.advance_write(buffer_bytes);
+                return Ok(slice_bytes);
             }
 
-            // if the total length is too large for even our empty buffer to hold, just
-            // forward to the connection's write impl
-            if total_len >= self.write_buf.capacity() {
-                return self.conn.write_slices_with_fds(iov, fds);
-            }
+            // just do a normal buffer read
+            let mut iov = [new_io_slice_mut(
+                &mut self.read_buf.buf[self.read_buf.valid_range.end..],
+            )];
 
-            // write the remaining slices to the buffer
-            self.write_buf.fds.append(fds);
-            iov.iter().for_each(|slice| {
-                self.write_to_buf(&*slice);
-            });
-
-            Ok(total_len)
-        } else {
-            // we only write one slice at a time
-            self.write_slice_impl(&*iov[0], fds)
+            let amt = read_handler(&mut self.conn, &mut iov, &mut self.read_buf.fds)?;
+            self.read_buf.advance_write(amt);
         }
-    }
 
-    /// Make sure the read cursor is in a sane place.
-    fn update_read_cursor(&mut self) {
-        // if the total window is empty, reset it to zero
-        if self.read_buffer_empty() {
-            self.read_cursor = 0;
-            self.read_buf.len = 0;
+        let amt = self.copy_into_slice(slice)?;
+        if let Some(fds) = fds {
+            fds.append(&mut self.read_buf.fds);
         }
-    }
 
-    /// Is our read buffer empty?
-    fn read_buffer_empty(&self) -> bool {
-        self.read_window_size() == 0
-    }
+        tracing::trace!("copied amt {} of {} bytes into buffer", amt, slice.len());
 
-    /// The total amount of unread data in the buffer.
-    fn read_window_size(&self) -> usize {
-        self.read_buf.len - self.read_cursor
+        Ok(amt)
     }
 }
 
-impl<C: Connection> Connection for BufConnection<C> {
-    fn write_slices_with_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        self.write_slices_impl(iov, fds)
+impl<Conn: Connection> Connection for BufConnection<Conn> {
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        self.send_slices_impl(slices, move |this, slices, true_write| {
+            if true_write {
+                this.conn.send_slices_and_fds(slices, fds)
+            } else {
+                this.write_buf.fds.append(fds);
+                Ok(0)
+            }
+        })
     }
 
-    fn write_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
-        self.write_slices_impl(iov, &mut Vec::new())
+    fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
+        self.send_slices_impl(slices, |this, slice, true_write| {
+            if true_write {
+                this.conn.send_slices(slice)
+            } else {
+                Ok(0)
+            }
+        })
     }
 
-    fn write_slice(&mut self, slice: &[u8]) -> Result<usize> {
-        self.write_slice_impl(slice, &mut Vec::new())
-    }
-
-    fn is_write_vectored(&self) -> bool {
-        self.conn.is_write_vectored()
-    }
-
-    fn read_to_buffer_with_fds(&mut self, buf: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
-        // if we have no data in our buffer, and the read is larger than the buffer,
-        // forward to the udnerlying read
-        if self.read_buffer_empty() && buf.len() >= self.read_buf.capacity() {
-            return self.conn.read_to_buffer_with_fds(buf, fds);
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        // if we can't fit the slice in the current write buffer,
+        // flush the buffer
+        if slice.len() >= self.write_buf.spare_capacity() {
+            self.flush_write_buffer()?;
         }
 
-        // if the internal buffer is not yet full, read to it
-        if self.spare_read_capacity() > 0 {
-            let write_window = &mut self.read_buf.bytes[self.read_buf.len..];
-            let n = self.conn.read_to_buffer_with_fds(write_window, fds)?;
-            self.read_buf.len += n;
+        // if the slice will never fit in the current write buffer,
+        // forward the call to the underlying connection
+        if slice.len() > self.write_buf.capacity() {
+            return self.conn.send_slice(slice);
         }
 
-        // copy as much as we can from the buffer to the user's buffer
-        let copy_amount = cmp::min(buf.len(), self.read_window_size());
-        self.read_cursor += copy_amount;
-        let read_window = &self.read_buf.bytes[self.read_cursor..self.read_cursor + copy_amount];
-        buf[..copy_amount].copy_from_slice(read_window);
+        // copy the slice into the write buffer
+        self.copy_slice_to_buffer(slice)?;
 
-        self.update_read_cursor();
+        Ok(slice.len())
+    }
 
-        Ok(copy_amount)
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        self.recv_slices_impl(slices, fds, |conn, slice, fds| {
+            conn.recv_slice_and_fds(slice, fds)
+        })
+    }
+
+    fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+        self.recv_slice_impl(slice, Some(fds), |conn, slices, fds| {
+            conn.recv_slices_and_fds(slices, fds)
+        })
+    }
+
+    fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+        self.recv_slice_impl(slice, None, |conn, slices, fds| {
+            conn.recv_slices_and_fds(slices, fds)
+        })
+    }
+
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        self.recv_slices_impl(slices, fds, |conn, slice, fds| {
+            conn.non_blocking_recv_slice_and_fds(slice, fds)
+        })
+    }
+
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
+        self.recv_slice_impl(slice, Some(fds), |conn, slices, fds| {
+            conn.non_blocking_recv_slices_and_fds(slices, fds)
+        })
     }
 
     fn flush(&mut self) -> Result<()> {
         self.flush_write_buffer()?;
         self.conn.flush()
     }
-}
 
-impl fmt::Debug for Buffer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use alloc::format;
-
-        let description = if self.fds.is_empty() {
-            format!(
-                "{}/{} with {} file descriptors",
-                self.len,
-                self.bytes.len(),
-                self.fds.len()
-            )
-        } else {
-            format!("{}/{}", self.len, self.bytes.len())
-        };
-
-        f.debug_tuple("Buffer").field(&description).finish()
+    fn shutdown(&self) -> Result<()> {
+        self.conn.shutdown()
     }
 }
 
-impl Buffer {
-    fn with_capacity(capacity: usize) -> Self {
-        Self {
-            bytes: vec![0; capacity].into_boxed_slice(),
-            len: 0,
-            fds: Vec::new(),
+impl ReadBuffer {
+    /// Get the slice of the `ReadBuffer` that has not been read to yet.
+    fn writable_slice(&mut self) -> &mut [u8] {
+        &mut self.buf[self.valid_range.end..]
+    }
+
+    /// Get the slice of the `ReadBuffer` that has already been read
+    /// and contains valid information
+    fn readable_slice(&self) -> &[u8] {
+        &self.buf[self.valid_range.clone()]
+    }
+
+    fn readable(&self) -> usize {
+        self.readable_slice().len()
+    }
+
+    fn is_empty(&self) -> bool {
+        return self.readable() == 0 && self.fds.is_empty();
+    }
+
+    /// Indicate that we've read `n` bytes from the connection into
+    /// the buffer.
+    fn advance_write(&mut self, n: usize) {
+        self.valid_range.end += n;
+        debug_assert!(self.valid_range.end <= self.buf.len());
+    }
+
+    /// Indicate that we've given `n` bytes to the user.
+    fn advance_read(&mut self, n: usize) {
+        self.valid_range.start += n;
+        debug_assert!(self.valid_range.start <= self.valid_range.end);
+
+        // reset ringbuffer back to start if we're empty now
+        if self.valid_range.is_empty() {
+            self.valid_range = 0..0;
         }
     }
 
+    /// Get the spare capacity of the buffer.
     fn spare_capacity(&self) -> usize {
-        self.bytes.len() - self.len
+        self.buf.len() - self.valid_range.end
     }
 
+    /// Get the total capacity of the buffer.
     fn capacity(&self) -> usize {
-        self.bytes.len()
+        self.buf.len()
+    }
+}
+
+impl WriteBuffer {
+    /// Get the slice of the `WriteBuffer` that hasn't been written to yet.
+    fn empty_slice(&mut self) -> &mut [u8] {
+        &mut self.buf[self.writable..]
+    }
+
+    /// Get the slice of the `WriteBuffer` that has already been written
+    /// to.
+    fn full_slice(&self) -> &[u8] {
+        &self.buf[..self.writable]
+    }
+
+    /// Indicate that we've written `n` bytes to the connection.
+    fn advance(&mut self, n: usize) {
+        self.writable += n;
+        debug_assert!(self.writable <= self.buf.len());
+    }
+
+    /// Indicate that we've flushed the buffer to the connection.
+    fn flush(&mut self) {
+        self.writable = 0;
+    }
+
+    /// Get the spare capacity of the buffer.
+    fn spare_capacity(&self) -> usize {
+        self.buf.len() - self.writable
+    }
+
+    /// Get the total capacity of the buffer.
+    fn capacity(&self) -> usize {
+        self.buf.len()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-
-    use super::BufConnection;
-    use crate::connection::{Connection, TestConnection};
+    use super::*;
+    use crate::{connection::with_test_connection, utils::setup_tracing};
+    use core::mem::ManuallyDrop;
 
     #[test]
-    fn buffered_reads() {
-        const DATA: &[u8] = b"This is a long enough sentence to require buffering.";
+    fn test_write_vectored() {
+        setup_tracing();
 
-        let mut _rfds = vec![];
-        let mut _wfds = vec![];
-        let mut _wbytes = vec![];
+        for buf_size in [16384, 5] {
+            with_test_connection(
+                &[],
+                vec![],
+                |conn| {
+                    let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-        let conn = TestConnection::new(DATA, &mut _rfds, &mut _wfds, &mut _wbytes);
+                    let iov = [
+                        IoSlice::new(b"Hello,"),
+                        IoSlice::new(b" world!"),
+                    ];
+                    let mut fds = (15..20).map(Fd::from).collect::<Vec<_>>();
 
-        let mut bufconn = BufConnection::with_capacity(10, 10, conn);
+                    let amt = bc.send_slices_and_fds(&iov, &mut fds).unwrap();
 
-        // several small writes
-        let mut buf = [0u8; 3];
-        let mut fds = vec![];
+                    assert_eq!(amt, 13);
 
-        bufconn.read_to_buffer_with_fds(&mut buf, &mut fds).unwrap();
-        assert_eq!(buf, [b'T', b'h', b'i']);
+                    // flush it
+                    bc.flush().unwrap();
+                },
+                |write_bytes, write_fds| {
+                    assert_eq!(&write_bytes, b"Hello, world!".as_ref());
+                    assert_eq!(write_fds, vec![15, 16, 17, 18, 19]);
+                },
+            )
+        }
+    }
 
-        bufconn.read_to_buffer_with_fds(&mut buf, &mut fds).unwrap();
-        assert_eq!(buf, [b'i', b' ', b'a']);
+    #[test]
+    fn test_read_vectored() {
+        setup_tracing();
 
-        bufconn.read_to_buffer_with_fds(&mut buf, &mut fds).unwrap();
-        assert_eq!(buf, [b' ', b'l', b'o']);
+        for buf_size in [16384] {
+            with_test_connection(
+                b"Hello, world!",
+                vec![15, 16, 17, 18, 19],
+                |conn| {
+                    let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-        bufconn.read_to_buffer_with_fds(&mut buf, &mut fds).unwrap();
-        assert_eq!(buf, [b'n', b'g', b' ']);
+                    // read using vectored I/O
+                    let mut buffer = [0; 13];
+                    let (buf1, buf2) = buffer.split_at_mut(3);
+                    let (buf2, buf3) = buf2.split_at_mut(3);
+                    let buf3 = &mut buf3[..3];
 
-        // a larger buffer
-        let mut buf = [0u8; 20];
-        bufconn.read_to_buffer_with_fds(&mut buf, &mut fds).unwrap();
-        assert_eq!(buf.as_ref(), b"enough sentence to req");
+                    let mut iov = [
+                        IoSliceMut::new(buf1),
+                        IoSliceMut::new(buf2),
+                        IoSliceMut::new(buf3),
+                    ];
+
+                    let mut fds = ManuallyDrop::new(vec![]);
+
+                    let amt = bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap();
+                    let fds = ManuallyDrop::into_inner(fds)
+                        .into_iter()
+                        .map(|fd| fd.into_raw_fd())
+                        .collect::<Vec<_>>();
+                    assert_eq!(amt, 9);
+
+                    assert_eq!(&buffer[..9], b"Hello, wo".as_ref());
+                    assert_eq!(fds, vec![15, 16, 17, 18, 19]);
+
+                    // try to follow up with another read
+                    let (buf1, buf2) = buffer.split_at_mut(2);
+                    let buf2 = &mut buf2[..2];
+                    let mut iov = [
+                        IoSliceMut::new(buf1),
+                        IoSliceMut::new(buf2),
+                    ];
+                    let mut fds = vec![];
+
+                    assert_eq!(
+                        bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap(),
+                        4
+                    );
+                    assert_eq!(
+                        &buffer[..4],
+                        b"rld!".as_ref()
+                    );
+                },
+                |_, _| {},
+            )
+        }
+    }
+
+    #[test]
+    fn test_write_vectored_without_fds() {
+        setup_tracing();
+
+        for buf_size in [16384, 5] {
+            with_test_connection(
+                &[],
+                vec![],
+                |conn| {
+                    let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
+
+                    let iov = [
+                        IoSlice::new(b"Hello,"),
+                        IoSlice::new(b" world!"),
+                    ];
+
+                    let amt = bc.send_slices(&iov).unwrap();
+                    assert_eq!(amt, 13);
+                    
+                    bc.flush().unwrap();
+                },
+                |write_bytes, write_fds| {
+                    assert_eq!(&write_bytes, b"Hello, world!".as_ref());
+                    assert_eq!(write_fds, vec![]);
+                },
+            );
+        }
+    }
+
+    #[test]
+    fn test_write_buffer() {
+        setup_tracing();
+
+        for buf_size in [16384, 5] {
+            with_test_connection(
+                &[],
+                vec![],
+                |conn| {
+                    let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
+
+                    assert_eq!(bc.send_slice(b"Hello, world!").unwrap(), 13);
+
+                    bc.flush().unwrap();
+                },
+                |write_bytes, write_fds| {
+                    assert_eq!(&write_bytes, b"Hello, world!".as_ref());
+                    assert_eq!(write_fds, vec![]);
+                },
+            );
+        }
+    }
+
+    #[test]
+    fn test_read_buffer() {
+        setup_tracing();
+
+        for buf_size in [16834, 6] {
+            with_test_connection(
+                b"Hello, world!",
+                vec![],
+                |conn| {
+                    let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
+
+                    // read the first five bytes
+                    let mut buf = [0; 5];
+                    assert_eq!(bc.recv_slice(&mut buf).unwrap(), 5);
+                    assert_eq!(buf, b"Hello".as_ref());
+
+                    // read the rest of the bytes
+                    let mut buf = [0; 8];
+                    let mut nread = 0;
+                    while nread < 8 {
+                        nread += bc.recv_slice(&mut buf[nread..]).unwrap();
+                    }
+                    assert_eq!(buf, b", world!".as_ref());
+
+                    // furhter reads should return nothing
+                    assert_eq!(bc.recv_slice(&mut buf).unwrap(), 0);
+                },
+                |_, _| {},
+            );
+        }
     }
 }
