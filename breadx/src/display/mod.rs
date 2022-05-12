@@ -35,6 +35,8 @@ cfg_sync! {
     pub use sync::SyncDisplay;
 }
 
+pub use crate::automatically_generated::DisplayFunctionsExt;
+
 use crate::{Error, Fd, Result};
 use x11rb_protocol::{
     connection::ReplyFdKind,
