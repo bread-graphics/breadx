@@ -27,7 +27,18 @@ cfg_sync! {
     pub(crate) use mutex::*;
 }
 
+#[doc(inline)]
+pub use x11rb_protocol::protocol;
+
+mod automatically_generated;
+
 pub type Fd = x11rb_protocol::RawFdContainer;
 
 pub mod connection;
 pub mod display;
+
+/// Contains a set of traits to be automatically imported for full
+/// functionality.
+pub mod prelude {
+    pub use super::display::{DisplayBaseExt, DisplayExt};
+}

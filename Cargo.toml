@@ -1,2 +1,2 @@
 [workspace]
-members = ["breadx", "xcb-parser"]
+members = ["breadx", "xcb_parser", "breadx-generator"]

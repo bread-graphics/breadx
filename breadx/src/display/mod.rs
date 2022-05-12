@@ -9,6 +9,12 @@ pub use basic::BasicDisplay;
 mod cell;
 pub use cell::CellDisplay;
 
+mod cookie;
+pub use cookie::Cookie;
+
+mod ext;
+pub use ext::*;
+
 mod extension_map;
 pub(crate) use extension_map::ExtensionMap;
 

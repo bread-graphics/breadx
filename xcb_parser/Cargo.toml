@@ -1,0 +1,13 @@
+[package]
+name = "xcb_parser"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["John Notgull <jtnunley01@gmail.com>"]
+description = "A simple parser for XCB-XML files"
+keywords = ["xcb","parser"]
+
+[dependencies]
+anyhow = { version = "1.0.53", features = ["backtrace"] }
+quick-xml = "0.22.0"
+tracing = "0.1.29"
