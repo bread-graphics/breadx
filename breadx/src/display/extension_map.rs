@@ -28,12 +28,11 @@ impl Default for ExtensionMap {
 }
 
 impl ExtensionMap {
-    pub(crate) fn get(&self, name: &'static str) -> Option<ExtensionInformation> {
+    pub(crate) fn get(&self, name: &'static str) -> Option<Option<ExtensionInformation>> {
         self.inner
             .get(&name)
             .and_then(|p| p.get_if_resolved())
             .copied()
-            .flatten()
     }
 
     pub(crate) fn insert(

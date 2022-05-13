@@ -212,7 +212,8 @@ impl<Conn: Connection> SyncDisplay<Conn> {
 
     fn extension_info(&self, name: &'static str) -> Result<ExtensionInformation> {
         match self.extension_map.read().get(name) {
-            Some(info) => Ok(info),
+            Some(Some(info)) => Ok(info),
+            Some(None) => Err(Error::make_missing_extension(name)),
             None => {
                 // try to prefetch it
                 let pf = self.prefetch_extension(name)?;

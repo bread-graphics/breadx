@@ -13,7 +13,7 @@ cfg_std_unix! {
 
 cfg_test! {
     mod test;
-    pub(crate) use test::{TestConnection, with_test_connection};
+    pub(crate) use test::with_test_connection;
 }
 
 cfg_std! {

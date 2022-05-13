@@ -20,9 +20,6 @@ pub(crate) use extension_map::ExtensionMap;
 mod sans_io;
 pub(crate) use sans_io::X11Core;
 
-mod poison;
-pub(crate) use poison::Poisonable;
-
 mod prefetch;
 pub(crate) use prefetch::Prefetch;
 
@@ -36,14 +33,12 @@ cfg_sync! {
 
 pub use crate::automatically_generated::DisplayFunctionsExt;
 
-use crate::{Error, Fd, Result};
+use crate::Result;
 use x11rb_protocol::{
-    connection::ReplyFdKind,
     protocol::{
         xproto::{Screen, Setup},
         Event,
     },
-    x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
 };
 
 cfg_async! {

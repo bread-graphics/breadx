@@ -1,16 +1,12 @@
 // MIT/Apache2 License
 
-use core::convert::TryInto;
-
 use crate::{Error, Fd, HashMap, InvalidState, Result};
-use alloc::{sync::Arc, vec::Vec};
+use alloc::vec::Vec;
 use x11rb_protocol::{
     connection::{Connection as ProtoConnection, ReplyFdKind},
     id_allocator::{IdAllocator, IdsExhausted},
-    packet_reader::PacketReader,
     protocol::{xc_misc::GetXIDRangeReply, xproto::Setup, Event},
     x11_utils::{ExtInfoProvider, ExtensionInformation, X11Error},
-    RawFdContainer,
 };
 
 use super::RawReply;

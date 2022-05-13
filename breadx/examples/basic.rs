@@ -70,6 +70,8 @@ fn main() -> breadx::Result<()> {
     let green_color = connection.alloc_color(cmap, 0, u16::MAX, 0)?;
     let blue_color = connection.alloc_color(cmap, 0, 0, u16::MAX)?;
 
+    connection.flush()?;
+
     // resolve the colors
     let red_pixel = connection.wait_for_reply(red_color)?.pixel;
     let green_pixel = connection.wait_for_reply(green_color)?.pixel;
@@ -78,6 +80,7 @@ fn main() -> breadx::Result<()> {
     // set up an exit strategy
     let wm_protocols = connection.intern_atom(false, "WM_PROTOCOLS")?;
     let wm_delete_window = connection.intern_atom(false, "WM_DELETE_WINDOW")?;
+    connection.flush()?;
     let wm_protocols = connection.wait_for_reply(wm_protocols)?.atom;
     let wm_delete_window = connection.wait_for_reply(wm_delete_window)?.atom;
 
@@ -170,6 +173,8 @@ fn main() -> breadx::Result<()> {
                         angle2: 360 * 64,
                     }],
                 )?;
+
+                connection.flush()?;
             }
             Event::ButtonPress(bp) => {
                 // indicate that we have been clicked

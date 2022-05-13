@@ -5,14 +5,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use core::cmp;
-use core::fmt;
-use core::fmt::Write;
 use core::ops::Range;
 
 use super::Connection;
 use super::{new_io_slice, new_io_slice_mut};
 use crate::connection::{IoSlice, IoSliceMut};
-use crate::{Error, Fd, InvalidState, Result};
+use crate::{Fd, Result};
 
 // libxcb uses these values by default
 const DEFAULT_READ_CAPACITY: usize = 4096;
@@ -379,13 +377,13 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
 
     fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
         self.recv_slice_impl(slice, Some(fds), |conn, slices, fds| {
-            conn.recv_slices_and_fds(slices, fds)
+           conn.recv_slices_and_fds(slices, fds)
         })
     }
 
     fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
         self.recv_slice_impl(slice, None, |conn, slices, fds| {
-            conn.recv_slices_and_fds(slices, fds)
+            conn.recv_slices_and_fds(slices, fds) 
         })
     }
 
@@ -420,11 +418,6 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
 }
 
 impl ReadBuffer {
-    /// Get the slice of the `ReadBuffer` that has not been read to yet.
-    fn writable_slice(&mut self) -> &mut [u8] {
-        &mut self.buf[self.valid_range.end..]
-    }
-
     /// Get the slice of the `ReadBuffer` that has already been read
     /// and contains valid information
     fn readable_slice(&self) -> &[u8] {
@@ -433,10 +426,6 @@ impl ReadBuffer {
 
     fn readable(&self) -> usize {
         self.readable_slice().len()
-    }
-
-    fn is_empty(&self) -> bool {
-        return self.readable() == 0 && self.fds.is_empty();
     }
 
     /// Indicate that we've read `n` bytes from the connection into
@@ -456,28 +445,12 @@ impl ReadBuffer {
             self.valid_range = 0..0;
         }
     }
-
-    /// Get the spare capacity of the buffer.
-    fn spare_capacity(&self) -> usize {
-        self.buf.len() - self.valid_range.end
-    }
-
-    /// Get the total capacity of the buffer.
-    fn capacity(&self) -> usize {
-        self.buf.len()
-    }
 }
 
 impl WriteBuffer {
     /// Get the slice of the `WriteBuffer` that hasn't been written to yet.
     fn empty_slice(&mut self) -> &mut [u8] {
         &mut self.buf[self.writable..]
-    }
-
-    /// Get the slice of the `WriteBuffer` that has already been written
-    /// to.
-    fn full_slice(&self) -> &[u8] {
-        &self.buf[..self.writable]
     }
 
     /// Indicate that we've written `n` bytes to the connection.

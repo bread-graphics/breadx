@@ -3,12 +3,12 @@
 use core::mem;
 
 use super::{
-    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Poisonable, Prefetch,
+    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch,
     RawReply, RawRequest, X11Core,
 };
 use crate::{
     connection::{new_io_slice, BufConnection, Connection},
-    Error, HashMap, InvalidState, NameConnection, Result,
+    Error, InvalidState, NameConnection, Result,
 };
 
 use alloc::{sync::Arc, vec, vec::Vec};
@@ -52,7 +52,7 @@ pub struct BasicDisplay<Conn> {
 }
 
 cfg_std! {
-    pub type DisplayConnection = BasicDisplay<NameConnection>;
+    pub type DisplayConnection = BasicDisplay<BufConnection<NameConnection>>;
 
     impl DisplayConnection {
         /// Connect to the server using the given display name.
@@ -85,7 +85,7 @@ cfg_std! {
 
                 mem::drop(_enter);
 
-                Self::connect_with_auth(conn, screen.into(), name, data)
+                Self::connect_with_auth(conn.into(), screen.into(), name, data)
             })
         }
     }
@@ -141,6 +141,8 @@ impl<Conn: Connection> BasicDisplay<Conn> {
 
                 tracing::debug!(written = n, total = nwritten, "wrote bytes for setup",);
             }
+
+            conn.flush()?;
 
             // read the setup reply
             tracing::info!("reading the setup from server");
@@ -271,7 +273,8 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         let _enter = span.enter();
 
         match self.extension_map.get(name) {
-            Some(info) => Ok(info),
+            Some(Some(info)) => Ok(info),
+            Some(None) => Err(Error::make_missing_extension(name)),
             None => {
                 // try to prefetch it
                 let pf = self.prefetch_extension(name)?;
@@ -399,6 +402,8 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         let span = tracing::info_span!("wait_for_reply_raw", seq = seq);
         let _enter = span.enter();
 
+        self.flush()?;
+
         loop {
             if let Some(reply) = self.core.fetch_reply(seq, &self.extension_map)? {
                 return Ok(reply);
@@ -412,6 +417,8 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
     fn wait_for_event(&mut self) -> Result<Event> {
         let span = tracing::info_span!("wait_for_event");
         let _enter = span.enter();
+
+        self.flush()?;
 
         loop {
             if let Some(event) = self.core.fetch_event(&self.extension_map)? {

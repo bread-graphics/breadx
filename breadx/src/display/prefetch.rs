@@ -218,6 +218,10 @@ impl<'a> PrefetchTarget for QueryExtensionRequest<'a> {
     type Target = Option<ExtensionInformation>;
 
     fn map_reply(reply: Self::Reply) -> Self::Target {
+        if !reply.present {
+            return None;
+        }
+
         let info = ExtensionInformation {
             major_opcode: reply.major_opcode,
             first_error: reply.first_error,

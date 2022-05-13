@@ -113,7 +113,9 @@ impl Error {
     }
 
     pub(crate) fn io(io: IoError) -> Self {
-        tracing::error!("encountered I/O error: {io:?}", io = io,);
+        if !matches!(io.kind(), ErrorKind::WouldBlock) {
+            tracing::error!("encountered I/O error: {io:?}", io = io);
+        }
         Error::from_inner(Inner::Io(io))
     }
 

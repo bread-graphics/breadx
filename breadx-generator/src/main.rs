@@ -1,15 +1,12 @@
 // MIT/Apache2 License
 
-use anyhow::{anyhow, Result};
-use concurrent_queue::ConcurrentQueue;
-use rayon::prelude::*;
+use anyhow::Result;
 use std::{
     env,
     fmt::Write as _,
     fs,
     io::{BufWriter, Write},
-    path::{Path, PathBuf},
-    sync::Mutex,
+    path::Path,
 };
 use xcb_parser::Header;
 

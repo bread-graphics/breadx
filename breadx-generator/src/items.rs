@@ -1,7 +1,7 @@
 // MIT/Apache2 License
 
 use super::always_available;
-use heck::{ToSnakeCase, ToUpperCamelCase};
+use heck::ToSnakeCase;
 use std::{
     fmt::{self, Write},
     mem,
@@ -29,7 +29,7 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
 
             let struct_name = camel_case_name(&req.name);
 
-            let (mut return_type, mut fncall_to_use) = match req.reply {
+            let (return_type, fncall_to_use) = match req.reply {
                 None => (ReturnType::Empty, "send_void_request"),
                 Some((ref fields, _)) => {
                     let ret_ty = format!("types::{}::{}Reply", &header.header, &struct_name);
@@ -75,7 +75,6 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                         Some(Parameter {
                             name: name.to_snake_case(),
                             ty,
-                            is_fd: false,
                         })
                     }
                     Field::List {
@@ -98,20 +97,17 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                                 }
                             }
                         },
-                        is_fd: ty == "fd",
                     }),
                     Field::SwitchCase { name, .. } => {
                         // presence of these fields translates to an Aux param on the x11rb side
                         Some(Parameter {
                             ty: Ty::Borrows(format!("{}::{}Aux", header.header, &struct_name)),
                             name: name.to_snake_case(),
-                            is_fd: false,
                         })
                     }
                     Field::Fd(name) => Some(Parameter {
                         ty: Ty::Simple("Fd".to_string()),
                         name: name.to_snake_case(),
-                        is_fd: true,
                     }),
                     _ => None,
                 })
@@ -148,7 +144,6 @@ fn write_initial_send(
     cfg_flag(header, &mut item);
 
     let struct_name = camel_case_name(&req.name);
-    let snake_case_name = req.name.to_snake_case();
 
     let fnname = fnname(header, req);
 
@@ -328,7 +323,6 @@ fn do_skip(name: &str) -> bool {
 struct Parameter {
     name: String,
     ty: Ty,
-    is_fd: bool,
 }
 
 impl Parameter {
@@ -372,13 +366,6 @@ impl Ty {
                 }
             }
             _ => {},
-        }
-    }
-
-    fn simple_name(&self) -> &str {
-        match self {
-            Ty::Simple(name) => name,
-            _ => unreachable!(),
         }
     }
 

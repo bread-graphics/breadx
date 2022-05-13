@@ -5,7 +5,7 @@
 use x11rb_protocol::x11_utils::{ReplyFDsRequest, ReplyRequest, TryParseFd, VoidRequest};
 
 use super::{Cookie, Display, DisplayBase, RawRequest};
-use crate::{Error, Result};
+use crate::Result;
 use alloc::vec::Vec;
 use core::mem;
 
