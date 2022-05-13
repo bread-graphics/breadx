@@ -169,8 +169,10 @@ impl<C: Connection> BufConnection<C> {
         if total_len > self.write_buf.capacity() {
             // calling write_handler with "true" indicates we're doing
             // a true write
-            tracing::debug!("write is too large for buffer, \
-            forwarding to inner impl");
+            tracing::debug!(
+                "write is too large for buffer, \
+            forwarding to inner impl"
+            );
             return write_handler(self, slices, true);
         }
 
@@ -180,10 +182,7 @@ impl<C: Connection> BufConnection<C> {
             nwritten += self.copy_slice_to_buffer(slice)?;
         }
 
-        tracing::trace!(
-            "wrote {} bytes to buffer",
-            nwritten
-        );
+        tracing::trace!("wrote {} bytes to buffer", nwritten);
 
         // if we have fds, copy them to the buffer
         // calling write_handler with "false" indicates we're just
@@ -272,10 +271,7 @@ impl<C: Connection> BufConnection<C> {
         fds: Option<&mut Vec<Fd>>,
         mut read_handler: impl FnMut(&mut C, &mut [IoSliceMut<'_>], &mut Vec<Fd>) -> Result<usize>,
     ) -> Result<usize> {
-        let span = tracing::debug_span!(
-            "BufConnection::recv_slice_impl",
-            len = slice.len(),
-        );
+        let span = tracing::debug_span!("BufConnection::recv_slice_impl", len = slice.len(),);
         let _enter = span.enter();
 
         // if the amount that we need is not in the buffer, try to preform
@@ -289,7 +285,7 @@ impl<C: Connection> BufConnection<C> {
             );
 
             // only logically possible if the buffer is empty
-            if self.read_buf.is_empty() {
+            /*if self.read_buf.is_empty() {
                 tracing::trace!("attempting vectored read to fill both buffers at once");
 
                 // life hack: try reading into the user's slice and the buffer
@@ -304,14 +300,11 @@ impl<C: Connection> BufConnection<C> {
                 let buffer_bytes = amt.saturating_sub(slice.len());
                 let slice_bytes = amt - buffer_bytes;
 
-                tracing::trace!(
-                    buffer_bytes,
-                    slice_bytes,
-                );
+                tracing::trace!(buffer_bytes, slice_bytes,);
 
                 self.read_buf.advance_write(buffer_bytes);
                 return Ok(slice_bytes);
-            }
+            }*/
 
             // just do a normal buffer read
             let mut iov = [new_io_slice_mut(
@@ -526,10 +519,7 @@ mod tests {
                 |conn| {
                     let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-                    let iov = [
-                        IoSlice::new(b"Hello,"),
-                        IoSlice::new(b" world!"),
-                    ];
+                    let iov = [IoSlice::new(b"Hello,"), IoSlice::new(b" world!")];
                     let mut fds = (15..20).map(Fd::from).collect::<Vec<_>>();
 
                     let amt = bc.send_slices_and_fds(&iov, &mut fds).unwrap();
@@ -585,20 +575,11 @@ mod tests {
                     // try to follow up with another read
                     let (buf1, buf2) = buffer.split_at_mut(2);
                     let buf2 = &mut buf2[..2];
-                    let mut iov = [
-                        IoSliceMut::new(buf1),
-                        IoSliceMut::new(buf2),
-                    ];
+                    let mut iov = [IoSliceMut::new(buf1), IoSliceMut::new(buf2)];
                     let mut fds = vec![];
 
-                    assert_eq!(
-                        bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap(),
-                        4
-                    );
-                    assert_eq!(
-                        &buffer[..4],
-                        b"rld!".as_ref()
-                    );
+                    assert_eq!(bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap(), 4);
+                    assert_eq!(&buffer[..4], b"rld!".as_ref());
                 },
                 |_, _| {},
             )
@@ -616,14 +597,11 @@ mod tests {
                 |conn| {
                     let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-                    let iov = [
-                        IoSlice::new(b"Hello,"),
-                        IoSlice::new(b" world!"),
-                    ];
+                    let iov = [IoSlice::new(b"Hello,"), IoSlice::new(b" world!")];
 
                     let amt = bc.send_slices(&iov).unwrap();
                     assert_eq!(amt, 13);
-                    
+
                     bc.flush().unwrap();
                 },
                 |write_bytes, write_fds| {

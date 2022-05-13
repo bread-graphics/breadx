@@ -63,9 +63,11 @@ use crate::{Result, display::{Cookie, Display, DisplayExt}};
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
+use __private::Sealed;
 
 cfg_async! {
     use crate::display::AsyncDisplay;
+    use __private::Sealed2;
 }
 "#
         .as_bytes(),
@@ -90,7 +92,7 @@ cfg_async! {
     // begin writing the impl blocks
     output.write_all(
         r#"
-pub trait DisplayFunctionsExt : Display {"#
+pub trait DisplayFunctionsExt : Display + Sealed {"#
             .as_bytes(),
     )?;
 
@@ -105,7 +107,7 @@ pub trait DisplayFunctionsExt : Display {"#
 }
 
 #[cfg(feature = "async")]
-pub trait AsyncDisplayFunctionsExt : AsyncDisplay {"#
+pub trait AsyncDisplayFunctionsExt : AsyncDisplay + Sealed2 {"#
             .as_bytes(),
     )?;
 
@@ -122,8 +124,29 @@ pub trait AsyncDisplayFunctionsExt : AsyncDisplay {"#
 impl<D: Display + ?Sized> DisplayFunctionsExt for D {}
 
 #[cfg(feature = "async")]
-impl<D: AsyncDisplay + ?Sized> AsyncDisplayFunctionsExt for D {}"#
-            .as_bytes(),
+impl<D: AsyncDisplay + ?Sized> AsyncDisplayFunctionsExt for D {}
+
+mod __private {
+    use crate::display::Display;
+
+    pub trait Sealed {
+        fn __sealed_trait_marker() {}
+    }
+
+    impl<D: Display + ?Sized> Sealed for D {}
+
+    cfg_async! {
+        use crate::display::AsyncDisplay;
+
+        pub trait Sealed2 {
+            fn __sealed_trait_marker() {}
+        }
+
+        impl<D: AsyncDisplay + ?Sized> Sealed2 for D {}
+    }
+}
+"#
+        .as_bytes(),
     )?;
 
     // add types module
@@ -198,5 +221,5 @@ mod types {
 }
 
 pub fn always_available(name: &str) -> bool {
-    matches!(name, "xproto" | "bigreq" | "xc-misc" | "ge")
+    matches!(name, "xproto" | "bigreq" | "xc_misc" | "ge")
 }

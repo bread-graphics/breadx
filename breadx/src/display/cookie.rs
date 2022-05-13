@@ -4,7 +4,7 @@
 
 use core::marker::PhantomData;
 use core::{fmt, hash::Hash};
-use x11rb_protocol::x11_utils::{Request, VoidRequest, ReplyRequest, ReplyFDsRequest};
+use x11rb_protocol::x11_utils::{ReplyFDsRequest, ReplyRequest, Request, VoidRequest};
 
 /// A sequence number indicating the state of a request.
 pub struct Cookie<T> {

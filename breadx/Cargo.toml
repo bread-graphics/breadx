@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 ahash = { version = "0.7.6", default-features = false, features = ["compile-time-rng"] }
+bytemuck = { version = "1.9.1", featuress = ["derive"] }
 cfg-if = "1"
 concurrent-queue = { version = "1.2.2", optional = true }
 futures-util = { version = "0.3.21", default-features = false, optional = true }

@@ -3,8 +3,8 @@
 use core::mem;
 
 use super::{
-    AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
-    X11Core,
+    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Poisonable, Prefetch,
+    RawReply, RawRequest, X11Core,
 };
 use crate::{
     connection::{new_io_slice, BufConnection, Connection},
@@ -14,6 +14,7 @@ use crate::{
 use alloc::{sync::Arc, vec, vec::Vec};
 use x11rb_protocol::{
     connect::Connect,
+    id_allocator::IdsExhausted,
     packet_reader::PacketReader,
     parse_display,
     protocol::{
@@ -51,7 +52,7 @@ pub struct BasicDisplay<Conn> {
 }
 
 cfg_std! {
-    pub type DisplayConnection = BasicDisplay<BufConnection<NameConnection>>;
+    pub type DisplayConnection = BasicDisplay<NameConnection>;
 
     impl DisplayConnection {
         /// Connect to the server using the given display name.
@@ -84,7 +85,7 @@ cfg_std! {
 
                 mem::drop(_enter);
 
-                Self::connect_with_auth(conn.into(), screen.into(), name, data)
+                Self::connect_with_auth(conn, screen.into(), name, data)
             })
         }
     }
@@ -436,6 +437,22 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
 
         // wait for the reply
         self.wait_for_reply_raw(seq).map(|_| ())
+    }
+
+    fn generate_xid(&mut self) -> Result<u32> {
+        // try to advance the XID ticket
+        loop {
+            match self.core.generate_xid() {
+                Some(id) => return Ok(id),
+                None => {
+                    // we need to update the xid range
+                    let reply = self.xc_misc_get_xid_range_immediate()?;
+                    self.core.update_xid_range(reply).map_err(|IdsExhausted| {
+                        Error::make_invalid_state(InvalidState::XidsExhausted)
+                    })?;
+                }
+            }
+        }
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {

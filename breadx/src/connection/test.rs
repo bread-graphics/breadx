@@ -117,8 +117,8 @@ pub(crate) fn with_test_connection(
 
 #[cfg(all(feature = "std", test))]
 mod tests {
-    use crate::setup_tracing;
     use super::*;
+    use crate::setup_tracing;
     use alloc::vec;
     use std::io::IoSlice;
 

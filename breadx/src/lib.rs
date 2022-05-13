@@ -17,6 +17,9 @@ pub use error::*;
 mod utils;
 pub(crate) use utils::*;
 
+mod void;
+pub use void::Void;
+
 cfg_std! {
     mod name;
     pub use name::*;
@@ -41,5 +44,7 @@ pub mod display;
 /// Contains a set of traits to be automatically imported for full
 /// functionality.
 pub mod prelude {
-    pub use super::display::{DisplayBaseExt, DisplayExt, DisplayFunctionsExt};
+    pub use super::display::{
+        Display, DisplayBase, DisplayBaseExt, DisplayExt, DisplayFunctionsExt,
+    };
 }

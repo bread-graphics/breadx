@@ -3,8 +3,7 @@
 //! Displays, used to connect to the X11 server.
 
 mod basic;
-use alloc::{boxed::Box, vec::Vec};
-pub use basic::BasicDisplay;
+pub use basic::{BasicDisplay, DisplayConnection};
 
 mod cell;
 pub use cell::CellDisplay;
@@ -40,7 +39,10 @@ pub use crate::automatically_generated::DisplayFunctionsExt;
 use crate::{Error, Fd, Result};
 use x11rb_protocol::{
     connection::ReplyFdKind,
-    protocol::{xproto::Setup, Event},
+    protocol::{
+        xproto::{Screen, Setup},
+        Event,
+    },
     x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
 };
 
@@ -61,6 +63,25 @@ pub trait DisplayBase {
 
     /// Poll to see if we have received an event.
     fn poll_for_event(&mut self) -> Result<Option<Event>>;
+
+    /* Helper methods */
+
+    /// Get the screens for this display.
+    fn screens(&self) -> &[Screen] {
+        &self.setup().roots
+    }
+
+    /// Get the default screen for this display.
+    fn default_screen(&self) -> &Screen {
+        self.screens()
+            .get(self.default_screen_index())
+            .unwrap_or_else(|| {
+                panic!(
+                    "Default screen index {} is not a valid screen",
+                    self.default_screen_index()
+                )
+            })
+    }
 }
 
 /// A blocking interface to the X11 server.
@@ -78,6 +99,9 @@ pub trait Display: DisplayBase {
     ///
     /// Returned in units of 4 bytes.
     fn maximum_request_length(&mut self) -> Result<usize>;
+
+    /// Get a unique ID valid for use by the server.
+    fn generate_xid(&mut self) -> Result<u32>;
 
     /// Synchronize this display with the server.
     fn synchronize(&mut self) -> Result<()>;

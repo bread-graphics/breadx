@@ -27,24 +27,12 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                 return None;
             }
 
-            let mut item = String::new();
-
-            // add cfg flag to this item
-            cfg_flag(header, &mut item);
-
             let struct_name = camel_case_name(&req.name);
-            let snake_case_name = req.name.to_snake_case();
-
-            let fnname = if header.header == "xproto" {
-                snake_case_name
-            } else {
-                format!("{}_{}", header.header, snake_case_name)
-            };
 
             let (mut return_type, mut fncall_to_use) = match req.reply {
-                None => ("()".into(), "send_void_request"),
+                None => (ReturnType::Empty, "send_void_request"),
                 Some((ref fields, _)) => {
-                    let mut ret_ty = format!("types::{}::{}Reply", &header.header, &struct_name);
+                    let ret_ty = format!("types::{}::{}Reply", &header.header, &struct_name);
                     let has_fds = fields.iter().any(|field| match field {
                         Field::Fd(_) => true,
                         Field::List { ty, .. } => ty == "fd",
@@ -52,7 +40,7 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                     });
 
                     (
-                        ret_ty,
+                        ReturnType::Reply(ret_ty),
                         if has_fds {
                             "send_reply_fd_request"
                         } else {
@@ -103,6 +91,8 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                             _ => {
                                 if ty == "fd" {
                                     Ty::Vector("Fd".to_string())
+                                } else if ty.to_lowercase() == "void" {
+                                    Ty::Void
                                 } else {
                                     Ty::Slice(camel_case_name(ty))
                                 }
@@ -136,64 +126,191 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
             // sanitize the names
             params.iter_mut().for_each(|param| param.sanitize_name());
 
-            // emit the function header
-            write!(item, "fn {}(&mut self, ", fnname).unwrap();
-            for param in &params {
-                write!(item, "{}: {}", param.name, param.ty).unwrap();
-                if !eq(param, params.last().unwrap()) {
-                    write!(item, ", ").unwrap();
-                }
-            }
-            write!(item, ") -> Result<Cookie<{}>> {{\n", return_type).unwrap();
-
-            // build the request in the item
-            write!(
-                item,
-                "    let request = types::{}::{}Request {{\n",
-                &header.header, struct_name,
-            )
-            .unwrap();
-            for param in &params {
-                match param.ty {
-                    Ty::Borrows(_) | Ty::Array(_, _) => {
-                        write!(
-                            item,
-                            "        {0}: Cow::Borrowed({0}.borrow()),\n",
-                            param.name
-                        )
-                        .unwrap();
-                    }
-                    Ty::Slice(_) => {
-                        write!(
-                            item,
-                            "        {0}: Cow::Borrowed({0}.as_ref()),\n",
-                            param.name
-                        )
-                        .unwrap();
-                    }
-                    Ty::Simple(_) | Ty::Vector(_) => {
-                        write!(item, "        {0},\n", param.name).unwrap();
-                    }
-                    Ty::Into(_) => {
-                        writeln!(
-                            item,
-                            "        {0}: Into::<u32>::into({0}.into()) as _,",
-                            param.name
-                        )
-                        .unwrap();
-                    }
-                }
-            }
-            write!(item, "    }};\n").unwrap();
-
-            // send the request along the display
-            writeln!(item, "    self.{}(request)", fncall_to_use).unwrap();
-
-            writeln!(item, "}}").unwrap();
+            let mut item = write_initial_send(header, req, &params, &return_type, fncall_to_use);
+            item.push_str(&immediate_function(header, req, &params, &return_type));
 
             Some(item)
         }
         _ => None,
+    }
+}
+
+fn write_initial_send(
+    header: &Header,
+    req: &Request,
+    params: &[Parameter],
+    return_type: &ReturnType,
+    fncall_to_use: &'static str,
+) -> String {
+    let mut item = String::new();
+
+    // output cfg flag
+    cfg_flag(header, &mut item);
+
+    let struct_name = camel_case_name(&req.name);
+    let snake_case_name = req.name.to_snake_case();
+
+    let fnname = fnname(header, req);
+
+    // emit the function header
+    write!(item, "fn {}{}(&mut self, ", fnname, ExtraVoidParam(params)).unwrap();
+    write_parameters(params, &mut item);
+
+    write!(item, ") -> Result<Cookie<{}>> {{\n", return_type).unwrap();
+
+    // create a span for it
+    writeln!(item, "    let span = tracing::info_span!(").unwrap();
+    writeln!(item, r#"        "{}","#, fnname).unwrap();
+    for param in params {
+        if !matches!(param.ty, Ty::Simple(_)) {
+            continue;
+        }
+
+        writeln!(
+            item,
+            "        {0} = ?{0},",
+            param.name,
+        ).unwrap();
+    }
+    writeln!(item, "    );").unwrap();
+    writeln!(item, "    let _enter = span.enter();").unwrap();
+
+    // build the request in the item
+    write!(
+        item,
+        "    let request = types::{}::{}Request {{\n",
+        &header.header, struct_name,
+    )
+    .unwrap();
+    for param in params {
+        match param.ty {
+            Ty::Borrows(_) | Ty::Array(_, _) => {
+                write!(
+                    item,
+                    "        {0}: Cow::Borrowed({0}.borrow()),\n",
+                    param.name
+                )
+                .unwrap();
+            }
+            Ty::Slice(_) => {
+                write!(
+                    item,
+                    "        {0}: Cow::Borrowed({0}.as_ref()),\n",
+                    param.name
+                )
+                .unwrap();
+            }
+            Ty::Simple(_) | Ty::Vector(_) => {
+                write!(item, "        {0},\n", param.name).unwrap();
+            }
+            Ty::Into(_) => {
+                writeln!(
+                    item,
+                    "        {0}: Into::<u32>::into({0}.into()) as _,",
+                    param.name
+                )
+                .unwrap();
+            }
+            Ty::Void => {
+                write!(
+                    item,
+                    "        {0}: Cow::Borrowed({0}.bytes()),\n",
+                    param.name
+                ).unwrap();
+            }
+        }
+    }
+    write!(item, "    }};\n").unwrap();
+
+    // send the request with the cookie
+    writeln!(item, "    self.{}(request)", fncall_to_use).unwrap();
+
+    writeln!(item, "}}").unwrap();
+
+    item
+}
+
+fn immediate_function(
+    header: &Header,
+    req: &Request,
+    params: &[Parameter],
+    return_type: &ReturnType,
+) -> String {
+    let mut item = String::new();
+    cfg_flag(header, &mut item);
+
+    // determine the function name
+
+    let old_fnname = fnname(header, req);
+    let suffix = match return_type {
+        ReturnType::Empty => "checked",
+        ReturnType::Reply(_) => "immediate",
+    };
+    let fnname = format!("{}_{}", old_fnname, suffix);
+
+    // emit the function header
+    write!(item, "fn {}{}(&mut self, ", fnname, ExtraVoidParam(params)).unwrap();
+    write_parameters(params, &mut item);
+    writeln!(item, ") -> Result<{}> {{", return_type).unwrap();
+
+    // call the previous function
+    writeln!(item, "    let cookie = self.{}(", old_fnname).unwrap();
+    for param in params {
+        writeln!(item, "        {},", param.name).unwrap();
+    }
+    writeln!(item, "    )?;").unwrap();
+
+    // resolve the cookie
+    writeln!(item, "    self.wait_for_reply(cookie)").unwrap();
+    writeln!(item, "}}").unwrap();
+
+    item
+}
+
+struct ExtraVoidParam<'a>(&'a [Parameter]);
+
+impl<'a> fmt::Display for ExtraVoidParam<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // see if there is a void param in here
+        if self.0.iter().any(|p| matches!(p.ty, Ty::Void)) {
+            write!(f, "<T: crate::Void + ?Sized>")
+        } else {
+            Ok(())
+        }
+    }
+}
+
+fn write_parameters<'a>(params: &[Parameter], item: &mut impl Write) {
+    for param in params {
+        write!(item, "{}: {}", param.name, param.ty).unwrap();
+        if !eq(param, params.last().unwrap()) {
+            write!(item, ", ").unwrap();
+        }
+    }
+}
+
+fn fnname(header: &Header, req: &Request) -> String {
+    let snake_case_name = req.name.to_snake_case();
+
+    if header.header == "xproto" {
+        snake_case_name
+    } else {
+        format!("{}_{}", header.header, snake_case_name)
+    }
+}
+
+#[derive(Clone)]
+enum ReturnType {
+    Empty,
+    Reply(String),
+}
+
+impl fmt::Display for ReturnType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ReturnType::Empty => f.write_str("()"),
+            ReturnType::Reply(ty) => f.write_str(ty),
+        }
     }
 }
 
@@ -232,6 +349,7 @@ enum Ty {
     Borrows(String),
     Vector(String),
     Array(String, usize),
+    Void,
 }
 
 impl Ty {
@@ -253,6 +371,7 @@ impl Ty {
                     }
                 }
             }
+            _ => {},
         }
     }
 
@@ -300,6 +419,7 @@ impl fmt::Display for Ty {
             Self::Into(t) => write!(f, "impl Into<types::{}>", t),
             Self::Vector(t) => write!(f, "Vec<types::{}>", t),
             Self::Array(t, len) => write!(f, "impl Borrow<[types::{}; {}]>", t, len),
+            Self::Void => f.write_str("&T")
         }
     }
 }

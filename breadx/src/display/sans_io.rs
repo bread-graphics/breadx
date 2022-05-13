@@ -6,9 +6,9 @@ use crate::{Error, Fd, HashMap, InvalidState, Result};
 use alloc::{sync::Arc, vec::Vec};
 use x11rb_protocol::{
     connection::{Connection as ProtoConnection, ReplyFdKind},
-    id_allocator::IdAllocator,
+    id_allocator::{IdAllocator, IdsExhausted},
     packet_reader::PacketReader,
-    protocol::{xproto::Setup, Event},
+    protocol::{xc_misc::GetXIDRangeReply, xproto::Setup, Event},
     x11_utils::{ExtInfoProvider, ExtensionInformation, X11Error},
     RawFdContainer,
 };
@@ -92,6 +92,17 @@ impl X11Core {
 
     pub(crate) fn send_request(&mut self, variant: ReplyFdKind) -> Option<u64> {
         self.proto.send_request(variant)
+    }
+
+    pub(crate) fn generate_xid(&mut self) -> Option<u32> {
+        self.id_allocator.generate_id()
+    }
+
+    pub(crate) fn update_xid_range(
+        &mut self,
+        range: GetXIDRangeReply,
+    ) -> core::result::Result<(), IdsExhausted> {
+        self.id_allocator.update_xid_range(&range)
     }
 }
 

@@ -5,6 +5,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use x11rb_protocol::{
+    id_allocator::IdsExhausted,
     packet_reader::PacketReader,
     protocol::{
         bigreq::EnableRequest,
@@ -17,12 +18,12 @@ use x11rb_protocol::{
 use crate::{
     connection::{new_io_slice, Connection},
     mutex::{Mutex, RwLock},
-    Error, Fd, Result,
+    Error, Fd, InvalidState, Result,
 };
 
 use super::{
-    AsyncStatus, BasicDisplay, Display, DisplayBase, ExtensionMap, Prefetch, RawReply, RawRequest,
-    X11Core,
+    AsyncStatus, BasicDisplay, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch,
+    RawReply, RawRequest, X11Core,
 };
 use core::mem;
 use std::sync::Arc;
@@ -299,6 +300,27 @@ impl<Conn: Connection> SyncDisplay<Conn> {
 
         (&*self).wait_for_reply_raw(seq).map(|_| ())
     }
+
+    fn generate_xid_inner(&self) -> Result<u32> {
+        loop {
+            match self.core.lock().core.generate_xid() {
+                Some(xid) => return Ok(xid),
+                None => {
+                    let mut this = self;
+
+                    // repopulate the xid range
+                    let range = this.xc_misc_get_xid_range_immediate()?;
+                    self.core
+                        .lock()
+                        .core
+                        .update_xid_range(range)
+                        .map_err(|IdsExhausted| {
+                            Error::make_invalid_state(InvalidState::XidsExhausted)
+                        })?;
+                }
+            }
+        }
+    }
 }
 
 impl<Conn: Connection> Io<Conn> {
@@ -435,6 +457,10 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
         Ok(len)
     }
 
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.generate_xid_inner()
+    }
+
     fn flush(&mut self) -> Result<()> {
         self.io.get_mut().conn.flush()
     }
@@ -478,6 +504,10 @@ impl<Conn: Connection> Display for &SyncDisplay<Conn> {
     fn maximum_request_length(&mut self) -> Result<usize> {
         let (_, len) = self.bigreq()?;
         Ok(len)
+    }
+
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.generate_xid_inner()
     }
 
     fn flush(&mut self) -> Result<()> {

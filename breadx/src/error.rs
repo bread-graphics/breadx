@@ -85,6 +85,7 @@ pub(crate) enum InvalidState {
     ScreenOutOfRange,
     ZeroIdMask,
     BadError,
+    XidsExhausted,
 }
 
 /// The setup for the connection failed.
@@ -339,6 +340,7 @@ impl fmt::Display for InvalidState {
             InvalidState::ScreenOutOfRange => f.write_str("screen out of range"),
             InvalidState::ZeroIdMask => f.write_str("zero id mask"),
             InvalidState::BadError => f.write_str("misformatted error"),
+            InvalidState::XidsExhausted => f.write_str("server ran out of xids"),
         }
     }
 }

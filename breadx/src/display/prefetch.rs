@@ -101,6 +101,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     pub(crate) fn request_to_send(&mut self) -> &mut RawRequest<'static> {
         match self.state {
             PrefetchState::Sending(Some(ref mut req)) => req,
+            PrefetchState::Formatting(Some(ref mut req)) => req,
             _ => panic!("Prefetch is not sending"),
         }
     }
@@ -108,7 +109,9 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Indicate that the request has been sent.
     pub(crate) fn sent(&mut self, seq: u64) {
         match self.state {
-            PrefetchState::Sending(_) => *self = PrefetchState::Waiting(seq).into(),
+            PrefetchState::Sending(_) | PrefetchState::Formatting(_) => {
+                *self = PrefetchState::Waiting(seq).into()
+            }
             _ => panic!("Prefetch is not sending"),
         }
     }

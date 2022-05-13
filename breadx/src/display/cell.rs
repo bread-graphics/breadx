@@ -61,6 +61,10 @@ impl<Conn: Connection> Display for CellDisplay<Conn> {
         self.inner.get_mut().maximum_request_length()
     }
 
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.inner.get_mut().generate_xid()
+    }
+
     fn synchronize(&mut self) -> Result<()> {
         self.inner.get_mut().synchronize()
     }
@@ -103,6 +107,10 @@ impl<Conn: Connection> Display for &CellDisplay<Conn> {
 
     fn maximum_request_length(&mut self) -> Result<usize> {
         self.inner.borrow_mut().maximum_request_length()
+    }
+
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.inner.borrow_mut().generate_xid()
     }
 
     fn synchronize(&mut self) -> Result<()> {

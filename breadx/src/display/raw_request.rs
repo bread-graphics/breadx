@@ -106,7 +106,7 @@ impl<'a> RawRequest<'a> {
 
     /// Set the opcode for the extension.
     pub fn set_extension_opcode(&mut self, ext_opcode: u8) {
-        self.data[1] = ext_opcode;
+        self.data[0] = ext_opcode;
     }
 }
 
