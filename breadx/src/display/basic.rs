@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use core::mem;
+use core::{mem, task::Context};
 
 use super::{
     AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch, RawReply,
@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     connection::{new_io_slice, BufConnection, Connection},
-    Error, InvalidState, NameConnection, Result,
+    Error, InvalidState, NameConnection, Result, ResultExt,
 };
 
 use alloc::{sync::Arc, vec, vec::Vec};
@@ -430,22 +430,6 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         }
     }
 
-    fn synchronize(&mut self) -> Result<()> {
-        let span = tracing::info_span!("synchronize");
-        let _enter = span.enter();
-
-        // send the sync request
-        let get_input_focus = GetInputFocusRequest {};
-        let req = RawRequest::from_request_reply(get_input_focus);
-        let seq = self.send_request_raw(req)?;
-
-        // flush the stream
-        self.flush()?;
-
-        // wait for the reply
-        self.wait_for_reply_raw(seq).map(|_| ())
-    }
-
     fn generate_xid(&mut self) -> Result<u32> {
         // try to advance the XID ticket
         loop {
@@ -478,3 +462,108 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         self.conn.flush()
     }
 }
+
+//cfg_async! {
+    impl<Conn: Connection> BasicDisplay<Conn> {
+        fn try_prefetch_maximum_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            let mut prefetch = self.max_request_size.take().unwrap();
+
+            // try to fetch it
+            let sz = prefetch.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
+            self.max_request_size = Some(prefetch);
+
+            sz
+        }
+
+        fn try_bigreq(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<(bool, usize)>> {
+            loop {
+                match self
+                    .max_request_size
+                    .as_ref()
+                    .map(|mrs| mrs.get_if_resolved().copied()) {
+                    None => {
+                        return Ok(AsyncStatus::Ready((false, self.setup.maximum_request_length as usize)));
+                    }
+                    Some(None) => {
+                        // prefetch
+                        mtry!(self.try_prefetch_maximum_length(ctx));
+                    }
+                    Some(Some(sz)) => {
+                        return Ok(AsyncStatus::Ready((
+                            sz.is_some(),
+                            sz.unwrap_or(self.setup.maximum_request_length as usize),
+                        )));
+                    }
+                }
+            }
+        }
+
+        fn try_prefetch_extension(&mut self, name: &'static str, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            let mut pf = match self.extension_map.take_pf(name) {
+                Some(pf) => pf,
+                None => Prefetch::new(QueryExtensionRequest {
+                    name: name.as_bytes().into()
+                }),
+            };
+
+            // try to evaluate it
+            let res = pf.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
+            self.extension_map.insert(name, pf);
+
+            res
+        }
+
+        fn try_extension_info(&mut self, name: &'static str, ctx: &mut Context<'_>) -> Result<AsyncStatus<ExtensionInformation>> {
+            loop {
+                match self.extension_map.get(name) {
+                    Some(Some(info)) => return Ok(AsyncStatus::Ready(info)),
+                    Some(None) => return Err(Error::make_missing_extension(name)),
+                    None => {
+                        // try to prefetch it
+                        mtry!(self.try_prefetch_extension(name, ctx))
+                    }
+                }
+            }
+        }
+
+        fn try_synchronize(&mut self) -> Result<AsyncStatus<()>> {
+            todo!()
+        }
+    }
+
+    impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
+        fn format_request(&mut self, req: &mut RawRequest, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            let (is_bigreq, _) = mtry!(self.try_bigreq(ctx));
+            let extension = req.extension();
+            let extension_opcode = match extension {
+                Some(ext) => {
+                    let info = mtry!(self.try_extension_info(ext, ctx));
+                    Some(info.major_opcode)
+                }
+                None => None,
+            };
+
+            // get the sequence number
+            let seq = loop {
+                match self.core.send_request(req.variant()) {
+                    Some(seq) => break seq,
+                    None => {
+                        // try to synchronize here
+                        mtry!(self.try_synchronize());
+                    }
+                }
+            };
+
+            req.compute_length(is_bigreq);
+            if let Some(opcode) = extension_opcode {
+                req.set_extension_opcode(opcode);
+            }
+
+            Ok(AsyncStatus::Ready(seq))
+        }
+
+        fn try_send_request_raw(&mut self, req: &mut RawRequest, ctx: &mut Context< '_>) ->Result<AsyncStatus<u64>> {
+            
+        }
+    }
+//}

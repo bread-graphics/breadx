@@ -2,6 +2,18 @@
 
 //! Displays, used to connect to the X11 server.
 
+/// `try!()`, but for `Result<AsyncStatus<_>>`.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! mtry {
+    ($expr: expr) => {
+        match ($expr)? {
+            AsyncStatus::Ready(t) => t,
+            status => return Ok(status.map(|_| unreachable!()))
+        }
+    };
+}
+
 mod basic;
 pub use basic::{BasicDisplay, DisplayConnection};
 
@@ -32,10 +44,13 @@ cfg_sync! {
 }
 
 pub use crate::automatically_generated::DisplayFunctionsExt;
+cfg_async! {
+    pub use crate::automatically_generated::AsyncDisplayFunctionsExt;
+}
 
 use crate::Result;
 use x11rb_protocol::protocol::{
-    xproto::{Screen, Setup},
+    xproto::{GetInputFocusRequest, Screen, Setup},
     Event,
 };
 
@@ -98,7 +113,21 @@ pub trait Display: DisplayBase {
     fn generate_xid(&mut self) -> Result<u32>;
 
     /// Synchronize this display with the server.
-    fn synchronize(&mut self) -> Result<()>;
+    fn synchronize(&mut self) -> Result<()> {
+        let span = tracing::info_span!("synchronize");
+        let _enter = span.enter();
+
+        // send the sync request
+        let get_input_focus = GetInputFocusRequest {};
+        let req = RawRequest::from_request_reply(get_input_focus);
+        let seq = self.send_request_raw(req)?;
+
+        // flush the stream
+        self.flush()?;
+
+        // wait for the reply
+        self.wait_for_reply_raw(seq).map(|_| ())
+    }
 
     /// Flush all pending requests to the server.
     fn flush(&mut self) -> Result<()>;
@@ -144,6 +173,12 @@ impl<T> AsyncStatus<T> {
     }
 }
 
+impl<T> AsyncStatus<&T> {
+    pub fn copied(self) -> AsyncStatus<T> {
+        self.map(|&t| t)
+    }
+}
+
 cfg_async! {
     #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum Interest {
@@ -179,6 +214,16 @@ cfg_async! {
             &mut self,
             ctx: &mut Context<'_>
         ) -> Result<AsyncStatus<()>>;
+
+        fn try_generate_xid(
+            &mut self,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u32>>;
+
+        fn try_maximum_request_length(
+            &mut self,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<usize>>;
     }
 
     /// A non-blocking interface to the X11 server.

@@ -10,6 +10,7 @@ cfg_test! {
     pub(crate) use test::setup_tracing;
 }
 
+use crate::{display::AsyncStatus, Result};
 use ahash::RandomState;
 use hashbrown::{HashMap as HbHashMap, HashSet as HbHashSet};
 
@@ -24,14 +25,28 @@ pub(crate) type HashSet<V> = HbHashSet<V, RandomState>;
 
 pub(crate) trait ResultExt<T>: Sized {
     fn trace(self, f: impl FnOnce(&T)) -> Self;
+
+    fn acopied<'a, R: 'a>(self) -> Result<AsyncStatus<R>>
+    where
+        T: Into<AsyncStatus<&'a R>>;
 }
 
-impl<T> ResultExt<T> for crate::Result<T> {
+impl<T> ResultExt<T> for Result<T> {
     fn trace(self, f: impl FnOnce(&T)) -> Self {
         if let Ok(ref t) = self {
             f(t);
         }
 
         self
+    }
+
+    fn acopied<'a, R: 'a>(self) -> Result<AsyncStatus<R>>
+    where
+        T: Into<AsyncStatus<&'a R>>,
+    {
+        match self {
+            Ok(t) => Ok(t.into().copied()),
+            Err(e) => Err(e),
+        }
     }
 }

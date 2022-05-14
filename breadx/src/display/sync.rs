@@ -2,337 +2,112 @@
 
 #![cfg(feature = "sync_display")]
 
-use alloc::vec;
-use alloc::vec::Vec;
-use x11rb_protocol::{
-    id_allocator::IdsExhausted,
-    packet_reader::PacketReader,
-    protocol::{
-        bigreq::EnableRequest,
-        xproto::{GetInputFocusRequest, QueryExtensionRequest, Setup},
-        Event,
-    },
-    x11_utils::ExtensionInformation,
-};
+use core::task::{Context, Waker};
 
-use crate::{
-    connection::{new_io_slice, Connection},
-    mutex::{Mutex, RwLock},
-    Error, Fd, InvalidState, Result,
-};
-
-use super::{
-    AsyncStatus, BasicDisplay, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch,
-    RawReply, RawRequest, X11Core,
-};
-use core::mem;
-use std::sync::Arc;
+use super::{AsyncStatus, BasicDisplay, Display, DisplayBase, RawReply, RawRequest};
+use crate::{connection::Connection, mutex::Mutex, Result};
+use alloc::sync::Arc;
+use concurrent_queue::ConcurrentQueue;
+use x11rb_protocol::protocol::{xproto::Setup, Event};
 
 cfg_async! {
-    use core::task::Waker;
-    use concurrent_queue::ConcurrentQueue;
+    use super::{CanBeAsyncDisplay};
 }
 
-/// An implementation of `Display` that can be used immutably through
-/// a thread-safe mutex.
+/// A `Display` that uses a mutex to coordinate access.
 pub struct SyncDisplay<Conn> {
-    /// The actual state of the X11 connection.
-    ///
-    /// When this is locked, it should only ever be locked temporarily.
-    /// Waiting should not occur while this lock is held.
-    core: Mutex<State>,
-    /// I/O state information.
-    ///
-    /// This lock can he held during periods of waiting.
-    io: Mutex<Io<Conn>>,
-    /// Waiter list.
-    ///
-    /// For async, this contains a list of wakers waiting for
-    /// the `io` mutex to be unlocked. Sync types will just wait on
-    /// the `io` mutex.
-    waiters: Waiters,
-    /// Extension map.
-    extension_map: RwLock<ExtensionMap>,
-
-    // fields already in BasicDisplay
+    inner: Mutex<BasicDisplay<Conn>>,
     setup: Arc<Setup>,
     default_screen_index: usize,
+    waiters: Waiters,
 }
 
-/// Fields necessary for I/O.
-struct Io<Conn> {
-    conn: Conn,
-    packet_reader: PacketReader,
-}
-
-/// Fields necessary for keeping state.
-struct State {
-    core: X11Core,
-    max_request_size: Option<Prefetch<EnableRequest>>,
-}
-
+/// A helper type for `SyncDisplay` that allows us to use `Waker`s to wake up
+/// the `SyncDisplay` when a lock is released.
+/// 
+/// Basically uses a "thunder lock". Performant for fewer concurrent accesses.
+/// 
+/// Is a no-op for non-async targets.
 struct Waiters {
     #[cfg(feature = "async")]
     wakers: ConcurrentQueue<Waker>,
 }
 
-impl Default for Waiters {
-    fn default() -> Self {
-        Self {
-            #[cfg(feature = "async")]
-            wakers: ConcurrentQueue::unbounded(),
-        }
-    }
-}
-
 impl<Conn: Connection> From<BasicDisplay<Conn>> for SyncDisplay<Conn> {
-    fn from(display: BasicDisplay<Conn>) -> Self {
-        // dissassemble the BasicDisplay
-        let BasicDisplay {
-            core,
-            setup,
-            packet_reader,
-            conn,
-            max_request_size,
-            default_screen_index,
-            extension_map,
-        } = display;
-
-        // assemble the SyncDisplay
-        let io = Io {
-            conn,
-            packet_reader,
-        };
-        let state = State {
-            core,
-            max_request_size,
-        };
-        let waiters = Waiters::default();
-        let extension_map = RwLock::new(extension_map);
-
+    fn from(bd: BasicDisplay<Conn>) -> Self {
+        let setup = bd.setup.clone();
         Self {
-            core: Mutex::new(state),
-            io: Mutex::new(io),
-            waiters,
             setup,
-            default_screen_index,
-            extension_map,
+            default_screen_index: bd.default_screen_index,
+            inner: Mutex::new(bd),
+            waiters: Waiters {
+                #[cfg(feature = "async")]
+                wakers: ConcurrentQueue::unbounded(),
+            },
         }
     }
 }
 
 impl<Conn: Connection> SyncDisplay<Conn> {
-    fn wait(&self) -> Result<()> {
-        let span = tracing::trace_span!("SyncDisplay::wait");
-        let _enter = span.enter();
+    fn with_inner<R>(&self, f: impl FnOnce(&mut BasicDisplay<Conn>) -> R) -> R {
+        let res = f(&mut *self.inner.lock());
 
-        // acquire an I/O guard and run it
-        let mut fds = vec![];
-        let packet = {
-            let mut io = self.io.lock();
-            let amt = io.read_to_buffer(&mut fds)?;
-
-            tracing::debug!(read = amt, num_fds = fds.len(), "read data from server",);
-
-            // see if we have a packet ready
-            io.packet_reader.advance(amt)
-        };
-
-        // acquire a lock on the core
-        let mut core = self.core.lock();
-
-        // push iems onto it
-        core.core.enqueue_fds(fds);
-        if let Some(packet) = packet {
-            tracing::debug!("completed packet");
-            core.core.enqueue_packet(packet);
-        }
-
-        Ok(())
+        // signal that we have released the mutex
+        self.waiters.release();
+        res
     }
 
-    fn non_blocking_wait(&self, waker: Option<&Waker>) -> Result<AsyncStatus<()>> {
-        // try to read from the stream unless the mutex is locked
-        // or we encounter a would-block error
-        let mut fds = vec![];
-        let packet = {
-            let mut io = match self.io.try_lock() {
-                Some(io) => io,
-                None => {
-                    // unable to lock, register the waiter for when
-                    // we release the lock later
-                    // TODO: register waker
-                    return Ok(AsyncStatus::UserControlled);
-                }
-            };
-
-            let amt = match io.read_to_buffer_non_blocking(&mut fds) {
-                Ok(amt) => amt,
-                Err(e) if e.would_block() => return Ok(AsyncStatus::Read),
-                Err(e) => return Err(e),
-            };
-
-            io.packet_reader.advance(amt)
-        };
-
-        // lock the core
-        let mut core = self.core.lock();
-        core.core.enqueue_fds(fds);
-        if let Some(packet) = packet {
-            core.core.enqueue_packet(packet);
-        }
-
-        Ok(AsyncStatus::Ready(()))
+    fn with_inner_mut<R>(&mut self, f: impl FnOnce(&mut BasicDisplay<Conn>) -> R) -> R {
+        let res = f(self.inner.get_mut());
+        self.waiters.release();
+        res
     }
 
-    fn prefetch_maximum_length(&self) -> Result<usize> {
-        // take it so lifetimes aren't an issue
-        let mut prefetch = self.core.lock().max_request_size.take().unwrap();
-
-        // we're now evaluating bigreq
-        let mut this = self;
-        let sz = prefetch.evaluate(&mut this).copied();
-        self.core.lock().max_request_size = Some(prefetch);
-
-        Ok(sz?.unwrap_or(self.setup.maximum_request_length as usize))
-    }
-
-    fn prefetch_extension(
+    fn try_with_inner<R>(
         &self,
-        name: &'static str,
-    ) -> Result<Prefetch<QueryExtensionRequest<'static>>> {
-        let mut pf = Prefetch::new(QueryExtensionRequest {
-            name: name.as_bytes().into(),
-        });
-
-        let mut this = self;
-        pf.evaluate(&mut this)?;
-        Ok(pf)
+        f: impl FnOnce(&mut BasicDisplay<Conn>) -> Result<Option<R>>,
+    ) -> Result<Option<R>> {
+        match self.inner.try_lock() {
+            Some(lock) => {
+                let res = f(&mut *lock);
+                self.waiters.release();
+                res
+            }
+            None => Ok(None),
+        }
     }
 
-    fn extension_info(&self, name: &'static str) -> Result<ExtensionInformation> {
-        match self.extension_map.read().get(name) {
-            Some(Some(info)) => Ok(info),
-            Some(None) => Err(Error::make_missing_extension(name)),
+    #[cfg(feature = "async")]
+    fn poll_inner<R>(
+        &self,
+        ctx: &mut Context<'_>,
+        f: impl FnOnce(&mut BasicDisplay<Conn>, &mut Context<'_>) -> Result<AsyncStatus<R>>,
+    ) -> Result<AsyncStatus<R>> {
+        match self.inner.try_lock() {
+            Some(lock) => {
+                let res = f(&mut *lock, ctx);
+                self.waiters.release();
+                res
+            }
             None => {
-                // try to prefetch it
-                let pf = self.prefetch_extension(name)?;
-                let info = pf.get_assert().as_ref().cloned().unwrap();
-                self.extension_map.write().insert(name, pf);
-                Ok(info)
-            }
-        }
-    }
-
-    fn bigreq(&self) -> Result<(bool, usize)> {
-        loop {
-            // temporarily lock the state
-            let state = self.core.lock();
-            match state
-                .max_request_size
-                .as_ref()
-                .map(|mrs| mrs.get_if_resolved().copied())
-            {
-                Some(Some(sz)) => {
-                    return Ok((
-                        sz.is_some(),
-                        sz.unwrap_or(self.setup.maximum_request_length as usize),
-                    ))
-                }
-                Some(None) => {
-                    // prefetch
-                    mem::drop(state);
-                    self.prefetch_maximum_length()?;
-                }
-                None => {
-                    // bigreq is currently being processed, return the
-                    // setup size
-                    return Ok((false, self.setup.maximum_request_length as usize));
-                }
-            }
-        }
-    }
-
-    fn format_request(&self, req: &mut RawRequest) -> Result<u64> {
-        let (is_bigreq, _) = self.bigreq()?;
-        let extension_opcode = req
-            .extension()
-            .map(|ext| self.extension_info(ext))
-            .transpose()?
-            .map(|ext| ext.major_opcode);
-
-        let seq = loop {
-            match self.core.lock().core.send_request(req.variant()) {
-                Some(seq) => break seq,
-                None => self.synchronize_inner()?,
-            }
-        };
-
-        // format the request
-        req.compute_length(is_bigreq);
-        if let Some(extension_opcode) = extension_opcode {
-            req.set_extension_opcode(extension_opcode);
-        }
-
-        Ok(seq)
-    }
-
-    fn send_request_raw_inner(&self, mut req: RawRequest) -> Result<u64> {
-        // format the request
-        let sequence = self.format_request(&mut req)?;
-
-        // send the request
-        let (buf, mut fds) = req.into_raw_parts();
-        let mut nwritten = 0;
-        let mut io = self.io.lock();
-
-        while nwritten < buf.len() {
-            let iov = [new_io_slice(&buf[nwritten..])];
-            nwritten += io.conn.send_slices_and_fds(&iov, &mut fds)?;
-        }
-
-        Ok(sequence)
-    }
-
-    fn synchronize_inner(&self) -> Result<()> {
-        let get_input_focus = GetInputFocusRequest {};
-        let req = RawRequest::from_request_reply(get_input_focus);
-        let seq = (&*self).send_request_raw(req)?;
-
-        (&*self).wait_for_reply_raw(seq).map(|_| ())
-    }
-
-    fn generate_xid_inner(&self) -> Result<u32> {
-        loop {
-            match self.core.lock().core.generate_xid() {
-                Some(xid) => return Ok(xid),
-                None => {
-                    let mut this = self;
-
-                    // repopulate the xid range
-                    let range = this.xc_misc_get_xid_range_immediate()?;
-                    self.core
-                        .lock()
-                        .core
-                        .update_xid_range(range)
-                        .map_err(|IdsExhausted| {
-                            Error::make_invalid_state(InvalidState::XidsExhausted)
-                        })?;
-                }
+                self.waiters.push(ctx.waker());
+                Ok(AsyncStatus::UserControlled)
             }
         }
     }
 }
 
-impl<Conn: Connection> Io<Conn> {
-    fn read_to_buffer(&mut self, fds: &mut Vec<Fd>) -> Result<usize> {
-        self.conn
-            .recv_slice_and_fds(self.packet_reader.buffer(), fds)
+impl Waiters {
+    fn push(&self, waker: &Waker) {
+        #[cfg(feature = "async")]
+        self.wakers.push(waker.clone()).ok();
     }
 
-    fn read_to_buffer_non_blocking(&mut self, fds: &mut Vec<Fd>) -> Result<usize> {
-        self.conn
-            .non_blocking_recv_slice_and_fds(self.packet_reader.buffer(), fds)
+    fn release(&self) {
+        #[cfg(feature = "async")]
+        while let Ok(waker) = self.wakers.pop() {
+            waker.wake();
+        }
     }
 }
 
@@ -346,34 +121,11 @@ impl<Conn: Connection> DisplayBase for SyncDisplay<Conn> {
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        loop {
-            if let Some(reply) = self.core.get_mut().core.fetch_event(&self.extension_map)? {
-                return Ok(Some(reply));
-            }
-
-            // wait for the stream
-            if !self.non_blocking_wait(None)?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.with_inner_mut(|inner| inner.poll_for_event())
     }
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
-        loop {
-            if let Some(reply) = self
-                .core
-                .get_mut()
-                .core
-                .fetch_reply(seq, &self.extension_map)?
-            {
-                return Ok(Some(reply));
-            }
-
-            // wait for the stream
-            if !self.non_blocking_wait(None)?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.with_inner_mut(move |inner| inner.poll_for_reply_raw(seq))
     }
 }
 
@@ -387,131 +139,158 @@ impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        loop {
-            if let Some(reply) = self.core.lock().core.fetch_event(&self.extension_map)? {
-                return Ok(Some(reply));
-            }
-
-            // wait for the stream
-            if !self.non_blocking_wait(None)?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.try_with_inner(|inner| inner.poll_for_event())
     }
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
-        loop {
-            if let Some(reply) = self
-                .core
-                .lock()
-                .core
-                .fetch_reply(seq, &self.extension_map)?
-            {
-                return Ok(Some(reply));
-            }
-
-            // wait for the stream
-            if !self.non_blocking_wait(None)?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.try_with_inner(move |inner| inner.poll_for_reply_raw(seq))
     }
 }
 
 impl<Conn: Connection> Display for SyncDisplay<Conn> {
     fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
-        self.send_request_raw_inner(req)
+        self.with_inner_mut(move |inner| inner.send_request_raw(req))
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        loop {
-            if let Some(reply) = self.core.get_mut().core.fetch_event(&self.extension_map)? {
-                return Ok(reply);
-            }
-
-            // wait for an event
-            self.wait()?;
-        }
+        self.with_inner_mut(|inner| inner.wait_for_event())
     }
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
-        loop {
-            if let Some(reply) = self
-                .core
-                .get_mut()
-                .core
-                .fetch_reply(seq, &self.extension_map)?
-            {
-                return Ok(reply);
-            }
-
-            self.wait()?;
-        }
-    }
-
-    fn synchronize(&mut self) -> Result<()> {
-        self.synchronize_inner()
-    }
-
-    fn maximum_request_length(&mut self) -> Result<usize> {
-        let (_, len) = self.bigreq()?;
-        Ok(len)
-    }
-
-    fn generate_xid(&mut self) -> Result<u32> {
-        self.generate_xid_inner()
+        self.with_inner_mut(move |inner| inner.wait_for_reply_raw(seq))
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.io.get_mut().conn.flush()
+        self.with_inner_mut(|inner| inner.flush())
+    }
+
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.with_inner_mut(|inner| inner.generate_xid())
+    }
+
+    fn maximum_request_length(&mut self) -> Result<usize> {
+        self.with_inner_mut(|inner| inner.maximum_request_length())
+    }
+
+    fn synchronize(&mut self) -> Result<()> {
+        self.with_inner_mut(|inner| inner.synchronize())
     }
 }
 
 impl<Conn: Connection> Display for &SyncDisplay<Conn> {
     fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
-        self.send_request_raw_inner(req)
+        self.with_inner(move |inner| inner.send_request_raw(req))
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        loop {
-            if let Some(reply) = self.core.lock().core.fetch_event(&self.extension_map)? {
-                return Ok(reply);
-            }
-
-            // wait for an event
-            self.wait()?;
-        }
+        self.with_inner(|inner| inner.wait_for_event())
     }
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
-        loop {
-            if let Some(reply) = self
-                .core
-                .lock()
-                .core
-                .fetch_reply(seq, &self.extension_map)?
-            {
-                return Ok(reply);
-            }
-
-            self.wait()?;
-        }
-    }
-
-    fn synchronize(&mut self) -> Result<()> {
-        self.synchronize_inner()
-    }
-
-    fn maximum_request_length(&mut self) -> Result<usize> {
-        let (_, len) = self.bigreq()?;
-        Ok(len)
-    }
-
-    fn generate_xid(&mut self) -> Result<u32> {
-        self.generate_xid_inner()
+        self.with_inner(move |inner| inner.wait_for_reply_raw(seq))
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.io.lock().conn.flush()
+        self.with_inner(|inner| inner.flush())
+    }
+
+    fn generate_xid(&mut self) -> Result<u32> {
+        self.with_inner(|inner| inner.generate_xid())
+    }
+
+    fn maximum_request_length(&mut self) -> Result<usize> {
+        self.with_inner(|inner| inner.maximum_request_length())
+    }
+
+    fn synchronize(&mut self) -> Result<()> {
+        self.with_inner(|inner| inner.synchronize())
+    }
+}
+
+cfg_async! {
+    impl<Conn: Connection> CanBeAsyncDisplay for SyncDisplay<Conn> {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.with_inner_mut(move |inner| inner.format_request(req, ctx))
+        }
+
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>> {
+            self.with_inner_mut(move |inner| inner.try_send_request_raw(req, ctx))
+        }
+
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+            self.with_inner_mut(move |inner| inner.try_wait_for_event(ctx))
+        }
+
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>> {
+            self.with_inner_mut(move |inner| inner.try_wait_for_reply_raw(seq, ctx))
+        }
+
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            self.with_inner_mut(move |inner| inner.try_flush(ctx))
+        }
+
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+            self.with_inner_mut(move |inner| inner.try_generate_xid(ctx))
+        }
+
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+            self.with_inner_mut(move |inner| inner.try_maximum_request_length(ctx))
+        }
+    }
+
+    impl<Conn: Connection> CanBeAsyncDisplay for &SyncDisplay<Conn> {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.format_request(req, ctx)) 
+        }
+
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx)) 
+        }
+
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>> {
+            self.poll_inner(ctx, move |inner, ctx| {
+                inner.try_wait_for_reply_raw(seq, ctx)
+            })
+        }
+
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_wait_for_event(ctx))
+        }
+
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_flush(ctx))
+        }
+
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_generate_xid(ctx))
+        }
+
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_maximum_request_length(ctx))
+        }
     }
 }

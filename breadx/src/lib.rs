@@ -37,8 +37,8 @@ cfg_async! {
 #[doc(inline)]
 pub use x11rb_protocol::protocol;
 
-#[rustfmt::skip]
-pub(crate) mod automatically_generated;
+//#[rustfmt::skip]
+//pub(crate) mod automatically_generated;
 
 pub type Fd = x11rb_protocol::RawFdContainer;
 
@@ -51,4 +51,10 @@ pub mod prelude {
     pub use super::display::{
         Display, DisplayBase, DisplayBaseExt, DisplayExt, DisplayFunctionsExt,
     };
+
+    cfg_async! {
+        pub use super::display::{
+            AsyncDisplay, AsyncDisplayExt, AsyncDisplayFunctionsExt
+        };
+    }
 }

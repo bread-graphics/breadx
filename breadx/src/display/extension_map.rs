@@ -35,6 +35,13 @@ impl ExtensionMap {
             .copied()
     }
 
+    pub(crate) fn take_pf(
+        &mut self,
+        name: &'static str,
+    ) -> Option<Prefetch<QueryExtensionRequest<'static>>> {
+        self.inner.remove(&name)
+    }
+
     pub(crate) fn insert(
         &mut self,
         name: &'static str,

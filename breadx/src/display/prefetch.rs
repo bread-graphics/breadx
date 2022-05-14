@@ -165,17 +165,6 @@ cfg_async! {
             display: &mut impl CanBeAsyncDisplay,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<&T::Target>> {
-            macro_rules! mtry {
-                ($expr: expr) => {
-                    match ($expr)? {
-                        AsyncStatus::Ready(res) => res,
-                        AsyncStatus::Read => return Ok(AsyncStatus::Read),
-                        AsyncStatus::Write => return Ok(AsyncStatus::Write),
-                        AsyncStatus::UserControlled => return Ok(AsyncStatus::UserControlled),
-                    }
-                }
-            }
-
             // call all functions in order
             if self.not_yet_formatted() {
                 let req = self.request_to_format();

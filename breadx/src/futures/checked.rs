@@ -53,7 +53,7 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: Unpin + TryParseFd> Future
                                 Innards::SendRequest(inner) => inner.cannibalize(),
                                 _ => unreachable!(),
                             };
- 
+
                             this.inner = Innards::WaitForReply(display_ref.wait_for_reply(cookie));
                         }
                         res => return res.map_ok(|_| unreachable!()),
