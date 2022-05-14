@@ -377,13 +377,13 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
 
     fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
         self.recv_slice_impl(slice, Some(fds), |conn, slices, fds| {
-           conn.recv_slices_and_fds(slices, fds)
+            conn.recv_slices_and_fds(slices, fds)
         })
     }
 
     fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
         self.recv_slice_impl(slice, None, |conn, slices, fds| {
-            conn.recv_slices_and_fds(slices, fds) 
+            conn.recv_slices_and_fds(slices, fds)
         })
     }
 

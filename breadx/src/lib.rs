@@ -30,6 +30,10 @@ cfg_sync! {
     pub(crate) use mutex::*;
 }
 
+cfg_async! {
+    pub mod futures;
+}
+
 #[doc(inline)]
 pub use x11rb_protocol::protocol;
 

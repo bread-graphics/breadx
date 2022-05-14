@@ -253,7 +253,7 @@ impl<Conn: Connection> SyncDisplay<Conn> {
         }
     }
 
-    fn format_request(&self, req: &mut RawRequest<'_>) -> Result<u64> {
+    fn format_request(&self, req: &mut RawRequest) -> Result<u64> {
         let (is_bigreq, _) = self.bigreq()?;
         let extension_opcode = req
             .extension()
@@ -277,7 +277,7 @@ impl<Conn: Connection> SyncDisplay<Conn> {
         Ok(seq)
     }
 
-    fn send_request_raw_inner(&self, mut req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw_inner(&self, mut req: RawRequest) -> Result<u64> {
         // format the request
         let sequence = self.format_request(&mut req)?;
 
@@ -419,7 +419,7 @@ impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for SyncDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
         self.send_request_raw_inner(req)
     }
 
@@ -468,7 +468,7 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for &SyncDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
         self.send_request_raw_inner(req)
     }
 

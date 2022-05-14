@@ -16,11 +16,6 @@ pub enum Mode {
 }
 
 pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option<String> {
-    if matches!(mode, Mode::Async) {
-        // TODO
-        return None;
-    }
-
     match item {
         ToplevelItem::Request(req) => {
             if do_skip(&req.name) {
@@ -122,8 +117,15 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
             // sanitize the names
             params.iter_mut().for_each(|param| param.sanitize_name());
 
-            let mut item = write_initial_send(header, req, &params, &return_type, fncall_to_use);
-            item.push_str(&immediate_function(header, req, &params, &return_type));
+            let mut item =
+                write_initial_send(header, req, &params, &return_type, fncall_to_use, mode);
+            item.push_str(&immediate_function(
+                header,
+                req,
+                &params,
+                &return_type,
+                mode,
+            ));
 
             Some(item)
         }
@@ -137,6 +139,7 @@ fn write_initial_send(
     params: &[Parameter],
     return_type: &ReturnType,
     fncall_to_use: &'static str,
+    mode: Mode,
 ) -> String {
     let mut item = String::new();
 
@@ -148,10 +151,23 @@ fn write_initial_send(
     let fnname = fnname(header, req);
 
     // emit the function header
-    write!(item, "fn {}{}(&mut self, ", fnname, ExtraVoidParam(params)).unwrap();
+    if matches!(mode, Mode::Async) {
+        write!(item, "fn {}<'this>(&'this mut self, ", fnname).unwrap();
+    } else {
+        write!(item, "fn {}(&mut self, ", fnname).unwrap();
+    }
     write_parameters(params, &mut item);
 
-    write!(item, ") -> Result<Cookie<{}>> {{\n", return_type).unwrap();
+    if matches!(mode, Mode::Async) {
+        writeln!(
+            item,
+            ") -> Instrumented<futures::SendRequest<'this, Self, {}>> {{",
+            return_type
+        )
+        .unwrap();
+    } else {
+        writeln!(item, ") -> Result<Cookie<{}>> {{", return_type).unwrap();
+    }
 
     // create a span for it
     writeln!(item, "    let span = tracing::info_span!(").unwrap();
@@ -161,14 +177,13 @@ fn write_initial_send(
             continue;
         }
 
-        writeln!(
-            item,
-            "        {0} = ?{0},",
-            param.name,
-        ).unwrap();
+        writeln!(item, "        {0} = ?{0},", param.name,).unwrap();
     }
     writeln!(item, "    );").unwrap();
-    writeln!(item, "    let _enter = span.enter();").unwrap();
+
+    if matches!(mode, Mode::Sync) {
+        writeln!(item, "    let _enter = span.enter();").unwrap();
+    }
 
     // build the request in the item
     write!(
@@ -211,14 +226,22 @@ fn write_initial_send(
                     item,
                     "        {0}: Cow::Borrowed({0}.bytes()),\n",
                     param.name
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
     }
     write!(item, "    }};\n").unwrap();
 
     // send the request with the cookie
-    writeln!(item, "    self.{}(request)", fncall_to_use).unwrap();
+    write!(item, "    self.{}(request)", fncall_to_use).unwrap();
+
+    if matches!(mode, Mode::Async) {
+        // ensure that the span is attached to the future
+        writeln!(item, ".instrument(span)").unwrap();
+    } else {
+        item.push('\n');
+    }
 
     writeln!(item, "}}").unwrap();
 
@@ -230,6 +253,7 @@ fn immediate_function(
     req: &Request,
     params: &[Parameter],
     return_type: &ReturnType,
+    mode: Mode,
 ) -> String {
     let mut item = String::new();
     cfg_flag(header, &mut item);
@@ -244,35 +268,52 @@ fn immediate_function(
     let fnname = format!("{}_{}", old_fnname, suffix);
 
     // emit the function header
-    write!(item, "fn {}{}(&mut self, ", fnname, ExtraVoidParam(params)).unwrap();
+    if matches!(mode, Mode::Async) {
+        write!(item, "fn {}<'this>(&'this mut self, ", fnname).unwrap();
+    } else {
+        write!(item, "fn {}(&mut self, ", fnname).unwrap();
+    }
     write_parameters(params, &mut item);
-    writeln!(item, ") -> Result<{}> {{", return_type).unwrap();
+
+    if matches!(mode, Mode::Async) {
+        writeln!(
+            item,
+            ") -> Instrumented<futures::CheckedSendRequest<'this, Self, {}>> {{",
+            return_type
+        )
+        .unwrap();
+    } else {
+        writeln!(item, ") -> Result<{}> {{", return_type).unwrap();
+    }
 
     // call the previous function
     writeln!(item, "    let cookie = self.{}(", old_fnname).unwrap();
     for param in params {
         writeln!(item, "        {},", param.name).unwrap();
     }
-    writeln!(item, "    )?;").unwrap();
+    writeln!(
+        item,
+        "    ){};",
+        if matches!(mode, Mode::Sync) { "?" } else { "" }
+    )
+    .unwrap();
 
     // resolve the cookie
-    writeln!(item, "    self.wait_for_reply(cookie)").unwrap();
+    if matches!(mode, Mode::Async) {
+        writeln!(item, "    let span = cookie.span().clone();").unwrap();
+        writeln!(item, "    let cookie = cookie.into_inner();").unwrap();
+        writeln!(
+            item,
+            "    let res: futures::CheckedSendRequest<'this, Self, {}> = cookie.into();",
+            return_type
+        ).unwrap();
+        writeln!(item, "    res.instrument(span)").unwrap();
+    } else {
+        writeln!(item, "    self.wait_for_reply(cookie)").unwrap();
+    }
     writeln!(item, "}}").unwrap();
 
     item
-}
-
-struct ExtraVoidParam<'a>(&'a [Parameter]);
-
-impl<'a> fmt::Display for ExtraVoidParam<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // see if there is a void param in here
-        if self.0.iter().any(|p| matches!(p.ty, Ty::Void)) {
-            write!(f, "<T: crate::Void + ?Sized>")
-        } else {
-            Ok(())
-        }
-    }
 }
 
 fn write_parameters<'a>(params: &[Parameter], item: &mut impl Write) {
@@ -365,7 +406,7 @@ impl Ty {
                     }
                 }
             }
-            _ => {},
+            _ => {}
         }
     }
 
@@ -406,7 +447,7 @@ impl fmt::Display for Ty {
             Self::Into(t) => write!(f, "impl Into<types::{}>", t),
             Self::Vector(t) => write!(f, "Vec<types::{}>", t),
             Self::Array(t, len) => write!(f, "impl Borrow<[types::{}; {}]>", t, len),
-            Self::Void => f.write_str("&T")
+            Self::Void => f.write_str("&(impl crate::Void + ?Sized)"),
         }
     }
 }

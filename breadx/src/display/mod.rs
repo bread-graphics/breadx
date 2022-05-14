@@ -34,14 +34,13 @@ cfg_sync! {
 pub use crate::automatically_generated::DisplayFunctionsExt;
 
 use crate::Result;
-use x11rb_protocol::{
-    protocol::{
-        xproto::{Screen, Setup},
-        Event,
-    },
+use x11rb_protocol::protocol::{
+    xproto::{Screen, Setup},
+    Event,
 };
 
 cfg_async! {
+    use crate::{Error, futures};
     use core::task::{Context, Poll};
 }
 
@@ -82,7 +81,7 @@ pub trait DisplayBase {
 /// A blocking interface to the X11 server.
 pub trait Display: DisplayBase {
     /// Send a raw request to the X11 server.
-    fn send_request_raw(&mut self, req: RawRequest<'_>) -> Result<u64>;
+    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64>;
 
     /// Wait for a reply from the X11 server.
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply>;
@@ -155,13 +154,13 @@ cfg_async! {
     pub trait CanBeAsyncDisplay: DisplayBase {
         fn format_request(
             &mut self,
-            req: &mut RawRequest<'_>,
+            req: &mut RawRequest,
             ctx: &mut Context<'_>
         ) -> Result<AsyncStatus<()>>;
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest<'_>,
+            req: &mut RawRequest,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>>;
 
@@ -171,15 +170,26 @@ cfg_async! {
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>>;
 
-        fn try_wait_for_event_raw(
+        fn try_wait_for_event(
             &mut self,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<Event>>;
+
+        fn try_flush(
+            &mut self,
+            ctx: &mut Context<'_>
+        ) -> Result<AsyncStatus<()>>;
     }
 
     /// A non-blocking interface to the X11 server.
-    pub trait AsyncDisplay: DisplayBase {
-        /// Poll to see if this display is able to participate in the given interest.
-        fn poll_interest(&mut self, interest: Interest, cx: &mut Context<'_>) -> Poll<Result<()>>;
+    pub trait AsyncDisplay: CanBeAsyncDisplay {
+        /// Poll for an interest. If the interest if ready, call
+        /// the provided callback.
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
+            ctx: &mut Context<'_>,
+        ) -> Poll<Result<()>>;
     }
 }

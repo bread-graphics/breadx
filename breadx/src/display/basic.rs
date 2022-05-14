@@ -3,8 +3,8 @@
 use core::mem;
 
 use super::{
-    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch,
-    RawReply, RawRequest, X11Core,
+    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch, RawReply,
+    RawRequest, X11Core,
 };
 use crate::{
     connection::{new_io_slice, BufConnection, Connection},
@@ -290,7 +290,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     /// # Blocking
     ///
     /// This will block.
-    fn format_request(&mut self, req: &mut RawRequest<'_>) -> Result<u64> {
+    fn format_request(&mut self, req: &mut RawRequest) -> Result<u64> {
         let span = tracing::info_span!("format_request");
         let _enter = span.enter();
 
@@ -375,7 +375,7 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for BasicDisplay<Conn> {
-    fn send_request_raw(&mut self, mut req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw(&mut self, mut req: RawRequest) -> Result<u64> {
         let span = tracing::info_span!("send_request_raw");
         let _enter = span.enter();
 

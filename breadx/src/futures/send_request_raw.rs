@@ -1,0 +1,60 @@
+// MIT/Apache2 License
+
+use super::TryWith;
+use crate::{
+    display::{AsyncDisplay, AsyncDisplayExt, AsyncStatus, RawRequest},
+    Result,
+};
+use alloc::boxed::Box;
+use core::{
+    future::Future,
+    marker::PhantomData,
+    pin::Pin,
+    task::{Context, Poll},
+};
+use futures_util::FutureExt;
+
+/// The future returned by the `send_request_raw` function.
+pub struct SendRequestRaw<'this, Dpy: ?Sized> {
+    innards: TryWith<'this, u64, FnTy<Dpy>, Dpy>,
+}
+
+type FnTy<Dpy> =
+    Box<dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static>;
+
+impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
+    pub(crate) fn polling(display: &'this mut Dpy, mut req: RawRequest) -> Self {
+        // set up the function
+        let mut formatted = false;
+        let func: FnTy<Dpy> = Box::new(move |display, ctx| {
+            if !formatted {
+                match display.format_request(&mut req, ctx) {
+                    Ok(AsyncStatus::Ready(())) => formatted = true,
+                    Ok(status) => return Ok(status.map(|()| unreachable!())),
+                    Err(e) => return Err(e),
+                }
+            }
+
+            display.try_send_request_raw(&mut req, ctx)
+        });
+
+        let try_with = display.try_with(func);
+
+        Self { innards: try_with }
+    }
+
+    /// Destroys this future and returns the inner display reference.
+    pub fn cannibalize(self) -> &'this mut Dpy {
+        self.innards.cannibalize()
+    }
+}
+
+impl<'this, Dpy: AsyncDisplay + ?Sized> Future for SendRequestRaw<'this, Dpy> {
+    type Output = Result<u64>;
+
+    fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Result<u64>> {
+        let this = self.get_mut();
+
+        this.innards.poll_unpin(ctx)
+    }
+}

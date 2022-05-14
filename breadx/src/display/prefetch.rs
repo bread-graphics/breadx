@@ -22,9 +22,9 @@ pub struct Prefetch<T: PrefetchTarget> {
 
 enum PrefetchState<T: PrefetchTarget> {
     /// In the process of formatting.
-    Formatting(Option<RawRequest<'static>>),
+    Formatting(Option<RawRequest>),
     /// We're in the process of sending this data.
-    Sending(Option<RawRequest<'static>>),
+    Sending(Option<RawRequest>),
     /// We've sent this data and are waiting for a reply.
     Waiting(SequenceNumber),
     /// The data is available for us; the request is complete.
@@ -80,7 +80,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Format the request.
     ///
     /// The user may use this in order to format the request.
-    pub(crate) fn request_to_format(&mut self) -> &mut RawRequest<'static> {
+    pub(crate) fn request_to_format(&mut self) -> &mut RawRequest {
         match self.state {
             PrefetchState::Formatting(Some(ref mut req)) => req,
             _ => panic!("Prefetch is not formatting"),
@@ -98,7 +98,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     }
 
     /// Get the request to send.
-    pub(crate) fn request_to_send(&mut self) -> &mut RawRequest<'static> {
+    pub(crate) fn request_to_send(&mut self) -> &mut RawRequest {
         match self.state {
             PrefetchState::Sending(Some(ref mut req)) => req,
             PrefetchState::Formatting(Some(ref mut req)) => req,

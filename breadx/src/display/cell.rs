@@ -45,7 +45,7 @@ impl<Conn: Connection> DisplayBase for CellDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for CellDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
         self.inner.get_mut().send_request_raw(req)
     }
 
@@ -93,7 +93,7 @@ impl<Conn: Connection> DisplayBase for &CellDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for &CellDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest<'_>) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
         self.inner.borrow_mut().send_request_raw(req)
     }
 

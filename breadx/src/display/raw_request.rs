@@ -9,27 +9,25 @@ use x11rb_protocol::{
 };
 
 /// The raw request.
-pub struct RawRequest<'a> {
+pub struct RawRequest {
     data: Vec<u8>,
     fds: Vec<Fd>,
     variant: ReplyFdKind,
     extension_name: Option<&'static str>,
-    _marker: PhantomData<&'a ()>,
 }
 
-impl<'a> Default for RawRequest<'a> {
+impl Default for RawRequest {
     fn default() -> Self {
         Self {
             data: Vec::new(),
             fds: Vec::new(),
             variant: ReplyFdKind::NoReply,
             extension_name: None,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<'a> RawRequest<'a> {
+impl RawRequest {
     /// Create a new `RawRequest` from a `Request`.
     fn from_request<R: Request>(req: R, variant: ReplyFdKind) -> Self {
         // use u8::MAX as a placeholder
@@ -40,7 +38,6 @@ impl<'a> RawRequest<'a> {
             fds,
             variant,
             extension_name: R::EXTENSION_NAME,
-            _marker: PhantomData,
         }
     }
 
