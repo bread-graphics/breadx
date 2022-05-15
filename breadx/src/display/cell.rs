@@ -7,6 +7,11 @@ use alloc::sync::Arc;
 use core::cell::RefCell;
 use x11rb_protocol::protocol::{xproto::Setup, Event};
 
+cfg_async! {
+    use super::CanBeAsyncDisplay;
+    use core::task::Context;
+}
+
 /// An implementation of `Display` that can be used immutably through
 /// thread-unsafe cells.
 pub struct CellDisplay<Conn> {
@@ -119,5 +124,50 @@ impl<Conn: Connection> Display for &CellDisplay<Conn> {
 
     fn flush(&mut self) -> Result<()> {
         self.inner.borrow_mut().flush()
+    }
+}
+
+impl<Conn: Connection> CanBeAsyncDisplay for CellDisplay<Conn> {
+    fn try_send_request_raw(
+        &mut self,
+        req: &mut RawRequest,
+        ctx: &mut Context<'_>,
+    ) -> Result<super::AsyncStatus<()>> {
+        self.inner.get_mut().try_send_request_raw(req, ctx)
+    }
+
+    fn format_request(
+        &mut self,
+        req: &mut RawRequest,
+        ctx: &mut Context<'_>,
+    ) -> Result<super::AsyncStatus<u64>> {
+        self.inner.get_mut().format_request(req, ctx)
+    }
+
+    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<Event>> {
+        self.inner.get_mut().try_wait_for_event(ctx)
+    }
+
+    fn try_wait_for_reply_raw(
+        &mut self,
+        seq: u64,
+        ctx: &mut Context<'_>,
+    ) -> Result<super::AsyncStatus<RawReply>> {
+        self.inner.get_mut().try_wait_for_reply_raw(seq, ctx)
+    }
+
+    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<()>> {
+        self.inner.get_mut().try_flush(ctx)
+    }
+
+    fn try_maximum_request_length(
+        &mut self,
+        ctx: &mut Context<'_>,
+    ) -> Result<super::AsyncStatus<usize>> {
+        self.inner.get_mut().try_maximum_request_length(ctx)
+    }
+
+    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<u32>> {
+        self.inner.get_mut().try_generate_xid(ctx)
     }
 }

@@ -24,9 +24,9 @@ pub struct SyncDisplay<Conn> {
 
 /// A helper type for `SyncDisplay` that allows us to use `Waker`s to wake up
 /// the `SyncDisplay` when a lock is released.
-/// 
+///
 /// Basically uses a "thunder lock". Performant for fewer concurrent accesses.
-/// 
+///
 /// Is a no-op for non-async targets.
 struct Waiters {
     #[cfg(feature = "async")]
@@ -213,7 +213,7 @@ cfg_async! {
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>,
-        ) -> Result<AsyncStatus<()>> {
+        ) -> Result<AsyncStatus<u64>> {
             self.with_inner_mut(move |inner| inner.format_request(req, ctx))
         }
 
@@ -221,7 +221,7 @@ cfg_async! {
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>,
-        ) -> Result<AsyncStatus<u64>> {
+        ) -> Result<AsyncStatus<()>> {
             self.with_inner_mut(move |inner| inner.try_send_request_raw(req, ctx))
         }
 
@@ -255,16 +255,16 @@ cfg_async! {
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>,
-        ) -> Result<AsyncStatus<()>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.format_request(req, ctx)) 
+        ) -> Result<AsyncStatus<u64>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.format_request(req, ctx))
         }
 
         fn try_send_request_raw(
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>,
-        ) -> Result<AsyncStatus<u64>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx)) 
+        ) -> Result<AsyncStatus<()>> {
+            self.poll_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx))
         }
 
         fn try_wait_for_reply_raw(

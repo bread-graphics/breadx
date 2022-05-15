@@ -7,7 +7,7 @@ use super::{
     RawRequest, X11Core,
 };
 use crate::{
-    connection::{new_io_slice, BufConnection, Connection},
+    connection::{new_io_slice, BufConnection, Connection, new_io_slice_mut},
     Error, InvalidState, NameConnection, Result, ResultExt,
 };
 
@@ -464,106 +464,194 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
 }
 
 //cfg_async! {
-    impl<Conn: Connection> BasicDisplay<Conn> {
-        fn try_prefetch_maximum_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-            let mut prefetch = self.max_request_size.take().unwrap();
+impl<Conn: Connection> BasicDisplay<Conn> {
+    fn try_prefetch_maximum_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+        let mut prefetch = self.max_request_size.take().unwrap();
 
-            // try to fetch it
-            let sz = prefetch.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
-            self.max_request_size = Some(prefetch);
+        // try to fetch it
+        let sz = prefetch.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
+        self.max_request_size = Some(prefetch);
 
-            sz
-        }
+        sz
+    }
 
-        fn try_bigreq(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<(bool, usize)>> {
-            loop {
-                match self
-                    .max_request_size
-                    .as_ref()
-                    .map(|mrs| mrs.get_if_resolved().copied()) {
-                    None => {
-                        return Ok(AsyncStatus::Ready((false, self.setup.maximum_request_length as usize)));
-                    }
-                    Some(None) => {
-                        // prefetch
-                        mtry!(self.try_prefetch_maximum_length(ctx));
-                    }
-                    Some(Some(sz)) => {
-                        return Ok(AsyncStatus::Ready((
-                            sz.is_some(),
-                            sz.unwrap_or(self.setup.maximum_request_length as usize),
-                        )));
-                    }
+    fn try_bigreq(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<(bool, usize)>> {
+        loop {
+            match self
+                .max_request_size
+                .as_ref()
+                .map(|mrs| mrs.get_if_resolved().copied())
+            {
+                None => {
+                    return Ok(AsyncStatus::Ready((
+                        false,
+                        self.setup.maximum_request_length as usize,
+                    )));
+                }
+                Some(None) => {
+                    // prefetch
+                    mtry!(self.try_prefetch_maximum_length(ctx));
+                }
+                Some(Some(sz)) => {
+                    return Ok(AsyncStatus::Ready((
+                        sz.is_some(),
+                        sz.unwrap_or(self.setup.maximum_request_length as usize),
+                    )));
                 }
             }
-        }
-
-        fn try_prefetch_extension(&mut self, name: &'static str, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-            let mut pf = match self.extension_map.take_pf(name) {
-                Some(pf) => pf,
-                None => Prefetch::new(QueryExtensionRequest {
-                    name: name.as_bytes().into()
-                }),
-            };
-
-            // try to evaluate it
-            let res = pf.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
-            self.extension_map.insert(name, pf);
-
-            res
-        }
-
-        fn try_extension_info(&mut self, name: &'static str, ctx: &mut Context<'_>) -> Result<AsyncStatus<ExtensionInformation>> {
-            loop {
-                match self.extension_map.get(name) {
-                    Some(Some(info)) => return Ok(AsyncStatus::Ready(info)),
-                    Some(None) => return Err(Error::make_missing_extension(name)),
-                    None => {
-                        // try to prefetch it
-                        mtry!(self.try_prefetch_extension(name, ctx))
-                    }
-                }
-            }
-        }
-
-        fn try_synchronize(&mut self) -> Result<AsyncStatus<()>> {
-            todo!()
         }
     }
 
-    impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
-        fn format_request(&mut self, req: &mut RawRequest, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-            let (is_bigreq, _) = mtry!(self.try_bigreq(ctx));
-            let extension = req.extension();
-            let extension_opcode = match extension {
-                Some(ext) => {
-                    let info = mtry!(self.try_extension_info(ext, ctx));
-                    Some(info.major_opcode)
-                }
-                None => None,
-            };
+    fn try_prefetch_extension(
+        &mut self,
+        name: &'static str,
+        ctx: &mut Context<'_>,
+    ) -> Result<AsyncStatus<()>> {
+        let mut pf = match self.extension_map.take_pf(name) {
+            Some(pf) => pf,
+            None => Prefetch::new(QueryExtensionRequest {
+                name: name.as_bytes().into(),
+            }),
+        };
 
-            // get the sequence number
-            let seq = loop {
-                match self.core.send_request(req.variant()) {
-                    Some(seq) => break seq,
-                    None => {
-                        // try to synchronize here
-                        mtry!(self.try_synchronize());
-                    }
-                }
-            };
+        // try to evaluate it
+        let res = pf.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
+        self.extension_map.insert(name, pf);
 
-            req.compute_length(is_bigreq);
-            if let Some(opcode) = extension_opcode {
-                req.set_extension_opcode(opcode);
+        res
+    }
+
+    fn try_extension_info(
+        &mut self,
+        name: &'static str,
+        ctx: &mut Context<'_>,
+    ) -> Result<AsyncStatus<ExtensionInformation>> {
+        loop {
+            match self.extension_map.get(name) {
+                Some(Some(info)) => return Ok(AsyncStatus::Ready(info)),
+                Some(None) => return Err(Error::make_missing_extension(name)),
+                None => {
+                    // try to prefetch it
+                    mtry!(self.try_prefetch_extension(name, ctx))
+                }
             }
-
-            Ok(AsyncStatus::Ready(seq))
-        }
-
-        fn try_send_request_raw(&mut self, req: &mut RawRequest, ctx: &mut Context< '_>) ->Result<AsyncStatus<u64>> {
-            
         }
     }
+}
+
+impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
+    fn format_request(
+        &mut self,
+        req: &mut RawRequest,
+        ctx: &mut Context<'_>,
+    ) -> Result<AsyncStatus<u64>> {
+        let (is_bigreq, _) = mtry!(self.try_bigreq(ctx));
+        let extension = req.extension();
+        let extension_opcode = match extension {
+            Some(ext) => {
+                let info = mtry!(self.try_extension_info(ext, ctx));
+                Some(info.major_opcode)
+            }
+            None => None,
+        };
+
+        // get the sequence number
+        let seq = loop {
+            match self.core.send_request(req.variant()) {
+                Some(seq) => break seq,
+                None => {
+                    // try to synchronize here
+                    todo!("synchronize here");
+                }
+            }
+        };
+
+        req.compute_length(is_bigreq);
+        if let Some(opcode) = extension_opcode {
+            req.set_extension_opcode(opcode);
+        }
+
+        Ok(AsyncStatus::Ready(seq))
+    }
+
+    fn try_send_request_raw(
+        &mut self,
+        req: &mut RawRequest,
+        ctx: &mut Context<'_>,
+    ) -> Result<AsyncStatus<()>> {
+        // begin sending the request
+        loop {
+            let (buf, fds) = req.mut_parts();
+
+            if buf.is_empty() {
+                break;
+            }
+
+            match self.conn.send_slices_and_fds(
+                &[new_io_slice(buf)],
+                fds,
+            ) {
+                Ok(nwritten) => {
+                    req.advance(nwritten);
+                }
+                Err(e) if e.would_block() => {
+                    // we're out
+                    return Ok(AsyncStatus::Write);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(AsyncStatus::Ready(()))
+    }
+
+    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+        match self.conn.flush() {
+            Ok(()) => Ok(AsyncStatus::Ready(())),
+            Err(e) if e.would_block() => Ok(AsyncStatus::Write),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+        todo!()
+    }
+
+    fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+        let (_, max) = mtry!(self.try_bigreq(ctx));
+        Ok(AsyncStatus::Ready(max))
+    }
+
+    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+        loop {
+            // see if we have an event
+            if let Some(event) = self.core.fetch_event(&self.extension_map)? {
+                return Ok(AsyncStatus::Ready(event));
+            }
+
+            let status = self.non_blocking_wait()?;
+            if !status.is_ready() {
+                return Ok(status.map(|_| unreachable!()));
+            }
+        }
+    }
+
+    fn try_wait_for_reply_raw(
+        &mut self,
+        seq: u64,
+        ctx: &mut Context<'_>,
+    ) -> Result<AsyncStatus<RawReply>> {
+        loop {
+            // see if we have an event
+            if let Some(event) = self.core.fetch_reply(seq, &self.extension_map)? {
+                return Ok(AsyncStatus::Ready(event));
+            }
+
+            let status = self.non_blocking_wait()?;
+            if !status.is_ready() {
+                return Ok(status.map(|_| unreachable!()));
+            }
+        }
+    }
+}
 //}

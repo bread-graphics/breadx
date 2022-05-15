@@ -9,7 +9,7 @@ macro_rules! mtry {
     ($expr: expr) => {
         match ($expr)? {
             AsyncStatus::Ready(t) => t,
-            status => return Ok(status.map(|_| unreachable!()))
+            status => return Ok(status.map(|_| unreachable!())),
         }
     };
 }
@@ -162,15 +162,6 @@ impl<T> AsyncStatus<T> {
             Self::UserControlled => AsyncStatus::UserControlled,
         }
     }
-
-    #[cfg(feature = "async")]
-    pub fn interest(&self) -> Option<Interest> {
-        match self {
-            Self::Read => Some(Interest::Readable),
-            Self::Write => Some(Interest::Writable),
-            _ => None,
-        }
-    }
 }
 
 impl<T> AsyncStatus<&T> {
@@ -191,13 +182,13 @@ cfg_async! {
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>
-        ) -> Result<AsyncStatus<()>>;
+        ) -> Result<AsyncStatus<u64>>;
 
         fn try_send_request_raw(
             &mut self,
             req: &mut RawRequest,
             ctx: &mut Context<'_>,
-        ) -> Result<AsyncStatus<u64>>;
+        ) -> Result<AsyncStatus<()>>;
 
         fn try_wait_for_reply_raw(
             &mut self,

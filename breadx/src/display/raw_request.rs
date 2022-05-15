@@ -2,7 +2,7 @@
 
 use crate::{Error, Fd, Result};
 use alloc::{boxed::Box, vec::Vec};
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::Range};
 use x11rb_protocol::{
     connection::ReplyFdKind,
     x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
@@ -12,6 +12,7 @@ use x11rb_protocol::{
 pub struct RawRequest {
     data: Vec<u8>,
     fds: Vec<Fd>,
+    valid_region: Range<usize>,
     variant: ReplyFdKind,
     extension_name: Option<&'static str>,
 }
@@ -21,6 +22,7 @@ impl Default for RawRequest {
         Self {
             data: Vec::new(),
             fds: Vec::new(),
+            valid_region: 0..0,
             variant: ReplyFdKind::NoReply,
             extension_name: None,
         }
@@ -36,6 +38,7 @@ impl RawRequest {
         Self {
             data,
             fds,
+            valid_region: 0..data.len(),
             variant,
             extension_name: R::EXTENSION_NAME,
         }
@@ -64,7 +67,17 @@ impl RawRequest {
     /// Once the `RawRequest` is finished, this function will
     /// return the parts that can be sent over the wire.
     pub fn into_raw_parts(self) -> (Box<[u8]>, Vec<Fd>) {
-        let Self { data, fds, .. } = self;
+        let Self {
+            mut data,
+            fds,
+            valid_region,
+            ..
+        } = self;
+
+        // take the valid region
+        data.split_off(valid_region.end);
+        let data = data.split_off(valid_region.start);
+
         (data.into_boxed_slice(), fds)
     }
 
@@ -104,6 +117,16 @@ impl RawRequest {
     /// Set the opcode for the extension.
     pub fn set_extension_opcode(&mut self, ext_opcode: u8) {
         self.data[0] = ext_opcode;
+    }
+
+    /// Get the mutable parts of the data.
+    pub fn mut_parts(&mut self) -> (&mut [u8], &mut Vec<Fd>) {
+        (&mut self.data, &mut self.fds)
+    }
+
+    /// Advance this request by the given number of bytes.
+    pub fn advance(&mut self, bytes: usize) {
+        self.valid_region.start += bytes;
     }
 }
 

@@ -25,17 +25,25 @@ type FnTy<Dpy> =
 impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, mut req: RawRequest) -> Self {
         // set up the function
-        let mut formatted = false;
+        let mut sequence = None;
         let func: FnTy<Dpy> = Box::new(move |display, ctx| {
-            if !formatted {
-                match display.format_request(&mut req, ctx) {
-                    Ok(AsyncStatus::Ready(())) => formatted = true,
-                    Ok(status) => return Ok(status.map(|()| unreachable!())),
-                    Err(e) => return Err(e),
+            loop {
+                match sequence {
+                    None => {
+                        // calculate the sequence number
+                        match display.format_request(&mut req, ctx) {
+                            Ok(AsyncStatus::Ready(seq)) => sequence = Some(seq),
+                            Ok(status) => return Ok(status.map(|_| unreachable!())),
+                            Err(e) => return Err(e),
+                        }
+                    }
+                    Some(seq) => {
+                        return display
+                            .try_send_request_raw(&mut req, ctx)
+                            .map(move |res| res.map(move |()| seq));
+                    }
                 }
             }
-
-            display.try_send_request_raw(&mut req, ctx)
         });
 
         let try_with = display.try_with(func);
