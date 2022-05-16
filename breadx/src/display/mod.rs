@@ -32,6 +32,9 @@ pub(crate) use extension_map::ExtensionMap;
 mod sans_io;
 pub(crate) use sans_io::X11Core;
 
+mod poison;
+pub(crate) use poison::Poisonable;
+
 mod prefetch;
 pub(crate) use prefetch::Prefetch;
 
@@ -162,9 +165,23 @@ impl<T> AsyncStatus<T> {
             Self::UserControlled => AsyncStatus::UserControlled,
         }
     }
+
+    pub fn unwrap(self) -> T {
+        match self {
+            Self::Ready(t) => t,
+            _ => panic!("unwrap() called on non-ready AsyncStatus"),
+        }
+    }
+
+    pub fn ready(self) -> Option<T> {
+        match self {
+            Self::Ready(t) => Some(t),
+            _ => None,
+        }
+    }
 }
 
-impl<T> AsyncStatus<&T> {
+impl<T: Copy> AsyncStatus<&T> {
     pub fn copied(self) -> AsyncStatus<T> {
         self.map(|&t| t)
     }

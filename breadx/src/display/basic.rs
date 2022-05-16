@@ -1,13 +1,16 @@
 // MIT/Apache2 License
 
-use core::{mem, task::Context};
+use core::{
+    mem,
+    task::{Context, Waker},
+};
 
 use super::{
-    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Prefetch, RawReply,
-    RawRequest, X11Core,
+    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Poisonable, Prefetch,
+    RawReply, RawRequest, X11Core,
 };
 use crate::{
-    connection::{new_io_slice, BufConnection, Connection, new_io_slice_mut},
+    connection::{new_io_slice, new_io_slice_mut, BufConnection, Connection},
     Error, InvalidState, NameConnection, Result, ResultExt,
 };
 
@@ -19,6 +22,7 @@ use x11rb_protocol::{
     parse_display,
     protocol::{
         bigreq::EnableRequest,
+        xc_misc::GetXIDRangeRequest,
         xproto::{GetInputFocusRequest, QueryExtensionRequest, Setup},
         Event,
     },
@@ -26,29 +30,42 @@ use x11rb_protocol::{
     xauth,
 };
 
+use impl_details::{BlockingStrategy, Strategy, PollingStrategy};
+
 cfg_async! {
     use super::CanBeAsyncDisplay;
+    use impl_details::NonBlockingStrategy;
 }
 
 /// An implementation of `Display` that requires a mutable reference
 /// to use.
 pub struct BasicDisplay<Conn> {
-    // all of the fields here are pub(crate) so that the From
-    // impl for SyncDisplay can access them.
     /// The protocol implementation core.
-    pub(crate) core: X11Core,
+    core: X11Core,
     /// The setup returned from the server.
     pub(crate) setup: Arc<Setup>,
     /// The packet reader buffer.
-    pub(crate) packet_reader: PacketReader,
+    packet_reader: PacketReader,
     /// The connection to the server. This may be able to be poisoned.
-    pub(crate) conn: Conn,
+    conn: Poisonable<Conn>,
     /// The maximum number of bytes we can send at once.
-    pub(crate) max_request_size: Option<Prefetch<EnableRequest>>,
+    max_request_size: Option<Prefetch<EnableRequest>>,
     /// The default screen index.
     pub(crate) default_screen_index: usize,
     /// Map between extension names and the extension information.
-    pub(crate) extension_map: ExtensionMap,
+    extension_map: ExtensionMap,
+    /// Tracking async state for in-flight requests/synchronization/etc.
+    async_state: AsyncState,
+}
+
+#[derive(Default)]
+struct AsyncState {
+    /// The last sequence number request we are in the middle of sending.
+    current_sending: Option<u64>,
+    /// The in-flight XID regeneration request.
+    xid_regeneration: Option<Prefetch<GetXIDRangeRequest>>,
+    /// Current synchronization status.
+    synchronization: Option<Prefetch<GetInputFocusRequest>>,
 }
 
 cfg_std! {
@@ -103,10 +120,11 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 core,
                 setup: Arc::new(setup),
                 packet_reader: PacketReader::new(),
-                conn,
+                conn: Poisonable::from(conn),
                 max_request_size: Some(Default::default()),
                 default_screen_index,
                 extension_map: Default::default(),
+                async_state: Default::default(),
             })
         })
     }
@@ -169,63 +187,101 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         })
     }
 
-    fn non_blocking_wait(&mut self) -> Result<AsyncStatus<()>> {
-        // otherwise, try to read from the stream
-        // read until we encounter a would-block error
+    /// Wait for a packet from the server, using the given strategy.
+    fn wait(&mut self, strategy: &mut impl Strategy<Conn>) -> Result<AsyncStatus<()>> {
+        let span = tracing::debug_span!("wait", strategy = strategy.description());
+        let _enter = span.enter();
+
+        // try to read from the stream until we encouter a would-block error
         let mut fds = vec![];
+        let packet_reader = &mut self.packet_reader;
         let amt = match self
             .conn
-            .non_blocking_recv_slice_and_fds(self.packet_reader.buffer(), &mut fds)
+            .with(|conn| strategy.read_slices(conn, packet_reader.buffer(), &mut fds))
         {
             Ok(amt) => amt,
             Err(e) if e.would_block() => return Ok(AsyncStatus::Read),
             Err(e) => return Err(e),
         };
 
+        tracing::debug!(amt = amt, num_fds = fds.len(), "read data from server");
+
+        // enqueue the data we received into the core for processing
         self.core.enqueue_fds(fds);
         if let Some(packet) = self.packet_reader.advance(amt) {
             self.core.enqueue_packet(packet);
         }
 
+        // we are now ready
         Ok(AsyncStatus::Ready(()))
     }
 
-    /// Block until a new packet is available.
-    fn wait(&mut self) -> Result<()> {
-        let span = tracing::info_span!("wait");
+    /// Get a reply for the given sequence number from the server, using
+    /// the given strategy.
+    fn fetch_reply(
+        &mut self,
+        seq: u64,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<RawReply>> {
+        let span = tracing::trace_span!("fetch_reply", seq=seq);
         let _enter = span.enter();
 
-        let mut fds = vec![];
-        let amt = self
-            .conn
-            .recv_slice_and_fds(self.packet_reader.buffer(), &mut fds)?;
+        // ensure that we have been flushed
+        mtry!(self.partial_flush());
 
-        tracing::debug!(read = amt, num_fds = fds.len(), "read data from server");
+        loop {
+            // see if the core has the reply available
+            if let Some(reply) = self.core.fetch_reply(seq, &self.extension_map)? {
+                return Ok(AsyncStatus::Ready(reply));
+            }
 
-        self.core.enqueue_fds(fds);
-        if let Some(packet) = self.packet_reader.advance(amt) {
-            tracing::debug!("completed packet");
-            self.core.enqueue_packet(packet);
+            // otherwise, try to wait
+            mtry!(self.wait(strategy));
         }
-
-        Ok(())
     }
 
-    fn prefetch_maximum_length(&mut self) -> Result<usize> {
+    /// Get the latest event from the server, using the given strategy.
+    fn fetch_event(&mut self, strategy: &mut impl Strategy<Conn>) -> Result<AsyncStatus<Event>> {
+        mtry!(self.partial_flush());
+
+        loop {
+            // see if the core has the event available
+            if let Some(event) = self.core.fetch_event(&self.extension_map)? {
+                return Ok(AsyncStatus::Ready(event));
+            }
+
+            // otherwise, try to wait
+            mtry!(self.wait(strategy));
+        }
+    }
+
+    fn prefetch_maximum_length(
+        &mut self,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<(bool, usize)>> {
         tracing::info!("prefetching maximum length from server");
 
         // take it so lifetimes aren't an issue
         let mut prefetch = self.max_request_size.take().unwrap();
 
         // we're now evaluating bigreq
-        let sz = prefetch.evaluate(self).copied();
+        let sz = strategy.prefetch(self, &mut prefetch, ctx).acopied();
         self.max_request_size = Some(prefetch);
 
-        Ok(sz?.unwrap_or(self.setup.maximum_request_length as usize))
+        let sz = mtry!(sz);
+        Ok(AsyncStatus::Ready((
+            sz.is_some(),
+            sz.unwrap_or(self.setup.maximum_request_length as usize),
+        )))
     }
 
-    fn bigreq(&mut self) -> Result<(bool, usize)> {
-        let span = tracing::info_span!("bigreq");
+    fn bigreq(
+        &mut self,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<(bool, usize)>> {
+        let span = tracing::debug_span!("bigreq");
         let _enter = span.enter();
 
         loop {
@@ -236,18 +292,21 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             {
                 None => {
                     // bigreq is being processed, return the setup size
-                    return Ok((false, self.setup.maximum_request_length as usize));
+                    return Ok(AsyncStatus::Ready((
+                        false,
+                        self.setup.maximum_request_length as usize,
+                    )));
                 }
                 Some(None) => {
                     // prefetch
-                    self.prefetch_maximum_length()?;
+                    mtry!(self.prefetch_maximum_length(ctx, strategy));
                 }
                 Some(Some(sz)) => {
                     // we have a size
-                    return Ok((
+                    return Ok(AsyncStatus::Ready((
                         sz.is_some(),
                         sz.unwrap_or(self.setup.maximum_request_length as usize),
-                    ));
+                    )));
                 }
             }
         }
@@ -256,51 +315,92 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn prefetch_extension(
         &mut self,
         name: &'static str,
-    ) -> Result<Prefetch<QueryExtensionRequest<'static>>> {
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<Option<ExtensionInformation>>> {
         tracing::info!("prefetching extension {} from server", name);
 
-        let mut pf = Prefetch::new(QueryExtensionRequest {
-            name: name.as_bytes().into(),
-        });
+        let mut pf = match self.extension_map.take_pf(name) {
+            Some(pf) => pf,
+            None => Prefetch::new(QueryExtensionRequest {
+                name: name.as_bytes().into(),
+            }),
+        };
 
         // evaluate it
-        pf.evaluate(self)?;
-        Ok(pf)
+        let res = strategy.prefetch(self, &mut pf, ctx).acopied();
+
+        // put prefetch back into map
+        self.extension_map.insert(name, pf);
+
+        res
     }
 
-    fn extension_info(&mut self, name: &'static str) -> Result<ExtensionInformation> {
+    fn extension_info(
+        &mut self,
+        name: &'static str,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<ExtensionInformation>> {
         let span = tracing::info_span!("extension_info");
         let _enter = span.enter();
 
-        match self.extension_map.get(name) {
-            Some(Some(info)) => Ok(info),
-            Some(None) => Err(Error::make_missing_extension(name)),
-            None => {
-                // try to prefetch it
-                let pf = self.prefetch_extension(name)?;
-                let info = pf.get_assert().as_ref().cloned().unwrap();
-                self.extension_map.insert(name, pf);
-                Ok(info)
+        loop {
+            match self.extension_map.get(name) {
+                Some(Some(info)) => return Ok(AsyncStatus::Ready(info)),
+                Some(None) => return Err(Error::make_missing_extension(name)),
+                None => {
+                    // try to prefetch it
+                    mtry!(self.prefetch_extension(name, ctx, strategy));
+                }
             }
         }
     }
 
+    fn partial_flush(&mut self) -> Result<AsyncStatus<()>> {
+        tracing::trace!("flushing connection");
+
+        match self.conn.with(|conn| conn.flush()) {
+            Ok(()) => Ok(AsyncStatus::Ready(())),
+            Err(e) if e.would_block() => Ok(AsyncStatus::Write),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Try to synchronize this client with the X11 server.
+    fn partial_synchronize(
+        &mut self,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<()>> {
+        let mut pf = self.async_state.synchronization.take().unwrap_or_default();
+        let res = strategy.prefetch(self, &mut pf, ctx).acopied();
+
+        if !matches!(res.as_ref().map(|a| a.is_ready()), Ok(true) | Err(_)) {
+            self.async_state.synchronization = Some(pf);
+        }
+
+        res.map(|a| a.map(|_| ()))
+    }
+
     /// Format the request to be compatible with our send mechanism.
-    ///
-    /// # Blocking
-    ///
-    /// This will block.
-    fn format_request(&mut self, req: &mut RawRequest) -> Result<u64> {
-        let span = tracing::info_span!("format_request");
+    fn try_format_request(
+        &mut self,
+        req: &mut RawRequest,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<u64>> {
+        let span = tracing::info_span!("format_request", strategy = strategy.description());
         let _enter = span.enter();
 
         // get the formatting bits
-        let (is_bigreq, _) = self.bigreq()?;
-        let extension_opcode = req
-            .extension()
-            .map(|ext| self.extension_info(ext))
-            .transpose()?
-            .map(|ext| ext.major_opcode);
+        let (is_bigreq, _) = mtry!(self.bigreq(ctx, strategy));
+        let extension = req.extension();
+
+        let extension_opcode = match extension {
+            Some(ext) => Some(mtry!(self.extension_info(ext, ctx, strategy)).major_opcode),
+            None => None,
+        };
 
         // get the sequence number
         let seq = loop {
@@ -308,7 +408,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 Some(seq) => break seq,
                 None => {
                     // synchronize to ensure sequences are up to date
-                    self.synchronize()?;
+                    mtry!(self.partial_synchronize(ctx, strategy));
                 }
             }
         };
@@ -326,7 +426,66 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             req.set_extension_opcode(opcode);
         }
 
-        Ok(seq)
+        Ok(AsyncStatus::Ready(seq))
+    }
+
+    /// Try to send the given request to the server.
+    fn try_send_raw_request(
+        &mut self,
+        req: &mut RawRequest,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<()>> {
+        loop {
+            let (buf, fds) = req.mut_parts();
+
+            if buf.is_empty() {
+                break;
+            }
+
+            match self
+                .conn
+                .with(|conn| conn.send_slices_and_fds(&[new_io_slice(buf)], fds))
+            {
+                Ok(nwritten) => {
+                    //tracing::trace!(nwritten = nwritten);
+                    req.advance(nwritten)
+                }
+                Err(e) if e.would_block() => {
+                    return Ok(AsyncStatus::Write);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(AsyncStatus::Ready(()))
+    }
+
+    /// Try to generate an XID.
+    fn partial_generate_xid(
+        &mut self,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<u32>> {
+        loop {
+            if let Some(id) = self.core.generate_xid() {
+                // we just generated a new XID
+                return Ok(AsyncStatus::Ready(id));
+            }
+
+            // we need to regenerate the XID range
+            let mut pf = self.async_state.xid_regeneration.take().unwrap_or_default();
+            let res = strategy.prefetch(self, &mut pf, ctx).acopied();
+
+            if !matches!(res.as_ref().map(|a| a.is_ready()), Ok(true) | Err(_)) {
+                self.async_state.xid_regeneration = Some(pf);
+            }
+
+            // we have the range to update
+            let range = mtry!(res);
+            self.core.update_xid_range(range).map_err(|IdsExhausted| {
+                Error::make_invalid_state(InvalidState::XidsExhausted)
+            })?;
+        }
     }
 }
 
@@ -340,37 +499,12 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
     }
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
-        let span = tracing::info_span!("poll_for_reply_raw", seq = seq);
-        let _enter = span.enter();
-
-        loop {
-            // check if we have a reply already
-            if let Some(reply) = self.core.fetch_reply(seq, &self.extension_map)? {
-                return Ok(Some(reply));
-            }
-
-            // otherwise, try to wait
-            if !self.non_blocking_wait()?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.fetch_reply(seq, &mut PollingStrategy)
+            .map(|a| a.ready())
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        let span = tracing::info_span!("poll_for_event");
-        let _enter = span.enter();
-
-        loop {
-            // check if we have an event pending
-            if let Some(event) = self.core.fetch_event(&self.extension_map)? {
-                return Ok(Some(event));
-            }
-
-            // otherwise, try to read from the stream
-            if !self.non_blocking_wait()?.is_ready() {
-                return Ok(None);
-            }
-        }
+        self.fetch_event(&mut PollingStrategy).map(|a| a.ready())
     }
 }
 
@@ -379,279 +513,213 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         let span = tracing::info_span!("send_request_raw");
         let _enter = span.enter();
 
-        let sequence = self.format_request(&mut req)?;
-
-        // send the request
-        let (buf, mut fds) = req.into_raw_parts();
-        let mut nwritten = 0;
-
-        tracing::info!(sequence = sequence, "sending request to server");
-
-        while nwritten < buf.len() {
-            let iov = [new_io_slice(&buf[nwritten..])];
-            let amt = self.conn.send_slices_and_fds(&iov, &mut fds)?;
-            nwritten += amt;
-
-            tracing::debug!(written = amt, total = nwritten, "sending bytes to server",);
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "async")] {
+                // ensure that we're not stepping on anyone else's toes
+                if let Some(seq) = self.async_state.current_sending {
+                    return Err(Error::async_send_in_progress(seq))
+                }
+            }
         }
 
+        let sequence = self
+            .try_format_request(&mut req, None, &mut BlockingStrategy)?
+            .unwrap();
+        self.try_send_raw_request(&mut req, &mut BlockingStrategy)?
+            .unwrap();
         Ok(sequence)
     }
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
-        let span = tracing::info_span!("wait_for_reply_raw", seq = seq);
-        let _enter = span.enter();
-
-        self.flush()?;
-
-        loop {
-            if let Some(reply) = self.core.fetch_reply(seq, &self.extension_map)? {
-                return Ok(reply);
-            }
-
-            // wait until the reply appears
-            self.wait()?;
-        }
+        self.fetch_reply(seq, &mut BlockingStrategy)
+            .map(|a| a.unwrap())
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        let span = tracing::info_span!("wait_for_event");
-        let _enter = span.enter();
-
-        self.flush()?;
-
-        loop {
-            if let Some(event) = self.core.fetch_event(&self.extension_map)? {
-                return Ok(event);
-            }
-
-            // wait until the event appears
-            self.wait()?;
-        }
+        self.fetch_event(&mut BlockingStrategy).map(|a| a.unwrap())
     }
 
     fn generate_xid(&mut self) -> Result<u32> {
-        // try to advance the XID ticket
-        loop {
-            match self.core.generate_xid() {
-                Some(id) => return Ok(id),
-                None => {
-                    // we need to update the xid range
-                    let reply = self.xc_misc_get_xid_range_immediate()?;
-                    self.core.update_xid_range(reply).map_err(|IdsExhausted| {
-                        Error::make_invalid_state(InvalidState::XidsExhausted)
-                    })?;
-                }
-            }
-        }
+        self.partial_generate_xid(None, &mut BlockingStrategy)
+            .map(|a| a.unwrap())
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {
         let span = tracing::info_span!("maximum_request_length");
         let _enter = span.enter();
 
-        let (_, max_len) = self.bigreq()?;
+        let (_, max_len) = self.bigreq(None, &mut BlockingStrategy)?.unwrap();
         Ok(max_len)
     }
 
     fn flush(&mut self) -> Result<()> {
-        let span = tracing::info_span!("flush");
-        let _enter = span.enter();
-
         // flush connection buffer
-        self.conn.flush()
+        self.conn.with(|conn| conn.flush())
     }
 }
 
-//cfg_async! {
-impl<Conn: Connection> BasicDisplay<Conn> {
-    fn try_prefetch_maximum_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-        let mut prefetch = self.max_request_size.take().unwrap();
-
-        // try to fetch it
-        let sz = prefetch.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
-        self.max_request_size = Some(prefetch);
-
-        sz
-    }
-
-    fn try_bigreq(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<(bool, usize)>> {
-        loop {
-            match self
-                .max_request_size
-                .as_ref()
-                .map(|mrs| mrs.get_if_resolved().copied())
-            {
-                None => {
-                    return Ok(AsyncStatus::Ready((
-                        false,
-                        self.setup.maximum_request_length as usize,
-                    )));
-                }
-                Some(None) => {
-                    // prefetch
-                    mtry!(self.try_prefetch_maximum_length(ctx));
-                }
-                Some(Some(sz)) => {
-                    return Ok(AsyncStatus::Ready((
-                        sz.is_some(),
-                        sz.unwrap_or(self.setup.maximum_request_length as usize),
-                    )));
-                }
-            }
+cfg_async! {
+    impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>> {
+            self.try_format_request(req, Some(ctx.waker()), &mut NonBlockingStrategy)
         }
-    }
 
-    fn try_prefetch_extension(
-        &mut self,
-        name: &'static str,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<()>> {
-        let mut pf = match self.extension_map.take_pf(name) {
-            Some(pf) => pf,
-            None => Prefetch::new(QueryExtensionRequest {
-                name: name.as_bytes().into(),
-            }),
-        };
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.try_send_raw_request(req, &mut NonBlockingStrategy)
+        }
 
-        // try to evaluate it
-        let res = pf.try_evaluate(self, ctx).map(|a| a.map(|_| ()));
-        self.extension_map.insert(name, pf);
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            self.partial_flush()
+        }
 
-        res
-    }
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+            self.partial_generate_xid(Some(ctx.waker()), &mut NonBlockingStrategy)
+        }
 
-    fn try_extension_info(
-        &mut self,
-        name: &'static str,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<ExtensionInformation>> {
-        loop {
-            match self.extension_map.get(name) {
-                Some(Some(info)) => return Ok(AsyncStatus::Ready(info)),
-                Some(None) => return Err(Error::make_missing_extension(name)),
-                None => {
-                    // try to prefetch it
-                    mtry!(self.try_prefetch_extension(name, ctx))
-                }
-            }
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+            let (_, max) = mtry!(self.bigreq(Some(ctx.waker()), &mut NonBlockingStrategy));
+            Ok(AsyncStatus::Ready(max))
+        }
+
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+            self.fetch_event(&mut NonBlockingStrategy)
+        }
+
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>> {
+            self.fetch_reply(seq, &mut NonBlockingStrategy)
         }
     }
 }
 
-impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
-    fn format_request(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<u64>> {
-        let (is_bigreq, _) = mtry!(self.try_bigreq(ctx));
-        let extension = req.extension();
-        let extension_opcode = match extension {
-            Some(ext) => {
-                let info = mtry!(self.try_extension_info(ext, ctx));
-                Some(info.major_opcode)
-            }
-            None => None,
-        };
+mod impl_details {
+    use core::task::{Context, Waker};
 
-        // get the sequence number
-        let seq = loop {
-            match self.core.send_request(req.variant()) {
-                Some(seq) => break seq,
-                None => {
-                    // try to synchronize here
-                    todo!("synchronize here");
-                }
-            }
-        };
+    use alloc::vec::Vec;
 
-        req.compute_length(is_bigreq);
-        if let Some(opcode) = extension_opcode {
-            req.set_extension_opcode(opcode);
-        }
+    use crate::{
+        connection::Connection,
+        display::{prefetch::PrefetchTarget, AsyncStatus, Prefetch},
+        Fd, Result,
+    };
 
-        Ok(AsyncStatus::Ready(seq))
+    use super::BasicDisplay;
+
+    /// Whether we should use a non-blocking strategy or a blocking
+    /// strategy for waiting for events.
+    pub(crate) trait Strategy<Conn> {
+        /// Read in slices from the connection.
+        fn read_slices(
+            &mut self,
+            conn: &mut Conn,
+            slice: &mut [u8],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize>;
+
+        /// Process a prefetch item.
+        fn prefetch<'p, P: PrefetchTarget>(
+            &mut self,
+            display: &mut BasicDisplay<Conn>,
+            prefetch: &'p mut Prefetch<P>,
+            ctx: Option<&Waker>,
+        ) -> Result<AsyncStatus<&'p P::Target>>;
+
+        /// Strategy description for tracing output.
+        fn description(&self) -> &'static str;
     }
 
-    fn try_send_request_raw(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<()>> {
-        // begin sending the request
-        loop {
-            let (buf, fds) = req.mut_parts();
+    /// Always assume that we are blocking.
+    pub(crate) struct BlockingStrategy;
 
-            if buf.is_empty() {
-                break;
-            }
-
-            match self.conn.send_slices_and_fds(
-                &[new_io_slice(buf)],
-                fds,
-            ) {
-                Ok(nwritten) => {
-                    req.advance(nwritten);
-                }
-                Err(e) if e.would_block() => {
-                    // we're out
-                    return Ok(AsyncStatus::Write);
-                }
-                Err(e) => return Err(e),
-            }
+    impl<Conn: Connection> Strategy<Conn> for BlockingStrategy {
+        fn read_slices(
+            &mut self,
+            conn: &mut Conn,
+            slice: &mut [u8],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            conn.recv_slice_and_fds(slice, fds)
         }
 
-        Ok(AsyncStatus::Ready(()))
-    }
+        fn prefetch<'p, P: PrefetchTarget>(
+            &mut self,
+            display: &mut BasicDisplay<Conn>,
+            prefetch: &'p mut Prefetch<P>,
+            _ctx: Option<&Waker>,
+        ) -> Result<AsyncStatus<&'p P::Target>> {
+            prefetch.evaluate(display).map(|t| AsyncStatus::Ready(t))
+        }
 
-    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-        match self.conn.flush() {
-            Ok(()) => Ok(AsyncStatus::Ready(())),
-            Err(e) if e.would_block() => Ok(AsyncStatus::Write),
-            Err(e) => Err(e),
+        fn description(&self) -> &'static str {
+            "blocking"
         }
     }
 
-    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
-        todo!()
-    }
+    /// Assume that we are just polling for a reply or event.
+    pub(crate) struct PollingStrategy;
 
-    fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
-        let (_, max) = mtry!(self.try_bigreq(ctx));
-        Ok(AsyncStatus::Ready(max))
-    }
+    impl<Conn: Connection> Strategy<Conn> for PollingStrategy {
+        fn read_slices(
+            &mut self,
+            conn: &mut Conn,
+            slice: &mut [u8],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            conn.non_blocking_recv_slice_and_fds(slice, fds)
+        }
 
-    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
-        loop {
-            // see if we have an event
-            if let Some(event) = self.core.fetch_event(&self.extension_map)? {
-                return Ok(AsyncStatus::Ready(event));
-            }
+        fn prefetch<'p, P: PrefetchTarget>(
+            &mut self,
+            display: &mut BasicDisplay<Conn>,
+            prefetch: &'p mut Prefetch<P>,
+            ctx: Option<&Waker>,
+        ) -> Result<AsyncStatus<&'p P::Target>> {
+            unreachable!()
+        }
 
-            let status = self.non_blocking_wait()?;
-            if !status.is_ready() {
-                return Ok(status.map(|_| unreachable!()));
-            }
+        fn description(&self) -> &'static str {
+            "polling"
         }
     }
 
-    fn try_wait_for_reply_raw(
-        &mut self,
-        seq: u64,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<RawReply>> {
-        loop {
-            // see if we have an event
-            if let Some(event) = self.core.fetch_reply(seq, &self.extension_map)? {
-                return Ok(AsyncStatus::Ready(event));
+    cfg_async! {
+        /// Always assume that we are not blocking.
+        pub(crate) struct NonBlockingStrategy;
+
+        impl<Conn: Connection> Strategy<Conn> for NonBlockingStrategy {
+            fn read_slices(
+                &mut self,
+                conn: &mut Conn,
+                slice: &mut [u8],
+                fds: &mut Vec<Fd>,
+            ) -> Result<usize> {
+                conn.non_blocking_recv_slice_and_fds(slice, fds)
             }
 
-            let status = self.non_blocking_wait()?;
-            if !status.is_ready() {
-                return Ok(status.map(|_| unreachable!()));
+            fn prefetch<'p, P: PrefetchTarget>(
+                &mut self,
+                display: &mut BasicDisplay<Conn>,
+                prefetch: &'p mut Prefetch<P>,
+                ctx: Option<&Waker>,
+            ) -> Result<AsyncStatus<&'p P::Target>> {
+                let mut ctx = Context::from_waker(ctx.unwrap());
+                prefetch.try_evaluate(display, &mut ctx)
+            }
+
+            fn description(&self) -> &'static str {
+                "non-blocking"
             }
         }
-    }
+    } 
 }
-//}

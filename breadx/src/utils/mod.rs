@@ -26,7 +26,7 @@ pub(crate) type HashSet<V> = HbHashSet<V, RandomState>;
 pub(crate) trait ResultExt<T>: Sized {
     fn trace(self, f: impl FnOnce(&T)) -> Self;
 
-    fn acopied<'a, R: 'a>(self) -> Result<AsyncStatus<R>>
+    fn acopied<'a, R: 'a + Copy>(self) -> Result<AsyncStatus<R>>
     where
         T: Into<AsyncStatus<&'a R>>;
 }
@@ -40,7 +40,7 @@ impl<T> ResultExt<T> for Result<T> {
         self
     }
 
-    fn acopied<'a, R: 'a>(self) -> Result<AsyncStatus<R>>
+    fn acopied<'a, R: 'a + Copy>(self) -> Result<AsyncStatus<R>>
     where
         T: Into<AsyncStatus<&'a R>>,
     {

@@ -36,9 +36,9 @@ impl RawRequest {
         let (data, fds) = req.serialize(u8::MAX);
 
         Self {
+            valid_region: 0..data.len(),
             data,
             fds,
-            valid_region: 0..data.len(),
             variant,
             extension_name: R::EXTENSION_NAME,
         }
@@ -75,7 +75,7 @@ impl RawRequest {
         } = self;
 
         // take the valid region
-        data.split_off(valid_region.end);
+        data.truncate(valid_region.end);
         let data = data.split_off(valid_region.start);
 
         (data.into_boxed_slice(), fds)
@@ -103,6 +103,8 @@ impl RawRequest {
             let spliced_data = [0, 0, l1, l2, l3, l4];
 
             self.data.splice(2..4, spliced_data);
+            // we need to expand the valid range
+            self.valid_region.end += 4;
         } else {
             let length_bytes = (x_len as u16).to_ne_bytes();
             self.data[2..4].copy_from_slice(&length_bytes);
@@ -121,7 +123,7 @@ impl RawRequest {
 
     /// Get the mutable parts of the data.
     pub fn mut_parts(&mut self) -> (&mut [u8], &mut Vec<Fd>) {
-        (&mut self.data, &mut self.fds)
+        (&mut self.data[self.valid_region.clone()], &mut self.fds)
     }
 
     /// Advance this request by the given number of bytes.

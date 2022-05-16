@@ -114,6 +114,9 @@ impl<C: Connection> BufConnection<C> {
         }
 
         self.write_buf.flush();
+
+        tracing::trace!("Flushed {} bytes to underlying connection", nwritten);
+
         Ok(nwritten)
     }
 

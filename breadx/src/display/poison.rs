@@ -1,7 +1,6 @@
 // MIT/Apache2 License
 
 use crate::{Error, Result};
-use core::any::type_name;
 
 /// A wrapper around a type that may be able to be poisoned if it runs
 /// an operation that may put it into an invalid state.

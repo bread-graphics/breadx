@@ -62,6 +62,12 @@ enum Inner {
         /// The name of the extension.
         name: &'static str,
     },
+    /// Attempted to send a request while another was in progress.
+    #[cfg(feature = "async")]
+    AsyncSendInProgress {
+        /// The sequence number of the request that was in progress.
+        seq: u64,
+    },
     /// An I/O error occurred.
     #[cfg(feature = "std")]
     Io(IoError),
@@ -182,7 +188,15 @@ impl Error {
     /// Did this error happen as a result of some state-based
     /// object entering an invalid state?
     pub fn invalid_state(&self) -> bool {
-        matches!(self.inner, Inner::InvalidState(_) | Inner::Poisoned { .. })
+        let mut base = matches!(self.inner, Inner::InvalidState(_) | Inner::Poisoned { .. });
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                base |= matches!(self.inner, Inner::Io(ref err) if err.kind() != ErrorKind::WouldBlock);
+            }
+        }
+
+        base
     }
 
     /// Did this error occur during initialization of the X11
@@ -204,6 +218,15 @@ impl Error {
         match self.inner {
             Inner::SetupFailed(sf) => Ok(sf),
             inner => Err(Self::from_inner(inner)),
+        }
+    }
+}
+
+// crate-private api
+cfg_async! {
+    impl Error {
+        pub(crate) fn async_send_in_progress(seq: u64) -> Self {
+            Error::from_inner(Inner::AsyncSendInProgress { seq })
         }
     }
 }
@@ -275,6 +298,10 @@ impl fmt::Debug for Error {
                     Inner::MissingExtension { name } => {
                         write!(f, "MissingExtension: {}", name)
                     }
+                    #[cfg(feature = "async")]
+                    Inner::AsyncSendInProgress { seq } => {
+                        write!(f, "AsyncSendInProgress: seq {}", seq)
+                    }
                     #[cfg(feature = "std")]
                     Inner::Io(ref e) => write!(f, "{:?}", e),
                 }
@@ -317,6 +344,10 @@ impl fmt::Display for Error {
             }
             Inner::MissingExtension { name } => {
                 write!(f, "missing extension: {}", name)
+            }
+            #[cfg(feature = "async")]
+            Inner::AsyncSendInProgress { seq } => {
+                write!(f, "async send in progress for sequence {}", seq)
             }
             #[cfg(feature = "std")]
             Inner::Io(ref e) => write!(f, "{}", e),

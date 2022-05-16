@@ -68,7 +68,7 @@ impl<Conn: Connection> SyncDisplay<Conn> {
         f: impl FnOnce(&mut BasicDisplay<Conn>) -> Result<Option<R>>,
     ) -> Result<Option<R>> {
         match self.inner.try_lock() {
-            Some(lock) => {
+            Some(mut lock) => {
                 let res = f(&mut *lock);
                 self.waiters.release();
                 res
@@ -84,7 +84,7 @@ impl<Conn: Connection> SyncDisplay<Conn> {
         f: impl FnOnce(&mut BasicDisplay<Conn>, &mut Context<'_>) -> Result<AsyncStatus<R>>,
     ) -> Result<AsyncStatus<R>> {
         match self.inner.try_lock() {
-            Some(lock) => {
+            Some(mut lock) => {
                 let res = f(&mut *lock, ctx);
                 self.waiters.release();
                 res

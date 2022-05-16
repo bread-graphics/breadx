@@ -24,7 +24,7 @@ fn main() -> breadx::Result<()> {
     let parent = connection.default_screen().root;
     let wid = connection.generate_xid()?;
 
-    connection.create_window_checked(
+    connection.create_window(
         0, // 0 indicates inherit from parent
         wid,
         parent,

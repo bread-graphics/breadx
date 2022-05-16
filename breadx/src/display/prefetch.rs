@@ -1,7 +1,11 @@
 // MIT/Apache2 License
 
 use x11rb_protocol::{
-    protocol::{bigreq::EnableRequest, xproto::QueryExtensionRequest},
+    protocol::{
+        bigreq::EnableRequest,
+        xc_misc::{GetXIDRangeReply, GetXIDRangeRequest},
+        xproto::{GetInputFocusReply, GetInputFocusRequest, QueryExtensionRequest},
+    },
     x11_utils::{ExtensionInformation, ReplyRequest},
     SequenceNumber,
 };
@@ -230,5 +234,29 @@ impl<'a> PrefetchTarget for QueryExtensionRequest<'a> {
 
     fn on_x11_error() -> Self::Target {
         None
+    }
+}
+
+impl PrefetchTarget for GetInputFocusRequest {
+    type Target = GetInputFocusReply;
+
+    fn map_reply(reply: Self::Reply) -> Self::Target {
+        reply
+    }
+
+    fn on_x11_error() -> Self::Target {
+        todo!()
+    }
+}
+
+impl PrefetchTarget for GetXIDRangeRequest {
+    type Target = GetXIDRangeReply;
+
+    fn map_reply(reply: Self::Reply) -> Self::Target {
+        reply
+    }
+
+    fn on_x11_error() -> Self::Target {
+        todo!()
     }
 }
