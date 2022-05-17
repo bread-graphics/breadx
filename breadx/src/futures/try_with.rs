@@ -59,6 +59,8 @@ impl<
     fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Result<R>> {
         let mut this = self.get_mut();
 
+        debug_assert!(this.straight_call || this.interest.is_some());
+
         // if we haven't tried to straight-call the callback, try it now
         if this.straight_call {
             this.straight_call = false;

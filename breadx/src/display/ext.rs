@@ -123,6 +123,13 @@ cfg_async! {
             futures::SendRequestRaw::polling(self, request)
         }
 
+        /// Generate an XID.
+        fn generate_xid(
+            &mut self
+        ) -> futures::GenerateXid<'_, Self> {
+            futures::GenerateXid::polling(self)
+        }
+
         /// Send a void request to the X11 server.
         fn send_void_request(
             &mut self,

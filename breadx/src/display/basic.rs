@@ -30,11 +30,19 @@ use x11rb_protocol::{
     xauth,
 };
 
-use impl_details::{BlockingStrategy, Strategy, PollingStrategy};
+use impl_details::{BlockingStrategy, PollingStrategy, Strategy};
 
 cfg_async! {
     use super::CanBeAsyncDisplay;
     use impl_details::NonBlockingStrategy;
+}
+
+cfg_std_unix! {
+    use std::os::unix::io::{AsRawFd, RawFd};
+}
+
+cfg_std_windows! {
+    use std::os::windows::io::{AsRawSocket, RawSocket};
 }
 
 /// An implementation of `Display` that requires a mutable reference
@@ -204,7 +212,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             Err(e) => return Err(e),
         };
 
-        tracing::debug!(amt = amt, num_fds = fds.len(), "read data from server");
+        //tracing::debug!(amt = amt, num_fds = fds.len(), "read data from server");
 
         // enqueue the data we received into the core for processing
         self.core.enqueue_fds(fds);
@@ -223,7 +231,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         seq: u64,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<RawReply>> {
-        let span = tracing::trace_span!("fetch_reply", seq=seq);
+        let span = tracing::trace_span!("fetch_reply", seq = seq);
         let _enter = span.enter();
 
         // ensure that we have been flushed
@@ -268,6 +276,8 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         // we're now evaluating bigreq
         let sz = strategy.prefetch(self, &mut prefetch, ctx).acopied();
         self.max_request_size = Some(prefetch);
+
+        tracing::info!("Finished bigreq setup");
 
         let sz = mtry!(sz);
         Ok(AsyncStatus::Ready((
@@ -413,7 +423,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             }
         };
 
-        tracing::debug!(
+        tracing::info!(
             seq = seq,
             is_bigreq = is_bigreq,
             extension_opcode = extension_opcode,
@@ -482,9 +492,29 @@ impl<Conn: Connection> BasicDisplay<Conn> {
 
             // we have the range to update
             let range = mtry!(res);
-            self.core.update_xid_range(range).map_err(|IdsExhausted| {
-                Error::make_invalid_state(InvalidState::XidsExhausted)
-            })?;
+            self.core
+                .update_xid_range(range)
+                .map_err(|IdsExhausted| Error::make_invalid_state(InvalidState::XidsExhausted))?;
+        }
+    }
+}
+
+cfg_std_unix! {
+    impl<Conn: AsRawFd> AsRawFd for BasicDisplay<Conn> {
+        fn as_raw_fd(&self) -> RawFd {
+            self.conn.with_ref(|conn| {
+                Ok(conn.as_raw_fd())
+            }).expect("`AsRawFd` impl failed because connection is poisoned")
+        }
+    }
+}
+
+cfg_std_windows! {
+    impl<Conn: AsRawSocket> AsRawSocket for BasicDisplay<Conn> {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.conn.with(|conn| {
+                Ok(conn.as_raw_socket())
+            }).expect("`AsRawSocket` impl failed because connection is poisoned")
         }
     }
 }
@@ -721,5 +751,5 @@ mod impl_details {
                 "non-blocking"
             }
         }
-    } 
+    }
 }

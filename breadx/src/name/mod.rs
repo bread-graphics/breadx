@@ -18,7 +18,11 @@ use x11rb_protocol::xauth::Family;
 
 cfg_std_unix! {
     use crate::connection::SendmsgConnection;
-    use std::os::unix::net::UnixStream;
+    use std::os::unix::{net::UnixStream, io::{AsRawFd, RawFd}};
+}
+
+cfg_std_windows! {
+    use std::os::windows::io::{AsRawSocket, RawSocket};
 }
 
 /// A connection that can be derived from a parsed display name.
@@ -133,6 +137,25 @@ cfg_std_unix! {
         pub(crate) fn from_unix_stream(stream: UnixStream) -> Self {
             NameConnection {
                 inner: Inner::Unix(stream.into()),
+            }
+        }
+    }
+
+    impl AsRawFd for NameConnection {
+        fn as_raw_fd(&self) -> RawFd {
+            match self.inner {
+                Inner::Tcp(ref connection) => connection.as_raw_fd(),
+                Inner::Unix(ref connection) => connection.as_raw_fd(),
+            }
+        }
+    }
+}
+
+cfg_std_windows! {
+    impl AsRawSocket for NameConnection {
+        fn as_raw_socket(&self) -> RawSocket {
+            match self.inner {
+                Inner::Tcp(ref connection) => connection.as_raw_socket(),
             }
         }
     }

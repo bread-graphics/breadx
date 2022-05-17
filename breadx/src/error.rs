@@ -73,6 +73,7 @@ enum Inner {
     Io(IoError),
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub(crate) enum Unsupported {
     Fds,

@@ -12,6 +12,14 @@ use super::{new_io_slice, new_io_slice_mut};
 use crate::connection::{IoSlice, IoSliceMut};
 use crate::{Fd, Result};
 
+cfg_std_unix! {
+    use std::os::unix::io::{AsRawFd, RawFd};
+}
+
+cfg_std_windows! {
+    use std::os::windows::io::{AsRawSocket, RawSocket};
+}
+
 // libxcb uses these values by default
 const DEFAULT_READ_CAPACITY: usize = 4096;
 const DEFAULT_WRITE_CAPACITY: usize = 16384;
@@ -59,6 +67,22 @@ struct WriteBuffer {
 impl<C: Connection> From<C> for BufConnection<C> {
     fn from(conn: C) -> Self {
         Self::new(conn)
+    }
+}
+
+cfg_std_unix! {
+    impl<C: AsRawFd> AsRawFd for BufConnection<C> {
+        fn as_raw_fd(&self) -> RawFd {
+            self.conn.as_raw_fd()
+        }
+    }
+}
+
+cfg_std_windows! {
+    impl<C: AsRawSocket> AsRawSocket for BufConnection<C> {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.conn.as_raw_socket()
+        }
     }
 }
 
@@ -278,12 +302,12 @@ impl<C: Connection> BufConnection<C> {
         // if the amount that we need is not in the buffer, try to preform
         // a read
         if slice.len() > self.read_buf.readable() {
-            tracing::debug!(
+            /*tracing::debug!(
                 "total length {} does not fit in buffer of size {}, \
                 forwarding to read_handler",
                 slice.len(),
                 self.read_buf.readable()
-            );
+            );*/
 
             // only logically possible if the buffer is empty
             /*if self.read_buf.is_empty() {

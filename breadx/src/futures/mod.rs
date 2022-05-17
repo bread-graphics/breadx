@@ -6,6 +6,9 @@ pub use checked::*;
 mod flush;
 pub use flush::*;
 
+mod generate_xid;
+pub use generate_xid::*;
+
 mod send_request;
 pub use send_request::*;
 

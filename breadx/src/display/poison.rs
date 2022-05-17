@@ -25,6 +25,16 @@ impl<T> Poisonable<T> {
             other_result => other_result,
         }
     }
+
+    /// Sometimes we just want a ref.
+    pub(crate) fn with_ref<R>(&self, f: impl FnOnce(&T) -> Result<R>) -> Result<R> {
+        let inner = match self.inner {
+            Some(ref inner) => inner,
+            None => return Err(Error::make_poisoned::<T>()),
+        };
+
+        f(inner)
+    }
 }
 
 impl<T> From<T> for Poisonable<T> {

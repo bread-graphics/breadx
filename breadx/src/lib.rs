@@ -17,6 +17,10 @@ pub use error::*;
 mod utils;
 pub(crate) use utils::*;
 
+cfg_async! {
+    pub mod rt_support;
+}
+
 mod void;
 pub use void::Void;
 
