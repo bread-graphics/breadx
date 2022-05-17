@@ -143,7 +143,24 @@ pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<Displa
 
         let screen = dpy.screen;
         let display_num = dpy.display;
-        let conn = NameConnection::from_parsed_display(dpy, name.is_none())?;
+        let conn = NameConnection::from_parsed_display_async(
+            dpy, 
+            name.is_none(),
+            |name| async move {
+                // poll the display until it is writable
+                let registered = AsyncFd::new(name).map_err(Error::io)?;
+                let mut guard = registered.writable().await.map_err(Error::io)?;
+                guard.retain_ready();
+                let name = registered.into_inner();
+
+                // check socket error
+                if let Some(err) = name.take_error() {
+                    Err(err)
+                } else {
+                    Ok(name)
+                }
+            } 
+        ).await?;
 
         // find xauth
         let (family, address) = conn.get_address()?;

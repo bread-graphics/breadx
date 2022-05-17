@@ -2,265 +2,168 @@
 
 #![cfg(feature = "async")]
 
-use super::NameConnection;
-use crate::{Error, Result};
+use crate::{Error, Result, Unblock, Unsupported};
+use alloc::{boxed::Box, string::ToString};
+use core::{future::{self, Future}, pin::Pin};
+use std::net::{Ipv4Addr, SocketAddr, Ipv6Addr};
+use futures_util::{stream::{self, StreamExt, TryStreamExt}, Stream};
+use socket2::{SockAddr, Domain, Protocol, Socket, Type};
+use x11rb_protocol::parse_display::{ParsedDisplay, ConnectAddress};
 
-use socket2::{Domain, Protocol, SockAddr, Socket, Type};
+use crate::NameConnection;
 
-use alloc::boxed::Box;
-use alloc::vec::Vec;
-use core::{future::Future, mem, pin::Pin, task::Context};
-use std::io;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::sync::mpsc;
-
-use x11rb_protocol::parse_display::ConnectAddress;
-
-/// Connect to the server in a non-blocking manner.
-pub(crate) async fn nb_connect(ca: ConnectAddress<'_>) -> Result<NameConnection> {
-    let mut error: Option<Error> = None;
-
-    for sock_addr in sock_addrs(ca).await {
-        let SocketDetails {
-            addr,
-            domain,
-            protocol,
-        } = sock_addr;
-
-        match connect(addr, domain, protocol) {
-            Ok(socket) => {
+pub(crate) async fn nb_connect<Fut, R>(pd: ParsedDisplay, is_env: bool, mut resolv: impl FnMut(NameConnection) -> Fut) -> Result<R> where Fut: Future<Output = Result<R>> {
+    // create a stream iterating over the possible connections
+    let mut conns = stream::iter(pd.connect_instruction())
+        .flat_map(|ci| instruction_into_socket(ci))
+        .map(|sd| sd.and_then(|(sd, mode)| {
+            sd.connect().map(move |sd| (sd, mode))
+        }))
+        .map(|sd| sd.map(|(socket, mode)| {
+            // determine what mode to put them in
+            if matches!(mode, SocketMode::Tcp) {
+                NameConnection::from_tcp_stream(socket.into())
+            } else {
                 #[cfg(unix)]
                 {
-                    if protocol.is_none() {
-                        return Ok(NameConnection::from_unix_stream(socket));
-                    }
+                    NameConnection::from_unix_stream(socket.into())
                 }
 
-                return Ok(NameConnection::from_tcp_stream(socket.into()));
+                #[cfg(not(unix))]
+                {
+                    unreachable!()
+                }
             }
-            Err(e) => {
-                error = Some(Error::io(e));
+        }));
+
+    // test them to see the first one that works
+    // swap Ok to Err for try_fold
+    let mut err: Option<Error> = None;
+
+    while let Some(conn) = conns.next().await {
+        match conn {
+            Ok(conn) => match resolv(conn).await {
+                Ok(conn) => return Ok(conn),
+                Err(e) => { err = Some(e); }
             }
+            Err(e) => { err = Some(e); }
         }
     }
 
-    Err(error.unwrap_or_else(|| Error::couldnt_parse_display()))
+    Err(err.unwrap_or_else(|| Error::couldnt_parse_display(is_env)))
 }
 
-/// Get the socket addresses we need to connect to.
-async fn sock_addrs(ca: ConnectAddress<'_>) -> Result<Vec<SocketDetails>> {
-    match ca {
+/// Convert a `ConnectInstruction` into a `Stream` iterating over the potential
+/// socket details.
+fn instruction_into_socket(ci: ConnectAddress<'_>) -> Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + '_>> {
+    match ci {
         ConnectAddress::Hostname(hostname, port) => {
             // collect the potential addresses
-            Ok(tcp_ip_addr(hostname, port)
-                .await?
-                .into_iter()
-                .map(|addr| {
+            tcp_ip_addrs(hostname, port)
+                .map(|addr| addr.map(|addr| {
                     let domain = Domain::for_address(addr);
-
-                    SocketDetails {
-                        addr: domain.into(),
+                    
+                    (SocketDetails {
+                        addr: addr.into(),
                         domain,
-                        protocol: Some(Protocol::Tcp),
-                    }
-                })
-                .collect())
+                        protocol: Some(Protocol::TCP),
+                    }, SocketMode::Tcp)
+                }))
+                .boxed()
         }
         ConnectAddress::Socket(path) => {
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    // begin a Unix domain socket connection to the path
-                    Ok(SocketDetails {
-                        addr: SockAddr::unix(path).map_err(Error::io)?,
-                        domain: Domain::UNIX,
-                        protocol: None,
-                    })
+                    // unix socket for the path
+                    let sock_details = SockAddr::unix(path).map_err(Error::io)
+                        .map(|sock_addr| (SocketDetails {
+                            addr: sock_addr,
+                            domain: Domain::UNIX,
+                            protocol: None,
+                        }, SocketMode::Unix));
+
+                    stream::once(future::ready(sock_details)).boxed()
                 } else {
-                    Err(Error::unsupported(Unsupported::Socket))
+                    stream::once(future::ready(Err(
+                        Err(Error::unsupported(Unsupported::Socket))
+                    ))).boxed()
                 }
             }
         }
     }
 }
 
-fn connect(addr: SockAddr, domain: Domain, protocol: Option<Protocol>) -> Result<Socket> {
-    let sock_type = Type::STREAM;
-    #[cfg(any(
-        target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "fuchsia",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
-    // If we can, set nonblocking at socket creation for unix
-    let sock_type = sock_type.nonblocking();
-    // This automatically handles cloexec on unix, no_inherit on windows and nosigpipe on macos
-    let socket = Socket::new(domain, sock_type, protocol).map_err(Error::io)?;
-    #[cfg(not(any(
-        target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "fuchsia",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )))]
-    // If the current platform doesn't support nonblocking at creation, enable it after creation
-    socket.set_nonblocking(true).map_err(Error::io)?;
-    match socket.connect(&addr) {
-        Ok(_) => {}
-        #[cfg(unix)]
-        Err(err) if err.raw_os_error() == Some(libc::EINPROGRESS) => {}
-        Err(err) if err.kind() == io::ErrorKind::WouldBlock => {}
-        Err(err) => return Err(Error::io(err)),
-    }
-    Ok(socket)
-}
-
-/// Get the IP address for a TCP connection.
-async fn tcp_ip_addr(hostname: &str, port: u16) -> Result<Vec<SocketAddr>> {
-    // try to fast path our way out of this; parse the hostname as an IP address
+fn tcp_ip_addrs(hostname: &str, port: u16) -> Pin<Box<dyn Stream<Item = Result<SocketAddr>> + Send + '_>> {
+    // fast paths that don't involve blocking
     if let Ok(ip) = hostname.parse::<Ipv4Addr>() {
-        return Ok(vec![SocketAddr::new(IpAddr::V4(ip), port)]);
+        return stream::once(future::ready(Ok(SocketAddr::new(
+            ip.into(), port
+        )))).boxed();
     }
 
     if let Ok(ip) = hostname.parse::<Ipv6Addr>() {
-        return Ok(vec![SocketAddr::new(IpAddr::V6(ip), port)]);
+        return stream::once(future::ready(Ok(SocketAddr::new(
+            ip.into(), port
+        )))).boxed();
     }
 
-    // slow path: open up a dedicated threadpool and resolve the hostname
-    // using DNS
-    //
-    // X11 isn't really connected to much over hostname anymore, so we can
-    // consider this the cold path
-    let socket_addr = (String::from(hostname), port);
-    Unblock::new(move || std::net::ToSocketAddrs::to_socket_addrs(socket_addr)).await
-}
-
-/// A future that spawns a dedicated thread to run a blocking iterator.
-///
-/// Similar to tokio::spawn_blocking or blocking::unblock, but this is
-/// runtime independent and probably much slower.
-enum Unblock<I: Iterator, F> {
-    Unspawned {
-        iterator: I,
-    },
-    Spawned {
-        pool: JoinHandle<()>,
-        output: mpsc::Receiver<Result<I::Item>>,
-        waker: mpsc::Sender<Waker>,
-        collection: Vec<I::Item>,
-    },
-    Hole,
-}
-
-impl<I: Iterator + 'static, F: FnOnce() -> Result<I>> Unblock<I>
-where
-    I::Item: 'static,
-{
-    fn new(iterator: F) -> Self {
-        Unblock::Unspawned { iterator }
-    }
-
-    fn spawn(&mut self) {
-        let (tx, rx) = mpsc::channel();
-        let (waker_tx, waker_rx) = mpsc::channel();
-
-        // get the iterator out
-        let this = mem::replace(self, Unblock::Hole);
-
-        let iterator = match this {
-            Unblock::Unspawned { iterator } => iterator,
-            _ => unreachable!(),
-        };
-
-        // spawn the thread
-        let handle = thread::Builder::new()
-            .name("breadx-dns-thread".into())
-            .spawn(move || {
-                // generate the iterator
-                let iterator = match iterator() {
-                    Ok(iterator) => iterator,
-                    Err(e) => {
-                        // notify and die
-                        let _ = tx.send(Err(e));
-                        return;
-                    }
-                };
-
-                // run the iterator
-                for item in iterator {
-                    if tx.send(Ok(item)).is_err() {
-                        break;
-                    }
-                }
-
-                // drop tx to signal the end
-                mem::drop(tx);
-
-                // wake the future
-                while let Ok(waker) = waker_rx.recv() {
-                    waker.wake();
-                }
-            })
-            .expect("failed to spawn unblock thread");
-
-        *self = Unblock::Spawned {
-            pool: handle,
-            output: rx,
-            waker: waker_tx,
-            collection: vec![],
-        };
-    }
-}
-
-impl<I: Iterator + 'static, F: FnOnce() -> I> Future for Unblock
-where
-    I::Item: 'static,
-{
-    type Output = Result<Vec<I::Item>>;
-
-    fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
-        // if we haven't spawned yet, do so
-        if let Unblock::Unspawned { .. } = self.get_mut() {
-            self.spawn();
-        }
-
-        // if we're still waiting, wait
-        if let Unblock::Spawned { .. } = self.get_mut() {
-            // try to receive an item from the channel
-            loop {
-                match self.get_mut().output.try_recv() {
-                    Ok(Ok(item)) => {
-                        self.get_mut().collection.push(item);
-                    }
-                    Ok(Err(e)) => {
-                        // iterator errored out, die
-                        return Poll::Ready(Err(e));
-                    }
-                    Err(mpsc::TryRecvError::Empty) => {
-                        // if we're still waiting, wait
-                        let _ = self.get_mut().waker.send(ctx.waker().clone());
-                        return Poll::Pending;
-                    }
-                    Err(mpsc::TryRecvError::Disconnected) => {
-                        // it's over
-                        return Poll::Ready(Ok(mem::take(&mut self.get_mut().collection)));
-                    }
-                }
-            }
-        } else {
-            unreachable!();
-        }
-    }
+    // slow path, use the Unblock struct with ToSocketAddrs
+    let socket_addr = (hostname.to_string(), port);
+    Unblock::new(move || std::net::ToSocketAddrs::to_socket_addrs(&socket_addr))
+        .map(|res| res.map_err(Error::io))
+        .boxed()
 }
 
 struct SocketDetails {
     addr: SockAddr,
     domain: Domain,
     protocol: Option<Protocol>,
+}
+
+enum SocketMode {
+    Tcp,
+    #[cfg(unix)]
+    Unix,
+}
+
+impl SocketDetails {
+    fn connect(self) -> Result<Socket> {
+        let SocketDetails { addr, domain, protocol } = self;
+
+        let sock_type = Type::STREAM;
+        #[cfg(any(
+            target_os = "android",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "illumos",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ))]
+        // If we can, set nonblocking at socket creation for unix
+        let sock_type = sock_type.nonblocking();
+        // This automatically handles cloexec on unix, no_inherit on windows and nosigpipe on macos
+        let socket = Socket::new(domain, sock_type, protocol).map_err(Error::io)?;
+        #[cfg(not(any(
+            target_os = "android",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "fuchsia",
+            target_os = "illumos",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )))]
+        // If the current platform doesn't support nonblocking at creation, enable it after creation
+        socket.set_nonblocking(true).map_err(Error::io)?;
+        match socket.connect(&addr) {
+            Ok(_) => {}
+            #[cfg(unix)]
+            Err(err) if err.raw_os_error() == Some(nix::libc::EINPROGRESS) => {}
+            Err(err) if err.kind() == std::io::ErrorKind::WouldBlock => {}
+            Err(err) => return Err(Error::io(err)),
+        }
+        Ok(socket)
+    }
 }

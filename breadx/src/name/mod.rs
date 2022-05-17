@@ -25,6 +25,12 @@ cfg_std_windows! {
     use std::os::windows::io::{AsRawSocket, RawSocket};
 }
 
+cfg_async! {
+    mod nb_connect;
+
+    use core::future::Future;
+}
+
 /// A connection that can be derived from a parsed display name.
 pub struct NameConnection {
     inner: Inner,
@@ -57,7 +63,7 @@ impl NameConnection {
         Self::from_parsed_display(parsed_display, name.is_none())
     }
 
-    pub(crate) fn from_parsed_display(parsed_display: ParsedDisplay, is_env: bool) -> Result<Self> {
+    pub fn from_parsed_display(parsed_display: ParsedDisplay, is_env: bool) -> Result<Self> {
         // iterate over the potential connection types
         let mut error: Option<Error> = None;
 
@@ -129,6 +135,33 @@ impl NameConnection {
             .into_string()
             .map_or_else(|_| Vec::new(), String::into_bytes);
         Ok((Family::LOCAL, hostname))
+    }
+
+    /// If there is an error associated with this socket, take it.
+    pub fn take_error(&self) -> Option<Error> {
+        let taken_error = match self.inner {
+            Inner::Tcp(ref t) => t.take_error(),
+            #[cfg(unix)]
+            Inner::Unix(ref u) => u.as_ref().take_error(),
+        };
+
+        match taken_error {
+            Err(err) | Ok(Some(err)) => Some(Error::io(err)),
+            _ => None,
+        }
+    }
+}
+
+cfg_async! {
+    impl NameConnection {
+        /// Create a `NameConnection` in a non-blocking manner.
+        pub fn from_parsed_display_async<Fut, R>(
+            parsed_display: ParsedDisplay,
+            is_env: bool,
+            resolv: impl FnMut(NameConnection) -> Fut,
+        ) -> impl Future<Output = Result<R>> where Fut: Future<Output = Result<R>> {
+            nb_connect::nb_connect(parsed_display, is_env, resolv)
+        }
     }
 }
 

@@ -11,7 +11,7 @@ ahash = { version = "0.7.6", default-features = false, features = ["compile-time
 bytemuck = { version = "1.9.1" }
 cfg-if = "1"
 concurrent-queue = { version = "1.2.2", optional = true }
-futures-util = { version = "0.3.21", default-features = false, optional = true }
+futures-util = { version = "0.3.21", default-features = false, features = ["alloc"], optional = true }
 gethostname = { version = "0.2.3", optional = true }
 hashbrown = { version = "0.12.0", default-features = false }
 nix = { version = "0.24.1", optional = true }
