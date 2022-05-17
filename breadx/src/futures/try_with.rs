@@ -62,53 +62,66 @@ impl<
         debug_assert!(this.straight_call || this.interest.is_some());
 
         // if we haven't tried to straight-call the callback, try it now
-        if this.straight_call {
-            this.straight_call = false;
+        loop {
+            if this.straight_call {
+                this.straight_call = false;
 
-            match (this.callback)(&mut *this.dpy, ctx) {
-                Ok(AsyncStatus::Ready(r)) => return Poll::Ready(Ok(r)),
-                Ok(AsyncStatus::Read) => this.interest = Some(Interest::Readable),
-                Ok(AsyncStatus::Write) => this.interest = Some(Interest::Writable),
-                Ok(AsyncStatus::UserControlled) => {
-                    this.straight_call = true;
+                tracing::trace!("trying straight call");
+
+                match (this.callback)(&mut *this.dpy, ctx) {
+                    Ok(AsyncStatus::Ready(r)) => return Poll::Ready(Ok(r)),
+                    Ok(AsyncStatus::Read) => this.interest = Some(Interest::Readable),
+                    Ok(AsyncStatus::Write) => this.interest = Some(Interest::Writable),
+                    Ok(AsyncStatus::UserControlled) => {
+                        this.straight_call = true;
+                    }
+                    Err(e) => return Poll::Ready(Err(e)),
                 }
-                Err(e) => return Poll::Ready(Err(e)),
             }
-        }
 
-        // if we have an interest to poll, poll it
-        if let Some(interest) = this.interest {
-            let mut res: Option<AsyncStatus<R>> = None;
+            // if we have an interest to poll, poll it
+            if let Some(interest) = this.interest {
+                tracing::trace!("re-polling for interest {:?}", interest);
 
-            // try the polling process
-            let mut callback = &mut this.callback;
+                let mut res: Option<AsyncStatus<R>> = None;
 
-            match this.dpy.poll_for_interest(
-                interest,
-                &mut |dpy, ctx| {
-                    (callback)(dpy, ctx).map(|status| {
-                        res = Some(status);
-                        ()
-                    })
-                },
-                ctx,
-            ) {
-                Poll::Pending => {}
-                Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
-                Poll::Ready(Ok(())) => {
-                    // match on the status
-                    match res.take().expect("malicious poll_for_interest impl") {
-                        AsyncStatus::Ready(r) => return Poll::Ready(Ok(r)),
-                        AsyncStatus::Read => this.interest = Some(Interest::Readable),
-                        AsyncStatus::Write => this.interest = Some(Interest::Writable),
-                        AsyncStatus::UserControlled => {
-                            this.straight_call = true;
+                // try the polling process
+                let callback = &mut this.callback;
+
+                match this.dpy.poll_for_interest(
+                    interest,
+                    &mut |dpy, ctx| {
+                        (callback)(dpy, ctx).and_then(|status| {
+                            // create a would_block error if the status is not ready
+                            let is_ready = status.is_ready();
+                            res = Some(status);
+
+                            if is_ready {
+                                Ok(())
+                            } else {
+                                Err(crate::Error::io(
+                                    std::io::ErrorKind::WouldBlock.into()
+                                ))
+                            }
+                        })
+                    },
+                    ctx,
+                ) {
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
+                    Poll::Ready(Ok(())) => {
+                        // match on the status
+                        match res.take().expect("malicious poll_for_interest impl") {
+                            AsyncStatus::Ready(r) => return Poll::Ready(Ok(r)),
+                            AsyncStatus::Read => this.interest = Some(Interest::Readable),
+                            AsyncStatus::Write => this.interest = Some(Interest::Writable),
+                            AsyncStatus::UserControlled => {
+                                this.straight_call = true;
+                            }
                         }
                     }
                 }
             }
         }
-
-        Poll::Pending
     }
 }

@@ -159,26 +159,26 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             let (mut connect, setup_request) = Connect::with_authorization(auth_name, auth_info);
 
             // write the setup request
-            tracing::info!("writing the setup request to server");
+            tracing::debug!("writing the setup request to server");
             let mut nwritten = 0;
             while nwritten < setup_request.len() {
                 let n = conn.send_slice(&setup_request[nwritten..])?;
                 nwritten += n;
 
-                tracing::debug!(written = n, total = nwritten, "wrote bytes for setup",);
+                tracing::trace!(written = n, total = nwritten, "wrote bytes for setup",);
             }
 
             conn.flush()?;
 
             // read the setup reply
-            tracing::info!("reading the setup from server");
+            tracing::debug!("reading the setup from server");
             loop {
                 let adv = conn.recv_slice(connect.buffer())?;
                 if adv == 0 {
                     return Err(Error::make_invalid_state(InvalidState::NotEnoughSetup));
                 }
 
-                tracing::debug!(read = adv, "read bytes for setup");
+                tracing::trace!(read = adv, "read bytes for setup");
 
                 if connect.advance(adv) {
                     // we've finished
@@ -277,7 +277,11 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         let sz = strategy.prefetch(self, &mut prefetch, ctx).acopied();
         self.max_request_size = Some(prefetch);
 
-        tracing::info!("Finished bigreq setup");
+        if self.max_request_size.as_ref().unwrap().get_if_resolved().is_some() {
+            tracing::trace!("Finished bigreq setup");
+        } else {
+            tracing::debug!("bigreq incomplete: {:?}", &sz);
+        }
 
         let sz = mtry!(sz);
         Ok(AsyncStatus::Ready((
@@ -352,7 +356,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         ctx: Option<&Waker>,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<ExtensionInformation>> {
-        let span = tracing::info_span!("extension_info");
+        let span = tracing::debug_span!("extension_info");
         let _enter = span.enter();
 
         loop {
@@ -383,12 +387,16 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         ctx: Option<&Waker>,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<()>> {
+        tracing::debug!("trying for partial synchronization");
+
         let mut pf = self.async_state.synchronization.take().unwrap_or_default();
         let res = strategy.prefetch(self, &mut pf, ctx).acopied();
 
         if !matches!(res.as_ref().map(|a| a.is_ready()), Ok(true) | Err(_)) {
             self.async_state.synchronization = Some(pf);
         }
+
+        tracing::trace!("finished partial synchronization");
 
         res.map(|a| a.map(|_| ()))
     }
@@ -400,7 +408,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         ctx: Option<&Waker>,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<u64>> {
-        let span = tracing::info_span!("format_request", strategy = strategy.description());
+        let span = tracing::debug_span!("format_request", strategy = strategy.description());
         let _enter = span.enter();
 
         // get the formatting bits
@@ -423,7 +431,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             }
         };
 
-        tracing::info!(
+        tracing::debug!(
             seq = seq,
             is_bigreq = is_bigreq,
             extension_opcode = extension_opcode,
@@ -457,7 +465,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 .with(|conn| conn.send_slices_and_fds(&[new_io_slice(buf)], fds))
             {
                 Ok(nwritten) => {
-                    //tracing::trace!(nwritten = nwritten);
+                    tracing::trace!(nwritten = nwritten, "sent data to server");
                     req.advance(nwritten)
                 }
                 Err(e) if e.would_block() => {
@@ -540,7 +548,7 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
 
 impl<Conn: Connection> Display for BasicDisplay<Conn> {
     fn send_request_raw(&mut self, mut req: RawRequest) -> Result<u64> {
-        let span = tracing::info_span!("send_request_raw");
+        let span = tracing::debug_span!("send_request_raw");
         let _enter = span.enter();
 
         cfg_if::cfg_if! {
@@ -575,7 +583,7 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {
-        let span = tracing::info_span!("maximum_request_length");
+        let span = tracing::debug_span!("maximum_request_length");
         let _enter = span.enter();
 
         let (_, max_len) = self.bigreq(None, &mut BlockingStrategy)?.unwrap();

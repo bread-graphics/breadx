@@ -177,20 +177,31 @@ cfg_async! {
             display: &mut impl CanBeAsyncDisplay,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<&T::Target>> {
+            let span = tracing::trace_span!(
+                "try_evaluate",
+                formatted = !self.not_yet_formatted(),
+                sent = !self.not_yet_sent(),
+                read = !self.not_yet_read()
+            );
+            let _enter = span.enter();
+
             // call all functions in order
             if self.not_yet_formatted() {
+                tracing::trace!("formatting request");
                 let req = self.request_to_format();
                 let seq = mtry!(display.format_request(req, ctx));
                 self.formatted(seq);
             }
 
             if self.not_yet_sent() {
+                tracing::trace!("sending request");
                 let req = self.request_to_send();
                 mtry!(display.try_send_request_raw(req, ctx));
                 self.sent();
             }
 
             if self.not_yet_read() {
+                tracing::trace!("receiving reply");
                 let reply = mtry!(display.try_wait_for_reply_raw(self.sequence(), ctx));
                 self.read_reply(reply)?;
             }

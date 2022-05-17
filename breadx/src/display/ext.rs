@@ -64,7 +64,7 @@ pub trait DisplayExt: Display {
         if mem::size_of::<R>() == 0 {
             // zero sized reply indicates that this is a void request,
             // check if we need to
-            tracing::info!("void request, beginning synchronize");
+            tracing::debug!("void request, beginning synchronize");
             self.synchronize()?;
             return Ok(R::try_parse_fd(&[], &mut Vec::new())
                 .unwrap_or_else(|_| unreachable!())

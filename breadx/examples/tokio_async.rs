@@ -172,7 +172,7 @@ mod inner {
                 Event::ButtonPress(bp) => {
                     // indicate the button press
                     let mut stdout = tokio::io::stdout();
-                    let f = format!("Detected click at ({}, {})", bp.event_x, bp.event_y);
+                    let f = format!("Detected click at ({}, {})\n", bp.event_x, bp.event_y);
                     stdout.write_all(f.as_bytes()).await.unwrap();
                 }
                 Event::ClientMessage(cme) => {

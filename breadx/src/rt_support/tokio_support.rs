@@ -43,7 +43,7 @@ impl<D: AsRawFd + CanBeAsyncDisplay> AsyncDisplay for AsyncFd<D> {
         );
         let _enter = span.enter();
 
-        tracing::info!("polling for interest in {:?}", interest);
+        tracing::debug!("polling for interest in {:?}", interest);
 
         // determine which interest we are polling on
         let guard = match interest {
@@ -51,7 +51,7 @@ impl<D: AsRawFd + CanBeAsyncDisplay> AsyncDisplay for AsyncFd<D> {
             Interest::Writable => self.poll_write_ready_mut(ctx),
         };
 
-        tracing::info!(
+        tracing::trace!(
             is_ready = guard.is_ready(),
             "polled for guard"
         );
