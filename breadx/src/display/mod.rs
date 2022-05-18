@@ -16,8 +16,8 @@ macro_rules! mtry {
 
 mod basic;
 use alloc::{boxed::Box, rc::Rc};
-use core::task::{Context, Poll};
 pub use basic::{BasicDisplay, DisplayConnection};
+use core::task::{Context, Poll};
 
 mod cell;
 pub use cell::CellDisplay;

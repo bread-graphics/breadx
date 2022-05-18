@@ -51,10 +51,7 @@ impl<D: AsRawFd + CanBeAsyncDisplay> AsyncDisplay for AsyncFd<D> {
             Interest::Writable => self.poll_write_ready_mut(ctx),
         };
 
-        tracing::trace!(
-            is_ready = guard.is_ready(),
-            "polled for guard"
-        );
+        tracing::trace!(is_ready = guard.is_ready(), "polled for guard");
 
         let mut guard = match guard {
             Poll::Pending => return Poll::Pending,
@@ -132,7 +129,7 @@ where
     }
 }
 
-/* Connect extension trait */
+/* Connection */
 
 pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<DisplayConnection>>> {
     let name = name.map(|name| name.to_string());
@@ -143,10 +140,8 @@ pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<Displa
 
         let screen = dpy.screen;
         let display_num = dpy.display;
-        let conn = NameConnection::from_parsed_display_async(
-            dpy, 
-            name.is_none(),
-            |name| async move {
+        let conn =
+            NameConnection::from_parsed_display_async(dpy, name.is_none(), |name| async move {
                 // poll the display until it is writable
                 let registered = AsyncFd::new(name).map_err(Error::io)?;
                 let mut guard = registered.writable().await.map_err(Error::io)?;
@@ -159,8 +154,8 @@ pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<Displa
                 } else {
                     Ok(name)
                 }
-            } 
-        ).await?;
+            })
+            .await?;
 
         // find xauth
         let (family, address) = conn.get_address()?;
@@ -202,12 +197,12 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
         let mut nwritten = 0;
         while nwritten < setup_request.len() {
             // wait for it to be available
-            let mut guard = registered.writable_mut().await.map_err(Error::io)?;
+            let guard = registered.writable_mut().await.map_err(Error::io)?;
 
             // write to it
             let n = try_io(
                 guard,
-                |mut conn: &mut Conn| conn.send_slice(&setup_request[nwritten..]),
+                |conn: &mut Conn| conn.send_slice(&setup_request[nwritten..]),
                 || 0,
             )?;
 
@@ -216,11 +211,11 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
 
         // flush the reply
         loop {
-            let mut guard = registered.writable_mut().await.map_err(Error::io)?;
+            let guard = registered.writable_mut().await.map_err(Error::io)?;
 
             if try_io(
                 guard,
-                |mut conn: &mut Conn| {
+                |conn: &mut Conn| {
                     conn.flush()?;
                     Ok(true)
                 },
@@ -232,10 +227,10 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
 
         // read until we're finished
         loop {
-            let mut guard = registered.readable_mut().await.map_err(Error::io)?;
+            let guard = registered.readable_mut().await.map_err(Error::io)?;
             let adv = try_io(
                 guard,
-                |mut conn: &mut Conn| conn.recv_slice(connect.buffer()),
+                |conn: &mut Conn| conn.recv_slice(connect.buffer()),
                 || 0,
             )?;
 

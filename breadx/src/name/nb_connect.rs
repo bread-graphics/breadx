@@ -4,37 +4,50 @@
 
 use crate::{Error, Result, Unblock, Unsupported};
 use alloc::{boxed::Box, string::ToString};
-use core::{future::{self, Future}, pin::Pin};
-use std::net::{Ipv4Addr, SocketAddr, Ipv6Addr};
-use futures_util::{stream::{self, StreamExt, TryStreamExt}, Stream};
-use socket2::{SockAddr, Domain, Protocol, Socket, Type};
-use x11rb_protocol::parse_display::{ParsedDisplay, ConnectAddress};
+use core::{
+    future::{self, Future},
+    pin::Pin,
+};
+use futures_util::{
+    stream::{self, StreamExt, TryStreamExt},
+    Stream,
+};
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
 
 use crate::NameConnection;
 
-pub(crate) async fn nb_connect<Fut, R>(pd: ParsedDisplay, is_env: bool, mut resolv: impl FnMut(NameConnection) -> Fut) -> Result<R> where Fut: Future<Output = Result<R>> {
+pub(crate) async fn nb_connect<Fut, R>(
+    pd: ParsedDisplay,
+    is_env: bool,
+    mut resolv: impl FnMut(NameConnection) -> Fut,
+) -> Result<R>
+where
+    Fut: Future<Output = Result<R>>,
+{
     // create a stream iterating over the possible connections
     let mut conns = stream::iter(pd.connect_instruction())
         .flat_map(|ci| instruction_into_socket(ci))
-        .map(|sd| sd.and_then(|(sd, mode)| {
-            sd.connect().map(move |sd| (sd, mode))
-        }))
-        .map(|sd| sd.map(|(socket, mode)| {
-            // determine what mode to put them in
-            if matches!(mode, SocketMode::Tcp) {
-                NameConnection::from_tcp_stream(socket.into())
-            } else {
-                #[cfg(unix)]
-                {
-                    NameConnection::from_unix_stream(socket.into())
-                }
+        .map(|sd| sd.and_then(|(sd, mode)| sd.connect().map(move |sd| (sd, mode))))
+        .map(|sd| {
+            sd.map(|(socket, mode)| {
+                // determine what mode to put them in
+                if matches!(mode, SocketMode::Tcp) {
+                    NameConnection::from_tcp_stream(socket.into())
+                } else {
+                    #[cfg(unix)]
+                    {
+                        NameConnection::from_unix_stream(socket.into())
+                    }
 
-                #[cfg(not(unix))]
-                {
-                    unreachable!()
+                    #[cfg(not(unix))]
+                    {
+                        unreachable!()
+                    }
                 }
-            }
-        }));
+            })
+        });
 
     // test them to see the first one that works
     // swap Ok to Err for try_fold
@@ -44,9 +57,13 @@ pub(crate) async fn nb_connect<Fut, R>(pd: ParsedDisplay, is_env: bool, mut reso
         match conn {
             Ok(conn) => match resolv(conn).await {
                 Ok(conn) => return Ok(conn),
-                Err(e) => { err = Some(e); }
+                Err(e) => {
+                    err = Some(e);
+                }
+            },
+            Err(e) => {
+                err = Some(e);
             }
-            Err(e) => { err = Some(e); }
         }
     }
 
@@ -55,20 +72,27 @@ pub(crate) async fn nb_connect<Fut, R>(pd: ParsedDisplay, is_env: bool, mut reso
 
 /// Convert a `ConnectInstruction` into a `Stream` iterating over the potential
 /// socket details.
-fn instruction_into_socket(ci: ConnectAddress<'_>) -> Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + '_>> {
+fn instruction_into_socket(
+    ci: ConnectAddress<'_>,
+) -> Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + '_>> {
     match ci {
         ConnectAddress::Hostname(hostname, port) => {
             // collect the potential addresses
             tcp_ip_addrs(hostname, port)
-                .map(|addr| addr.map(|addr| {
-                    let domain = Domain::for_address(addr);
-                    
-                    (SocketDetails {
-                        addr: addr.into(),
-                        domain,
-                        protocol: Some(Protocol::TCP),
-                    }, SocketMode::Tcp)
-                }))
+                .map(|addr| {
+                    addr.map(|addr| {
+                        let domain = Domain::for_address(addr);
+
+                        (
+                            SocketDetails {
+                                addr: addr.into(),
+                                domain,
+                                protocol: Some(Protocol::TCP),
+                            },
+                            SocketMode::Tcp,
+                        )
+                    })
+                })
                 .boxed()
         }
         ConnectAddress::Socket(path) => {
@@ -93,18 +117,17 @@ fn instruction_into_socket(ci: ConnectAddress<'_>) -> Pin<Box<dyn Stream<Item = 
     }
 }
 
-fn tcp_ip_addrs(hostname: &str, port: u16) -> Pin<Box<dyn Stream<Item = Result<SocketAddr>> + Send + '_>> {
+fn tcp_ip_addrs(
+    hostname: &str,
+    port: u16,
+) -> Pin<Box<dyn Stream<Item = Result<SocketAddr>> + Send + '_>> {
     // fast paths that don't involve blocking
     if let Ok(ip) = hostname.parse::<Ipv4Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(
-            ip.into(), port
-        )))).boxed();
+        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
     }
 
     if let Ok(ip) = hostname.parse::<Ipv6Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(
-            ip.into(), port
-        )))).boxed();
+        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
     }
 
     // slow path, use the Unblock struct with ToSocketAddrs
@@ -128,7 +151,11 @@ enum SocketMode {
 
 impl SocketDetails {
     fn connect(self) -> Result<Socket> {
-        let SocketDetails { addr, domain, protocol } = self;
+        let SocketDetails {
+            addr,
+            domain,
+            protocol,
+        } = self;
 
         let sock_type = Type::STREAM;
         #[cfg(any(

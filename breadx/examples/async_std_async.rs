@@ -2,20 +2,19 @@
 
 use breadx::Result;
 
-#[cfg(all(feature = "tokio-support", unix))]
+#[cfg(feature = "async-std-support")]
 mod inner {
+    use async_std::io::prelude::*;
     use breadx::{
         prelude::*,
         protocol::{xproto, Event},
-        rt_support::tokio_support,
+        rt_support::async_std_support,
         Result,
     };
-    use tokio::io::AsyncWriteExt;
 
-    #[tokio::main(flavor = "current_thread")]
     pub async fn real_main() -> Result<()> {
-        // Connect to the server.
-        let mut connection = tokio_support::connect(None).await?;
+        // almost identical to the tokio example, see that for comments
+        let mut connection = async_std_support::connect(None).await?;
 
         // the events our windows receives.
         let events = xproto::EventMask::EXPOSURE | xproto::EventMask::BUTTON_PRESS;
@@ -47,7 +46,7 @@ mod inner {
 
         // map to screen and set title
         connection.map_window_checked(wid).await?;
-        let title = "Hello from tokio!";
+        let title = "Hello from async-std!";
         connection
             .change_property_checked(
                 xproto::PropMode::REPLACE,
@@ -204,9 +203,14 @@ mod inner {
                 }
                 Event::ButtonPress(bp) => {
                     // indicate the button press
-                    let mut stdout = tokio::io::stdout();
-                    let f = format!("Detected click at ({}, {})\n", bp.event_x, bp.event_y);
-                    stdout.write_all(f.as_bytes()).await.unwrap();
+                    let mut stdout = async_std::io::stdout();
+                    writeln!(
+                        stdout,
+                        "Detected click at ({}, {})",
+                        bp.event_x, bp.event_y
+                    )
+                    .await
+                    .unwrap();
                 }
                 Event::ClientMessage(cme) => {
                     // check if exit msg
@@ -222,13 +226,14 @@ mod inner {
     }
 }
 
-#[cfg(all(feature = "tokio-support", unix))]
-fn main() -> Result<()> {
+#[async_std::main]
+#[cfg(feature = "async-std-support")]
+async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
-    inner::real_main()
+    inner::real_main().await
 }
 
-#[cfg(not(all(feature = "tokio-support", unix)))]
+#[cfg(not(feature = "async-std-support"))]
 fn main() {
-    println!("`tokio-support` feature needs to be enabled for this example");
+    println!("This example requires the `async-std-support` feature to be enabled.");
 }

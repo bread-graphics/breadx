@@ -46,11 +46,6 @@ impl<'this, Dpy: AsyncDisplay + ?Sized> WaitForReplyRaw<'this, Dpy> {
 
         Self { innards: try_with }
     }
-
-    /// Destroy this future and return the inner display reference.
-    pub(crate) fn cannibalize(self) -> &'this mut Dpy {
-        self.innards.cannibalize()
-    }
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> Future for WaitForReplyRaw<'this, Dpy> {

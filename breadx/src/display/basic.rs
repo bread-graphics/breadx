@@ -277,7 +277,13 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         let sz = strategy.prefetch(self, &mut prefetch, ctx).acopied();
         self.max_request_size = Some(prefetch);
 
-        if self.max_request_size.as_ref().unwrap().get_if_resolved().is_some() {
+        if self
+            .max_request_size
+            .as_ref()
+            .unwrap()
+            .get_if_resolved()
+            .is_some()
+        {
             tracing::trace!("Finished bigreq setup");
         } else {
             tracing::debug!("bigreq incomplete: {:?}", &sz);

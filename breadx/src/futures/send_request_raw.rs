@@ -8,7 +8,6 @@ use crate::{
 use alloc::boxed::Box;
 use core::{
     future::Future,
-    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
 };

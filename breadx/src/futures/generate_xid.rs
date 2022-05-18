@@ -12,7 +12,6 @@ use core::{
     task::{Context, Poll},
 };
 use futures_util::FutureExt;
-use x11rb_protocol::protocol::Event;
 
 /// The future returned by the `generate_xid` function.
 pub struct GenerateXid<'this, Dpy: ?Sized> {

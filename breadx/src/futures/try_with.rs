@@ -99,9 +99,7 @@ impl<
                             if is_ready {
                                 Ok(())
                             } else {
-                                Err(crate::Error::io(
-                                    std::io::ErrorKind::WouldBlock.into()
-                                ))
+                                Err(crate::Error::io(std::io::ErrorKind::WouldBlock.into()))
                             }
                         })
                     },
