@@ -11,6 +11,9 @@ pub struct Cookie<T> {
     marker: PhantomData<T>,
 }
 
+// because of T, we need to manually implement these traits instead
+// of deriving
+
 impl<T> Clone for Cookie<T> {
     fn clone(&self) -> Self {
         Self {

@@ -35,6 +35,14 @@ impl<'this, Dpy: AsyncDisplay + ?Sized> Synchronize<'this, Dpy> {
             innards: Innards::Sending(dpy.send_request_raw(req)),
         }
     }
+
+    pub(crate) fn cannibalize(self) -> &'this mut Dpy {
+        match self.innards {
+            Innards::Sending(innards) => innards.cannibalize(),
+            Innards::Waiting(innards) => innards.cannibalize(),
+            Innards::Hole => panic!("cannibalized Synchronize"),
+        }
+    }
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> Future for Synchronize<'this, Dpy> {

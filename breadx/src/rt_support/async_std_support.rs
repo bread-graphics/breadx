@@ -72,7 +72,7 @@ impl<D: CanBeAsyncDisplay + Source> AsyncDisplay for Async<D> {
                 // indicate that we should poll again
                 ctx.waker().wake_by_ref();
                 Poll::Pending
-            },
+            }
             poll => Poll::Ready(poll),
         }
     }
@@ -104,7 +104,7 @@ where
             Err(e) if e.would_block() => {
                 ctx.waker().wake_by_ref();
                 Poll::Pending
-            },
+            }
             poll => Poll::Ready(poll),
         }
     }

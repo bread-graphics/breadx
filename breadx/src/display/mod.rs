@@ -188,53 +188,53 @@ impl<T: Copy> AsyncStatus<&T> {
     }
 }
 
-//cfg_async! {
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Interest {
-    Readable,
-    Writable,
+cfg_async! {
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub enum Interest {
+        Readable,
+        Writable,
+    }
+
+    pub trait CanBeAsyncDisplay: DisplayBase {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>>;
+
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>>;
+
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>>;
+
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>>;
+
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>>;
+
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>>;
+
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>>;
+    }
+
+    /// A non-blocking interface to the X11 server.
+    pub trait AsyncDisplay: CanBeAsyncDisplay {
+        /// Poll for an interest. If the interest if ready, call
+        /// the provided callback.
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
+            ctx: &mut Context<'_>,
+        ) -> Poll<Result<()>>;
+    }
 }
-
-pub trait CanBeAsyncDisplay: DisplayBase {
-    fn format_request(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<u64>>;
-
-    fn try_send_request_raw(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<()>>;
-
-    fn try_wait_for_reply_raw(
-        &mut self,
-        seq: u64,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<RawReply>>;
-
-    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>>;
-
-    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>>;
-
-    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>>;
-
-    fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>>;
-}
-
-/// A non-blocking interface to the X11 server.
-pub trait AsyncDisplay: CanBeAsyncDisplay {
-    /// Poll for an interest. If the interest if ready, call
-    /// the provided callback.
-    fn poll_for_interest(
-        &mut self,
-        interest: Interest,
-        callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
-        ctx: &mut Context<'_>,
-    ) -> Poll<Result<()>>;
-}
-//}
 
 /* Mut impls */
 
@@ -286,45 +286,47 @@ impl<D: Display + ?Sized> Display for &mut D {
     }
 }
 
-impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &mut D {
-    fn format_request(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<u64>> {
-        (**self).format_request(req, ctx)
-    }
+cfg_async! {
+    impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &mut D {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>> {
+            (**self).format_request(req, ctx)
+        }
 
-    fn try_send_request_raw(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<()>> {
-        (**self).try_send_request_raw(req, ctx)
-    }
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            (**self).try_send_request_raw(req, ctx)
+        }
 
-    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
-        (**self).try_wait_for_event(ctx)
-    }
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+            (**self).try_wait_for_event(ctx)
+        }
 
-    fn try_wait_for_reply_raw(
-        &mut self,
-        seq: u64,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<RawReply>> {
-        (**self).try_wait_for_reply_raw(seq, ctx)
-    }
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>> {
+            (**self).try_wait_for_reply_raw(seq, ctx)
+        }
 
-    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-        (**self).try_flush(ctx)
-    }
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            (**self).try_flush(ctx)
+        }
 
-    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
-        (**self).try_generate_xid(ctx)
-    }
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+            (**self).try_generate_xid(ctx)
+        }
 
-    fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
-        (**self).try_maximum_request_length(ctx)
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+            (**self).try_maximum_request_length(ctx)
+        }
     }
 }
 
@@ -378,44 +380,46 @@ impl<D: Display + ?Sized> Display for Box<D> {
     }
 }
 
-impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for Box<D> {
-    fn format_request(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<u64>> {
-        (**self).format_request(req, ctx)
-    }
+cfg_async! {
+    impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for Box<D> {
+        fn format_request(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<u64>> {
+            (**self).format_request(req, ctx)
+        }
 
-    fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-        (**self).try_flush(ctx)
-    }
+        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+            (**self).try_flush(ctx)
+        }
 
-    fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
-        (**self).try_generate_xid(ctx)
-    }
+        fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
+            (**self).try_generate_xid(ctx)
+        }
 
-    fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
-        (**self).try_maximum_request_length(ctx)
-    }
+        fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
+            (**self).try_maximum_request_length(ctx)
+        }
 
-    fn try_send_request_raw(
-        &mut self,
-        req: &mut RawRequest,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<()>> {
-        (**self).try_send_request_raw(req, ctx)
-    }
+        fn try_send_request_raw(
+            &mut self,
+            req: &mut RawRequest,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            (**self).try_send_request_raw(req, ctx)
+        }
 
-    fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
-        (**self).try_wait_for_event(ctx)
-    }
+        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+            (**self).try_wait_for_event(ctx)
+        }
 
-    fn try_wait_for_reply_raw(
-        &mut self,
-        seq: u64,
-        ctx: &mut Context<'_>,
-    ) -> Result<AsyncStatus<RawReply>> {
-        (**self).try_wait_for_reply_raw(seq, ctx)
+        fn try_wait_for_reply_raw(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<RawReply>> {
+            (**self).try_wait_for_reply_raw(seq, ctx)
+        }
     }
 }

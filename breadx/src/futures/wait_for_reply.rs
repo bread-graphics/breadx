@@ -38,6 +38,13 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply> WaitForReply<'this, Dpy, Reply> {
             _marker: PhantomData,
         }
     }
+
+    pub(crate) fn cannibalize(self) -> &'this mut Dpy {
+        match self.innards {
+            Innards::Waiting(innards) => innards.cannibalize(),
+            Innards::Synchronizing(innards) => innards.cannibalize(),
+        }
+    }
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: TryParseFd + Unpin> Future

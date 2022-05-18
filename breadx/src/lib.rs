@@ -49,6 +49,9 @@ pub type Fd = x11rb_protocol::RawFdContainer;
 pub mod connection;
 pub mod display;
 
+mod mutlireply;
+pub use mutlireply::*;
+
 /// Contains a set of traits to be automatically imported for full
 /// functionality.
 pub mod prelude {
