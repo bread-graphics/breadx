@@ -84,6 +84,6 @@ jobs:
 
       # run tests with no default features
       - name: Feature Powerset Test
-        run: cargo hack test --feature-powerset --no-dev-deps
+        run: cargo hack test --feature-powerset
         working-directory: breadx
   
