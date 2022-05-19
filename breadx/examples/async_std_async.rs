@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+#[cfg(feature = "async-std-support")]
 use breadx::Result;
 
 #[cfg(feature = "async-std-support")]
