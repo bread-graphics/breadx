@@ -1,15 +1,16 @@
 // MIT/Apache2 License
 
 use anyhow::Context;
-use std::{collections::HashMap, fs::read_dir};
+use std::{collections::HashMap, fs::read_dir, path::Path};
 use xcb_parser::{read_xcb_from_file, Expression, ToplevelItem};
 
-const XPROTO_ROOT: &str = "../../xcbproto/src";
+const MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
+const XPROTO_ROOT: &str = "../xcbproto/src";
 
 #[test]
-fn main() {
+fn parse_all_protocol() {
     // iterate over the xproto directory, read in items and then parse them
-    let protocol: HashMap<_, _> = read_dir(XPROTO_ROOT)
+    let protocol: HashMap<_, _> = read_dir(Path::new(MANIFEST_DIR).join(XPROTO_ROOT))
         .expect("Failed to read dir")
         .map(|x| x.expect("Failed to read dir entry"))
         .filter(|x| x.path().extension().map_or(false, |ext| ext == "xml"))

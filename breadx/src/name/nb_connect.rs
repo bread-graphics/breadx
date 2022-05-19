@@ -20,7 +20,7 @@ use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
 use crate::Unsupported;
 
 pub(crate) async fn nb_connect<Fut, R>(
-    pd: ParsedDisplay,
+    pd: &ParsedDisplay,
     is_env: bool,
     mut resolv: impl FnMut(NameConnection) -> Fut,
 ) -> Result<R>
@@ -29,7 +29,7 @@ where
 {
     // create a stream iterating over the possible connections
     let mut conns = stream::iter(pd.connect_instruction())
-        .flat_map(|ci| instruction_into_socket(ci))
+        .flat_map(instruction_into_socket)
         .map(|sd| sd.and_then(|(sd, mode)| sd.connect().map(move |sd| (sd, mode))))
         .map(|sd| {
             sd.map(|(socket, mode)| {
@@ -71,11 +71,13 @@ where
     Err(err.unwrap_or_else(|| Error::couldnt_parse_display(is_env)))
 }
 
+type SockAddrStream<'a> = Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + 'a>>; 
+
 /// Convert a `ConnectInstruction` into a `Stream` iterating over the potential
 /// socket details.
 fn instruction_into_socket(
     ci: ConnectAddress<'_>,
-) -> Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + '_>> {
+) -> SockAddrStream<'_> {
     match ci {
         ConnectAddress::Hostname(hostname, port) => {
             // collect the potential addresses

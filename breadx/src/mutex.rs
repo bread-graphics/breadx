@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+#![allow(dead_code)]
 #![cfg(feature = "sync_display")]
 
 cfg_not_pl! {

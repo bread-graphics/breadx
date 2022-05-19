@@ -127,7 +127,7 @@ fn poll_ready<D>(a: &Async<D>, interest: Interest, ctx: &mut Context<'_>) -> Pol
 // connection forming
 
 pub fn connect(name: Option<&str>) -> impl Future<Output = Result<Async<DisplayConnection>>> {
-    let name = name.map(|name| name.to_string());
+    let name = name.map(ToString::to_string);
     async move {
         // create a name connection
         let dpy = parse_display::parse_display(name.as_deref())
@@ -136,7 +136,7 @@ pub fn connect(name: Option<&str>) -> impl Future<Output = Result<Async<DisplayC
         let screen = dpy.screen;
         let display_num = dpy.display;
         let conn =
-            NameConnection::from_parsed_display_async(dpy, name.is_none(), |name| async move {
+            NameConnection::from_parsed_display_async(&dpy, name.is_none(), |name| async move {
                 // poll the display until it is writable
                 let registered = Async::new(name).map_err(Error::io)?;
                 registered.writable().await.map_err(Error::io)?;

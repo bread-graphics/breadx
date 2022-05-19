@@ -16,7 +16,7 @@
 //!
 //! 2). Setting up infrastructure for the above is a lot of work.
 //! 3). It takes a generation function that returns a Result<T>, specifically
-//!     for ToSocketAddrs.
+//!     for `ToSocketAddrs`.
 
 #![cfg(feature = "async")]
 
@@ -82,18 +82,12 @@ impl<
                 // sub-function for waking all of our wakers
                 let wake_all = move |wait_for_drop: bool| {
                     if wait_for_drop {
-                        loop {
-                            match wakers_rx.recv() {
-                                Ok(waker) => waker.wake(),
-                                Err(_) => break,
-                            }
+                        while let Ok(waker) = wakers_rx.recv() {
+                            waker.wake();
                         }
                     } else {
-                        loop {
-                            match wakers_rx.try_recv() {
-                                Ok(waker) => waker.wake(),
-                                Err(_) => break,
-                            }
+                        while let Ok(waker) = wakers_rx.try_recv() {
+                            waker.wake();
                         }
                     }
                 };

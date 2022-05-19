@@ -425,7 +425,7 @@ mod tests {
             Field::Pad {
                 bytes: 4,
                 ty: PaddingType::SetNumberOfBytes,
-                serialize: false,
+                serialize: true,
             }
         );
     }
@@ -434,7 +434,7 @@ mod tests {
     fn test_parse_pad_serialize() {
         let mut reader = Reader::from_str(
             r#"
-            <pad bytes="4" serialize="true" />
+            <pad bytes="4" serialize="false" />
             "#,
         );
         let start = read_start_event(&mut reader);
@@ -444,7 +444,7 @@ mod tests {
             Field::Pad {
                 bytes: 4,
                 ty: PaddingType::SetNumberOfBytes,
-                serialize: true,
+                serialize: false,
             }
         );
     }
@@ -463,7 +463,7 @@ mod tests {
             Field::Pad {
                 bytes: 4,
                 ty: PaddingType::ToAlignment,
-                serialize: false,
+                serialize: true,
             }
         );
     }

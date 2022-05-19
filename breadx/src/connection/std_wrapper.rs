@@ -54,7 +54,7 @@ cfg_std_windows! {
 /// let socket = TcpStream::connect("localhost:6000")?;
 /// let mut connection = StdConnection::new(socket);
 /// let mut buf = [0; 1024];
-/// connection.read_slice(&mut buf)?;
+/// connection.recv_slice(&mut buf)?;
 /// # Ok(()) }
 /// ```
 ///
@@ -150,7 +150,7 @@ impl<C: ?Sized> StdConnection<C> {
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let socket = TcpStream::connect("localhost:6000")?;
-    /// let connection = StdConnection::new(socket);
+    /// let mut connection = StdConnection::new(socket);
     ///
     /// let peer_addr = connection.get_mut().peer_addr()?;
     /// println!("peer address: {}", peer_addr);

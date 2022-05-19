@@ -77,7 +77,7 @@ impl NameConnection {
         let parsed_display =
             parse_display(name).ok_or_else(|| Error::couldnt_parse_display(name.is_none()))?;
 
-        Self::from_parsed_display(parsed_display, name.is_none())
+        Self::from_parsed_display(&parsed_display, name.is_none())
     }
 
     /// Creates a new connection from an already parsed display name.
@@ -86,7 +86,7 @@ impl NameConnection {
     ///
     /// This function blocks while it tries to connect to the server. Use the
     /// [`from_parsed_display_async`] function if you would like a non-blocking variant.
-    pub fn from_parsed_display(parsed_display: ParsedDisplay, is_env: bool) -> Result<Self> {
+    pub fn from_parsed_display(parsed_display: &ParsedDisplay, is_env: bool) -> Result<Self> {
         // iterate over the potential connection types
         let mut error: Option<Error> = None;
 
@@ -186,11 +186,11 @@ cfg_async! {
         /// This function does not block, and will select the first connection
         /// that is available. The `resolv` parameter should poll the connection
         /// until it is writable using the currently availably runtime.
-        pub fn from_parsed_display_async<Fut, R>(
-            parsed_display: ParsedDisplay,
+        pub fn from_parsed_display_async<'a, Fut, R: 'a>(
+            parsed_display: &'a ParsedDisplay,
             is_env: bool,
-            resolv: impl FnMut(NameConnection) -> Fut,
-        ) -> impl Future<Output = Result<R>> where Fut: Future<Output = Result<R>> {
+            resolv: impl FnMut(NameConnection) -> Fut + 'a,
+        ) -> impl Future<Output = Result<R>> + 'a where Fut: Future<Output = Result<R>> + 'a {
             nb_connect::nb_connect(parsed_display, is_env, resolv)
         }
     }

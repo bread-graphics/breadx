@@ -5,6 +5,7 @@ on:
   pull_request:
 
 env:
+  RUSTFLAGS: -Dwarnings
   clippy_version: 1.60.0
 
 jobs:

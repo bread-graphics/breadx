@@ -89,7 +89,7 @@ cfg_std! {
         /// Connect to the server using the given display name.
         pub fn connect(display: Option<&str>) -> Result<Self> {
             let span = tracing::info_span!("connect");
-            let _enter = span.enter();
+            let enter = span.enter();
 
             crate::initialization(|| {
                 // try to create a NameConnection
@@ -100,7 +100,7 @@ cfg_std! {
 
                 let screen = dpy.screen;
                 let display_num = dpy.display;
-                let conn = NameConnection::from_parsed_display(dpy, display.is_none())?;
+                let conn = NameConnection::from_parsed_display(&dpy, display.is_none())?;
 
                 // find an xauth entry for it
                 let (family, address) = conn.get_address()?;
@@ -114,7 +114,7 @@ cfg_std! {
                     },
                 };
 
-                mem::drop(_enter);
+                mem::drop(enter);
 
                 Self::connect_with_auth(conn.into(), screen.into(), name, data)
             })
@@ -135,10 +135,10 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 setup: Arc::new(setup),
                 packet_reader: PacketReader::new(),
                 conn: Poisonable::from(conn),
-                max_request_size: Some(Default::default()),
+                max_request_size: Some(Prefetch::default()),
                 default_screen_index,
-                extension_map: Default::default(),
-                async_state: Default::default(),
+                extension_map: ExtensionMap::default(),
+                async_state: AsyncState::default(),
             })
         })
     }
@@ -386,7 +386,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn partial_flush(&mut self) -> Result<AsyncStatus<()>> {
         tracing::trace!("flushing connection");
 
-        match self.conn.with(|conn| conn.flush()) {
+        match self.conn.with(Connection::flush) {
             Ok(()) => Ok(AsyncStatus::Ready(())),
             Err(e) if e.would_block() => Ok(AsyncStatus::Write),
             Err(e) => Err(e),
@@ -404,7 +404,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         let mut pf = self.async_state.synchronization.take().unwrap_or_default();
         let res = strategy.prefetch(self, &mut pf, ctx).acopied();
 
-        if !matches!(res.as_ref().map(|a| a.is_ready()), Ok(true) | Err(_)) {
+        if !matches!(res.as_ref().map(AsyncStatus::is_ready), Ok(true) | Err(_)) {
             self.async_state.synchronization = Some(pf);
         }
 
@@ -474,7 +474,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             {
                 Ok(nwritten) => {
                     tracing::trace!(nwritten = nwritten, "sent data to server");
-                    req.advance(nwritten)
+                    req.advance(nwritten);
                 }
                 Err(e) if e.would_block() => {
                     return Ok(AsyncStatus::Write);
@@ -502,7 +502,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
             let mut pf = self.async_state.xid_regeneration.take().unwrap_or_default();
             let res = strategy.prefetch(self, &mut pf, ctx).acopied();
 
-            if !matches!(res.as_ref().map(|a| a.is_ready()), Ok(true) | Err(_)) {
+            if !matches!(res.as_ref().map(AsyncStatus::is_ready), Ok(true) | Err(_)) {
                 self.async_state.xid_regeneration = Some(pf);
             }
 
@@ -546,11 +546,11 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
         self.fetch_reply(seq, &mut PollingStrategy)
-            .map(|a| a.ready())
+            .map(AsyncStatus::ready)
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        self.fetch_event(&mut PollingStrategy).map(|a| a.ready())
+        self.fetch_event(&mut PollingStrategy).map(AsyncStatus::ready)
     }
 }
 
@@ -577,16 +577,16 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
         self.fetch_reply(seq, &mut BlockingStrategy)
-            .map(|a| a.unwrap())
+            .map(AsyncStatus::unwrap)
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        self.fetch_event(&mut BlockingStrategy).map(|a| a.unwrap())
+        self.fetch_event(&mut BlockingStrategy).map(AsyncStatus::unwrap)
     }
 
     fn generate_xid(&mut self) -> Result<u32> {
         self.partial_generate_xid(None, &mut BlockingStrategy)
-            .map(|a| a.unwrap())
+            .map(AsyncStatus::unwrap)
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {
@@ -599,7 +599,7 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
 
     fn flush(&mut self) -> Result<()> {
         // flush connection buffer
-        self.conn.with(|conn| conn.flush())
+        self.conn.with(Connection::flush)
     }
 }
 
@@ -703,7 +703,7 @@ mod impl_details {
             prefetch: &'p mut Prefetch<P>,
             _ctx: Option<&Waker>,
         ) -> Result<AsyncStatus<&'p P::Target>> {
-            prefetch.evaluate(display).map(|t| AsyncStatus::Ready(t))
+            prefetch.evaluate(display).map(AsyncStatus::Ready)
         }
 
         fn description(&self) -> &'static str {

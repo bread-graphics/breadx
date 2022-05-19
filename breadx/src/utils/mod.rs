@@ -12,16 +12,13 @@ cfg_test! {
 
 use crate::{display::AsyncStatus, Result};
 use ahash::RandomState;
-use hashbrown::{HashMap as HbHashMap, HashSet as HbHashSet};
+use hashbrown::HashMap as HbHashMap;
 
-/// A hash map that uses the AHash algorithm.
+/// A hash map that uses the `ahash` algorithm.
 ///
 /// It is marginally more vulnerable to denial of service attacks than
 /// default hashmaps, but it is also much faster.
 pub(crate) type HashMap<K, V> = HbHashMap<K, V, RandomState>;
-
-/// A hash set that uses the AHash algorithm.
-pub(crate) type HashSet<V> = HbHashSet<V, RandomState>;
 
 pub(crate) trait ResultExt<T>: Sized {
     fn trace(self, f: impl FnOnce(&T)) -> Self;

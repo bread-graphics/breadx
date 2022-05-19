@@ -121,7 +121,7 @@ impl<Conn: Connection> DisplayBase for SyncDisplay<Conn> {
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        self.with_inner_mut(|inner| inner.poll_for_event())
+        self.with_inner_mut(DisplayBase::poll_for_event)
     }
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
@@ -139,7 +139,7 @@ impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        self.try_with_inner(|inner| inner.poll_for_event())
+        self.try_with_inner(DisplayBase::poll_for_event)
     }
 
     fn poll_for_reply_raw(&mut self, seq: u64) -> Result<Option<RawReply>> {
@@ -153,7 +153,7 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        self.with_inner_mut(|inner| inner.wait_for_event())
+        self.with_inner_mut(Display::wait_for_event)
     }
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
@@ -161,19 +161,19 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.with_inner_mut(|inner| inner.flush())
+        self.with_inner_mut(Display::flush)
     }
 
     fn generate_xid(&mut self) -> Result<u32> {
-        self.with_inner_mut(|inner| inner.generate_xid())
+        self.with_inner_mut(Display::generate_xid)
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {
-        self.with_inner_mut(|inner| inner.maximum_request_length())
+        self.with_inner_mut(Display::maximum_request_length)
     }
 
     fn synchronize(&mut self) -> Result<()> {
-        self.with_inner_mut(|inner| inner.synchronize())
+        self.with_inner_mut(Display::synchronize)
     }
 }
 
@@ -183,7 +183,7 @@ impl<Conn: Connection> Display for &SyncDisplay<Conn> {
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        self.with_inner(|inner| inner.wait_for_event())
+        self.with_inner(Display::wait_for_event)
     }
 
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
@@ -191,19 +191,19 @@ impl<Conn: Connection> Display for &SyncDisplay<Conn> {
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.with_inner(|inner| inner.flush())
+        self.with_inner(Display::flush)
     }
 
     fn generate_xid(&mut self) -> Result<u32> {
-        self.with_inner(|inner| inner.generate_xid())
+        self.with_inner(Display::generate_xid)
     }
 
     fn maximum_request_length(&mut self) -> Result<usize> {
-        self.with_inner(|inner| inner.maximum_request_length())
+        self.with_inner(Display::maximum_request_length)
     }
 
     fn synchronize(&mut self) -> Result<()> {
-        self.with_inner(|inner| inner.synchronize())
+        self.with_inner(Display::synchronize)
     }
 }
 
@@ -278,19 +278,19 @@ cfg_async! {
         }
 
         fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_wait_for_event(ctx))
+            self.poll_inner(ctx, CanBeAsyncDisplay::try_wait_for_event)
         }
 
         fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_flush(ctx))
+            self.poll_inner(ctx, CanBeAsyncDisplay::try_flush)
         }
 
         fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_generate_xid(ctx))
+            self.poll_inner(ctx, CanBeAsyncDisplay::try_generate_xid)
         }
 
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_maximum_request_length(ctx))
+            self.poll_inner(ctx, CanBeAsyncDisplay::try_maximum_request_length)
         }
     }
 }

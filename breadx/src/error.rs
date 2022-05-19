@@ -177,12 +177,14 @@ impl Error {
 impl Error {
     /// Did this error happen as the result of calling an
     /// unsupported operation?
+    #[must_use]
     pub fn unsupported(&self) -> bool {
         matches!(self.inner, Inner::Unsupported(_))
     }
 
     /// Did this error happen as a result of some state-based
     /// object entering an invalid state?
+    #[must_use]
     pub fn invalid_state(&self) -> bool {
         let mut base = matches!(self.inner, Inner::InvalidState(_) | Inner::Poisoned { .. });
 
@@ -197,11 +199,13 @@ impl Error {
 
     /// Did this error occur during initialization of the X11
     /// connection?
+    #[must_use]
     pub fn initialization(&self) -> bool {
         self.initialization
     }
 
     /// Get the inner setup failure that this error is a wrapper around.
+    #[must_use]
     pub fn as_setup_failure(&self) -> Option<&SetupFailure> {
         match self.inner {
             Inner::SetupFailed(ref sf) => Some(sf),
@@ -231,6 +235,7 @@ cfg_async! {
 cfg_std! {
     impl Error {
         /// Get the inner I/O error that this error is a wrapper around.
+        #[must_use]
         pub fn as_io_error(&self) -> Option<&IoError> {
             match self.inner {
                 Inner::Io(ref io) => Some(io),

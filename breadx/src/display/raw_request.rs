@@ -67,12 +67,14 @@ impl RawRequest {
     }
 
     /// Get the variant of the request.
+    #[must_use]
     pub fn variant(&self) -> ReplyFdKind {
         self.variant
     }
 
     /// Once the `RawRequest` is finished, this function will
     /// return the parts that can be sent over the wire.
+    #[must_use]
     pub fn into_raw_parts(self) -> (Box<[u8]>, Vec<Fd>) {
         let Self {
             mut data,
@@ -89,6 +91,7 @@ impl RawRequest {
     }
 
     /// Compute the length of this request.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn compute_length(&mut self, bigreq: bool) {
         let mut len = self.data.len();
 
@@ -119,6 +122,7 @@ impl RawRequest {
     }
 
     /// The extension name for the opcode.
+    #[must_use]
     pub fn extension(&self) -> Option<&'static str> {
         self.extension_name
     }
@@ -146,13 +150,14 @@ pub struct RawReply {
 }
 
 impl RawReply {
+    #[must_use]
     pub fn new(data: Box<[u8]>, fds: Vec<Fd>) -> Self {
         Self { data, fds }
     }
 
     pub fn into_reply<T: TryParseFd>(mut self) -> Result<T> {
         let (val, _) =
-            T::try_parse_fd(&self.data, &mut self.fds).map_err(|e| Error::make_parse_error(e))?;
+            T::try_parse_fd(&self.data, &mut self.fds).map_err(Error::make_parse_error)?;
         Ok(val)
     }
 }

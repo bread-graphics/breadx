@@ -19,6 +19,7 @@ pub struct GenerateXid<'this, Dpy: ?Sized> {
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> GenerateXid<'this, Dpy> {
+    #[allow(clippy::redundant_closure_for_method_calls)]
     pub(crate) fn polling(display: &'this mut Dpy) -> Self {
         let func: Box<
             dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<u32>> + Send + 'static,

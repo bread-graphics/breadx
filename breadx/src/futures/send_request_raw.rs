@@ -51,7 +51,7 @@ impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
     }
 
     /// Destroys this future and returns the inner display reference.
-    pub fn cannibalize(self) -> &'this mut Dpy {
+    pub(crate) fn cannibalize(self) -> &'this mut Dpy {
         self.innards.cannibalize()
     }
 }

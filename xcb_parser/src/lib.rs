@@ -288,7 +288,7 @@ mod tests {
     fn test_read_header_with_extension() {
         let mut reader = Reader::from_str(
             r#"<?xml version="1.0" encoding="UTF-8"?>
-            <xcb header="xproto" extension_xname="xname" extension_name="extension" extension_multiworld="true" major_version="1" minor_version="2">
+            <xcb header="xproto" extension-xname="xname" extension-name="extension" extension-multiworld="true" major-version="1" minor-version="2">
             </xcb>"#,
         );
         let start_elem = read_start_event(&mut reader);

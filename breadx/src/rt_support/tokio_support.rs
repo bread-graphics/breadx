@@ -130,8 +130,11 @@ where
 
 /* Connection */
 
+/// # Panics
+/// 
+/// Panics if `tokio` fails to join the blocking task used to compute authorization details.
 pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<DisplayConnection>>> {
-    let name = name.map(|name| name.to_string());
+    let name = name.map(ToString::to_string);
     async move {
         // try to create a name connection
         let dpy = parse_display::parse_display(name.as_deref())
@@ -140,7 +143,7 @@ pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<Displa
         let screen = dpy.screen;
         let display_num = dpy.display;
         let conn =
-            NameConnection::from_parsed_display_async(dpy, name.is_none(), |name| async move {
+            NameConnection::from_parsed_display_async(&dpy, name.is_none(), |name| async move {
                 // poll the display until it is writable
                 let registered = AsyncFd::new(name).map_err(Error::io)?;
                 let mut guard = registered.writable().await.map_err(Error::io)?;
@@ -212,14 +215,15 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
         loop {
             let guard = registered.writable_mut().await.map_err(Error::io)?;
 
-            if try_io(
+            let finished = try_io(
                 guard,
                 |conn: &mut Conn| {
                     conn.flush()?;
                     Ok(true)
                 },
                 || false,
-            )? {
+            )?;
+            if finished {
                 break;
             }
         }
@@ -240,7 +244,7 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
 
         let setup = connect.into_setup().map_err(Error::make_connect_error)?;
         let dpy = BasicDisplay::with_connection(registered.into_inner(), setup, default_screen)?;
-        Ok(AsyncFd::new(dpy).map_err(Error::io)?)
+        AsyncFd::new(dpy).map_err(Error::io)
     }
     .instrument(span)
 }

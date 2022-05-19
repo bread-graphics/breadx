@@ -42,6 +42,7 @@ impl X11Core {
         self.proto.enqueue_packet(packet);
     }
 
+    #[allow(clippy::unused_self)]
     fn try_parse_error(&self, err: Vec<u8>, ext_info: &dyn ExtInfoProvider) -> Result<Vec<u8>> {
         // first number has to be zero
         if err[0] != 0 {

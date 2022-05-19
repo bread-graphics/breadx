@@ -54,7 +54,7 @@ impl<'a> Connection for TestConnection<'a> {
         }
 
         self.written_fds
-            .extend(mem::take(fds).into_iter().map(|fd| fd.into_raw_fd()));
+            .extend(mem::take(fds).into_iter().map(Fd::into_raw_fd));
         Ok(len)
     }
 
@@ -183,7 +183,7 @@ mod tests {
                 assert_eq!(buffer, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
                 let fds = fds
                     .into_iter()
-                    .map(|fd| fd.into_raw_fd())
+                    .map(Fd::into_raw_fd)
                     .collect::<Vec<_>>();
                 assert_eq!(fds, vec![1, 2, 3, 4, 5]);
             },

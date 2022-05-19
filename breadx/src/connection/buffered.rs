@@ -48,14 +48,14 @@ const DEFAULT_WRITE_CAPACITY: usize = 16384;
 /// let connection = StdConnection::new(socket);
 ///
 /// // create a connection that is buffered
-/// let connection = BufConnection::new(connection);
+/// let mut connection = BufConnection::new(connection);
 ///
 /// let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);
 ///
 /// // these two reads would normally result in two syscalls
 /// // however, with buffering, only one syscall occurs
-/// connection.read_slice(&mut buf1)?;
-/// connection.read_slice(&mut buf2)?;
+/// connection.recv_slice(&mut buf1)?;
+/// connection.recv_slice(&mut buf2)?;
 /// # Ok(()) }
 /// ```
 ///

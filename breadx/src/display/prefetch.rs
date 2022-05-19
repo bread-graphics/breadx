@@ -87,8 +87,8 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Indicate that we've formatted the request.
     pub(crate) fn formatted(&mut self, seq: u64) {
         match self.state {
-            PrefetchState::Formatting(ref mut req) => {
-                *self = PrefetchState::Sending(req.take(), seq).into()
+            PrefetchState::Formatting(ref mut request) => {
+                *self = PrefetchState::Sending(request.take(), seq).into();
             }
             _ => panic!("Prefetch is not formatting"),
         }
@@ -97,8 +97,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Get the request to send.
     pub(crate) fn request_to_send(&mut self) -> &mut RawRequest {
         match self.state {
-            PrefetchState::Sending(Some(ref mut req), ..) => req,
-            PrefetchState::Formatting(Some(ref mut req)) => req,
+            PrefetchState::Sending(Some(ref mut req), ..) |             PrefetchState::Formatting(Some(ref mut req))=> req,
             _ => panic!("Prefetch is not sending"),
         }
     }
@@ -140,9 +139,9 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Evaluate the prefetch while blocking.
     pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {
         // call all functions in order
-        let req = self.request_to_format();
-        let req = mem::take(req);
-        let seq = display.send_request_raw(req)?;
+        let request = self.request_to_format();
+        let request = mem::take(request);
+        let seq = display.send_request_raw(request)?;
         self.sent_override(seq);
         let reply = display.wait_for_reply_raw(self.sequence())?;
         self.read_reply(reply)?;

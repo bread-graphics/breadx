@@ -87,7 +87,7 @@
 //!
 //!     match event {
 //!         // match on the Event struct in here
-//!         #_ => {},
+//!         # _ => {},
 //!     }
 //! }
 //! # Ok(()) }
@@ -129,7 +129,6 @@ cfg_std! {
 
 cfg_sync! {
     mod mutex;
-    pub(crate) use mutex::*;
 }
 
 cfg_async! {
@@ -145,7 +144,11 @@ cfg_std! {
     pub use x11rb_protocol::resource_manager;
 }
 
-#[rustfmt::skip]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::needless_lifetimes, 
+    clippy::too_many_arguments
+)]
 pub(crate) mod automatically_generated;
 
 pub type Fd = x11rb_protocol::RawFdContainer;

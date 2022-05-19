@@ -330,6 +330,10 @@ impl<T> AsyncStatus<T> {
 
     /// Unwrap the `AsyncStatus`, returning the inner value or
     /// panicking otherwise.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the `AsyncStatus` is not `Ready`.
     pub fn unwrap(self) -> T {
         match self {
             Self::Ready(t) => t,
@@ -348,6 +352,7 @@ impl<T> AsyncStatus<T> {
 
 impl<T: Copy> AsyncStatus<&T> {
     /// Copy the reference in an `AsyncStatus` to a value.
+    #[must_use]
     pub fn copied(self) -> AsyncStatus<T> {
         self.map(|&t| t)
     }
