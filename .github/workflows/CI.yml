@@ -73,8 +73,6 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - name: Install cargo-hack
-        run: cargo install cargo-hack
 
       # run tests for all crates
       - name: Default Features Test
@@ -83,7 +81,30 @@ jobs:
           command: test
 
       # run tests with no default features
-      - name: Feature Powerset Test
-        run: cargo hack test --feature-powerset
+      - name: No Default Features Test
+        run: cargo test --no-default-features
+        working-directory: breadx
+
+      - name: No Default Features Test (All Extensions)
+        run: cargo test --no-default-features --features all-extensions
+        working-directory: breadx
+
+      # run tests with all features
+      - name: All Features Test
+        run: cargo test --all-features
+        working-directory: breadx
+
+      # run tests for just async
+      - name: Async Test
+        run: cargo test --features async
+        working-directory: breadx
+
+      - name: Async Test (All Extensions)
+        run: cargo test --features async all-extensions
+        working-directory: breadx
+
+      # run pl tests
+      - name: Parking Lot Test
+        run: cargo test --features pl all-extensions
         working-directory: breadx
   
