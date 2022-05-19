@@ -654,8 +654,8 @@ cfg_async! {
 }
 
 mod impl_details {
-    use core::task::Waker;
     use alloc::vec::Vec;
+    use core::task::Waker;
 
     cfg_async! {
         use core::task::Context;

@@ -178,7 +178,7 @@ impl Error {
             } else {
                 false
             }
-        } 
+        }
     }
 }
 

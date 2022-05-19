@@ -1,5 +1,6 @@
 // MIT/Apache2 License
 
+#[cfg(all(feature = "tokio-support", unix))]
 use breadx::Result;
 
 #[cfg(all(feature = "tokio-support", unix))]
