@@ -6,11 +6,11 @@ use core::{
 };
 
 use super::{
-    AsyncStatus, Display, DisplayBase, DisplayFunctionsExt, ExtensionMap, Poisonable, Prefetch,
-    RawReply, RawRequest, X11Core,
+    AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
+    X11Core,
 };
 use crate::{
-    connection::{new_io_slice, new_io_slice_mut, BufConnection, Connection},
+    connection::{new_io_slice, BufConnection, Connection},
     Error, InvalidState, NameConnection, Result, ResultExt,
 };
 
@@ -77,6 +77,12 @@ struct AsyncState {
 }
 
 cfg_std! {
+    /// A [`Display`] that has connected to an X11 server using the usual
+    /// transports.
+    ///
+    /// This is a good default [`Display`] to use in most cases.
+    ///
+    /// [`Display`]: crate::display::Display
     pub type DisplayConnection = BasicDisplay<BufConnection<NameConnection>>;
 
     impl DisplayConnection {
@@ -410,7 +416,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     /// Format the request to be compatible with our send mechanism.
     fn try_format_request(
         &mut self,
-        req: &mut RawRequest,
+        request: &mut RawRequest,
         ctx: Option<&Waker>,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<u64>> {
@@ -419,7 +425,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
 
         // get the formatting bits
         let (is_bigreq, _) = mtry!(self.bigreq(ctx, strategy));
-        let extension = req.extension();
+        let extension = request.extension();
 
         let extension_opcode = match extension {
             Some(ext) => Some(mtry!(self.extension_info(ext, ctx, strategy)).major_opcode),
@@ -428,7 +434,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
 
         // get the sequence number
         let seq = loop {
-            match self.core.send_request(req.variant()) {
+            match self.core.send_request(request.variant()) {
                 Some(seq) => break seq,
                 None => {
                     // synchronize to ensure sequences are up to date
@@ -445,20 +451,16 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         );
 
         // format the request
-        req.compute_length(is_bigreq);
+        request.compute_length(is_bigreq);
         if let Some(opcode) = extension_opcode {
-            req.set_extension_opcode(opcode);
+            request.set_extension_opcode(opcode);
         }
 
         Ok(AsyncStatus::Ready(seq))
     }
 
     /// Try to send the given request to the server.
-    fn try_send_raw_request(
-        &mut self,
-        req: &mut RawRequest,
-        strategy: &mut impl Strategy<Conn>,
-    ) -> Result<AsyncStatus<()>> {
+    fn try_send_raw_request(&mut self, req: &mut RawRequest) -> Result<AsyncStatus<()>> {
         loop {
             let (buf, fds) = req.mut_parts();
 
@@ -569,8 +571,7 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         let sequence = self
             .try_format_request(&mut req, None, &mut BlockingStrategy)?
             .unwrap();
-        self.try_send_raw_request(&mut req, &mut BlockingStrategy)?
-            .unwrap();
+        self.try_send_raw_request(&mut req)?.unwrap();
         Ok(sequence)
     }
 
@@ -615,12 +616,12 @@ cfg_async! {
         fn try_send_request_raw(
             &mut self,
             req: &mut RawRequest,
-            ctx: &mut Context<'_>,
+            _ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
-            self.try_send_raw_request(req, &mut NonBlockingStrategy)
+            self.try_send_raw_request(req)
         }
 
-        fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
+        fn try_flush(&mut self, _ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
             self.partial_flush()
         }
 
@@ -633,14 +634,14 @@ cfg_async! {
             Ok(AsyncStatus::Ready(max))
         }
 
-        fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
+        fn try_wait_for_event(&mut self, _ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
             self.fetch_event(&mut NonBlockingStrategy)
         }
 
         fn try_wait_for_reply_raw(
             &mut self,
             seq: u64,
-            ctx: &mut Context<'_>,
+            _ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
             self.fetch_reply(seq, &mut NonBlockingStrategy)
         }
@@ -725,9 +726,9 @@ mod impl_details {
 
         fn prefetch<'p, P: PrefetchTarget>(
             &mut self,
-            display: &mut BasicDisplay<Conn>,
-            prefetch: &'p mut Prefetch<P>,
-            ctx: Option<&Waker>,
+            _display: &mut BasicDisplay<Conn>,
+            _prefetch: &'p mut Prefetch<P>,
+            _ctx: Option<&Waker>,
         ) -> Result<AsyncStatus<&'p P::Target>> {
             unreachable!()
         }

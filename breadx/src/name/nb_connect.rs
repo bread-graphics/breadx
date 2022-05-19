@@ -2,21 +2,22 @@
 
 #![cfg(feature = "async")]
 
-use crate::{Error, Result, Unblock, Unsupported};
+use crate::{Error, NameConnection, Result, Unblock};
 use alloc::{boxed::Box, string::ToString};
 use core::{
     future::{self, Future},
     pin::Pin,
 };
 use futures_util::{
-    stream::{self, StreamExt, TryStreamExt},
+    stream::{self, StreamExt},
     Stream,
 };
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
 use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
 
-use crate::NameConnection;
+#[allow(unused_imports)]
+use crate::Unsupported;
 
 pub(crate) async fn nb_connect<Fut, R>(
     pd: ParsedDisplay,

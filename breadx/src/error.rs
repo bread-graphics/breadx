@@ -86,7 +86,6 @@ pub(crate) enum Unsupported {
 /// if we want to.
 #[derive(Clone, Copy)]
 pub(crate) enum InvalidState {
-    FdsNotWritten,
     UnexpectedFds,
     NotEnoughSetup,
     ScreenOutOfRange,
@@ -171,10 +170,6 @@ impl Error {
 
         err.initialization = true;
         err
-    }
-
-    pub(crate) fn is_x11_error(&self) -> bool {
-        matches!(self.inner, Inner::X11Error(_))
     }
 }
 
@@ -368,7 +363,6 @@ impl fmt::Display for Unsupported {
 impl fmt::Display for InvalidState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            InvalidState::FdsNotWritten => f.write_str("file descriptors have not been written"),
             InvalidState::UnexpectedFds => f.write_str("unexpected file descriptors"),
             InvalidState::NotEnoughSetup => f.write_str("not enough data for setup"),
             InvalidState::ScreenOutOfRange => f.write_str("screen out of range"),

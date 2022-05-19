@@ -15,8 +15,8 @@ use core::task::{Context, Poll};
 use crate::{
     connection::Connection,
     display::{
-        AsyncDisplay, AsyncStatus, BasicDisplay, CanBeAsyncDisplay, Display, DisplayBase,
-        DisplayConnection, Interest, RawReply, RawRequest,
+        AsyncDisplay, AsyncStatus, BasicDisplay, CanBeAsyncDisplay, DisplayBase, DisplayConnection,
+        Interest, RawReply, RawRequest,
     },
     Error, NameConnection, Result,
 };
@@ -198,7 +198,7 @@ pub fn establish_connect<Conn: Source + Connection>(
         }
 
         // flush the request
-        write_with_mut(&mut registered, |conn| conn.flush()).await?;
+        write_with_mut(&mut registered, Connection::flush).await?;
 
         // read until we're finished
         loop {
@@ -217,7 +217,7 @@ pub fn establish_connect<Conn: Source + Connection>(
             setup,
             default_screen,
         )?;
-        Ok(Async::new(dpy).map_err(Error::io)?)
+        Async::new(dpy).map_err(Error::io)
     }
     .instrument(span)
 }

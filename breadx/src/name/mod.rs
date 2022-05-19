@@ -2,7 +2,11 @@
 
 #![cfg(feature = "std")]
 
-//! Defines the `NameConnection` type.
+//! Defines the p`NameConnection`] type.
+//!
+//! Consult the documentation for [`NameConnection`] for more information.
+//!
+//! [`NameConnection`]: crate::name::NameConnection
 
 use crate::connection::{Connection, StdConnection};
 use crate::{Error, Fd, Result};
@@ -32,6 +36,19 @@ cfg_async! {
 }
 
 /// A connection that can be derived from a parsed display name.
+///
+/// This is the primary [`Connection`] type that is used in `breadx`, as it
+/// represents the most common byte streams that are used to connect to the
+/// X11 server on modern OS. The display name, usually stored in the `DISPLAY`
+/// environment variable, is parsed and the connection is created from the parsed
+/// information.
+///
+/// This is a wrapper around either [`StdConnection<TcpStream>`] or, if on Unix,
+/// [`SendmsgConnection`].
+///
+/// [`Connection`]: crate::connection::Connection
+/// [`StdConnection<TcpStream>`]: crate::connection::StdConnection
+/// [`SendmsgConnection`]: crate::connection::SendmsgConnection
 pub struct NameConnection {
     inner: Inner,
 }
@@ -63,6 +80,12 @@ impl NameConnection {
         Self::from_parsed_display(parsed_display, name.is_none())
     }
 
+    /// Creates a new connection from an already parsed display name.
+    ///
+    /// # Blocking
+    ///
+    /// This function blocks while it tries to connect to the server. Use the
+    /// [`from_parsed_display_async`] function if you would like a non-blocking variant.
     pub fn from_parsed_display(parsed_display: ParsedDisplay, is_env: bool) -> Result<Self> {
         // iterate over the potential connection types
         let mut error: Option<Error> = None;
@@ -104,8 +127,11 @@ impl NameConnection {
         }
     }
 
-    /// Get the peer address for xauth.
-    pub(crate) fn get_address(&self) -> Result<(Family, Vec<u8>)> {
+    /// Get the peer address and family used in this connection.
+    ///
+    /// This is useful, since the `xauth` interface requires the family and
+    /// address to be known.
+    pub fn get_address(&self) -> Result<(Family, Vec<u8>)> {
         if let Inner::Tcp(ref connection) = self.inner {
             let ip = match connection.peer_addr().map_err(Error::io)? {
                 SocketAddr::V4(ip) => *ip.ip(),
@@ -138,6 +164,7 @@ impl NameConnection {
     }
 
     /// If there is an error associated with this socket, take it.
+    #[must_use]
     pub fn take_error(&self) -> Option<Error> {
         let taken_error = match self.inner {
             Inner::Tcp(ref t) => t.take_error(),
@@ -155,6 +182,10 @@ impl NameConnection {
 cfg_async! {
     impl NameConnection {
         /// Create a `NameConnection` in a non-blocking manner.
+        ///
+        /// This function does not block, and will select the first connection
+        /// that is available. The `resolv` parameter should poll the connection
+        /// until it is writable using the currently availably runtime.
         pub fn from_parsed_display_async<Fut, R>(
             parsed_display: ParsedDisplay,
             is_env: bool,

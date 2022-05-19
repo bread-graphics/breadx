@@ -5,10 +5,6 @@ use ahash::RandomState;
 use super::Prefetch;
 use crate::HashMap;
 
-cfg_sync! {
-    use crate::mutex::RwLock;
-}
-
 use x11rb_protocol::{
     protocol::xproto::QueryExtensionRequest,
     x11_utils::{ExtInfoProvider, ExtensionInformation},
@@ -78,21 +74,5 @@ impl ExtInfoProvider for ExtensionMap {
 
     fn get_from_error_code(&self, error_code: u8) -> Option<(&str, ExtensionInformation)> {
         self.find(|info| info.first_error == error_code)
-    }
-}
-
-cfg_sync! {
-    impl ExtInfoProvider for RwLock<ExtensionMap> {
-        fn get_from_major_opcode(&self, major_opcode: u8) -> Option<(&str, ExtensionInformation)> {
-            self.read().find(|info| info.major_opcode == major_opcode)
-        }
-
-        fn get_from_event_code(&self, event_code: u8) -> Option<(&str, ExtensionInformation)> {
-            self.read().find(|info| info.first_event == event_code)
-        }
-
-        fn get_from_error_code(&self, error_code: u8) -> Option<(&str, ExtensionInformation)> {
-            self.read().find(|info| info.first_error == error_code)
-        }
     }
 }

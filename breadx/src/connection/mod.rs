@@ -1,5 +1,48 @@
 // MIT/Apache2 License
 
+//! Implementation of the [`Connection`] type, which is used as a byte
+//! transport for the actual X11 protocol.
+//!
+//! X11 communication can take place over "any reliable byte stream"
+//! ([source]). Although this byte stream is most often a TCP connection
+//! or a Unix domain socket, it can be anything else. The [`Connection`]
+//! trait aims to define the interface for this byte stream.
+//!
+//! Note that in the overwhelming majority of cases, [`NameConnection`] will
+//! fulfill all of your connection-related needs. All other connection types
+//! exist to give the user as much freedom as possible in using the protocol.
+//!
+//! ## Details
+//!
+//! In X11, the requirements for a byte stream include:
+//!
+//! - Being able to write bytes.
+//! - Being able to read bytes.
+//! - Being able to read bytes without blocking.
+//!
+//! In addition, certain extensions requires the ability to pass file
+//! descriptors between the client and the server. This is not a requirement.
+//!
+//! - [`StdConnection`] (enabled with the `std` feature) is a wrapper around
+//!   any type that implements [`Read`] and [`Write`]. In addition, it also
+//!   requires [`AsRawFd`] on Unix and [`AsRawSocket`] on Windows, in order to
+//!   take advantage of system APIs for non-blocking I/O.
+//! - [`SendmsgConnection`] (requires Unix) is a wrapper around a Unix domain
+//!   socket that includes message passing functionality.
+//! - [`BufConnection`] is a wrapper around anything that implements [`Connection`]
+//!   that buffers all data written to and read from it.
+//!
+//! [`Connection`]: crate::connection::Connection
+//! [source]: https://www.x.org/releases/X11R7.5/doc/x11proto/proto.pdf
+//! [`NameConnection`]: crate::name::NameConnection
+//! [`StdConnection`]: crate::connection::StdConnection
+//! [`Read`]: std::io::Read
+//! [`Write`]: std::io::Write
+//! [`AsRawFd`]: std::os::unix::io::AsRawFd
+//! [`AsRawSocket`]: std::os::windows::io::AsRawSocket
+//! [`SendmsgConnection`]: crate::connection::SendmsgConnection
+//! [`BufConnection`]: crate::connection::BufConnection
+
 use crate::{Error, Fd, InvalidState, Result};
 use alloc::vec::Vec;
 
@@ -30,6 +73,8 @@ cfg_no_std! {
 }
 
 /// A "suitable byte stream" where communication with the X11 server can occur.
+///
+/// See the [module level documentation](index.html) for more details.
 pub trait Connection {
     /// Write a series of I/O slices and a series of file descriptors to
     /// the X11 server.
@@ -89,7 +134,7 @@ pub trait Connection {
     ///
     /// # Errors
     ///
-    /// Same as `send_slices.
+    /// Same as `send_slices`.
     fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
         self.send_slices(&[new_io_slice(slice)])
     }
@@ -187,6 +232,11 @@ pub trait Connection {
     ///
     /// Even if the connection is in blocking mode, this function should
     /// never block.
+    ///
+    /// # Errors
+    ///
+    /// This will return a `WouldBlock` I/O error if the function would
+    /// block. Otherwise, it should bubble up any platform I/O errors.
     fn non_blocking_recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
@@ -195,6 +245,10 @@ pub trait Connection {
 
     /// Receive data from the X11 server into a single slice, in a
     /// non-blocking manner.
+    ///
+    /// # Errors
+    ///
+    /// Same as `non_blocking_recv_slices_and_fds`.
     fn non_blocking_recv_slice_and_fds(
         &mut self,
         slice: &mut [u8],
@@ -207,6 +261,14 @@ pub trait Connection {
     ///
     /// This should have the same effect as dropping this object, but
     /// any OS errors should be able to be caught.
+    ///
+    /// # Blocking
+    ///
+    /// This function should never block.
+    ///
+    /// # Errors
+    ///
+    /// Any OS errors should be bubbled up to the user.
     fn shutdown(&self) -> Result<()>;
 }
 
@@ -264,8 +326,6 @@ impl<C: Connection + ?Sized> Connection for &mut C {
         (**self).shutdown()
     }
 }
-
-// TODO: windows, wasi and any other platforms we want to support
 
 cfg_std! {
     pub(crate) fn new_io_slice(sl: &[u8]) -> IoSlice<'_> {

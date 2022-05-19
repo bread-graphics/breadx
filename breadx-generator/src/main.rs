@@ -96,7 +96,7 @@ pub trait DisplayFunctionsExt : Display + Sealed {"#
 
     for sync_item in sync_items {
         // indent it by 4 spaces
-        let sync_item = sync_item.replace("\n", "\n    ");
+        let sync_item = sync_item.replace('\n', "\n    ");
         write!(output, "\n    {}", sync_item)?;
     }
 
@@ -111,7 +111,7 @@ pub trait AsyncDisplayFunctionsExt : AsyncDisplay + Sealed2 {"#
 
     for async_item in async_items {
         // indent it by 4 spaces
-        let async_item = async_item.replace("\n", "\n    ");
+        let async_item = async_item.replace('\n', "\n    ");
         write!(output, "\n    {}", async_item)?;
     }
 

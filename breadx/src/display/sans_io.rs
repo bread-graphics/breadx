@@ -1,12 +1,12 @@
 // MIT/Apache2 License
 
-use crate::{Error, Fd, HashMap, InvalidState, Result};
+use crate::{Error, Fd, InvalidState, Result};
 use alloc::vec::Vec;
 use x11rb_protocol::{
     connection::{Connection as ProtoConnection, ReplyFdKind},
     id_allocator::{IdAllocator, IdsExhausted},
     protocol::{xc_misc::GetXIDRangeReply, xproto::Setup, Event},
-    x11_utils::{ExtInfoProvider, ExtensionInformation, X11Error},
+    x11_utils::{ExtInfoProvider, X11Error},
 };
 
 use super::RawReply;
@@ -99,29 +99,5 @@ impl X11Core {
         range: GetXIDRangeReply,
     ) -> core::result::Result<(), IdsExhausted> {
         self.id_allocator.update_xid_range(&range)
-    }
-}
-
-struct ExtMap(HashMap<&'static str, ExtensionInformation>);
-
-impl From<HashMap<&'static str, ExtensionInformation>> for ExtMap {
-    fn from(map: HashMap<&'static str, ExtensionInformation>) -> Self {
-        Self(map)
-    }
-}
-
-impl ExtMap {
-    /// Find an extension info entry by a closure.
-    fn find(
-        &self,
-        mut closure: impl FnMut(&ExtensionInformation) -> bool,
-    ) -> Option<(&str, ExtensionInformation)> {
-        self.0.iter().find_map(|(name, ext_info)| {
-            if closure(ext_info) {
-                Some((*name, *ext_info))
-            } else {
-                None
-            }
-        })
     }
 }

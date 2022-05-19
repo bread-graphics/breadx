@@ -22,7 +22,7 @@ type FnTy<Dpy> =
     Box<dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static>;
 
 impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
-    pub(crate) fn polling(display: &'this mut Dpy, mut req: RawRequest) -> Self {
+    pub(crate) fn polling(display: &'this mut Dpy, mut request: RawRequest) -> Self {
         // set up the function
         let mut sequence = None;
         let func: FnTy<Dpy> = Box::new(move |display, ctx| {
@@ -30,7 +30,7 @@ impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
                 match sequence {
                     None => {
                         // calculate the sequence number
-                        match display.format_request(&mut req, ctx) {
+                        match display.format_request(&mut request, ctx) {
                             Ok(AsyncStatus::Ready(seq)) => sequence = Some(seq),
                             Ok(status) => return Ok(status.map(|_| unreachable!())),
                             Err(e) => return Err(e),
@@ -38,7 +38,7 @@ impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
                     }
                     Some(seq) => {
                         return display
-                            .try_send_request_raw(&mut req, ctx)
+                            .try_send_request_raw(&mut request, ctx)
                             .map(move |res| res.map(move |()| seq));
                     }
                 }

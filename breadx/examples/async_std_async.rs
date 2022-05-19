@@ -204,13 +204,9 @@ mod inner {
                 Event::ButtonPress(bp) => {
                     // indicate the button press
                     let mut stdout = async_std::io::stdout();
-                    writeln!(
-                        stdout,
-                        "Detected click at ({}, {})",
-                        bp.event_x, bp.event_y
-                    )
-                    .await
-                    .unwrap();
+                    writeln!(stdout, "Detected click at ({}, {})", bp.event_x, bp.event_y)
+                        .await
+                        .unwrap();
                 }
                 Event::ClientMessage(cme) => {
                     // check if exit msg

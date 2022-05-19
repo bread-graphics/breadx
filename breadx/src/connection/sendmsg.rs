@@ -17,10 +17,15 @@ use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, Ms
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::os::unix::net::UnixStream;
 
-/// A variant of the `UnixStream` connection that uses `sendmsg` to send data
+/// A variant of the [`UnixStream`] connection that uses `sendmsg` to send data
 /// and `recvmsg` to receive it.
 ///
-/// This connection supports file descriptor passing.
+/// The main difference between this type and [`StdConnection<UnixStream>`] is
+/// that this type supports file descriptor passing. This is useful for
+/// extensions that require file descriptor passing.
+///
+/// [`UnixStream`]: std::os::unix::net::UnixStream
+/// [`StdConnection<UnixStream>`]: crate::connection::StdConnection
 pub struct SendmsgConnection {
     stream: UnixStream,
 }
@@ -75,11 +80,13 @@ impl BorrowMut<UnixStream> for SendmsgConnection {
 
 impl SendmsgConnection {
     /// Create a new connection from a `UnixStream`.
+    #[must_use]
     pub fn new(stream: UnixStream) -> Self {
         SendmsgConnection { stream }
     }
 
     /// Convert this object back into a `UnixStream`.
+    #[must_use]
     pub fn into_stream(self) -> UnixStream {
         self.stream
     }
@@ -120,7 +127,7 @@ impl SendmsgConnection {
                     _ => None,
                 })
                 .flatten()
-                .map(|fd| Fd::new(fd)),
+                .map(Fd::new),
         );
 
         tracing::trace!("read {} bytes and {} fds", bytes_read, fds.len());
@@ -138,10 +145,7 @@ impl SendmsgConnection {
         }
 
         let our_fds = mem::take(fds);
-        let raw_fds = our_fds
-            .iter()
-            .map(|fd| fd.as_raw_fd())
-            .collect::<Vec<i32>>();
+        let raw_fds = our_fds.iter().map(AsRawFd::as_raw_fd).collect::<Vec<i32>>();
         let control_msg = [ControlMessage::ScmRights(&raw_fds)];
         let conn = self.stream.as_raw_fd();
 

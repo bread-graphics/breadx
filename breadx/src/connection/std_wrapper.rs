@@ -23,16 +23,48 @@ cfg_std_windows! {
     use std::os::windows::io::{AsRawSocket, RawSocket};
 }
 
-/// A wrapper around a type that implements `Connection` for
+/// A newtype wrapper around a type that implements [`Connection`] for
 /// certain types in the standard library.
 ///
-/// `Connection` is implemented for types that implement the
-/// following traits:
+/// Types within the Rust ecosystem can function as a reliable byte steam.
+/// This newtype allows these tpyes to be used in places that expect a
+/// [`Connection`]. [`Connection`] is implemented for types that implement
+/// the following traits:
 ///
-/// - `Read`
-/// - `Write`
-/// - `AsRawFd` for Unix platforms
-/// - `AsRawSocket` for Windows platforms
+/// - [`Read`]
+/// - [`Write`]
+/// - [`AsRawFd`] for Unix platforms
+/// - [`AsRawSocket`] for Windows platforms
+///
+/// In addition, if [`Read`] and [`Write`] are implemented for `&T`, then
+/// [`Connection`] is implemented for `&StdConnection<T>`, allowing it to
+/// be used in shared contexts.
+///
+/// This type does not preform FD passing. If you need to pass
+/// file descriptors, either use [`NameConnection`], [`SendmsgConnection`],
+/// or build your own type.
+///
+/// ## Example
+///
+/// ```rust,no_run
+/// use breadx::connection::{Connection, StdConnection};
+/// use std::net::TcpStream;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let socket = TcpStream::connect("localhost:6000")?;
+/// let mut connection = StdConnection::new(socket);
+/// let mut buf = [0; 1024];
+/// connection.read_slice(&mut buf)?;
+/// # Ok(()) }
+/// ```
+///
+/// [`Connection`]: crate::connection::Connection
+/// [`Read`]: std::io::Read
+/// [`Write`]: std::io::Write
+/// [`AsRawFd`]: std::os::unix::io::AsRawFd
+/// [`AsRawSocket`]: std::os::windows::io::AsRawSocket
+/// [`NameConnection`]: crate::name::NameConnection
+/// [`SendmsgConnection`]: crate::connection::SendmsgConnection
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
 pub struct StdConnection<C: ?Sized> {
@@ -48,11 +80,40 @@ impl<C: fmt::Debug> fmt::Debug for StdConnection<C> {
 impl<C> StdConnection<C> {
     /// Create a new `StdConnection` wrapping around an existing
     /// connection.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    /// # let _ = connection;
+    /// # Ok(()) }
+    /// ```
     pub fn new(inner: C) -> Self {
         Self { inner }
     }
 
     /// Unwrap this newtype to get the underlying connection.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    ///
+    /// // we need the connection back
+    /// let socket = connection.into_inner();
+    /// # let _ = socket;
+    /// # Ok(()) }
+    /// ```
     pub fn into_inner(self) -> C {
         self.inner
     }
@@ -60,11 +121,41 @@ impl<C> StdConnection<C> {
 
 impl<C: ?Sized> StdConnection<C> {
     /// Get a reference to the underlying connection.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    ///
+    /// let peer_addr = connection.get_ref().peer_addr()?;
+    /// println!("peer address: {}", peer_addr);
+    /// # Ok(()) }
+    /// ```
     pub fn get_ref(&self) -> &C {
         &self.inner
     }
 
     /// Get a mutable reference to the underlying connection.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    ///
+    /// let peer_addr = connection.get_mut().peer_addr()?;
+    /// println!("peer address: {}", peer_addr);
+    /// # Ok(()) }
+    /// ```
     pub fn get_mut(&mut self) -> &mut C {
         &mut self.inner
     }

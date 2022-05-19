@@ -12,9 +12,7 @@ use crate::{
 use super::{SendRequest, WaitForReply};
 
 /// A wrapper around [`SendRequest`] that immediately resolves the cookie.
-pub struct CheckedSendRequest<'this, Dpy: ?Sized, Reply> {
-    inner: Innards<'this, Dpy, Reply>,
-}
+pub struct CheckedSendRequest<'this, Dpy: ?Sized, Reply> { inner: Innards<'this, Dpy, Reply>, }
 
 enum Innards<'this, Dpy: ?Sized, Reply> {
     SendRequest(SendRequest<'this, Dpy, Reply>),

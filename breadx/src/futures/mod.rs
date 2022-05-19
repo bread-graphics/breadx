@@ -1,5 +1,14 @@
 // MIT/Apache2 License
 
+//! Futures that are used throughout the program.
+//!
+//! In `breadx`, we manually create our own futures instead of using
+//! `async` syntax, in order to allow traits to return either thread-safe or
+//! thread-unsafe futures, based on the flavor of [`Display`] being used.
+//! These futures are stored here.
+//!
+//! [`Display`]: crate::display::Display
+
 mod checked;
 pub use checked::*;
 

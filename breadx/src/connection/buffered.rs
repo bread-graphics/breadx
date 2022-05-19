@@ -25,6 +25,43 @@ const DEFAULT_READ_CAPACITY: usize = 4096;
 const DEFAULT_WRITE_CAPACITY: usize = 16384;
 
 /// A wrapper around a [`Connection`] that buffers all of the I/O.
+///
+/// System calls for I/O are expensive, while reading to and writing from
+/// memory is not. This type aims to provide a simple wrapper around a
+/// [`Connection`] that buffers all of the I/O. It serves a similar purpose
+/// to [`BufReader`] and [`BufWriter`], but for [`Connection`]s.
+///
+/// If the [`Connection`] is already in memory, then `BufReader` serves no
+/// purpose. In addition, programs that make larger reads/writes tend to lose the
+/// advantage of buffering. However, smaller, more frequent reads are
+/// common in X11, so this type is useful in general.
+///
+/// ## Example
+///
+/// ```rust,no_run
+/// use breadx::connection::{BufConnection, Connection, StdConnection};
+/// use std::net::TcpStream;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // create a connection that isn't buffered
+/// let socket = TcpStream::connect("localhost:6000")?;
+/// let connection = StdConnection::new(socket);
+///
+/// // create a connection that is buffered
+/// let connection = BufConnection::new(connection);
+///
+/// let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);
+///
+/// // these two reads would normally result in two syscalls
+/// // however, with buffering, only one syscall occurs
+/// connection.read_slice(&mut buf1)?;
+/// connection.read_slice(&mut buf2)?;
+/// # Ok(()) }
+/// ```
+///
+/// [`Connection`]: crate::connection::Connection
+/// [`BufReader`]: std::io::BufReader
+/// [`BufWriter`]: std::io::BufWriter
 pub struct BufConnection<C> {
     /// The connection we're wrapping around.
     conn: C,
@@ -36,6 +73,7 @@ pub struct BufConnection<C> {
     write_buf: WriteBuffer,
 }
 
+/// The buffer used to store reads.
 struct ReadBuffer {
     /// The buffer of data that we've read from the connection.
     buf: Box<[u8]>,
@@ -51,6 +89,7 @@ struct ReadBuffer {
     fds: Vec<Fd>,
 }
 
+/// The buffer used to store writes.
 struct WriteBuffer {
     /// The buffer of data that we haven't wrote to the connection.
     buf: Box<[u8]>,
@@ -67,6 +106,18 @@ struct WriteBuffer {
 impl<C: Connection> From<C> for BufConnection<C> {
     fn from(conn: C) -> Self {
         Self::new(conn)
+    }
+}
+
+impl<C: Connection> AsRef<C> for BufConnection<C> {
+    fn as_ref(&self) -> &C {
+        &self.conn
+    }
+}
+
+impl<C: Connection> AsMut<C> for BufConnection<C> {
+    fn as_mut(&mut self) -> &mut C {
+        &mut self.conn
     }
 }
 
@@ -88,12 +139,43 @@ cfg_std_windows! {
 
 impl<C: Connection> BufConnection<C> {
     /// Create a new `BufConnection` from a given connection.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{BufConnection, Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    /// let connection = BufConnection::new(connection);
+    /// # let _ = connection;
+    /// # Ok(()) }
+    /// ```
     pub fn new(conn: C) -> Self {
         Self::with_capacity(DEFAULT_READ_CAPACITY, DEFAULT_WRITE_CAPACITY, conn)
     }
 
     /// Create a new `BufConnection` from a given connection, with
     /// the given read and write capacities.
+    ///
+    /// This can be useful if you expect your program to use different
+    /// amounts of read and write data than normal ones do.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{BufConnection, Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    /// let connection = BufConnection::with_capacity(1024, 2048, connection);
+    /// # let _ = connection;
+    /// # Ok(()) }
+    /// ```
     pub fn with_capacity(read_capacity: usize, write_capacity: usize, conn: C) -> Self {
         let read_buf = ReadBuffer {
             buf: vec![0; read_capacity].into_boxed_slice(),
@@ -145,7 +227,7 @@ impl<C: Connection> BufConnection<C> {
     }
 
     /// Copy the slice of data into our write buffer.
-    fn copy_slice_to_buffer(&mut self, slice: &[u8]) -> Result<usize> {
+    fn copy_slice_to_buffer(&mut self, slice: &[u8]) -> usize {
         let amt = cmp::min(self.write_buf.spare_capacity(), slice.len());
 
         // use copy_from_slice to make the copy
@@ -155,13 +237,13 @@ impl<C: Connection> BufConnection<C> {
         // update the write buffer
         self.write_buf.advance(amt);
 
-        Ok(amt)
+        amt
     }
 
-    /// Implementation for send_slices_and_fds and send_slices.
+    /// Implementation for `send_slices_and_fds` and `send_slices`.
     ///
-    /// fds is a &mut Vec<Fd>, which means we can't split it up among
-    /// two functions. Therefore, write_handler handles both cases:
+    /// fds is a `&mut Vec<Fd>`, which means we can't split it up among
+    /// two functions. Therefore, `write_handler` handles both cases:
     ///
     /// - if we need to forward the slices, it will call with true
     /// - if we just need to push fds, it will call with false
@@ -174,7 +256,7 @@ impl<C: Connection> BufConnection<C> {
         let total_len = slices
             .iter()
             .map(|s| s.len())
-            .fold(0usize, |acc, len| acc.saturating_add(len));
+            .fold(0usize, usize::saturating_add);
 
         let span = tracing::debug_span!(
             "BufConnection::send_slices_impl",
@@ -204,7 +286,7 @@ impl<C: Connection> BufConnection<C> {
         // write into our buffer and return
         let mut nwritten = 0;
         for slice in slices {
-            nwritten += self.copy_slice_to_buffer(slice)?;
+            nwritten += self.copy_slice_to_buffer(slice);
         }
 
         tracing::trace!("wrote {} bytes to buffer", nwritten);
@@ -218,26 +300,26 @@ impl<C: Connection> BufConnection<C> {
     }
 
     /// Copy from the read buffer into the given slice.
-    fn copy_into_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+    fn copy_into_slice(&mut self, slice: &mut [u8]) -> usize {
         let amt = cmp::min(slice.len(), self.read_buf.readable_slice().len());
         let buf = self.read_buf.readable_slice();
 
         slice[..amt].copy_from_slice(&buf[..amt]);
         self.read_buf.advance_read(amt);
-        Ok(amt)
+        amt
     }
 
     /// Copy from the read buffer into the given I/O slices.
     ///
     /// Returns the number of bytes copied.
-    fn copy_into_slices(&mut self, slices: &mut [IoSliceMut<'_>]) -> Result<usize> {
+    fn copy_into_slices(&mut self, slices: &mut [IoSliceMut<'_>]) -> usize {
         let mut amt_copied = 0;
 
         for slice in slices {
-            amt_copied += self.copy_into_slice(&mut *slice)?;
+            amt_copied += self.copy_into_slice(&mut *slice);
         }
 
-        Ok(amt_copied)
+        amt_copied
     }
 
     fn recv_slices_impl(
@@ -250,7 +332,7 @@ impl<C: Connection> BufConnection<C> {
         let total_len = slices
             .iter()
             .map(|s| s.len())
-            .fold(0usize, |acc, len| acc.saturating_add(len));
+            .fold(0usize, usize::saturating_add);
 
         let span = tracing::debug_span!(
             "BufConnection::recv_slices_impl",
@@ -278,7 +360,7 @@ impl<C: Connection> BufConnection<C> {
         }
 
         // copy the data into the slices
-        let amt_copied = self.copy_into_slices(slices)?;
+        let amt_copied = self.copy_into_slices(slices);
         fds.append(&mut self.read_buf.fds);
 
         tracing::trace!(
@@ -340,7 +422,7 @@ impl<C: Connection> BufConnection<C> {
             self.read_buf.advance_write(amt);
         }
 
-        let amt = self.copy_into_slice(slice)?;
+        let amt = self.copy_into_slice(slice);
         if let Some(fds) = fds {
             fds.append(&mut self.read_buf.fds);
         }
@@ -387,7 +469,7 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
         }
 
         // copy the slice into the write buffer
-        self.copy_slice_to_buffer(slice)?;
+        self.copy_slice_to_buffer(slice);
 
         Ok(slice.len())
     }
@@ -533,7 +615,7 @@ mod tests {
                     assert_eq!(&write_bytes, b"Hello, world!".as_ref());
                     assert_eq!(write_fds, vec![15, 16, 17, 18, 19]);
                 },
-            )
+            );
         }
     }
 
@@ -565,7 +647,7 @@ mod tests {
                     let amt = bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap();
                     let fds = ManuallyDrop::into_inner(fds)
                         .into_iter()
-                        .map(|fd| fd.into_raw_fd())
+                        .map(|f| f.as_raw_fd())
                         .collect::<Vec<_>>();
                     assert_eq!(amt, 9);
 
@@ -582,7 +664,7 @@ mod tests {
                     assert_eq!(&buffer[..4], b"rld!".as_ref());
                 },
                 |_, _| {},
-            )
+            );
         }
     }
 

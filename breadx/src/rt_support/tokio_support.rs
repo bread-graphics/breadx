@@ -5,17 +5,16 @@
 // TODO: support async windows sockets if/when they come out in tokio
 
 use crate::{
-    connection::{BufConnection, Connection},
+    connection::Connection,
     display::{
-        AsyncDisplay, AsyncStatus, BasicDisplay, CanBeAsyncDisplay, Display, DisplayBase,
-        DisplayConnection, Interest, RawReply, RawRequest,
+        AsyncDisplay, AsyncStatus, BasicDisplay, CanBeAsyncDisplay, DisplayBase, DisplayConnection,
+        Interest, RawReply, RawRequest,
     },
     Error, NameConnection, Result,
 };
-use alloc::{boxed::Box, string::ToString, vec, vec::Vec};
+use alloc::{string::ToString, vec, vec::Vec};
 use core::{
     future::Future,
-    pin::Pin,
     task::{Context, Poll},
 };
 use std::os::unix::io::AsRawFd;

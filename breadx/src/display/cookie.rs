@@ -64,6 +64,8 @@ impl<T> fmt::Display for Cookie<T> {
 }
 
 impl<T> Cookie<T> {
+    /// Create a new `Cookie` from the raw sequence number.
+    #[must_use]
     pub fn from_sequence(sequence: u64) -> Self {
         Self {
             sequence,
@@ -71,6 +73,8 @@ impl<T> Cookie<T> {
         }
     }
 
+    /// Get the raw sequence number.
+    #[must_use]
     pub fn sequence(self) -> u64 {
         self.sequence
     }

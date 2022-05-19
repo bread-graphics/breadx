@@ -2,13 +2,20 @@
 
 use crate::{Error, Fd, Result};
 use alloc::{boxed::Box, vec::Vec};
-use core::{marker::PhantomData, ops::Range};
+use core::ops::Range;
 use x11rb_protocol::{
     connection::ReplyFdKind,
     x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
 };
 
 /// The raw request.
+///
+/// This structure essentially acts as a monomorphization of the
+/// [`Request`] trait. It contains all of the information needed
+/// to send the request, such as the raw bytes, whether it has a
+/// reply, and the name of the extension.
+///
+/// [`Request`]: crate::x11_utils::Request
 pub struct RawRequest {
     data: Vec<u8>,
     fds: Vec<Fd>,

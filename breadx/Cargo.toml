@@ -23,7 +23,7 @@ socket2 = { version = "0.4", optional = true }
 tokio = { version = "1.18.2", features = ["net", "rt"], optional = true }
 tracing = { version = "0.1.34", default-features = false }
 tracing-futures = { version = "0.2.5", default-features = false, optional = true, features = ["std-future"] }
-x11rb-protocol = { git = "https://github.com/psychon/x11rb" }
+x11rb-protocol = { git = "https://github.com/psychon/x11rb", default-features = false }
 
 [dev-dependencies]
 async-std = { version = "1.11.0", features = ["attributes"] }
@@ -33,7 +33,7 @@ tracing-subscriber = "0.3.11"
 
 [features]
 default = ["std"]
-std = ["ahash/std", "gethostname", "nix"]
+std = ["ahash/std", "gethostname", "nix", "x11rb-protocol/std", "x11rb-protocol/resource_manager"]
 async = ["futures-util", "std", "socket2"]
 async-std-support = ["async", "async-io", "blocking"]
 tokio-support = ["async", "tokio"]
@@ -68,3 +68,33 @@ xselinux = ["x11rb-protocol/xselinux"]
 xtest = ["x11rb-protocol/xtest"]
 xv = ["shm", "x11rb-protocol/xv"]
 xvmc = ["xv", "x11rb-protocol/xvmc"]
+
+all-extensions = [
+    "composite",
+    "damage",
+    "dpms",
+    "dri2",
+    "dri3",
+    "glx",
+    "present",
+    "randr",
+    "record",
+    "render",
+    "res",
+    "screensaver",
+    "shape",
+    "shm",
+    "sync",
+    "xevie",
+    "xf86dri",
+    "xf86vidmode",
+    "xfixes",
+    "xinerama",
+    "xinput",
+    "xkb",
+    "xprint",
+    "xselinux",
+    "xtest",
+    "xv",
+    "xvmc",
+]

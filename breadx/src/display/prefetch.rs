@@ -74,13 +74,6 @@ impl<T: PrefetchTarget> Prefetch<T> {
         }
     }
 
-    pub(crate) fn get_assert(&self) -> &T::Target {
-        match self.state {
-            PrefetchState::Complete(ref c) => c,
-            _ => panic!("Prefetch not yet resolved"),
-        }
-    }
-
     /// Format the request.
     ///
     /// The user may use this in order to format the request.
@@ -188,8 +181,8 @@ cfg_async! {
             // call all functions in order
             if self.not_yet_formatted() {
                 tracing::trace!("formatting request");
-                let req = self.request_to_format();
-                let seq = mtry!(display.format_request(req, ctx));
+                let request = self.request_to_format();
+                let seq = mtry!(display.format_request(request, ctx));
                 self.formatted(seq);
             }
 

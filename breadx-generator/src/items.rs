@@ -186,32 +186,32 @@ fn write_initial_send(
     }
 
     // build the request in the item
-    write!(
+    writeln!(
         item,
-        "    let request = types::{}::{}Request {{\n",
+        "    let request = types::{}::{}Request {{",
         &header.header, struct_name,
     )
     .unwrap();
     for param in params {
         match param.ty {
             Ty::Borrows(_) | Ty::Array(_, _) => {
-                write!(
+                writeln!(
                     item,
-                    "        {0}: Cow::Borrowed({0}.borrow()),\n",
+                    "        {0}: Cow::Borrowed({0}.borrow()),",
                     param.name
                 )
                 .unwrap();
             }
             Ty::Slice(_) => {
-                write!(
+                writeln!(
                     item,
-                    "        {0}: Cow::Borrowed({0}.as_ref()),\n",
+                    "        {0}: Cow::Borrowed({0}.as_ref()),",
                     param.name
                 )
                 .unwrap();
             }
             Ty::Simple(_) | Ty::Vector(_) => {
-                write!(item, "        {0},\n", param.name).unwrap();
+                writeln!(item, "        {0},", param.name).unwrap();
             }
             Ty::Into(_) => {
                 writeln!(
@@ -222,16 +222,11 @@ fn write_initial_send(
                 .unwrap();
             }
             Ty::Void => {
-                write!(
-                    item,
-                    "        {0}: Cow::Borrowed({0}.bytes()),\n",
-                    param.name
-                )
-                .unwrap();
+                writeln!(item, "        {0}: Cow::Borrowed({0}.bytes()),", param.name).unwrap();
             }
         }
     }
-    write!(item, "    }};\n").unwrap();
+    writeln!(item, "    }};").unwrap();
 
     // send the request with the cookie
     write!(item, "    self.{}(request)", fncall_to_use).unwrap();
@@ -306,7 +301,8 @@ fn immediate_function(
             item,
             "    let res: futures::CheckedSendRequest<'this, Self, {}> = cookie.into();",
             return_type
-        ).unwrap();
+        )
+        .unwrap();
         writeln!(item, "    res.instrument(span)").unwrap();
     } else {
         writeln!(item, "    self.wait_for_reply(cookie)").unwrap();
@@ -316,7 +312,7 @@ fn immediate_function(
     item
 }
 
-fn write_parameters<'a>(params: &[Parameter], item: &mut impl Write) {
+fn write_parameters(params: &[Parameter], item: &mut impl Write) {
     for param in params {
         write!(item, "{}: {}", param.name, param.ty).unwrap();
         if !eq(param, params.last().unwrap()) {
@@ -368,11 +364,8 @@ struct Parameter {
 
 impl Parameter {
     fn sanitize_name(&mut self) {
-        match self.name.as_str() {
-            "type" => {
-                self.name = "type_".to_string();
-            }
-            _ => {}
+        if self.name.as_str() == "type" {
+            self.name = "type_".to_string();
         }
     }
 }

@@ -18,6 +18,8 @@ cfg_async! {
 pub trait DisplayBaseExt: DisplayBase {
     /// Poll for a reply matching the given sequence number.
     fn poll_for_reply<R: TryParseFd>(&mut self, seq: u64) -> Result<Option<R>> {
+        // TODO: zero sized reply
+
         match self.poll_for_reply_raw(seq)? {
             Some(reply) => reply.into_reply().map(Some),
             None => Ok(None),
@@ -83,10 +85,11 @@ cfg_async! {
     pub trait AsyncDisplayExt : AsyncDisplay {
         /// Wrap a function that returns an `AsyncStatus` in the runtime
         /// that this is connected to.
-        fn try_with<'this, R, F: FnMut(&mut Self, &mut Context<'_>) -> Result<AsyncStatus<R>>>(
-            &'this mut self,
+        #[doc(hidden)]
+        fn try_with<R, F: FnMut(&mut Self, &mut Context<'_>) -> Result<AsyncStatus<R>>>(
+            &mut self,
             f: F
-        ) -> futures::TryWith<'this, R, F, Self>  {
+        ) -> futures::TryWith<'_, R, F, Self>  {
             futures::TryWith::new(self, f)
         }
 
@@ -116,10 +119,10 @@ cfg_async! {
         }
 
         /// Send a raw request to the X11 server.
-        fn send_request_raw<'this, 'req>(
-            &'this mut self,
+        fn send_request_raw(
+            &mut self,
             request: RawRequest,
-        ) -> futures::SendRequestRaw<'this, Self>{
+        ) -> futures::SendRequestRaw<'_, Self>{
             futures::SendRequestRaw::polling(self, request)
         }
 
