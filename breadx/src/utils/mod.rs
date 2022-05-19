@@ -7,6 +7,7 @@ cfg_async! {
 
 cfg_test! {
     mod test;
+    #[allow(unused_imports)]
     pub(crate) use test::setup_tracing;
 }
 

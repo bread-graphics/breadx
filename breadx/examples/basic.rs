@@ -2,12 +2,14 @@
 
 //! Demonstration of the basic capabilities of `breadx`.
 
+#[cfg(feature = "std")]
 use breadx::{
     display::DisplayConnection,
     prelude::*,
     protocol::{xproto, Event},
 };
 
+#[cfg(feature = "std")]
 fn main() -> breadx::Result<()> {
     tracing_subscriber::fmt::init();
 
@@ -191,4 +193,9 @@ fn main() -> breadx::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(not(feature = "std"))]
+fn main() {
+    println!("Feature `std` is necessary to run this example.");
 }

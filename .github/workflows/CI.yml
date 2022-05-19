@@ -82,7 +82,7 @@ jobs:
 
       # run tests with no default features
       - name: No Default Features Test
-        run: cargo test --no-default-features
+        run: cargo build --no-default-features
         working-directory: breadx
 
       - name: No Default Features Test (All Extensions)

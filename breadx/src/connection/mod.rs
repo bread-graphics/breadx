@@ -56,6 +56,7 @@ cfg_std_unix! {
 
 cfg_test! {
     mod test;
+    #[cfg(feature = "std")]
     pub(crate) use test::with_test_connection;
 }
 

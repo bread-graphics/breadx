@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-#![cfg(test)]
+#![cfg(all(feature = "std", test))]
 
 use alloc::vec::Vec;
 use core::{cmp, mem};
@@ -115,7 +115,6 @@ pub(crate) fn with_test_connection(
     asserts(written_bytes, written_fds);
 }
 
-#[cfg(all(feature = "std", test))]
 mod tests {
     use super::*;
     use crate::setup_tracing;
