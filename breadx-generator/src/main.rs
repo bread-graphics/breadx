@@ -65,7 +65,7 @@ use __private::Sealed;
 
 cfg_async! {
     use crate::{display::{AsyncDisplay, AsyncDisplayExt}, futures};
-    use tracing_futures::{Instrument, Instrumented};
+    use tracing::{Instrument, instrument::Instrumented};
     use __private::Sealed2;
 }
 "#
