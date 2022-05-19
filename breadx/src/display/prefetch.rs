@@ -12,10 +12,11 @@ use x11rb_protocol::{
 
 use super::{Display, RawReply, RawRequest};
 use crate::Result;
-use core::{mem, task::Context};
+use core::mem;
 
 cfg_async! {
     use super::{AsyncStatus, CanBeAsyncDisplay};
+    use core::task::Context;
 }
 
 /// Some internal data that needs to be fetched through
@@ -28,6 +29,7 @@ enum PrefetchState<T: PrefetchTarget> {
     /// In the process of formatting.
     Formatting(Option<RawRequest>),
     /// We're in the process of sending this data.
+    #[allow(dead_code)]
     Sending(Option<RawRequest>, u64),
     /// We've sent this data and are waiting for a reply.
     Waiting(SequenceNumber),
@@ -84,24 +86,6 @@ impl<T: PrefetchTarget> Prefetch<T> {
         }
     }
 
-    /// Indicate that we've formatted the request.
-    pub(crate) fn formatted(&mut self, seq: u64) {
-        match self.state {
-            PrefetchState::Formatting(ref mut request) => {
-                *self = PrefetchState::Sending(request.take(), seq).into();
-            }
-            _ => panic!("Prefetch is not formatting"),
-        }
-    }
-
-    /// Get the request to send.
-    pub(crate) fn request_to_send(&mut self) -> &mut RawRequest {
-        match self.state {
-            PrefetchState::Sending(Some(ref mut req), ..) |             PrefetchState::Formatting(Some(ref mut req))=> req,
-            _ => panic!("Prefetch is not sending"),
-        }
-    }
-
     /// Send with an overridden sequence number.
     pub(crate) fn sent_override(&mut self, seq: u64) {
         match self.state {
@@ -109,14 +93,6 @@ impl<T: PrefetchTarget> Prefetch<T> {
                 *self = PrefetchState::Waiting(seq).into();
             }
             _ => panic!("Prefetch is not sending or formatting"),
-        }
-    }
-
-    /// Indicate that the request has been sent.
-    pub(crate) fn sent(&mut self) {
-        match self.state {
-            PrefetchState::Sending(_, seq) => *self = PrefetchState::Waiting(seq).into(),
-            _ => panic!("Prefetch is not sending"),
         }
     }
 
@@ -161,6 +137,34 @@ cfg_async! {
 
         fn not_yet_read(&self) -> bool {
             !matches!(self.state, PrefetchState::Complete(_))
+        }
+
+
+        /// Indicate that the request has been sent.
+        pub(crate) fn sent(&mut self) {
+            match self.state {
+                PrefetchState::Sending(_, seq) => *self = PrefetchState::Waiting(seq).into(),
+                _ => panic!("Prefetch is not sending"),
+            }
+        }
+
+        /// Indicate that we've formatted the request.
+        pub(crate) fn formatted(&mut self, seq: u64) {
+            match self.state {
+                PrefetchState::Formatting(ref mut request) => {
+                    *self = PrefetchState::Sending(request.take(), seq).into();
+                }
+                _ => panic!("Prefetch is not formatting"),
+            }
+        }
+
+        /// Get the request to send.
+        pub(crate) fn request_to_send(&mut self) -> &mut RawRequest {
+            match self.state {
+                PrefetchState::Sending(Some(ref mut req), ..)
+                | PrefetchState::Formatting(Some(ref mut req)) => req,
+                _ => panic!("Prefetch is not sending"),
+            }
         }
 
         /// Evaluate the prefetch, but avoid blocking.

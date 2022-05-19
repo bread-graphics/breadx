@@ -27,6 +27,7 @@ impl<T> Poisonable<T> {
     }
 
     /// Sometimes we just want a ref.
+    #[cfg(feature = "std")]
     pub(crate) fn with_ref<R>(&self, f: impl FnOnce(&T) -> Result<R>) -> Result<R> {
         let inner = match self.inner {
             Some(ref inner) => inner,

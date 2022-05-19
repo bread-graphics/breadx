@@ -35,6 +35,7 @@ pub struct Error {
 /// a breaking change.
 enum Inner {
     /// We tried to run an operation that is not supported.
+    #[allow(dead_code)]
     Unsupported(Unsupported),
     /// We did something that has put the X11 connection into an invalid state.
     ///
@@ -114,15 +115,9 @@ impl Error {
         Error::from_inner(Inner::InvalidState(is))
     }
 
+    #[allow(dead_code)]
     pub(crate) fn make_unsupported(us: Unsupported) -> Self {
         Error::from_inner(Inner::Unsupported(us))
-    }
-
-    pub(crate) fn io(io: IoError) -> Self {
-        if !matches!(io.kind(), ErrorKind::WouldBlock) {
-            tracing::error!("encountered I/O error: {io:?}", io = io);
-        }
-        Error::from_inner(Inner::Io(io))
     }
 
     pub(crate) fn couldnt_parse_display(from_env: bool) -> Self {
@@ -171,6 +166,31 @@ impl Error {
         err.initialization = true;
         err
     }
+
+    /// Tell if this is a would-block I/O error.
+    pub(crate) fn would_block(&self) -> bool {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                match self.as_io_error() {
+                    Some(io) => io.kind() == ErrorKind::WouldBlock,
+                    None => false,
+                }
+            } else {
+                false
+            }
+        } 
+    }
+}
+
+cfg_std! {
+    impl Error {
+        pub(crate) fn io(io: IoError) -> Self {
+            if !matches!(io.kind(), ErrorKind::WouldBlock) {
+                tracing::error!("encountered I/O error: {io:?}", io = io);
+            }
+            Error::from_inner(Inner::Io(io))
+        }
+    }
 }
 
 // public API
@@ -186,6 +206,7 @@ impl Error {
     /// object entering an invalid state?
     #[must_use]
     pub fn invalid_state(&self) -> bool {
+        #[allow(unused_mut)]
         let mut base = matches!(self.inner, Inner::InvalidState(_) | Inner::Poisoned { .. });
 
         cfg_if::cfg_if! {
@@ -248,19 +269,6 @@ cfg_std! {
             match self.inner {
                 Inner::Io(io) => Ok(io),
                 inner => Err(Self::from_inner(inner)),
-            }
-        }
-    }
-}
-
-// crate-private API
-cfg_std! {
-    impl Error {
-        /// Tell if this is a would-block I/O error.
-        pub(crate) fn would_block(&self) -> bool {
-            match self.as_io_error() {
-                Some(io) => io.kind() == ErrorKind::WouldBlock,
-                None => false,
             }
         }
     }

@@ -62,9 +62,10 @@ macro_rules! mtry {
 }
 
 mod basic;
-use alloc::boxed::Box;
-pub use basic::{BasicDisplay, DisplayConnection};
-use core::task::{Context, Poll};
+pub use basic::BasicDisplay;
+cfg_std! {
+    pub use basic::DisplayConnection;
+}
 
 mod cell;
 pub use cell::CellDisplay;
@@ -98,9 +99,11 @@ cfg_sync! {
 pub use crate::automatically_generated::DisplayFunctionsExt;
 cfg_async! {
     pub use crate::automatically_generated::AsyncDisplayFunctionsExt;
+    use core::task::{Context, Poll};
 }
 
 use crate::Result;
+use alloc::boxed::Box;
 use x11rb_protocol::protocol::{
     xproto::{GetInputFocusRequest, Screen, Setup},
     Event,
@@ -330,9 +333,9 @@ impl<T> AsyncStatus<T> {
 
     /// Unwrap the `AsyncStatus`, returning the inner value or
     /// panicking otherwise.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if the `AsyncStatus` is not `Ready`.
     pub fn unwrap(self) -> T {
         match self {

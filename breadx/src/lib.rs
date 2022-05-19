@@ -146,7 +146,7 @@ cfg_std! {
 
 #[allow(
     clippy::cast_possible_truncation,
-    clippy::needless_lifetimes, 
+    clippy::needless_lifetimes,
     clippy::too_many_arguments
 )]
 pub(crate) mod automatically_generated;

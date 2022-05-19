@@ -71,13 +71,12 @@ where
     Err(err.unwrap_or_else(|| Error::couldnt_parse_display(is_env)))
 }
 
-type SockAddrStream<'a> = Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + 'a>>; 
+type SockAddrStream<'a> =
+    Pin<Box<dyn Stream<Item = Result<(SocketDetails, SocketMode)>> + Send + 'a>>;
 
 /// Convert a `ConnectInstruction` into a `Stream` iterating over the potential
 /// socket details.
-fn instruction_into_socket(
-    ci: ConnectAddress<'_>,
-) -> SockAddrStream<'_> {
+fn instruction_into_socket(ci: ConnectAddress<'_>) -> SockAddrStream<'_> {
     match ci {
         ConnectAddress::Hostname(hostname, port) => {
             // collect the potential addresses

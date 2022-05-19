@@ -1,17 +1,14 @@
 // MIT/Apache2 License
 
-use core::{
-    mem,
-    task::{Context, Waker},
-};
+use core::task::Waker;
 
 use super::{
     AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
     X11Core,
 };
 use crate::{
-    connection::{new_io_slice, BufConnection, Connection},
-    Error, InvalidState, NameConnection, Result, ResultExt,
+    connection::{new_io_slice, Connection},
+    Error, InvalidState, Result, ResultExt,
 };
 
 use alloc::{sync::Arc, vec, vec::Vec};
@@ -19,7 +16,6 @@ use x11rb_protocol::{
     connect::Connect,
     id_allocator::IdsExhausted,
     packet_reader::PacketReader,
-    parse_display,
     protocol::{
         bigreq::EnableRequest,
         xc_misc::GetXIDRangeRequest,
@@ -27,13 +23,19 @@ use x11rb_protocol::{
         Event,
     },
     x11_utils::ExtensionInformation,
-    xauth,
 };
 
 use impl_details::{BlockingStrategy, PollingStrategy, Strategy};
 
+cfg_std! {
+    use crate::{connection::BufConnection, NameConnection};
+    use core::mem;
+    use x11rb_protocol::{parse_display, xauth};
+}
+
 cfg_async! {
     use super::CanBeAsyncDisplay;
+    use core::task::Context;
     use impl_details::NonBlockingStrategy;
 }
 
@@ -69,6 +71,7 @@ pub struct BasicDisplay<Conn> {
 #[derive(Default)]
 struct AsyncState {
     /// The last sequence number request we are in the middle of sending.
+    #[allow(dead_code)]
     current_sending: Option<u64>,
     /// The in-flight XID regeneration request.
     xid_regeneration: Option<Prefetch<GetXIDRangeRequest>>,
@@ -550,7 +553,8 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
     }
 
     fn poll_for_event(&mut self) -> Result<Option<Event>> {
-        self.fetch_event(&mut PollingStrategy).map(AsyncStatus::ready)
+        self.fetch_event(&mut PollingStrategy)
+            .map(AsyncStatus::ready)
     }
 }
 
@@ -581,7 +585,8 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
     }
 
     fn wait_for_event(&mut self) -> Result<Event> {
-        self.fetch_event(&mut BlockingStrategy).map(AsyncStatus::unwrap)
+        self.fetch_event(&mut BlockingStrategy)
+            .map(AsyncStatus::unwrap)
     }
 
     fn generate_xid(&mut self) -> Result<u32> {
@@ -649,9 +654,12 @@ cfg_async! {
 }
 
 mod impl_details {
-    use core::task::{Context, Waker};
-
+    use core::task::Waker;
     use alloc::vec::Vec;
+
+    cfg_async! {
+        use core::task::Context;
+    }
 
     use crate::{
         connection::Connection,

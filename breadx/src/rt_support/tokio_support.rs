@@ -131,7 +131,7 @@ where
 /* Connection */
 
 /// # Panics
-/// 
+///
 /// Panics if `tokio` fails to join the blocking task used to compute authorization details.
 pub fn connect(name: Option<&str>) -> impl Future<Output = Result<AsyncFd<DisplayConnection>>> {
     let name = name.map(ToString::to_string);

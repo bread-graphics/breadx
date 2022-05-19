@@ -58,6 +58,7 @@ fn main() -> Result<()> {
 
 use crate::{Result, display::{Cookie, Display, DisplayExt}};
 use alloc::borrow::Cow;
+#[allow(unused_imports)]
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 use __private::Sealed;
