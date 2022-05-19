@@ -584,7 +584,7 @@ impl WriteBuffer {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 mod tests {
     use super::*;
     use crate::{connection::with_test_connection, utils::setup_tracing};
