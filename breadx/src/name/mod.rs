@@ -110,7 +110,7 @@ impl NameConnection {
                         } else {
                             // we don't support unix domain sockets
                             let _ = path;
-                            error = Some(Error::unsupported(Unsupported::Socket));
+                            error = Some(Error::make_unsupported(crate::Unsupported::Socket));
                         }
                     }
                 }
@@ -132,6 +132,7 @@ impl NameConnection {
     /// This is useful, since the `xauth` interface requires the family and
     /// address to be known.
     pub fn get_address(&self) -> Result<(Family, Vec<u8>)> {
+        #[allow(irrefutable_let_patterns)]
         if let Inner::Tcp(ref connection) = self.inner {
             let ip = match connection.peer_addr().map_err(Error::io)? {
                 SocketAddr::V4(ip) => *ip.ip(),

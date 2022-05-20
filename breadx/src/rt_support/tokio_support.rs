@@ -19,7 +19,7 @@ use core::{
 };
 use std::os::unix::io::AsRawFd;
 use tokio::io::unix::{AsyncFd, AsyncFdReadyMutGuard};
-use tracing_futures::Instrument;
+use tracing::Instrument;
 use x11rb_protocol::{
     connect::Connect,
     parse_display,

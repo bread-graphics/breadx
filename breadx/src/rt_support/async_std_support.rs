@@ -23,7 +23,7 @@ use crate::{
 use alloc::{string::ToString, vec, vec::Vec};
 use async_io::Async;
 use core::future::Future;
-use tracing_futures::Instrument;
+use tracing::Instrument;
 use x11rb_protocol::{
     connect::Connect,
     parse_display,

@@ -111,7 +111,7 @@ fn instruction_into_socket(ci: ConnectAddress<'_>) -> SockAddrStream<'_> {
                     stream::once(future::ready(sock_details)).boxed()
                 } else {
                     stream::once(future::ready(Err(
-                        Err(Error::unsupported(Unsupported::Socket))
+                        Err(Error::unsupported(crate::Unsupported::Socket))
                     ))).boxed()
                 }
             }
