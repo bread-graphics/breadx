@@ -1,0 +1,3 @@
+[submodule "xcbproto"]
+	path = xcbproto
+	url = https://gitlab.freedesktop.org/xorg/proto/xcbproto.git

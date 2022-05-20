@@ -1,4 +1,11 @@
-/target
+target
 Cargo.lock
 vistest
 vistest.c
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
