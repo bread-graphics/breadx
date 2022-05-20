@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-#![cfg(all(feature = "std", test))]
+#![cfg(all(feature = "std", unix, test))]
 
 use alloc::vec::Vec;
 use core::{cmp, mem};

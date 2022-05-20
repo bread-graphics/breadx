@@ -452,7 +452,7 @@ cfg_std_windows! {
     }
 
     impl<'a, C: AsRawSocket> Connection for &'a StdConnection<C>
-        where &'a C: Read + Write 
+        where &'a C: Read + Write
     {
         impl_non_os_specific_items! { & }
 
