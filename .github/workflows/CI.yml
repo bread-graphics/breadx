@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUSTFLAGS: -Dwarnings
+  clippy_version: 1.60.0
+
+jobs:
+  rustfmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rust: stable
+          - rust: beta
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v1
+      - name: Run rustfmt
+        run: |
+          if ! rustfmt --check --edition 2021 $(git ls-files '*.rs'); then
+            printf "Please fix rustfmt errors.\n" >&2
+            exit 1
+          fi
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.clippy_version }}
+          override: true
+          components: clippy
+      - uses: Swatinem/rust-cache@v1
+      - name: Run Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all --tests --all-features
+
+  test:
+    name: run tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+
+      # run tests for all crates
+      - name: Default Features Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+      # run tests with no default features
+      - name: No Default Features Test
+        run: cargo build --no-default-features
+        working-directory: breadx
+
+      - name: No Default Features Test (All Extensions)
+        run: cargo test --no-default-features --features all-extensions
+        working-directory: breadx
+
+      # run tests with all features
+      - name: All Features Test
+        run: cargo test --all-features
+        working-directory: breadx
+
+      # run tests for just async
+      - name: Async Test
+        run: cargo test --features async
+        working-directory: breadx
+
+      - name: Async Test (All Extensions)
+        run: cargo test --features async all-extensions
+        working-directory: breadx
+
+      # run pl tests
+      - name: Parking Lot Test
+        run: cargo test --features pl all-extensions
+        working-directory: breadx
+  
