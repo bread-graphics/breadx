@@ -13,6 +13,9 @@
 //!   no waiting outside of standard I/O primitives. The goal is to ensure that
 //!   there are as few layers as possible between the user's intended goal and
 //!   actually sending data to the server.
+//! - **Safe**: `breadx` has `#[forbid(unsafe_code)]`, which means that there never
+//!   will be any unsafe code in `breadx`. This means that `breadx` will never be
+//!   the cause of any undefined behavior.
 //! - **Versatile:** For cases where sharing the connection is necessary, `breadx`
 //!   provides [thread unsafe] and [thread safe] variants.
 //! - **`no_std`:** By disabling the `std` feature, `breadx` can be used
@@ -137,7 +140,17 @@ cfg_async! {
 
 // inline some of x11rb_protocol's docs into ours
 #[doc(inline)]
-pub use x11rb_protocol::{connect, protocol, x11_utils};
+pub use x11rb_protocol::{connect, x11_utils};
+
+/// The protocol used during communication.
+pub mod protocol {
+    #[doc(inline)]
+    pub use x11rb_protocol::{
+        connection::ReplyFdKind,
+        protocol::*,
+        x11_utils::X11Error,
+    };
+}
 
 cfg_std! {
     #[doc(inline)]
