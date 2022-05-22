@@ -2,16 +2,15 @@
 
 #![cfg(feature = "sync_display")]
 
-use core::task::{Context, Waker};
-
-use super::{AsyncStatus, BasicDisplay, Display, DisplayBase, RawReply, RawRequest};
+use super::{BasicDisplay, Display, DisplayBase, RawReply, RawRequest};
 use crate::{connection::Connection, mutex::Mutex, Result};
 use alloc::sync::Arc;
-use concurrent_queue::ConcurrentQueue;
 use x11rb_protocol::protocol::{xproto::Setup, Event};
 
 cfg_async! {
-    use super::{CanBeAsyncDisplay};
+    use super::{AsyncStatus, CanBeAsyncDisplay};
+    use concurrent_queue::ConcurrentQueue;
+    use core::task::{Context, Waker};
 }
 
 /// A `Display` that uses a mutex to coordinate access.
@@ -98,8 +97,8 @@ impl<Conn: Connection> SyncDisplay<Conn> {
 }
 
 impl Waiters {
+    #[cfg(feature = "async")]
     fn push(&self, waker: &Waker) {
-        #[cfg(feature = "async")]
         self.wakers.push(waker.clone()).ok();
     }
 

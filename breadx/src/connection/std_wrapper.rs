@@ -20,7 +20,7 @@ cfg_std_unix! {
 }
 
 cfg_std_windows! {
-    use std::os::windows::io::{AsRawSocket, RawSocket};
+    use std::{io, net, os::windows::io::{AsRawSocket, RawSocket}};
 }
 
 /// A newtype wrapper around a type that implements [`Connection`] for
@@ -207,7 +207,7 @@ impl<C> DerefMut for StdConnection<C> {
 }
 
 cfg_std_unix! {
-    impl<C: AsRawFd> AsRawFd for StdConnection<C> {
+    impl<C: AsRawFd + ?Sized> AsRawFd for StdConnection<C> {
         fn as_raw_fd(&self) -> RawFd {
             self.inner.as_raw_fd()
         }
@@ -215,7 +215,7 @@ cfg_std_unix! {
 }
 
 cfg_std_windows! {
-    impl<C: AsRawSocket> AsRawSocket for StdConnection<C> {
+    impl<C: AsRawSocket + ?Sized> AsRawSocket for StdConnection<C> {
         fn as_raw_socket(&self) -> RawSocket {
             self.inner.as_raw_socket()
         }
@@ -425,6 +425,54 @@ cfg_std_unix! {
         where &'a C: Read + Write
     {
         impl_items_unix! { & }
+    }
+}
+
+cfg_std_windows! {
+    impl<C: Read + Write + AsRawSocket> Connection for StdConnection<C> {
+        impl_non_os_specific_items! { &mut }
+
+        fn non_blocking_recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            // if the read queue is empty, a read call will block
+            if fionread::fionread(&*self).map_err(Error::io)? == 0 {
+                Err(Error::io(io::ErrorKind::WouldBlock.into()))
+            } else {
+                self.recv_slices_and_fds(slices, fds)
+            }
+        }
+
+        fn shutdown(&self) -> Result<()> {
+            // TODO: sockref may be unsafe to use in the future
+            socket2::SockRef::from(self).shutdown(net::Shutdown::Both).map_err(Error::io)
+        }
+    }
+
+    impl<'a, C: AsRawSocket> Connection for &'a StdConnection<C>
+        where &'a C: Read + Write
+    {
+        impl_non_os_specific_items! { & }
+
+        fn non_blocking_recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            // if the read queue is empty, a read call will block
+            if fionread::fionread(*self).map_err(Error::io)? == 0 {
+                Err(Error::io(io::ErrorKind::WouldBlock.into()))
+            } else {
+                self.recv_slices_and_fds(slices, fds)
+            }
+        }
+
+        fn shutdown(&self) -> Result<()> {
+            // TODO: sockref may be unsafe to use in the future
+            socket2::SockRef::from(*self).shutdown(net::Shutdown::Both).map_err(Error::io)
+        }
     }
 }
 

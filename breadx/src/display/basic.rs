@@ -531,7 +531,7 @@ cfg_std_unix! {
 cfg_std_windows! {
     impl<Conn: AsRawSocket> AsRawSocket for BasicDisplay<Conn> {
         fn as_raw_socket(&self) -> RawSocket {
-            self.conn.with(|conn| {
+            self.conn.with_ref(|conn| {
                 Ok(conn.as_raw_socket())
             }).expect("`AsRawSocket` impl failed because connection is poisoned")
         }
