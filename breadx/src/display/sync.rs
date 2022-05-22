@@ -98,7 +98,7 @@ impl<Conn: Connection> SyncDisplay<Conn> {
 
 impl Waiters {
     #[cfg(feature = "async")]
-    fn push(&self, waker: &Waker) {        
+    fn push(&self, waker: &Waker) {
         self.wakers.push(waker.clone()).ok();
     }
 
