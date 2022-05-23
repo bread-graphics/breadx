@@ -1,25 +1,20 @@
 # breadx
 
-[![Build Status](https://dev.azure.com/jtnunley01/gui-tools/_apis/build/status/bread-graphics.breadx?branchName=master)](https://dev.azure.com/jtnunley01/gui-tools/_build/latest?definitionId=19&branchName=master) [![crates.io](https://img.shields.io/crates/v/breadx)](https://crates.io/crates/breadx) [![Docs](https://docs.rs/breadx/badge.svg)](https://docs.rs/breadx)
+An implementation of the X Window System Protocol in Rust, with an emphasis on comprehensability and usability.
 
-An implementation of the X Window System Protocol in Rust. 100% safe and (generally) mutex-free.
+## Advantages
 
-MSRV is currently 1.44.0. Pull requests that make this MSRV lower are welcome.
+* `breadx` is simple and direct. There is very little between you and the protocol.
+* Without the `sync_display` feature, `breadx` uses no synchronization primitives, eliminating one of the primary causes of deadlocking.
+* `breadx` is written in 100% safe code.
+* `breadx` is able to be `no_std` and be used without the standard library.
+* Runtime-independent `async` support may be enabled using the `async` feature.
+* API is designed to be able to be used everywhere.
 
-## Reasons you should use this over Xlib/XCB Bindings
+## Disadvantages
 
-* No Mutexes
-* Generally faster (awaiting verification)
-* Built-in support for Rust's async ecosystem via `async_net`
-* Crate proper is `#[forbid(unsafe_code)]`, dependencies are either safe or verified.
-* Tries to provide the ease of use of Xlib while also providing XCB's ability to leverage the async capabilities of the X server
-* Can be used in `#[no_std]` environments.
-
-## Reasons not to use this over Xlib/XCB Bindings
-
-* Currently very immature
-* Extensions are supported but their interfaces are not fully implemented
-* Not ABI/API compatible with Xlib/XCB
+* On its own, `breadx` is not compatible with libraries that use `lixcb` or Xlib. Consider using [`whitebreadx`](https://github.com/bread-graphics/whitebreadx) if this is important.
+* `breadx` provides no utility or helper functions beyond the requests that go on the wire.
 
 If you're looking for a more complete, full-Rust X11 implementation with support for all documented extensions, consider [x11rb](https://github.com/psychon/x11rb/). This project sets out to accomplish very much the same goal as breadx, although with different ideas of how to accomplish those goals.
 

@@ -110,7 +110,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
         let mapped = T::map_reply(reply);
         *self = PrefetchState::Complete(mapped).into();
         Ok(())
-    } 
+    }
 
     /// Evaluate the prefetch while blocking.
     pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {

@@ -190,7 +190,10 @@ impl Error {
 
     #[allow(dead_code)]
     pub(crate) fn is_protocol_error(&self) -> bool {
-        matches!(self.inner, Inner::X11Error(..) | Inner::MissingExtension { .. })
+        matches!(
+            self.inner,
+            Inner::X11Error(..) | Inner::MissingExtension { .. }
+        )
     }
 }
 
@@ -394,7 +397,8 @@ impl fmt::Display for Error {
                 write!(
                     f,
                     "Request of size {} bytes exceeds maximum length of {} bytes",
-                    x_len * 4, max_len * 4
+                    x_len * 4,
+                    max_len * 4
                 )
             }
             #[cfg(feature = "async")]
