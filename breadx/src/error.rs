@@ -441,6 +441,12 @@ impl From<X11Error> for Error {
 }
 
 cfg_std! {
+    impl From<IoError> for Error {
+        fn from(e: IoError) -> Self {
+            Self::from_inner(Inner::Io(e))
+        }
+    }
+
     impl StdError for Error {
         fn source(&self) -> Option<&(dyn StdError + 'static)> {
             match self.inner {
