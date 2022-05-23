@@ -145,11 +145,7 @@ pub use x11rb_protocol::{connect, x11_utils};
 /// The protocol used during communication.
 pub mod protocol {
     #[doc(inline)]
-    pub use x11rb_protocol::{
-        connection::ReplyFdKind,
-        protocol::*,
-        x11_utils::X11Error,
-    };
+    pub use x11rb_protocol::{connection::ReplyFdKind, protocol::*, x11_utils::*};
 }
 
 cfg_std! {
