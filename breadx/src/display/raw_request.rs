@@ -2,7 +2,7 @@
 
 use crate::{Error, Fd, Result};
 use alloc::{boxed::Box, vec::Vec};
-use core::ops::Range;
+use core::{convert::TryFrom, ops::Range};
 use x11rb_protocol::{
     connection::ReplyFdKind,
     x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
@@ -92,7 +92,7 @@ impl RawRequest {
 
     /// Compute the length of this request.
     #[allow(clippy::cast_possible_truncation)]
-    pub fn compute_length(&mut self, bigreq: bool) {
+    pub fn compute_length(&mut self, max_len: usize) -> Result<()> {
         let mut len = self.data.len();
 
         // make sure the length is a multiple of 4
@@ -101,9 +101,19 @@ impl RawRequest {
         // pad the data to the new length
         self.data.resize(len, 0);
 
-        // format as per bigreq
+        // format!
         let x_len = len / 4;
-        if bigreq {
+
+        if x_len > max_len {
+            return Err(Error::make_large_request(x_len, max_len));
+        }
+
+        // see if we can use truncated notation
+        if let Ok(x_len) = u16::try_from(x_len) {
+            let [l1, l2] = x_len.to_ne_bytes();
+            self.data[2] = l1;
+            self.data[3] = l2;
+        } else {
             // TODO: probably more efficient to use i/o
             // slices in this case
             let length_bytes = ((x_len + 1) as u32).to_ne_bytes();
@@ -115,10 +125,9 @@ impl RawRequest {
             self.data.splice(2..4, spliced_data);
             // we need to expand the valid range
             self.valid_region.end += 4;
-        } else {
-            let length_bytes = (x_len as u16).to_ne_bytes();
-            self.data[2..4].copy_from_slice(&length_bytes);
         }
+
+        Ok(())
     }
 
     /// The extension name for the opcode.

@@ -110,11 +110,12 @@ impl<T: PrefetchTarget> Prefetch<T> {
         let mapped = T::map_reply(reply);
         *self = PrefetchState::Complete(mapped).into();
         Ok(())
-    }
+    } 
 
     /// Evaluate the prefetch while blocking.
     pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {
         // call all functions in order
+        // TODO: handle on_x11_error
         let request = self.request_to_format();
         let request = mem::take(request);
         let seq = display.send_request_raw(request)?;
@@ -138,7 +139,6 @@ cfg_async! {
         fn not_yet_read(&self) -> bool {
             !matches!(self.state, PrefetchState::Complete(_))
         }
-
 
         /// Indicate that the request has been sent.
         pub(crate) fn sent(&mut self) {

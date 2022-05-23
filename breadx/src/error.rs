@@ -4,6 +4,8 @@ use core::any::type_name;
 use core::fmt;
 use core::str;
 
+use alloc::string::String;
+use alloc::string::ToString;
 use x11rb_protocol::x11_utils::X11Error;
 use x11rb_protocol::{
     errors::{ConnectError, ParseError},
@@ -37,6 +39,8 @@ enum Inner {
     /// We tried to run an operation that is not supported.
     #[allow(dead_code)]
     Unsupported(Unsupported),
+    /// A custom message.
+    Message(String),
     /// We did something that has put the X11 connection into an invalid state.
     ///
     /// This is a signal to the connection to halt all operations.
@@ -62,6 +66,13 @@ enum Inner {
     MissingExtension {
         /// The name of the extension.
         name: &'static str,
+    },
+    /// Request was too large to be sent.
+    RequestTooLarge {
+        /// Length of the request.
+        x_len: usize,
+        /// Maximum request length.
+        max_len: usize,
     },
     /// Attempted to send a request while another was in progress.
     #[cfg(feature = "async")]
@@ -130,16 +141,12 @@ impl Error {
         })
     }
 
-    pub(crate) fn make_parse_error(pe: ParseError) -> Self {
-        Error::from_inner(Inner::ParseError(pe))
+    pub(crate) fn make_large_request(x_len: usize, max_len: usize) -> Self {
+        Error::from_inner(Inner::RequestTooLarge { x_len, max_len })
     }
 
     pub(crate) fn make_setup_failure(sf: SetupFailure) -> Self {
         Error::from_inner(Inner::SetupFailed(sf))
-    }
-
-    pub(crate) fn make_missing_extension(name: &'static str) -> Self {
-        Error::from_inner(Inner::MissingExtension { name })
     }
 
     pub(crate) fn make_connect_error(ce: ConnectError) -> Self {
@@ -180,6 +187,11 @@ impl Error {
             }
         }
     }
+
+    #[allow(dead_code)]
+    pub(crate) fn is_protocol_error(&self) -> bool {
+        matches!(self.inner, Inner::X11Error(..) | Inner::MissingExtension { .. })
+    }
 }
 
 cfg_std! {
@@ -195,11 +207,30 @@ cfg_std! {
 
 // public API
 impl Error {
+    /// Create a new error from something that can be formatted into
+    /// a message.
+    #[must_use]
+    pub fn make_msg<D: fmt::Display>(msg: D) -> Self {
+        Self::from_inner(Inner::Message(msg.to_string()))
+    }
+
     /// Did this error happen as the result of calling an
     /// unsupported operation?
     #[must_use]
     pub fn unsupported(&self) -> bool {
         matches!(self.inner, Inner::Unsupported(_))
+    }
+
+    /// Create an error from an X11 parse error.
+    #[must_use]
+    pub fn make_parse_error(pe: ParseError) -> Self {
+        Error::from_inner(Inner::ParseError(pe))
+    }
+
+    /// Create an error from a missing extension.
+    #[must_use]
+    pub fn make_missing_extension(name: &'static str) -> Self {
+        Error::from_inner(Inner::MissingExtension { name })
     }
 
     /// Did this error happen as a result of some state-based
@@ -293,6 +324,7 @@ impl fmt::Debug for Error {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 match self.0 {
                     Inner::Unsupported(ref e) => write!(f, "Unsupported: {}", e),
+                    Inner::Message(ref msg) => f.write_str(msg),
                     Inner::InvalidState(ref e) => write!(f, "InvalidState: {}", e),
                     Inner::CouldntParseDisplay { .. } => f.write_str("CouldntParseDisplay"),
                     Inner::Poisoned { type_name } => write!(f, "Poisoned({})", type_name),
@@ -306,6 +338,9 @@ impl fmt::Debug for Error {
                     Inner::X11Error(x11) => fmt::Debug::fmt(x11, f),
                     Inner::MissingExtension { name } => {
                         write!(f, "MissingExtension: {}", name)
+                    }
+                    Inner::RequestTooLarge { x_len, max_len } => {
+                        write!(f, "RequestTooLarge: {} > {}", x_len, max_len)
                     }
                     #[cfg(feature = "async")]
                     Inner::AsyncSendInProgress { seq } => {
@@ -354,6 +389,14 @@ impl fmt::Display for Error {
             Inner::MissingExtension { name } => {
                 write!(f, "missing extension: {}", name)
             }
+            Inner::Message(ref msg) => f.write_str(msg),
+            Inner::RequestTooLarge { x_len, max_len } => {
+                write!(
+                    f,
+                    "Request of size {} bytes exceeds maximum length of {} bytes",
+                    x_len * 4, max_len * 4
+                )
+            }
             #[cfg(feature = "async")]
             Inner::AsyncSendInProgress { seq } => {
                 write!(f, "async send in progress for sequence {}", seq)
@@ -397,6 +440,7 @@ cfg_std! {
     impl StdError for Error {
         fn source(&self) -> Option<&(dyn StdError + 'static)> {
             match self.inner {
+                Inner::ParseError(ref pe) => Some(pe),
                 #[cfg(feature = "std")]
                 Inner::Io(ref e) => Some(e),
                 _ => None,

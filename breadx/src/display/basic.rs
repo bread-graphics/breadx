@@ -328,6 +328,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 }
                 Some(None) => {
                     // prefetch
+                    // TODO: does this work on non-bigreq systems?
                     mtry!(self.prefetch_maximum_length(ctx, strategy));
                 }
                 Some(Some(sz)) => {
@@ -427,7 +428,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         let _enter = span.enter();
 
         // get the formatting bits
-        let (is_bigreq, _) = mtry!(self.bigreq(ctx, strategy));
+        let (is_bigreq, max_len) = mtry!(self.bigreq(ctx, strategy));
         let extension = request.extension();
 
         let extension_opcode = match extension {
@@ -454,7 +455,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         );
 
         // format the request
-        request.compute_length(is_bigreq);
+        request.compute_length(max_len)?;
         if let Some(opcode) = extension_opcode {
             request.set_extension_opcode(opcode);
         }
