@@ -18,12 +18,14 @@ pub struct GenerateXid<'this, Dpy: ?Sized> {
     innards: TryWithDyn<'this, u32, Dpy>,
 }
 
+type FnTy = Box<
+            dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u32>> + Send + 'static,
+        >;
+
 impl<'this, Dpy: AsyncDisplay + ?Sized> GenerateXid<'this, Dpy> {
     #[allow(clippy::redundant_closure_for_method_calls)]
     pub(crate) fn polling(display: &'this mut Dpy) -> Self {
-        let func: Box<
-            dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<u32>> + Send + 'static,
-        > = Box::new(|display, ctx| display.try_generate_xid(ctx));
+        let func: FnTy = Box::new(|display, ctx| display.try_generate_xid(ctx));
         let try_with = display.try_with(func);
 
         Self { innards: try_with }

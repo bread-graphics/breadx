@@ -25,7 +25,7 @@ pub struct TryWith<'this, R, F, Dpy: ?Sized> {
 pub(crate) type TryWithDyn<'this, R, Dpy> = TryWith<
     'this,
     R,
-    Box<dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<R>> + Send + 'static>,
+    Box<dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<R>> + Send + 'static>,
     Dpy,
 >;
 
@@ -50,7 +50,7 @@ impl<'this, R, F, Dpy: ?Sized> TryWith<'this, R, F, Dpy> {
 impl<
         'this,
         R,
-        F: FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<R>> + Unpin,
+        F: FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<R>> + Unpin,
         Dpy: AsyncDisplay + ?Sized,
     > Future for TryWith<'this, R, F, Dpy>
 {
@@ -68,7 +68,7 @@ impl<
 
                 tracing::trace!("trying straight call");
 
-                match (this.callback)(&mut *this.dpy, ctx) {
+                match (this.callback)(&mut this.dpy, ctx) {
                     Ok(AsyncStatus::Ready(r)) => return Poll::Ready(Ok(r)),
                     Ok(AsyncStatus::Read) => this.interest = Some(Interest::Readable),
                     Ok(AsyncStatus::Write) => this.interest = Some(Interest::Writable),

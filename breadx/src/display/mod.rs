@@ -504,7 +504,7 @@ cfg_async! {
         fn poll_for_interest(
             &mut self,
             interest: Interest,
-            callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<()>,
             ctx: &mut Context<'_>,
         ) -> Poll<Result<()>>;
     }
@@ -602,6 +602,17 @@ cfg_async! {
             (**self).try_maximum_request_length(ctx)
         }
     }
+
+    impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
+        fn poll_for_interest(
+            &mut self, 
+            interest: Interest, 
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>, 
+            ctx: &mut Context< '_>
+        ) -> Poll<Result<()>> {
+            (**self).poll_for_interest(interest, callback, ctx)
+        }
+    }
 }
 
 /* Box impls */
@@ -694,6 +705,17 @@ cfg_async! {
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
             (**self).try_wait_for_reply_raw(seq, ctx)
+        }
+    }
+
+    impl<D: AsyncDisplay + ?Sized> AsyncDisplay for Box<D> {
+        fn poll_for_interest(
+            &mut self, 
+            interest: Interest, 
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>, 
+            ctx: &mut Context<'_>
+        ) -> Poll<Result<()>> {
+            (**self).poll_for_interest(interest, callback, ctx)
         }
     }
 }

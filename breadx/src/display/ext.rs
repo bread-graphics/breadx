@@ -86,7 +86,7 @@ cfg_async! {
         /// Wrap a function that returns an `AsyncStatus` in the runtime
         /// that this is connected to.
         #[doc(hidden)]
-        fn try_with<R, F: FnMut(&mut Self, &mut Context<'_>) -> Result<AsyncStatus<R>>>(
+        fn try_with<R, F: FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<R>>>(
             &mut self,
             f: F
         ) -> futures::TryWith<'_, R, F, Self>  {
