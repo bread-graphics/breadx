@@ -18,13 +18,17 @@ pub struct WaitForReplyRaw<'this, Dpy: ?Sized> {
     innards: TryWithDyn<'this, RawReply, Dpy>,
 }
 
+type FnTy = Box<
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<RawReply>>
+        + Send
+        + 'static,
+>;
+
 impl<'this, Dpy: AsyncDisplay + ?Sized> WaitForReplyRaw<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, seq: u64) -> Self {
         // setup the function
         let mut flushed = false;
-        let func: Box<
-            dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<RawReply>> + Send + 'static,
-        > = Box::new(move |display, ctx| {
+        let func: FnTy = Box::new(move |display, ctx| {
             if !flushed {
                 match display.try_flush(ctx) {
                     Ok(AsyncStatus::Ready(())) => {

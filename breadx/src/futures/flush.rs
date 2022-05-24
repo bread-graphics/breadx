@@ -18,12 +18,14 @@ pub struct Flush<'this, Dpy: ?Sized> {
     innards: TryWithDyn<'this, (), Dpy>,
 }
 
+type FnTy = Box<
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<()>> + Send + 'static,
+>;
+
 impl<'this, Dpy: AsyncDisplay + ?Sized> Flush<'this, Dpy> {
     #[allow(clippy::redundant_closure_for_method_calls)]
     pub(crate) fn polling(display: &'this mut Dpy) -> Self {
-        let func: Box<
-            dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<()>> + Send + 'static,
-        > = Box::new(|display, ctx| display.try_flush(ctx));
+        let func: FnTy = Box::new(|display, ctx| display.try_flush(ctx));
         let try_with = display.try_with(func);
 
         Self { innards: try_with }

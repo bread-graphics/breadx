@@ -52,7 +52,7 @@ impl<D: CanBeAsyncDisplay + Source> AsyncDisplay for Async<D> {
     fn poll_for_interest(
         &mut self,
         interest: Interest,
-        callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
+        callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<()>,
         ctx: &mut Context<'_>,
     ) -> Poll<Result<()>> {
         let span = tracing::trace_span!(
@@ -85,7 +85,7 @@ where
     fn poll_for_interest(
         &mut self,
         interest: Interest,
-        callback: &mut dyn FnMut(&mut Self, &mut Context<'_>) -> Result<()>,
+        callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<()>,
         ctx: &mut Context<'_>,
     ) -> Poll<Result<()>> {
         let span = tracing::trace_span!(

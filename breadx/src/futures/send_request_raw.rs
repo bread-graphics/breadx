@@ -15,17 +15,18 @@ use futures_util::FutureExt;
 
 /// The future returned by the `send_request_raw` function.
 pub struct SendRequestRaw<'this, Dpy: ?Sized> {
-    innards: TryWith<'this, u64, FnTy<Dpy>, Dpy>,
+    innards: TryWith<'this, u64, FnTy, Dpy>,
 }
 
-type FnTy<Dpy> =
-    Box<dyn FnMut(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static>;
+type FnTy = Box<
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static,
+>;
 
 impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, mut request: RawRequest) -> Self {
         // set up the function
         let mut sequence = None;
-        let func: FnTy<Dpy> = Box::new(move |display, ctx| {
+        let func: FnTy = Box::new(move |display, ctx| {
             loop {
                 match sequence {
                     None => {
