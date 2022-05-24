@@ -19,8 +19,10 @@ pub struct WaitForReplyRaw<'this, Dpy: ?Sized> {
 }
 
 type FnTy = Box<
-            dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<RawReply>> + Send + 'static,
-        >;
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<RawReply>>
+        + Send
+        + 'static,
+>;
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> WaitForReplyRaw<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, seq: u64) -> Self {

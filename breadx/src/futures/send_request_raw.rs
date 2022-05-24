@@ -18,8 +18,9 @@ pub struct SendRequestRaw<'this, Dpy: ?Sized> {
     innards: TryWith<'this, u64, FnTy, Dpy>,
 }
 
-type FnTy =
-    Box<dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static>;
+type FnTy = Box<
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static,
+>;
 
 impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, mut request: RawRequest) -> Self {

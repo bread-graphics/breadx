@@ -19,8 +19,8 @@ pub struct GenerateXid<'this, Dpy: ?Sized> {
 }
 
 type FnTy = Box<
-            dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u32>> + Send + 'static,
-        >;
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u32>> + Send + 'static,
+>;
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> GenerateXid<'this, Dpy> {
     #[allow(clippy::redundant_closure_for_method_calls)]

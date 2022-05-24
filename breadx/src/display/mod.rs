@@ -605,9 +605,9 @@ cfg_async! {
 
     impl<D: AsyncDisplay + ?Sized> AsyncDisplay for &mut D {
         fn poll_for_interest(
-            &mut self, 
-            interest: Interest, 
-            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>, 
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
             ctx: &mut Context< '_>
         ) -> Poll<Result<()>> {
             (**self).poll_for_interest(interest, callback, ctx)
@@ -710,9 +710,9 @@ cfg_async! {
 
     impl<D: AsyncDisplay + ?Sized> AsyncDisplay for Box<D> {
         fn poll_for_interest(
-            &mut self, 
-            interest: Interest, 
-            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>, 
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
             ctx: &mut Context<'_>
         ) -> Poll<Result<()>> {
             (**self).poll_for_interest(interest, callback, ctx)

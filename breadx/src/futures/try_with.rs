@@ -25,7 +25,11 @@ pub struct TryWith<'this, R, F, Dpy: ?Sized> {
 pub(crate) type TryWithDyn<'this, R, Dpy> = TryWith<
     'this,
     R,
-    Box<dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<R>> + Send + 'static>,
+    Box<
+        dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<R>>
+            + Send
+            + 'static,
+    >,
     Dpy,
 >;
 

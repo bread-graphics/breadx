@@ -20,8 +20,10 @@ pub struct WaitForEvent<'this, Dpy: ?Sized> {
 }
 
 type FnTy = Box<
-            dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<Event>> + Send + 'static,
-        >;
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<Event>>
+        + Send
+        + 'static,
+>;
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> WaitForEvent<'this, Dpy> {
     #[allow(clippy::redundant_closure_for_method_calls)]
