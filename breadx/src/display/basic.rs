@@ -6,10 +6,7 @@ use super::{
     AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
     X11Core,
 };
-use crate::{
-    connection::{new_io_slice, Connection},
-    Error, InvalidState, Result, ResultExt,
-};
+use crate::{connection::Connection, Error, InvalidState, Result, ResultExt};
 
 use alloc::{sync::Arc, vec, vec::Vec};
 use x11rb_protocol::{
@@ -420,7 +417,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     /// Format the request to be compatible with our send mechanism.
     fn try_format_request(
         &mut self,
-        request: &mut RawRequest,
+        request: &mut RawRequest<'_, '_>,
         ctx: Option<&Waker>,
         strategy: &mut impl Strategy<Conn>,
     ) -> Result<AsyncStatus<u64>> {
@@ -455,27 +452,21 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         );
 
         // format the request
-        request.compute_length(max_len)?;
-        if let Some(opcode) = extension_opcode {
-            request.set_extension_opcode(opcode);
-        }
+        request.format(extension_opcode, max_len)?;
 
         Ok(AsyncStatus::Ready(seq))
     }
 
     /// Try to send the given request to the server.
-    fn try_send_raw_request(&mut self, req: &mut RawRequest) -> Result<AsyncStatus<()>> {
+    fn try_send_raw_request(&mut self, req: &mut RawRequest<'_, '_>) -> Result<AsyncStatus<()>> {
         loop {
-            let (buf, fds) = req.mut_parts();
-
-            if buf.is_empty() {
+            if req.is_empty() {
                 break;
             }
 
-            match self
-                .conn
-                .with(|conn| conn.send_slices_and_fds(&[new_io_slice(buf)], fds))
-            {
+            let (buf, fds) = req.mut_parts();
+
+            match self.conn.with(|conn| conn.send_slices_and_fds(&**buf, fds)) {
                 Ok(nwritten) => {
                     tracing::trace!(nwritten = nwritten, "sent data to server");
                     req.advance(nwritten);
@@ -560,7 +551,7 @@ impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for BasicDisplay<Conn> {
-    fn send_request_raw(&mut self, mut req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, mut req: RawRequest<'_, '_>) -> Result<u64> {
         let span = tracing::debug_span!("send_request_raw");
         let _enter = span.enter();
 
@@ -613,7 +604,7 @@ cfg_async! {
     impl<Conn: Connection> CanBeAsyncDisplay for BasicDisplay<Conn> {
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
             self.try_format_request(req, Some(ctx.waker()), &mut NonBlockingStrategy)
@@ -621,7 +612,7 @@ cfg_async! {
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             _ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
             self.try_send_raw_request(req)

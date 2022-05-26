@@ -50,7 +50,7 @@ impl<Conn: Connection> DisplayBase for CellDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for CellDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.inner.get_mut().send_request_raw(req)
     }
 
@@ -98,7 +98,7 @@ impl<Conn: Connection> DisplayBase for &CellDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for &CellDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.inner.borrow_mut().send_request_raw(req)
     }
 
@@ -131,7 +131,7 @@ cfg_async! {
     impl<Conn: Connection> CanBeAsyncDisplay for CellDisplay<Conn> {
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<super::AsyncStatus<()>> {
             self.inner.get_mut().try_send_request_raw(req, ctx)
@@ -139,7 +139,7 @@ cfg_async! {
 
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<super::AsyncStatus<u64>> {
             self.inner.get_mut().format_request(req, ctx)
@@ -176,7 +176,7 @@ cfg_async! {
     impl<Conn: Connection> CanBeAsyncDisplay for &CellDisplay<Conn> {
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<super::AsyncStatus<()>> {
             self.inner.borrow_mut().try_send_request_raw(req, ctx)
@@ -184,7 +184,7 @@ cfg_async! {
 
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<super::AsyncStatus<u64>> {
             self.inner.borrow_mut().format_request(req, ctx)

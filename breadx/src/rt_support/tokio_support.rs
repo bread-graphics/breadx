@@ -317,7 +317,7 @@ where
 impl<D: AsRawFd + CanBeAsyncDisplay> CanBeAsyncDisplay for AsyncFd<D> {
     fn format_request(
         &mut self,
-        req: &mut RawRequest,
+        req: &mut RawRequest<'_, '_>,
         ctx: &mut Context<'_>,
     ) -> Result<AsyncStatus<u64>> {
         self.get_mut().format_request(req, ctx)
@@ -325,7 +325,7 @@ impl<D: AsRawFd + CanBeAsyncDisplay> CanBeAsyncDisplay for AsyncFd<D> {
 
     fn try_send_request_raw(
         &mut self,
-        req: &mut RawRequest,
+        req: &mut RawRequest<'_, '_>,
         ctx: &mut Context<'_>,
     ) -> Result<AsyncStatus<()>> {
         self.get_mut().try_send_request_raw(req, ctx)
@@ -362,7 +362,7 @@ where
 {
     fn format_request(
         &mut self,
-        req: &mut RawRequest,
+        req: &mut RawRequest<'_, '_>,
         ctx: &mut Context<'_>,
     ) -> Result<AsyncStatus<u64>> {
         self.get_ref().format_request(req, ctx)
@@ -370,7 +370,7 @@ where
 
     fn try_send_request_raw(
         &mut self,
-        req: &mut RawRequest,
+        req: &mut RawRequest<'_, '_>,
         ctx: &mut Context<'_>,
     ) -> Result<AsyncStatus<()>> {
         self.get_ref().try_send_request_raw(req, ctx)

@@ -336,6 +336,10 @@ cfg_std! {
     pub(crate) fn new_io_slice_mut(sl: &mut [u8]) -> IoSliceMut<'_> {
         IoSliceMut::new(sl)
     }
+
+    pub(crate) fn advance_io(sl: &mut IoSlice<'_>, bytes: usize) {
+        sl.advance(bytes);
+    }
 }
 
 cfg_no_std! {
@@ -345,5 +349,9 @@ cfg_no_std! {
 
     pub(crate) fn new_io_slice_mut(sl: &mut [u8]) -> IoSliceMut<'_> {
         sl
+    }
+
+    pub(crate) fn advance_io(sl: &mut IoSlice<'_>, bytes: usize) {
+        *sl = &sl[bytes..];
     }
 }

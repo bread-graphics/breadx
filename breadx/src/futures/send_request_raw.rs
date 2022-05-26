@@ -2,7 +2,7 @@
 
 use super::TryWith;
 use crate::{
-    display::{AsyncDisplay, AsyncDisplayExt, AsyncStatus, RawRequest},
+    display::{AsyncDisplay, AsyncDisplayExt, AsyncStatus, BufferedRequest, RawRequest},
     Result,
 };
 use alloc::boxed::Box;
@@ -22,8 +22,15 @@ type FnTy = Box<
     dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<u64>> + Send + 'static,
 >;
 
-impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
-    pub(crate) fn polling(display: &'this mut Dpy, mut request: RawRequest) -> Self {
+impl<'this, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
+    pub(crate) fn polling(display: &'this mut Dpy, request: RawRequest<'_, '_>) -> Self {
+        // buffer the request
+        // TODO: work through the lifetimes here, this can't be the most efficient
+        // way of doing it
+        // but it's gotta somehow work with SendRequest<>, selfref or boxing async{}
+        // may be the only option but each has caveats
+        let mut request: BufferedRequest = request.into();
+
         // set up the function
         let mut sequence = None;
         let func: FnTy = Box::new(move |display, ctx| {
@@ -31,15 +38,15 @@ impl<'this, 'req, Dpy: AsyncDisplay + ?Sized> SendRequestRaw<'this, Dpy> {
                 match sequence {
                     None => {
                         // calculate the sequence number
-                        match display.format_request(&mut request, ctx) {
+                        match request.borrow(|request| display.format_request(request, ctx)) {
                             Ok(AsyncStatus::Ready(seq)) => sequence = Some(seq),
                             Ok(status) => return Ok(status.map(|_| unreachable!())),
                             Err(e) => return Err(e),
                         }
                     }
                     Some(seq) => {
-                        return display
-                            .try_send_request_raw(&mut request, ctx)
+                        return request
+                            .borrow(|request| display.try_send_request_raw(request, ctx))
                             .map(move |res| res.map(move |()| seq));
                     }
                 }

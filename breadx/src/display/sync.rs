@@ -147,7 +147,7 @@ impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for SyncDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.with_inner_mut(move |inner| inner.send_request_raw(req))
     }
 
@@ -177,7 +177,7 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
 }
 
 impl<Conn: Connection> Display for &SyncDisplay<Conn> {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.with_inner(move |inner| inner.send_request_raw(req))
     }
 
@@ -210,7 +210,7 @@ cfg_async! {
     impl<Conn: Connection> CanBeAsyncDisplay for SyncDisplay<Conn> {
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
             self.with_inner_mut(move |inner| inner.format_request(req, ctx))
@@ -218,7 +218,7 @@ cfg_async! {
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
             self.with_inner_mut(move |inner| inner.try_send_request_raw(req, ctx))
@@ -252,7 +252,7 @@ cfg_async! {
     impl<Conn: Connection> CanBeAsyncDisplay for &SyncDisplay<Conn> {
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
             self.poll_inner(ctx, move |inner, ctx| inner.format_request(req, ctx))
@@ -260,7 +260,7 @@ cfg_async! {
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
             self.poll_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx))

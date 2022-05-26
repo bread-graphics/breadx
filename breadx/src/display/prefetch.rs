@@ -10,9 +10,11 @@ use x11rb_protocol::{
     SequenceNumber,
 };
 
-use super::{Display, RawReply, RawRequest};
+use super::{
+    raw_request::{from_reply_request, BufferedRequest},
+    Display, RawReply,
+};
 use crate::Result;
-use core::mem;
 
 cfg_async! {
     use super::{AsyncStatus, CanBeAsyncDisplay};
@@ -27,10 +29,10 @@ pub struct Prefetch<T: PrefetchTarget> {
 
 enum PrefetchState<T: PrefetchTarget> {
     /// In the process of formatting.
-    Formatting(Option<RawRequest>),
+    Formatting(Option<BufferedRequest>),
     /// We're in the process of sending this data.
     #[allow(dead_code)]
-    Sending(Option<RawRequest>, u64),
+    Sending(Option<BufferedRequest>, u64),
     /// We've sent this data and are waiting for a reply.
     Waiting(SequenceNumber),
     /// The data is available for us; the request is complete.
@@ -63,7 +65,8 @@ impl<T: PrefetchTarget> From<PrefetchState<T>> for Prefetch<T> {
 
 impl<T: PrefetchTarget> Prefetch<T> {
     pub fn new(req: T) -> Self {
-        let req = RawRequest::from_request_reply(req);
+        #[allow(clippy::redundant_closure_for_method_calls)]
+        let req = from_reply_request(req, |req| req.into());
         PrefetchState::Formatting(Some(req)).into()
     }
 
@@ -79,7 +82,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Format the request.
     ///
     /// The user may use this in order to format the request.
-    pub(crate) fn request_to_format(&mut self) -> &mut RawRequest {
+    pub(crate) fn request_to_format(&mut self) -> &mut BufferedRequest {
         match self.state {
             PrefetchState::Formatting(Some(ref mut req)) => req,
             _ => panic!("Prefetch is not formatting"),
@@ -117,8 +120,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
         // call all functions in order
         // TODO: handle on_x11_error
         let request = self.request_to_format();
-        let request = mem::take(request);
-        let seq = display.send_request_raw(request)?;
+        let seq = request.take(|request| display.send_request_raw(request))?;
         self.sent_override(seq);
         let reply = display.wait_for_reply_raw(self.sequence())?;
         self.read_reply(reply)?;
@@ -159,7 +161,7 @@ cfg_async! {
         }
 
         /// Get the request to send.
-        pub(crate) fn request_to_send(&mut self) -> &mut RawRequest {
+        pub(crate) fn request_to_send(&mut self) -> &mut BufferedRequest {
             match self.state {
                 PrefetchState::Sending(Some(ref mut req), ..)
                 | PrefetchState::Formatting(Some(ref mut req)) => req,
@@ -185,14 +187,22 @@ cfg_async! {
             if self.not_yet_formatted() {
                 tracing::trace!("formatting request");
                 let request = self.request_to_format();
-                let seq = mtry!(display.format_request(request, ctx));
+                let seq = mtry! {
+                    request.borrow(|request| {
+                        display.format_request(request, ctx)
+                    })
+                };
                 self.formatted(seq);
             }
 
             if self.not_yet_sent() {
                 tracing::trace!("sending request");
-                let req = self.request_to_send();
-                mtry!(display.try_send_request_raw(req, ctx));
+                let request = self.request_to_send();
+                mtry! {
+                    request.borrow(|request| {
+                        display.try_send_request_raw(request, ctx)
+                    })
+                };
                 self.sent();
             }
 

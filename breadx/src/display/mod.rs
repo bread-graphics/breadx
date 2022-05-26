@@ -89,7 +89,9 @@ mod prefetch;
 pub(crate) use prefetch::Prefetch;
 
 mod raw_request;
-pub use raw_request::{RawReply, RawRequest};
+pub use raw_request::{
+    from_reply_fds_request, from_reply_request, from_void_request, RawReply, RawRequest,
+};
 
 cfg_sync! {
     mod sync;
@@ -99,6 +101,7 @@ cfg_sync! {
 pub use crate::automatically_generated::DisplayFunctionsExt;
 cfg_async! {
     pub use crate::automatically_generated::AsyncDisplayFunctionsExt;
+    pub(crate) use raw_request::BufferedRequest;
     use core::task::{Context, Poll};
 }
 
@@ -210,7 +213,7 @@ pub trait Display: DisplayBase {
     ///
     /// This function should block until the request has been sent to the
     /// server.
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64>;
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64>;
 
     /// Wait for a reply from the X11 server.
     ///
@@ -269,14 +272,15 @@ pub trait Display: DisplayBase {
 
         // send the sync request
         let get_input_focus = GetInputFocusRequest {};
-        let req = RawRequest::from_request_reply(get_input_focus);
-        let seq = self.send_request_raw(req)?;
+        raw_request::from_reply_request(get_input_focus, |req| {
+            let seq = self.send_request_raw(req)?;
 
-        // flush the stream
-        self.flush()?;
+            // flush the stream
+            self.flush()?;
 
-        // wait for the reply
-        self.wait_for_reply_raw(seq).map(|_| ())
+            // wait for the reply
+            self.wait_for_reply_raw(seq).map(|_| ())
+        })
     }
 
     /// Flush all pending requests to the server.
@@ -398,7 +402,7 @@ cfg_async! {
         /// can be used to wait for the reply.
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>>;
 
@@ -415,7 +419,7 @@ cfg_async! {
         /// fragment of a request will corrupt the X11 server.
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>>;
 
@@ -531,7 +535,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
 }
 
 impl<D: Display + ?Sized> Display for &mut D {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         (**self).send_request_raw(req)
     }
 
@@ -564,7 +568,7 @@ cfg_async! {
     impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &mut D {
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
             (**self).format_request(req, ctx)
@@ -572,7 +576,7 @@ cfg_async! {
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
             (**self).try_send_request_raw(req, ctx)
@@ -636,7 +640,7 @@ impl<D: DisplayBase + ?Sized> DisplayBase for Box<D> {
 }
 
 impl<D: Display + ?Sized> Display for Box<D> {
-    fn send_request_raw(&mut self, req: RawRequest) -> Result<u64> {
+    fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         (**self).send_request_raw(req)
     }
 
@@ -669,7 +673,7 @@ cfg_async! {
     impl<D: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for Box<D> {
         fn format_request(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
             (**self).format_request(req, ctx)
@@ -689,7 +693,7 @@ cfg_async! {
 
         fn try_send_request_raw(
             &mut self,
-            req: &mut RawRequest,
+            req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
             (**self).try_send_request_raw(req, ctx)

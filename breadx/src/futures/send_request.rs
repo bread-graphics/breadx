@@ -2,7 +2,10 @@
 
 use super::SendRequestRaw;
 use crate::{
-    display::{AsyncDisplay, AsyncDisplayExt, Cookie, RawRequest},
+    display::{
+        from_reply_fds_request, from_reply_request, from_void_request, AsyncDisplay,
+        AsyncDisplayExt, Cookie,
+    },
     Result,
 };
 use core::{
@@ -22,10 +25,10 @@ pub struct SendRequest<'this, Dpy: ?Sized, Reply> {
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> SendRequest<'this, Dpy, ()> {
     pub(crate) fn for_void<Req: VoidRequest>(display: &'this mut Dpy, req: Req) -> Self {
-        Self {
-            innards: display.send_request_raw(RawRequest::from_request_void(req)),
+        from_void_request(req, move |req| Self {
+            innards: display.send_request_raw(req),
             _marker: PhantomData,
-        }
+        })
     }
 }
 
@@ -34,20 +37,20 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply> SendRequest<'this, Dpy, Reply> {
         display: &'this mut Dpy,
         req: Req,
     ) -> Self {
-        Self {
-            innards: display.send_request_raw(RawRequest::from_request_reply(req)),
+        from_reply_request(req, move |req| Self {
+            innards: display.send_request_raw(req),
             _marker: PhantomData,
-        }
+        })
     }
 
     pub(crate) fn for_reply_fds<Req: ReplyFDsRequest<Reply = Reply>>(
         display: &'this mut Dpy,
         req: Req,
     ) -> Self {
-        Self {
-            innards: display.send_request_raw(RawRequest::from_request_reply_fds(req)),
+        from_reply_fds_request(req, move |req| Self {
+            innards: display.send_request_raw(req),
             _marker: PhantomData,
-        }
+        })
     }
 
     pub(crate) fn cannibalize(self) -> &'this mut Dpy {

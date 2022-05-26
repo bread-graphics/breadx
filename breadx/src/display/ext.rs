@@ -4,23 +4,29 @@
 
 use x11rb_protocol::x11_utils::{ReplyFDsRequest, ReplyRequest, TryParseFd, VoidRequest};
 
-use super::{Cookie, Display, DisplayBase, RawRequest};
+use super::{
+    from_reply_fds_request, from_reply_request, from_void_request, Cookie, Display, DisplayBase,
+};
 use crate::Result;
 use alloc::vec::Vec;
 use core::mem;
 
 cfg_async! {
-    use super::{AsyncStatus, AsyncDisplay};
+    use super::{AsyncStatus, AsyncDisplay, RawRequest};
     use crate::futures;
     use core::task::Context;
 }
 
 pub trait DisplayBaseExt: DisplayBase {
     /// Poll for a reply matching the given sequence number.
-    fn poll_for_reply<R: TryParseFd>(&mut self, seq: u64) -> Result<Option<R>> {
+    fn poll_for_reply<R: TryParseFd>(&mut self, cookie: Cookie<R>) -> Result<Option<R>> {
         // TODO: zero sized reply
+        if mem::size_of::<R>() == 0 {
+            tracing::warn!("zero sized reply");
+            return Ok(None);
+        }
 
-        match self.poll_for_reply_raw(seq)? {
+        match self.poll_for_reply_raw(cookie.sequence())? {
             Some(reply) => reply.into_reply().map(Some),
             None => Ok(None),
         }
@@ -33,16 +39,20 @@ impl<D: DisplayBase + ?Sized> DisplayBaseExt for D {}
 pub trait DisplayExt: Display {
     /// Send a request with no reply.
     fn send_void_request(&mut self, request: impl VoidRequest) -> Result<Cookie<()>> {
-        let seq = self.send_request_raw(RawRequest::from_request_void(request))?;
+        from_void_request(request, |request| {
+            let seq = self.send_request_raw(request)?;
 
-        Ok(Cookie::from(seq))
+            Ok(Cookie::from(seq))
+        })
     }
 
     /// Send a request with a reply.
     fn send_reply_request<R: ReplyRequest>(&mut self, request: R) -> Result<Cookie<R::Reply>> {
-        let seq = self.send_request_raw(RawRequest::from_request_reply(request))?;
+        from_reply_request(request, |request| {
+            let seq = self.send_request_raw(request)?;
 
-        Ok(Cookie::from(seq))
+            Ok(Cookie::from(seq))
+        })
     }
 
     /// Send a request with a reply containing file descriptors.
@@ -50,9 +60,11 @@ pub trait DisplayExt: Display {
         &mut self,
         request: R,
     ) -> Result<Cookie<R::Reply>> {
-        let seq = self.send_request_raw(RawRequest::from_request_reply_fds(request))?;
+        from_reply_fds_request(request, |request| {
+            let seq = self.send_request_raw(request)?;
 
-        Ok(Cookie::from(seq))
+            Ok(Cookie::from(seq))
+        })
     }
 
     /// Receive a reply from the server.
@@ -121,7 +133,7 @@ cfg_async! {
         /// Send a raw request to the X11 server.
         fn send_request_raw(
             &mut self,
-            request: RawRequest,
+            request: RawRequest<'_, '_>,
         ) -> futures::SendRequestRaw<'_, Self>{
             futures::SendRequestRaw::polling(self, request)
         }

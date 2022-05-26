@@ -9,7 +9,7 @@ use futures_util::{Future, FutureExt};
 use x11rb_protocol::protocol::xproto::GetInputFocusRequest;
 
 use crate::{
-    display::{AsyncDisplay, AsyncDisplayExt, RawRequest},
+    display::{from_reply_request, AsyncDisplay, AsyncDisplayExt},
     Result,
 };
 
@@ -29,11 +29,10 @@ enum Innards<'this, Dpy: ?Sized> {
 impl<'this, Dpy: AsyncDisplay + ?Sized> Synchronize<'this, Dpy> {
     pub(crate) fn new(dpy: &'this mut Dpy) -> Self {
         let req = GetInputFocusRequest {};
-        let req = RawRequest::from_request_reply(req);
 
-        Self {
+        from_reply_request(req, move |req| Self {
             innards: Innards::Sending(dpy.send_request_raw(req)),
-        }
+        })
     }
 
     pub(crate) fn cannibalize(self) -> &'this mut Dpy {
