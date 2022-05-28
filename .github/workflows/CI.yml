@@ -6,7 +6,7 @@ on:
 
 env:
   RUSTFLAGS: -Dwarnings
-  clippy_version: nightly
+  clippy_version: 1.60.0
 
 jobs:
   rustfmt:
@@ -16,7 +16,6 @@ jobs:
       matrix:
         include:
           - rust: stable
-#          - rust: beta
     
     steps:
       - uses: actions/checkout@v2
@@ -62,6 +61,15 @@ jobs:
           - windows-latest
           - ubuntu-latest
           - macos-latest
+        toolchain:
+          - stable
+        include:
+          - os: ubuntu-latest
+            toolchain: beta
+          - os: ubuntu-latest
+            toolchain: nightly
+          - os: ubuntu-latest
+            toolchain: 1.58.0 # msrv
 
     steps:
       - uses: actions/checkout@v2
@@ -70,7 +78,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
 

@@ -338,7 +338,7 @@ cfg_std! {
     }
 
     pub(crate) fn advance_io(sl: &mut IoSlice<'_>, bytes: usize) {
-        sl.advance(bytes);
+        advance::advance(sl, bytes);
     }
 }
 

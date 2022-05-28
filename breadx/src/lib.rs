@@ -100,7 +100,6 @@
 //! on the usage of `breadx`.
 
 #![no_std]
-#![feature(io_slice_advance)]
 #![forbid(future_incompatible, unsafe_code, rust_2018_idioms)]
 #![warn(clippy::pedantic)]
 #![allow(
