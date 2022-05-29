@@ -200,9 +200,9 @@ impl Error {
 cfg_std! {
     impl Error {
         pub(crate) fn io(io: IoError) -> Self {
-            if !matches!(io.kind(), ErrorKind::WouldBlock) {
+            //if !matches!(io.kind(), ErrorKind::WouldBlock) {
                 tracing::error!("encountered I/O error: {io:?}", io = io);
-            }
+            //}
             Error::from_inner(Inner::Io(io))
         }
     }
@@ -335,8 +335,12 @@ impl fmt::Debug for Error {
                     Inner::SetupFailed(SetupFailure::Authenticate(_)) => {
                         f.write_str("SetupFailed: could not authenticate")
                     }
-                    Inner::SetupFailed(SetupFailure::Failed(_)) => {
-                        f.write_str("SetupFailed: failed")
+                    Inner::SetupFailed(SetupFailure::Failed(fail)) => {
+                        let reason = match str::from_utf8(&fail.reason) {
+                            Ok(reason) => reason, 
+                            Err(_) => "bad utf-8",
+                        };
+                        write!(f, "SetupFailed: {}", reason)
                     }
                     Inner::X11Error(x11) => fmt::Debug::fmt(x11, f),
                     Inner::MissingExtension { name } => {

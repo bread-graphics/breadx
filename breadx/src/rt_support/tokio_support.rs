@@ -233,12 +233,14 @@ pub fn establish_connect<Conn: AsRawFd + Connection>(
             let guard = registered.readable_mut().await.map_err(Error::io)?;
             let adv = try_io(
                 guard,
-                |conn: &mut Conn| conn.recv_slice(connect.buffer()),
-                || 0,
+                |conn: &mut Conn| conn.recv_slice(connect.buffer()).map(Some),
+                || None,
             )?;
 
-            if connect.advance(adv) {
-                break;
+            if let Some(adv) = adv {
+                if connect.advance(adv) {
+                    break;
+                }
             }
         }
 
