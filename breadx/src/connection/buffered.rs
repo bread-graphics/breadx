@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 use core::cmp;
 use core::ops::Range;
 
-use super::Connection;
+use super::{ReadHalf, WriteHalf, SplitConnection};
 use super::{new_io_slice, new_io_slice_mut};
 use crate::connection::{IoSlice, IoSliceMut};
 use crate::{Fd, Result};
@@ -62,15 +62,15 @@ const DEFAULT_WRITE_CAPACITY: usize = 16384;
 /// [`Connection`]: crate::connection::Connection
 /// [`BufReader`]: std::io::BufReader
 /// [`BufWriter`]: std::io::BufWriter
-pub struct BufConnection<C> {
-    /// The connection we're wrapping around.
-    conn: C,
+pub struct BufConnection<C: ?Sized> {
     /// The read buffer, containing data that has been read from the
     /// connection but not yet returned to the caller.
     read_buf: ReadBuffer,
     /// The write buffer, containing data that has been written to the
     /// connection but not yet flushed.
     write_buf: WriteBuffer,
+    /// The connection we're wrapping around.
+    conn: C,
 }
 
 /// The buffer used to store reads.
@@ -103,26 +103,26 @@ struct WriteBuffer {
     fds: Vec<Fd>,
 }
 
-impl<C: Connection> From<C> for BufConnection<C> {
+impl<C> From<C> for BufConnection<C> {
     fn from(conn: C) -> Self {
         Self::new(conn)
     }
 }
 
-impl<C: Connection> AsRef<C> for BufConnection<C> {
+impl<C: ?Sized> AsRef<C> for BufConnection<C> {
     fn as_ref(&self) -> &C {
         &self.conn
     }
 }
 
-impl<C: Connection> AsMut<C> for BufConnection<C> {
+impl<C: ?Sized> AsMut<C> for BufConnection<C> {
     fn as_mut(&mut self) -> &mut C {
         &mut self.conn
     }
 }
 
 cfg_std_unix! {
-    impl<C: AsRawFd> AsRawFd for BufConnection<C> {
+    impl<C: AsRawFd + ?Sized> AsRawFd for BufConnection<C> {
         fn as_raw_fd(&self) -> RawFd {
             self.conn.as_raw_fd()
         }
@@ -130,14 +130,14 @@ cfg_std_unix! {
 }
 
 cfg_std_windows! {
-    impl<C: AsRawSocket> AsRawSocket for BufConnection<C> {
+    impl<C: AsRawSocket + ?Sized> AsRawSocket for BufConnection<C> {
         fn as_raw_socket(&self) -> RawSocket {
             self.conn.as_raw_socket()
         }
     }
 }
 
-impl<C: Connection> BufConnection<C> {
+impl<C> BufConnection<C> {
     /// Create a new `BufConnection` from a given connection.
     ///
     /// ## Example
@@ -190,12 +190,14 @@ impl<C: Connection> BufConnection<C> {
         };
 
         Self {
-            conn,
             read_buf,
             write_buf,
+            conn,
         }
     }
+}
 
+impl<C: WriteHalf + ?Sized> BufConnection<C> {
     /// Flush the `WriteBuffer` to the underlying connection.
     ///
     /// This will flush the `WriteBuffer` to the underlying connection,
@@ -298,7 +300,9 @@ impl<C: Connection> BufConnection<C> {
 
         Ok(total_len)
     }
+}
 
+impl<C: ReadHalf + ?Sized> BufConnection<C> {
     /// Copy from the read buffer into the given slice.
     fn copy_into_slice(&mut self, slice: &mut [u8]) -> usize {
         let amt = cmp::min(slice.len(), self.read_buf.readable_slice().len());
@@ -433,47 +437,7 @@ impl<C: Connection> BufConnection<C> {
     }
 }
 
-impl<Conn: Connection> Connection for BufConnection<Conn> {
-    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        self.send_slices_impl(slices, move |this, slices, true_write| {
-            if true_write {
-                this.conn.send_slices_and_fds(slices, fds)
-            } else {
-                this.write_buf.fds.append(fds);
-                Ok(0)
-            }
-        })
-    }
-
-    fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
-        self.send_slices_impl(slices, |this, slice, true_write| {
-            if true_write {
-                this.conn.send_slices(slice)
-            } else {
-                Ok(0)
-            }
-        })
-    }
-
-    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
-        // if we can't fit the slice in the current write buffer,
-        // flush the buffer
-        if slice.len() >= self.write_buf.spare_capacity() {
-            self.flush_write_buffer()?;
-        }
-
-        // if the slice will never fit in the current write buffer,
-        // forward the call to the underlying connection
-        if slice.len() > self.write_buf.capacity() {
-            return self.conn.send_slice(slice);
-        }
-
-        // copy the slice into the write buffer
-        self.copy_slice_to_buffer(slice);
-
-        Ok(slice.len())
-    }
-
+impl<Conn: ReadHalf + ?Sized> ReadHalf for BufConnection<Conn> {
     fn recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
@@ -515,14 +479,91 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
             conn.non_blocking_recv_slices_and_fds(slices, fds)
         })
     }
+}
+
+impl<Conn: WriteHalf + ?Sized> WriteHalf for BufConnection<Conn> {
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        self.send_slices_impl(slices, move |this, slices, true_write| {
+            if true_write {
+                this.conn.send_slices_and_fds(slices, fds)
+            } else {
+                this.write_buf.fds.append(fds);
+                Ok(0)
+            }
+        })
+    }
+
+    fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
+        self.send_slices_impl(slices, |this, slice, true_write| {
+            if true_write {
+                this.conn.send_slices(slice)
+            } else {
+                Ok(0)
+            }
+        })
+    }
+
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        // if we can't fit the slice in the current write buffer,
+        // flush the buffer
+        if slice.len() >= self.write_buf.spare_capacity() {
+            self.flush_write_buffer()?;
+        }
+
+        // if the slice will never fit in the current write buffer,
+        // forward the call to the underlying connection
+        if slice.len() > self.write_buf.capacity() {
+            return self.conn.send_slice(slice);
+        }
+
+        // copy the slice into the write buffer
+        self.copy_slice_to_buffer(slice);
+
+        Ok(slice.len())
+    }
 
     fn flush(&mut self) -> Result<()> {
         self.flush_write_buffer()?;
         self.conn.flush()
     }
+}
 
-    fn shutdown(&self) -> Result<()> {
-        self.conn.shutdown()
+impl<Conn: SplitConnection> SplitConnection for BufConnection<Conn> {
+    type ReadHalf = halves::BufReadHalf<Conn::ReadHalf>;
+    type WriteHalf = halves::BufWriteHalf<Conn::WriteHalf>;
+
+    fn split(self) -> Result<(Self::ReadHalf, Self::WriteHalf)> {
+        // split out the fields
+        let Self {
+            read_buf,
+            write_buf,
+            conn
+        } = self;
+
+        // split the connection
+        let (read, write) = conn.split()?;
+
+        // create two new BufConnections that each use one of the former buffers
+        let read = BufConnection {
+            read_buf,
+            write_buf: WriteBuffer {
+                buf: Box::new([]),
+                writable: 0,
+                fds: Vec::new(),
+            },
+            conn: read,
+        };
+        let write = BufConnection {
+            read_buf: ReadBuffer { buf: Box::new([]), valid_range: 0..0, fds: Vec::new() },
+            write_buf,
+            conn: write,
+        };
+
+        // return in wrappers that prevent access to underlying buffers
+        Ok((
+            halves::BufReadHalf(read),
+            halves::BufWriteHalf(write),
+        ))
     }
 }
 
@@ -581,6 +622,58 @@ impl WriteBuffer {
     /// Get the total capacity of the buffer.
     fn capacity(&self) -> usize {
         self.buf.len()
+    }
+}
+
+mod halves {
+    use crate::{Result, Fd, connection::{IoSlice, IoSliceMut, ReadHalf, WriteHalf}};
+    use super::BufConnection;
+    use alloc::vec::Vec;
+
+    #[doc(hidden)]
+    pub struct BufReadHalf<C: ?Sized>(pub(crate) BufConnection<C>);
+
+    #[doc(hidden)]
+    pub struct BufWriteHalf<C: ?Sized>(pub(crate) BufConnection<C>);
+
+    impl<C: ReadHalf + ?Sized> ReadHalf for BufReadHalf<C> {
+        fn non_blocking_recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+            self.0.non_blocking_recv_slice_and_fds(slice, fds)
+        }
+
+        fn non_blocking_recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<crate::Fd>) -> Result<usize> {
+            self.0.non_blocking_recv_slices_and_fds(slices, fds)
+        }
+
+        fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+            self.0.recv_slice(slice)
+        }
+
+        fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+            self.0.recv_slice_and_fds(slice, fds)
+        }
+
+        fn recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+            self.0.recv_slices_and_fds(slices, fds)
+        }
+    }
+
+    impl<C: WriteHalf + ?Sized> WriteHalf for BufWriteHalf<C> {
+        fn flush(&mut self) -> Result<()> {
+            self.0.flush()
+        }
+
+        fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+            self.0.send_slice(slice)
+        }
+
+        fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
+            self.0.send_slices(slices)
+        }
+
+        fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+            self.0.send_slices_and_fds(slices, fds)
+        }
     }
 }
 

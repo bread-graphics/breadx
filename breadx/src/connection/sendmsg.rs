@@ -2,7 +2,7 @@
 
 #![cfg(unix)]
 
-use super::Connection;
+use super::{ReadHalf, WriteHalf, ClonableConnection};
 use crate::{Error, Fd, Result};
 
 use alloc::vec::Vec;
@@ -171,67 +171,65 @@ impl SendmsgConnection {
 
 // so we can duplicate the impl for owned and &
 macro_rules! impl_sendmsg_conn {
-    ($($inner: tt)*) => {
-        fn send_slices_and_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-            self.sendmsg(iov, fds)
+    ($tyname: ty, $($inner: tt)*) => {
+        impl WriteHalf for $tyname {
+            fn send_slices_and_fds(&mut self, iov: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+                self.sendmsg(iov, fds)
+            }
+
+            fn send_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
+                // since we don't have file descriptors, we can just skip the
+                // special stuff and use write_vectored
+                ($($inner)* self.stream).write_vectored(iov).map_err(Error::io)
+            }
+
+            fn send_slice(&mut self, buffer: &[u8]) -> Result<usize> {
+                // same as above
+                ($($inner)* self.stream).write(buffer).map_err(Error::io)
+            }
+
+            fn flush(&mut self) -> Result<()> {
+                ($($inner)* self.stream).flush().map_err(Error::io)
+            }
         }
 
-        fn send_slices(&mut self, iov: &[IoSlice<'_>]) -> Result<usize> {
-            // since we don't have file descriptors, we can just skip the
-            // special stuff and use write_vectored
-            ($($inner)* self.stream).write_vectored(iov).map_err(Error::io)
-        }
+        impl ReadHalf for $tyname {
+            fn recv_slices_and_fds(
+                &mut self,
+                slices: &mut [IoSliceMut<'_>],
+                fds: &mut Vec<Fd>,
+            ) -> Result<usize> {
+                // use our recvmsg helper function
+                self.recvmsg(slices, fds, MsgFlags::empty())
+            }
 
-        fn send_slice(&mut self, buffer: &[u8]) -> Result<usize> {
-            // same as above
-            ($($inner)* self.stream).write(buffer).map_err(Error::io)
-        }
+            fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+                let span = tracing::trace_span!("recv_slice");
+                let _enter = span.enter();
 
-        fn recv_slices_and_fds(
-            &mut self,
-            slices: &mut [IoSliceMut<'_>],
-            fds: &mut Vec<Fd>,
-        ) -> Result<usize> {
-            // use our recvmsg helper function
-            self.recvmsg(slices, fds, MsgFlags::empty())
-        }
+                // just use the read() function
+                ($($inner)* self.stream).read(slice).map_err(Error::io)
+            }
 
-        fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
-            let span = tracing::trace_span!("recv_slice");
-            let _enter = span.enter();
-
-            // just use the read() function
-            ($($inner)* self.stream).read(slice).map_err(Error::io)
-        }
-
-        fn flush(&mut self) -> Result<()> {
-            ($($inner)* self.stream).flush().map_err(Error::io)
-        }
-
-        fn non_blocking_recv_slices_and_fds(
-            &mut self,
-            slices: &mut [IoSliceMut<'_>],
-            fds: &mut Vec<Fd>,
-        ) -> Result<usize> {
-            // use the recvmsg function with MSG_DONTWAIT
-            self.recvmsg(slices, fds, MsgFlags::MSG_DONTWAIT)
-        }
-
-        fn shutdown(&self) -> Result<()> {
-            let span = tracing::trace_span!("shutdown");
-            let _guard = span.enter();
-
-            self.stream
-                .shutdown(std::net::Shutdown::Both)
-                .map_err(Error::io)
+            fn non_blocking_recv_slices_and_fds(
+                &mut self,
+                slices: &mut [IoSliceMut<'_>],
+                fds: &mut Vec<Fd>,
+            ) -> Result<usize> {
+                // use the recvmsg function with MSG_DONTWAIT
+                self.recvmsg(slices, fds, MsgFlags::MSG_DONTWAIT)
+            }
         }
     }
 }
 
-impl Connection for SendmsgConnection {
-    impl_sendmsg_conn! { &mut }
-}
+impl_sendmsg_conn! { SendmsgConnection, &mut }
+impl_sendmsg_conn! { &SendmsgConnection, & }
 
-impl Connection for &SendmsgConnection {
-    impl_sendmsg_conn! { & }
+impl ClonableConnection for SendmsgConnection {
+    fn try_clone(&self) -> Result<Self> {
+        Ok(SendmsgConnection {
+            stream: self.stream.try_clone().map_err(Error::io)?,
+        })
+    }
 }

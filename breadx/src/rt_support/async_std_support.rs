@@ -13,7 +13,7 @@ cfg_std_windows! {
 use core::task::{Context, Poll};
 
 use crate::{
-    connection::Connection,
+    connection::{Connection, WriteHalf},
     display::{
         AsyncDisplay, AsyncStatus, BasicDisplay, CanBeAsyncDisplay, DisplayBase, DisplayConnection,
         Interest, RawReply, RawRequest,
@@ -198,7 +198,7 @@ pub fn establish_connect<Conn: Source + Connection>(
         }
 
         // flush the request
-        write_with_mut(&mut registered, Connection::flush).await?;
+        write_with_mut(&mut registered, WriteHalf::flush).await?;
 
         // read until we're finished
         loop {

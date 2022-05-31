@@ -6,7 +6,7 @@ use super::{
     AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
     X11Core,
 };
-use crate::{connection::Connection, Error, InvalidState, Result, ResultExt};
+use crate::{connection::{Connection, WriteHalf}, Error, InvalidState, Result, ResultExt};
 
 use alloc::{sync::Arc, vec, vec::Vec};
 use x11rb_protocol::{
@@ -387,7 +387,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn partial_flush(&mut self) -> Result<AsyncStatus<()>> {
         tracing::trace!("flushing connection");
 
-        match self.conn.with(Connection::flush) {
+        match self.conn.with(WriteHalf::flush) {
             Ok(()) => Ok(AsyncStatus::Ready(())),
             Err(e) if e.would_block() => Ok(AsyncStatus::Write),
             Err(e) => Err(e),
@@ -596,7 +596,7 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
 
     fn flush(&mut self) -> Result<()> {
         // flush connection buffer
-        self.conn.with(Connection::flush)
+        self.conn.with(WriteHalf::flush)
     }
 }
 

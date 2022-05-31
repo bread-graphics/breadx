@@ -5,7 +5,7 @@
 use alloc::vec::Vec;
 use core::{cmp, mem};
 
-use super::{Connection, IoSlice, IoSliceMut};
+use super::{ReadHalf, WriteHalf, IoSlice, IoSliceMut};
 use crate::Fd;
 
 /// It is useful, for testing, to just have a `Connection` that reads and writes from
@@ -39,26 +39,8 @@ impl<'a> TestConnection<'a> {
     }
 }
 
-impl<'a> Connection for TestConnection<'a> {
-    fn send_slices_and_fds(
-        &mut self,
-        slices: &[IoSlice<'_>],
-        fds: &mut Vec<Fd>,
-    ) -> crate::Result<usize> {
-        let mut len = 0;
-
-        // push every slice onto the written_bytes vector
-        for slice in slices {
-            len += slice.len();
-            self.written_bytes.extend_from_slice(&*slice);
-        }
-
-        self.written_fds
-            .extend(mem::take(fds).into_iter().map(Fd::into_raw_fd));
-        Ok(len)
-    }
-
-    fn recv_slices_and_fds(
+impl<'a> ReadHalf for TestConnection<'a> {
+fn recv_slices_and_fds(
         &mut self,
         buffer: &mut [IoSliceMut<'_>],
         fds: &mut Vec<Fd>,
@@ -77,21 +59,37 @@ impl<'a> Connection for TestConnection<'a> {
         Ok(len)
     }
 
-    fn flush(&mut self) -> crate::Result<()> {
-        Ok(())
-    }
-
-    fn shutdown(&self) -> crate::Result<()> {
-        Ok(())
-    }
-
-    fn non_blocking_recv_slices_and_fds(
+fn non_blocking_recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
         fds: &mut Vec<Fd>,
     ) -> crate::Result<usize> {
         self.recv_slices_and_fds(slices, fds)
     }
+}
+
+impl<'a> WriteHalf for TestConnection<'a> {
+    fn send_slices_and_fds(
+        &mut self,
+        slices: &[IoSlice<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> crate::Result<usize> {
+        let mut len = 0;
+
+        // push every slice onto the written_bytes vector
+        for slice in slices {
+            len += slice.len();
+            self.written_bytes.extend_from_slice(&*slice);
+        }
+
+        self.written_fds
+            .extend(mem::take(fds).into_iter().map(Fd::into_raw_fd));
+        Ok(len)
+    } 
+
+    fn flush(&mut self) -> crate::Result<()> {
+        Ok(())
+    } 
 }
 
 pub(crate) fn with_test_connection(

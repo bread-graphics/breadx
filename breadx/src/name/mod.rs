@@ -8,7 +8,7 @@
 //!
 //! [`NameConnection`]: crate::name::NameConnection
 
-use crate::connection::{Connection, StdConnection};
+use crate::connection::{ReadHalf, WriteHalf, StdConnection, ClonableConnection};
 use crate::{Error, Fd, Result};
 
 use core::fmt;
@@ -251,11 +251,7 @@ macro_rules! forward_impl {
     }
 }
 
-impl Connection for NameConnection {
-    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        forward_impl!(&mut self, send_slices_and_fds, slices, fds)
-    }
-
+impl ReadHalf for NameConnection {
     fn recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
@@ -264,28 +260,12 @@ impl Connection for NameConnection {
         forward_impl!(&mut self, recv_slices_and_fds, slices, fds)
     }
 
-    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
-        forward_impl!(&mut self, send_slices, slices)
-    }
-
-    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
-        forward_impl!(&mut self, send_slice, slice)
-    }
-
     fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
         forward_impl!(&mut self, recv_slice_and_fds, slice, fds)
     }
 
     fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
         forward_impl!(&mut self, recv_slice, slice)
-    }
-
-    fn flush(&mut self) -> Result<()> {
-        forward_impl!(&mut self, flush,)
-    }
-
-    fn shutdown(&self) -> Result<()> {
-        forward_impl!(&self, shutdown,)
     }
 
     fn non_blocking_recv_slice_and_fds(
@@ -305,11 +285,25 @@ impl Connection for NameConnection {
     }
 }
 
-impl Connection for &NameConnection {
+impl WriteHalf for NameConnection {
     fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        forward_impl!(&self, send_slices_and_fds, slices, fds)
+        forward_impl!(&mut self, send_slices_and_fds, slices, fds)
     }
 
+    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
+        forward_impl!(&mut self, send_slices, slices)
+    }
+
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        forward_impl!(&mut self, send_slice, slice)
+    } 
+
+    fn flush(&mut self) -> Result<()> {
+        forward_impl!(&mut self, flush,)
+    } 
+}
+
+impl ReadHalf for &NameConnection {
     fn recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
@@ -318,28 +312,12 @@ impl Connection for &NameConnection {
         forward_impl!(&self, recv_slices_and_fds, slices, fds)
     }
 
-    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
-        forward_impl!(&self, send_slices, slices)
-    }
-
-    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
-        forward_impl!(&self, send_slice, slice)
-    }
-
     fn recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
         forward_impl!(&self, recv_slice_and_fds, slice, fds)
     }
 
     fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
         forward_impl!(&self, recv_slice, slice)
-    }
-
-    fn flush(&mut self) -> Result<()> {
-        forward_impl!(&self, flush,)
-    }
-
-    fn shutdown(&self) -> Result<()> {
-        forward_impl!(&self, shutdown,)
     }
 
     fn non_blocking_recv_slice_and_fds(
@@ -356,5 +334,43 @@ impl Connection for &NameConnection {
         fds: &mut Vec<Fd>,
     ) -> Result<usize> {
         forward_impl!(&self, non_blocking_recv_slices_and_fds, slices, fds)
+    }
+}
+
+impl WriteHalf for &NameConnection {
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        forward_impl!(&self, send_slices_and_fds, slices, fds)
+    } 
+
+    fn send_slices(&mut self, slices: &[crate::connection::IoSlice<'_>]) -> Result<usize> {
+        forward_impl!(&self, send_slices, slices)
+    }
+
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        forward_impl!(&self, send_slice, slice)
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        forward_impl!(&self, flush,)
+    }
+}
+
+impl ClonableConnection for NameConnection {
+    fn try_clone(&self) -> Result<Self> {
+        match self.inner {
+            Inner::Tcp(ref connection) => {
+                let connection = connection.try_clone()?;
+                Ok(NameConnection {
+                    inner: Inner::Tcp(connection),
+                })
+            }
+            #[cfg(unix)]
+            Inner::Unix(ref connection) => {
+                let connection = connection.try_clone()?;
+                Ok(NameConnection {
+                    inner: Inner::Unix(connection),
+                })
+            }
+        }
     }
 }

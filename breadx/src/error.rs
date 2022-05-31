@@ -200,9 +200,9 @@ impl Error {
 cfg_std! {
     impl Error {
         pub(crate) fn io(io: IoError) -> Self {
-            //if !matches!(io.kind(), ErrorKind::WouldBlock) {
+            if !matches!(io.kind(), ErrorKind::WouldBlock) {
                 tracing::error!("encountered I/O error: {io:?}", io = io);
-            //}
+            }
             Error::from_inner(Inner::Io(io))
         }
     }

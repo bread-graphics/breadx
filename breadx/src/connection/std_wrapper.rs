@@ -2,7 +2,7 @@
 
 #![cfg(feature = "std")]
 
-use super::Connection;
+use super::{ReadHalf, WriteHalf, ClonableConnection};
 use crate::{Error, Fd, Result, ResultExt, Unsupported};
 
 use alloc::vec::Vec;
@@ -65,7 +65,7 @@ cfg_std_windows! {
 /// [`AsRawSocket`]: std::os::windows::io::AsRawSocket
 /// [`NameConnection`]: crate::name::NameConnection
 /// [`SendmsgConnection`]: crate::connection::SendmsgConnection
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
 pub struct StdConnection<C: ?Sized> {
     inner: C,
@@ -225,7 +225,63 @@ cfg_std_windows! {
 // macro to implement items that aren't tied to OS functionality
 // the inner is either & or &mut, so we can implement this for
 // either StdConnection or &StdConnection
-macro_rules! impl_non_os_specific_items {
+macro_rules! impl_read_half {
+    ($($inner: tt)*) => {
+        fn recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            _fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
+            let span = tracing::trace_span!(
+                "{tyname}::recv_slices_and_fds",
+                tyname = type_name::<Self>()
+            );
+            let _enter = span.enter();
+
+            // forward to read_vectored()
+            ($($inner)* self.inner)
+                .read_vectored(slices)
+                .map_err(Error::io)
+                .trace(|amt| {
+                    tracing::trace!("Received {} bytes", amt);
+                })
+        }
+
+        fn recv_slice_and_fds(&mut self, slice: &mut [u8], _fds: &mut Vec<Fd>) -> Result<usize> {
+            let span = tracing::trace_span!(
+                "{tyname}::recv_slice_and_fds",
+                tyname = type_name::<Self>()
+            );
+            let _enter = span.enter();
+
+            // forward to read()
+            ($($inner)* self.inner)
+                .read(slice)
+                .map_err(Error::io)
+                .trace(|amt| {
+                    tracing::trace!("Received {} bytes", amt);
+                })
+        }
+
+        fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
+            let span = tracing::trace_span!(
+                "{tyname}::recv_slice",
+                tyname = type_name::<Self>()
+            );
+            let _enter = span.enter();
+
+            // forward to read()
+            ($($inner)* self.inner)
+                .read(slice)
+                .map_err(Error::io)
+                .trace(|amt| {
+                    tracing::trace!("Received {} bytes", amt);
+                })
+        }
+    }
+}
+
+macro_rules! impl_write_half {
     ($($inner: tt)*) => {
         fn send_slices_and_fds(
             &mut self,
@@ -285,58 +341,6 @@ macro_rules! impl_non_os_specific_items {
                 })
         }
 
-        fn recv_slices_and_fds(
-            &mut self,
-            slices: &mut [IoSliceMut<'_>],
-            _fds: &mut Vec<Fd>,
-        ) -> Result<usize> {
-            let span = tracing::trace_span!(
-                "{tyname}::recv_slices_and_fds",
-                tyname = type_name::<Self>()
-            );
-            let _enter = span.enter();
-
-            // forward to read_vectored()
-            ($($inner)* self.inner)
-                .read_vectored(slices)
-                .map_err(Error::io)
-                .trace(|amt| {
-                    tracing::trace!("Received {} bytes", amt);
-                })
-        }
-
-        fn recv_slice_and_fds(&mut self, slice: &mut [u8], _fds: &mut Vec<Fd>) -> Result<usize> {
-            let span = tracing::trace_span!(
-                "{tyname}::recv_slice_and_fds",
-                tyname = type_name::<Self>()
-            );
-            let _enter = span.enter();
-
-            // forward to read()
-            ($($inner)* self.inner)
-                .read(slice)
-                .map_err(Error::io)
-                .trace(|amt| {
-                    tracing::trace!("Received {} bytes", amt);
-                })
-        }
-
-        fn recv_slice(&mut self, slice: &mut [u8]) -> Result<usize> {
-            let span = tracing::trace_span!(
-                "{tyname}::recv_slice",
-                tyname = type_name::<Self>()
-            );
-            let _enter = span.enter();
-
-            // forward to read()
-            ($($inner)* self.inner)
-                .read(slice)
-                .map_err(Error::io)
-                .trace(|amt| {
-                    tracing::trace!("Received {} bytes", amt);
-                })
-        }
-
         fn flush(&mut self) -> Result<()> {
             let span = tracing::trace_span!(
                 "{tyname}::flush",
@@ -353,8 +357,6 @@ cfg_std_unix! {
     // avoid duplication in implementation
     macro_rules! impl_items_unix {
         ($($inner: tt)*) => {
-            impl_non_os_specific_items! { $($inner)* }
-
             fn non_blocking_recv_slices_and_fds(
                 &mut self,
                 slices: &mut [IoSliceMut<'_>],
@@ -402,35 +404,37 @@ cfg_std_unix! {
                     tracing::trace!("Received {} bytes", amt);
                 })
             }
-
-            fn shutdown(&self) -> Result<()> {
-                let span = tracing::trace_span!(
-                    "{tyname}::shutdown",
-                    tyname = type_name::<Self>()
-                );
-                let _enter = span.enter();
-
-                // use the shutdown() function, shut down both ends
-                let raw_fd = self.inner.as_raw_fd();
-                socket::shutdown(raw_fd, socket::Shutdown::Both).map_err(Error::nix)
-            }
         }
     }
 
-    impl<C: Read + Write + AsRawFd + ?Sized> Connection for StdConnection<C> {
+    impl<C: Read + AsRawFd + ?Sized> ReadHalf for StdConnection<C> {
+        impl_read_half! { &mut }
         impl_items_unix! { &mut }
     }
 
-    impl<'a, C: AsRawFd + ?Sized> Connection for &'a StdConnection<C>
-        where &'a C: Read + Write
-    {
+    impl<C: Write + AsRawFd + ?Sized> WriteHalf for StdConnection<C> {
+        impl_write_half! { &mut }
+    }
+
+    impl<'a, C: AsRawFd + ?Sized> ReadHalf for &'a StdConnection<C>
+        where &'a C: Read {
+        impl_read_half! { & }
         impl_items_unix! { & }
+    }
+
+    impl<'a, C: AsRawFd + ?Sized> WriteHalf for &'a StdConnection<C>
+        where &'a C: Write {
+        impl_write_half! { & }
     }
 }
 
 cfg_std_windows! {
-    impl<C: Read + Write + AsRawSocket> Connection for StdConnection<C> {
-        impl_non_os_specific_items! { &mut }
+    impl<C: Write + AsRawSocket> WriteHalf for StdConnection<C> {
+        impl_write_half! { &mut }
+    }
+
+    impl<C: Read + AsRawSocket> ReadHalf for StdConnection<C> {
+        impl_read_half! { &mut }
 
         fn non_blocking_recv_slices_and_fds(
             &mut self,
@@ -444,17 +448,12 @@ cfg_std_windows! {
                 self.recv_slices_and_fds(slices, fds)
             }
         }
-
-        fn shutdown(&self) -> Result<()> {
-            // TODO: sockref may be unsafe to use in the future
-            socket2::SockRef::from(self).shutdown(net::Shutdown::Both).map_err(Error::io)
-        }
     }
 
-    impl<'a, C: AsRawSocket> Connection for &'a StdConnection<C>
-        where &'a C: Read + Write
+    impl<'a, C: AsRawSocket> ReadHalf for &'a StdConnection<C>
+        where &'a C: Read
     {
-        impl_non_os_specific_items! { & }
+        impl_read_half! { & }
 
         fn non_blocking_recv_slices_and_fds(
             &mut self,
@@ -468,12 +467,38 @@ cfg_std_windows! {
                 self.recv_slices_and_fds(slices, fds)
             }
         }
+    }
 
-        fn shutdown(&self) -> Result<()> {
-            // TODO: sockref may be unsafe to use in the future
-            socket2::SockRef::from(*self).shutdown(net::Shutdown::Both).map_err(Error::io)
-        }
+    impl<'a, C: AsRawSocket> WriteHalf for &'a StdConnection<C>
+        where &'a C: Write {
+        impl_write_half! { &}
     }
 }
 
-// TODO: implement Connection for Windows and WASI
+// TODO: this system could cover more cases than just the ones we have
+// could implement SplitConnection for all Conn: AsRawFd that split it
+// off into an Fd-based reader or writer
+// but that's complicated and potentially unsound, this is safer but
+// less flexible
+macro_rules! impl_clonable_conn {
+    ($($(#[$meta: meta])? $tys: ty),*) => {
+        $(
+            $(#[$meta])?
+            impl ClonableConnection for StdConnection<$tys> {
+                fn try_clone(&self) -> Result<Self> {
+                    Ok(StdConnection {
+                        inner: self.inner.try_clone().map_err(Error::io)?
+                    })
+                }
+            }
+        )*
+    }
+}
+
+impl_clonable_conn! {
+    std::net::TcpStream,
+    #[cfg(unix)]
+    std::os::unix::net::UnixStream
+}
+
+// TODO: implement Connection for WASI
