@@ -44,8 +44,8 @@
 //! [`BufConnection`]: crate::connection::BufConnection
 
 use crate::{Error, Fd, InvalidState, Result};
-use alloc::{boxed::Box, vec::Vec, rc::Rc, sync::Arc};
 use __private::Sealed;
+use alloc::{boxed::Box, rc::Rc, sync::Arc, vec::Vec};
 
 mod buffered;
 pub use buffered::BufConnection;
@@ -78,11 +78,11 @@ cfg_no_std! {
 }
 
 /// The "read half" of a [`Connection`].
-/// 
+///
 /// This type contains the reading methods necessary for a [`Connection`]. When
 /// used on its own, it is intended to be used in the case where a [`SplitConnection`]
 /// is split into two halves.
-/// 
+///
 /// [`Connection`]: crate::connection::Connection
 /// [`SplitConnection`]: crate::connection::SplitConnection
 pub trait ReadHalf {
@@ -193,11 +193,11 @@ pub trait ReadHalf {
 }
 
 /// The "write half" of a [`Connection`].
-/// 
+///
 /// This type contains the writing methods necessary for a [`Connection`]. When
 /// used on its own, it is intended to be used in the case where a [`SplitConnection`]
 /// is split into two halves.
-/// 
+///
 /// [`Connection`]: crate::connection::Connection
 /// [`SplitConnection`]: crate::connection::SplitConnection
 pub trait WriteHalf {
@@ -341,11 +341,19 @@ impl<C: WriteHalf + ?Sized> WriteHalf for &mut C {
 // implement for Box<impl Connection>
 
 impl<C: ReadHalf + ?Sized> ReadHalf for Box<C> {
-    fn non_blocking_recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (**self).non_blocking_recv_slice_and_fds(slice, fds)
     }
 
-    fn non_blocking_recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (**self).non_blocking_recv_slices_and_fds(slices, fds)
     }
 
@@ -357,7 +365,11 @@ impl<C: ReadHalf + ?Sized> ReadHalf for Box<C> {
         (**self).recv_slice_and_fds(slice, fds)
     }
 
-    fn recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (**self).recv_slices_and_fds(slices, fds)
     }
 }
@@ -382,12 +394,22 @@ impl<C: WriteHalf + ?Sized> WriteHalf for Box<C> {
 
 // impl for Rc<impl &Connection>
 impl<C: ?Sized> ReadHalf for Rc<C>
-    where for<'a> &'a C: ReadHalf {
-    fn non_blocking_recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+where
+    for<'a> &'a C: ReadHalf,
+{
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).non_blocking_recv_slice_and_fds(slice, fds)
     }
 
-    fn non_blocking_recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).non_blocking_recv_slices_and_fds(slices, fds)
     }
 
@@ -399,13 +421,19 @@ impl<C: ?Sized> ReadHalf for Rc<C>
         (&**self).recv_slice_and_fds(slice, fds)
     }
 
-    fn recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).recv_slices_and_fds(slices, fds)
     }
 }
 
 impl<C: ?Sized> WriteHalf for Rc<C>
-    where for<'a> &'a C: WriteHalf {
+where
+    for<'a> &'a C: WriteHalf,
+{
     fn flush(&mut self) -> Result<()> {
         (&**self).flush()
     }
@@ -426,12 +454,22 @@ impl<C: ?Sized> WriteHalf for Rc<C>
 // impl for Arc<impl &Connection>
 
 impl<C: ?Sized> ReadHalf for Arc<C>
-    where for<'a> &'a C: ReadHalf {
-    fn non_blocking_recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+where
+    for<'a> &'a C: ReadHalf,
+{
+    fn non_blocking_recv_slice_and_fds(
+        &mut self,
+        slice: &mut [u8],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).non_blocking_recv_slice_and_fds(slice, fds)
     }
 
-    fn non_blocking_recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn non_blocking_recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).non_blocking_recv_slices_and_fds(slices, fds)
     }
 
@@ -443,12 +481,19 @@ impl<C: ?Sized> ReadHalf for Arc<C>
         (&**self).recv_slice_and_fds(slice, fds)
     }
 
-    fn recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+    fn recv_slices_and_fds(
+        &mut self,
+        slices: &mut [IoSliceMut<'_>],
+        fds: &mut Vec<Fd>,
+    ) -> Result<usize> {
         (&**self).recv_slices_and_fds(slices, fds)
     }
 }
 
-impl<C: ?Sized> WriteHalf for Arc<C> where for<'a> &'a C: WriteHalf {
+impl<C: ?Sized> WriteHalf for Arc<C>
+where
+    for<'a> &'a C: WriteHalf,
+{
     fn flush(&mut self) -> Result<()> {
         (&**self).flush()
     }

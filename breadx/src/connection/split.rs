@@ -1,13 +1,13 @@
 // MIT/Apache2 License
 
-use super::{ReadHalf, WriteHalf, Connection};
+use super::{Connection, ReadHalf, WriteHalf};
 use crate::Result;
 
 /// A type of connection that can be split into a write half and a read half.
-/// 
+///
 /// This allows for certain types of [`Display`]s to, for instance, read an
 /// event while also writing to the same connection.
-/// 
+///
 /// [`Display`]: crate::Display
 pub trait SplitConnection: Connection {
     /// The read half that this connection splits into.
@@ -20,10 +20,10 @@ pub trait SplitConnection: Connection {
 }
 
 /// A connection that can be cloned, potentially with an error.
-/// 
+///
 /// This simplifies implementation of [`SplitConnection`] by allowing the
 /// [`SplitConnection`] to be implemented for types that can be cloned.
-/// 
+///
 /// [`SplitConnection`]: crate::connection::SplitConnection
 pub trait ClonableConnection: Connection + Sized {
     /// Try to clone this connection.

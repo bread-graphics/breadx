@@ -337,7 +337,7 @@ impl fmt::Debug for Error {
                     }
                     Inner::SetupFailed(SetupFailure::Failed(fail)) => {
                         let reason = match str::from_utf8(&fail.reason) {
-                            Ok(reason) => reason, 
+                            Ok(reason) => reason,
                             Err(_) => "bad utf-8",
                         };
                         write!(f, "SetupFailed: {}", reason)

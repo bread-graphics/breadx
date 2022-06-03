@@ -6,7 +6,10 @@ use super::{
     AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
     X11Core,
 };
-use crate::{connection::{Connection, WriteHalf}, Error, InvalidState, Result, ResultExt};
+use crate::{
+    connection::{Connection, WriteHalf},
+    Error, InvalidState, Result, ResultExt,
+};
 
 use alloc::{sync::Arc, vec, vec::Vec};
 use x11rb_protocol::{

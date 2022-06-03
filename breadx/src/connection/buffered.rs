@@ -7,8 +7,8 @@ use alloc::vec::Vec;
 use core::cmp;
 use core::ops::Range;
 
-use super::{ReadHalf, WriteHalf, SplitConnection};
 use super::{new_io_slice, new_io_slice_mut};
+use super::{ReadHalf, SplitConnection, WriteHalf};
 use crate::connection::{IoSlice, IoSliceMut};
 use crate::{Fd, Result};
 
@@ -537,7 +537,7 @@ impl<Conn: SplitConnection> SplitConnection for BufConnection<Conn> {
         let Self {
             read_buf,
             write_buf,
-            conn
+            conn,
         } = self;
 
         // split the connection
@@ -554,16 +554,17 @@ impl<Conn: SplitConnection> SplitConnection for BufConnection<Conn> {
             conn: read,
         };
         let write = BufConnection {
-            read_buf: ReadBuffer { buf: Box::new([]), valid_range: 0..0, fds: Vec::new() },
+            read_buf: ReadBuffer {
+                buf: Box::new([]),
+                valid_range: 0..0,
+                fds: Vec::new(),
+            },
             write_buf,
             conn: write,
         };
 
         // return in wrappers that prevent access to underlying buffers
-        Ok((
-            halves::BufReadHalf(read),
-            halves::BufWriteHalf(write),
-        ))
+        Ok((halves::BufReadHalf(read), halves::BufWriteHalf(write)))
     }
 }
 
@@ -626,8 +627,11 @@ impl WriteBuffer {
 }
 
 mod halves {
-    use crate::{Result, Fd, connection::{IoSlice, IoSliceMut, ReadHalf, WriteHalf}};
     use super::BufConnection;
+    use crate::{
+        connection::{IoSlice, IoSliceMut, ReadHalf, WriteHalf},
+        Fd, Result,
+    };
     use alloc::vec::Vec;
 
     #[doc(hidden)]
@@ -637,11 +641,19 @@ mod halves {
     pub struct BufWriteHalf<C: ?Sized>(pub(crate) BufConnection<C>);
 
     impl<C: ReadHalf + ?Sized> ReadHalf for BufReadHalf<C> {
-        fn non_blocking_recv_slice_and_fds(&mut self, slice: &mut [u8], fds: &mut Vec<Fd>) -> Result<usize> {
+        fn non_blocking_recv_slice_and_fds(
+            &mut self,
+            slice: &mut [u8],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
             self.0.non_blocking_recv_slice_and_fds(slice, fds)
         }
 
-        fn non_blocking_recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<crate::Fd>) -> Result<usize> {
+        fn non_blocking_recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<crate::Fd>,
+        ) -> Result<usize> {
             self.0.non_blocking_recv_slices_and_fds(slices, fds)
         }
 
@@ -653,7 +665,11 @@ mod halves {
             self.0.recv_slice_and_fds(slice, fds)
         }
 
-        fn recv_slices_and_fds(&mut self, slices: &mut [IoSliceMut<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        fn recv_slices_and_fds(
+            &mut self,
+            slices: &mut [IoSliceMut<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
             self.0.recv_slices_and_fds(slices, fds)
         }
     }
@@ -671,7 +687,11 @@ mod halves {
             self.0.send_slices(slices)
         }
 
-        fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        fn send_slices_and_fds(
+            &mut self,
+            slices: &[IoSlice<'_>],
+            fds: &mut Vec<Fd>,
+        ) -> Result<usize> {
             self.0.send_slices_and_fds(slices, fds)
         }
     }
