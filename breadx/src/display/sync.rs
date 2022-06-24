@@ -41,7 +41,7 @@ impl<Dpy: DisplayBase> From<Dpy> for SyncDisplay<Dpy> {
             inner: Mutex::new(bd),
             waiters: Waiters {
                 #[cfg(feature = "async")]
-                wakers: make_waker_queue(), 
+                wakers: make_waker_queue(),
             },
         }
     }
@@ -50,7 +50,11 @@ impl<Dpy: DisplayBase> From<Dpy> for SyncDisplay<Dpy> {
 #[cfg(all(feature = "async", feature = "std"))]
 fn make_waker_queue() -> ConcurrentQueue<Waker> {
     // if the user wants an unbounded queue, oblige them
-    if std::env::var_os("BREADX_UNBOUNDED_WAKER_QUEUE").as_ref().and_then(|t| t.to_str()) == Some("1") {
+    if std::env::var_os("BREADX_UNBOUNDED_WAKER_QUEUE")
+        .as_ref()
+        .and_then(|t| t.to_str())
+        == Some("1")
+    {
         ConcurrentQueue::unbounded()
     } else {
         ConcurrentQueue::bounded(1024)
@@ -74,7 +78,7 @@ impl<Dpy: ?Sized> SyncDisplay<Dpy> {
     fn with_inner_mut<R>(&mut self, f: impl FnOnce(&mut Dpy) -> R) -> R {
         let res = f(self.inner.get_mut());
         // don't need to signal, &mut indicates that no one has an
-        // & reference == no wakers 
+        // & reference == no wakers
         res
     }
 
@@ -125,7 +129,7 @@ impl<Dpy: ?Sized> SyncDisplay<Dpy> {
             }
             None => {
                 self.waiters.push(ctx.waker());
-                Poll::Pending 
+                Poll::Pending
             }
         }
     }
