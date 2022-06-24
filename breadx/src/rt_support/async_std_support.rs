@@ -20,7 +20,7 @@ use crate::{
     },
     Error, NameConnection, Result,
 };
-use alloc::{string::ToString, vec, vec::Vec};
+use alloc::{string::ToString, sync::Arc, vec, vec::Vec};
 use async_io::Async;
 use core::future::Future;
 use tracing::Instrument;
@@ -267,7 +267,7 @@ async fn read_with_mut<D, R: Default>(
 // trait forwarding
 
 impl<D: DisplayBase> DisplayBase for Async<D> {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         self.get_ref().setup()
     }
 
@@ -288,7 +288,7 @@ impl<'lt, D: DisplayBase> DisplayBase for &'lt Async<D>
 where
     &'lt D: DisplayBase,
 {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         self.get_ref().setup()
     }
 

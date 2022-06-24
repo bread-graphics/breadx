@@ -531,7 +531,7 @@ cfg_std_windows! {
 }
 
 impl<Conn: Connection> DisplayBase for BasicDisplay<Conn> {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         &self.setup
     }
 
