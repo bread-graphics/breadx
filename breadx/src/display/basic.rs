@@ -3,8 +3,8 @@
 use core::task::Waker;
 
 use super::{
-    AsyncStatus, Display, DisplayBase, ExtensionMap, Poisonable, Prefetch, RawReply, RawRequest,
-    X11Core,
+    AsyncStatus, BlockingStrategy, Display, DisplayBase, ExtensionMap, Poisonable, PollingStrategy,
+    Prefetch, RawReply, RawRequest, Strategy, X11Core,
 };
 use crate::{
     connection::{Connection, WriteHalf},
@@ -25,8 +25,6 @@ use x11rb_protocol::{
     x11_utils::ExtensionInformation,
 };
 
-use impl_details::{BlockingStrategy, PollingStrategy, Strategy};
-
 cfg_std! {
     use crate::{connection::BufConnection, NameConnection};
     use core::mem;
@@ -34,9 +32,8 @@ cfg_std! {
 }
 
 cfg_async! {
-    use super::CanBeAsyncDisplay;
+    use super::{CanBeAsyncDisplay, NonBlockingStrategy};
     use core::task::Context;
-    use impl_details::NonBlockingStrategy;
 }
 
 cfg_std_unix! {
@@ -205,7 +202,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     }
 
     /// Wait for a packet from the server, using the given strategy.
-    fn wait(&mut self, strategy: &mut impl Strategy<Conn>) -> Result<AsyncStatus<()>> {
+    fn wait(&mut self, strategy: &mut impl Strategy<Conn, Self>) -> Result<AsyncStatus<()>> {
         let span = tracing::debug_span!("wait", strategy = strategy.description());
         let _enter = span.enter();
 
@@ -238,7 +235,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn fetch_reply(
         &mut self,
         seq: u64,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<RawReply>> {
         let span = tracing::trace_span!("fetch_reply", seq = seq);
         let _enter = span.enter();
@@ -258,7 +255,10 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     }
 
     /// Get the latest event from the server, using the given strategy.
-    fn fetch_event(&mut self, strategy: &mut impl Strategy<Conn>) -> Result<AsyncStatus<Event>> {
+    fn fetch_event(
+        &mut self,
+        strategy: &mut impl Strategy<Conn, Self>,
+    ) -> Result<AsyncStatus<Event>> {
         mtry!(self.partial_flush());
 
         loop {
@@ -275,7 +275,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn prefetch_maximum_length(
         &mut self,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<(bool, usize)>> {
         tracing::info!("prefetching maximum length from server");
 
@@ -308,7 +308,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn bigreq(
         &mut self,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<(bool, usize)>> {
         let span = tracing::debug_span!("bigreq");
         let _enter = span.enter();
@@ -346,7 +346,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         &mut self,
         name: &'static str,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<Option<ExtensionInformation>>> {
         tracing::info!("prefetching extension {} from server", name);
 
@@ -370,7 +370,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         &mut self,
         name: &'static str,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<ExtensionInformation>> {
         let span = tracing::debug_span!("extension_info");
         let _enter = span.enter();
@@ -401,7 +401,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn partial_synchronize(
         &mut self,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<()>> {
         tracing::debug!("trying for partial synchronization");
 
@@ -422,7 +422,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         &mut self,
         request: &mut RawRequest<'_, '_>,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<u64>> {
         let span = tracing::debug_span!("format_request", strategy = strategy.description());
         let _enter = span.enter();
@@ -488,7 +488,7 @@ impl<Conn: Connection> BasicDisplay<Conn> {
     fn partial_generate_xid(
         &mut self,
         ctx: Option<&Waker>,
-        strategy: &mut impl Strategy<Conn>,
+        strategy: &mut impl Strategy<Conn, Self>,
     ) -> Result<AsyncStatus<u32>> {
         loop {
             if let Some(id) = self.core.generate_xid() {
@@ -644,130 +644,6 @@ cfg_async! {
             _ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
             self.fetch_reply(seq, &mut NonBlockingStrategy)
-        }
-    }
-}
-
-mod impl_details {
-    use alloc::vec::Vec;
-    use core::task::Waker;
-
-    cfg_async! {
-        use core::task::Context;
-    }
-
-    use crate::{
-        connection::Connection,
-        display::{prefetch::PrefetchTarget, AsyncStatus, Prefetch},
-        Fd, Result,
-    };
-
-    use super::BasicDisplay;
-
-    /// Whether we should use a non-blocking strategy or a blocking
-    /// strategy for waiting for events.
-    pub(crate) trait Strategy<Conn> {
-        /// Read in slices from the connection.
-        fn read_slices(
-            &mut self,
-            conn: &mut Conn,
-            slice: &mut [u8],
-            fds: &mut Vec<Fd>,
-        ) -> Result<usize>;
-
-        /// Process a prefetch item.
-        fn prefetch<'p, P: PrefetchTarget>(
-            &mut self,
-            display: &mut BasicDisplay<Conn>,
-            prefetch: &'p mut Prefetch<P>,
-            ctx: Option<&Waker>,
-        ) -> Result<AsyncStatus<&'p P::Target>>;
-
-        /// Strategy description for tracing output.
-        fn description(&self) -> &'static str;
-    }
-
-    /// Always assume that we are blocking.
-    pub(crate) struct BlockingStrategy;
-
-    impl<Conn: Connection> Strategy<Conn> for BlockingStrategy {
-        fn read_slices(
-            &mut self,
-            conn: &mut Conn,
-            slice: &mut [u8],
-            fds: &mut Vec<Fd>,
-        ) -> Result<usize> {
-            conn.recv_slice_and_fds(slice, fds)
-        }
-
-        fn prefetch<'p, P: PrefetchTarget>(
-            &mut self,
-            display: &mut BasicDisplay<Conn>,
-            prefetch: &'p mut Prefetch<P>,
-            _ctx: Option<&Waker>,
-        ) -> Result<AsyncStatus<&'p P::Target>> {
-            prefetch.evaluate(display).map(AsyncStatus::Ready)
-        }
-
-        fn description(&self) -> &'static str {
-            "blocking"
-        }
-    }
-
-    /// Assume that we are just polling for a reply or event.
-    pub(crate) struct PollingStrategy;
-
-    impl<Conn: Connection> Strategy<Conn> for PollingStrategy {
-        fn read_slices(
-            &mut self,
-            conn: &mut Conn,
-            slice: &mut [u8],
-            fds: &mut Vec<Fd>,
-        ) -> Result<usize> {
-            conn.non_blocking_recv_slice_and_fds(slice, fds)
-        }
-
-        fn prefetch<'p, P: PrefetchTarget>(
-            &mut self,
-            _display: &mut BasicDisplay<Conn>,
-            _prefetch: &'p mut Prefetch<P>,
-            _ctx: Option<&Waker>,
-        ) -> Result<AsyncStatus<&'p P::Target>> {
-            unreachable!()
-        }
-
-        fn description(&self) -> &'static str {
-            "polling"
-        }
-    }
-
-    cfg_async! {
-        /// Always assume that we are not blocking.
-        pub(crate) struct NonBlockingStrategy;
-
-        impl<Conn: Connection> Strategy<Conn> for NonBlockingStrategy {
-            fn read_slices(
-                &mut self,
-                conn: &mut Conn,
-                slice: &mut [u8],
-                fds: &mut Vec<Fd>,
-            ) -> Result<usize> {
-                conn.non_blocking_recv_slice_and_fds(slice, fds)
-            }
-
-            fn prefetch<'p, P: PrefetchTarget>(
-                &mut self,
-                display: &mut BasicDisplay<Conn>,
-                prefetch: &'p mut Prefetch<P>,
-                ctx: Option<&Waker>,
-            ) -> Result<AsyncStatus<&'p P::Target>> {
-                let mut ctx = Context::from_waker(ctx.unwrap());
-                prefetch.try_evaluate(display, &mut ctx)
-            }
-
-            fn description(&self) -> &'static str {
-                "non-blocking"
-            }
         }
     }
 }

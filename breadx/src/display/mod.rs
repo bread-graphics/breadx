@@ -79,8 +79,13 @@ pub use ext::*;
 mod extension_map;
 pub(crate) use extension_map::ExtensionMap;
 
+mod io;
+
 mod sans_io;
 pub(crate) use sans_io::X11Core;
+
+mod strategy;
+pub(crate) use strategy::{BlockingStrategy, NonBlockingStrategy, PollingStrategy, Strategy};
 
 mod poison;
 pub(crate) use poison::Poisonable;

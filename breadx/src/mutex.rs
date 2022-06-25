@@ -9,7 +9,7 @@ cfg_not_pl! {
 
 /// A wrapper around `std::sync::Mutex` when `parking_lot` is not enabled,
 /// and `parking_lot::Mutex` when it is.
-pub(crate) struct Mutex<T> {
+pub(crate) struct Mutex<T: ?Sized> {
     #[cfg(feature = "pl")]
     mutex: parking_lot::Mutex<T>,
     #[cfg(not(feature = "pl"))]
@@ -46,7 +46,9 @@ cfg_pl! {
                 mutex: parking_lot::Mutex::new(t),
             }
         }
+    }
 
+    impl<T: ?Sized> Mutex<T> {
         pub(crate) fn lock(&self) -> MutexGuard<'_, T> {
             self.mutex.lock()
         }
@@ -120,7 +122,9 @@ cfg_not_pl! {
                 mutex: sync::Mutex::new(t),
             }
         }
+    }
 
+    impl<T: ?Sized> Mutex<T> {
         pub(crate) fn lock(&self) -> MutexGuard<'_, T> {
             lock!(self.mutex.lock())
         }

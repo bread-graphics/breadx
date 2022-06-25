@@ -114,6 +114,7 @@ impl NameConnection {
                         }
                     }
                 }
+                _ => return Err(Error::make_msg("invalid connect address")),
             }
         }
 

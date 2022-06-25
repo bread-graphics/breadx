@@ -108,15 +108,16 @@ fn instruction_into_socket(ci: ConnectAddress<'_>) -> SockAddrStream<'_> {
                             protocol: None,
                         }, SocketMode::Unix));
 
-                    stream::once(future::ready(sock_details)).boxed()
+                    one(sock_details)
                 } else {
                     let _ = path;
-                    stream::once(future::ready(
+                    one(
                         Err(Error::make_unsupported(crate::Unsupported::Socket))
-                    )).boxed()
+                    )
                 }
             }
         }
+        _ => one(Err(Error::make_msg("invalid connect address"))),
     }
 }
 
@@ -126,11 +127,11 @@ fn tcp_ip_addrs(
 ) -> Pin<Box<dyn Stream<Item = Result<SocketAddr>> + Send + '_>> {
     // fast paths that don't involve blocking
     if let Ok(ip) = hostname.parse::<Ipv4Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
+        return one(Ok(SocketAddr::new(ip.into(), port)));
     }
 
     if let Ok(ip) = hostname.parse::<Ipv6Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
+        return one(Ok(SocketAddr::new(ip.into(), port)));
     }
 
     // slow path, use the Unblock struct with ToSocketAddrs
@@ -138,6 +139,10 @@ fn tcp_ip_addrs(
     Unblock::new(move || std::net::ToSocketAddrs::to_socket_addrs(&socket_addr))
         .map(|res| res.map_err(Error::io))
         .boxed()
+}
+
+fn one<'a, T: 'a + Send>(item: T) -> Pin<Box<dyn Stream<Item = T> + Send + 'a>> {
+    stream::once(future::ready(item)).boxed()
 }
 
 struct SocketDetails {

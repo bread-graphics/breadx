@@ -116,7 +116,7 @@ impl<T: PrefetchTarget> Prefetch<T> {
     }
 
     /// Evaluate the prefetch while blocking.
-    pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {
+    pub fn evaluate(&mut self, display: &mut (impl Display + ?Sized)) -> Result<&T::Target> {
         // call all functions in order
         // TODO: handle on_x11_error
         let request = self.request_to_format();
@@ -172,7 +172,7 @@ cfg_async! {
         /// Evaluate the prefetch, but avoid blocking.
         pub fn try_evaluate(
             &mut self,
-            display: &mut impl CanBeAsyncDisplay,
+            display: &mut (impl CanBeAsyncDisplay + ?Sized),
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<&T::Target>> {
             let span = tracing::trace_span!(
