@@ -20,9 +20,7 @@ use std::{
 };
 use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
 
-cfg_std_unix! {
-    use std::os::unix::ffi::OsStrExt;
-}
+cfg_std_unix! {}
 
 #[allow(unused_imports)]
 use crate::Unsupported;
@@ -154,6 +152,7 @@ fn tcp_ip_addrs(
 fn unix_connections(path: PathBuf) -> impl Stream<Item = Result<SockAddr>> + Send {
     use alloc::vec;
     use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
 
     // first, try connecting to the abstract socket (prepend with zero)
     let path_bytes = path.as_os_str().as_bytes();
