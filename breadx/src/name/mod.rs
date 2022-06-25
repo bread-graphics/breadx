@@ -202,7 +202,7 @@ impl NameConnection {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 fn connect_abstract(path: &Path) -> Result<UnixStream> {
     use alloc::vec;
-    use socket2::{SockAddr, Socket, Domain, Type};
+    use socket2::{Domain, SockAddr, Socket, Type};
     use std::{ffi::OsStr, os::unix::ffi::OsStrExt};
 
     // create a name with a zero in front
@@ -215,11 +215,7 @@ fn connect_abstract(path: &Path) -> Result<UnixStream> {
     let sock_addr = SockAddr::unix(abstract_socket)?;
 
     // create socket
-    let sock = Socket::new(
-        Domain::UNIX,
-        Type::STREAM,
-        None
-    )?;
+    let sock = Socket::new(Domain::UNIX, Type::STREAM, None)?;
 
     // connect to the address
     sock.connect(&sock_addr)?;
