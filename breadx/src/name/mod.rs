@@ -11,6 +11,7 @@
 use crate::connection::{Connection, StdConnection};
 use crate::{Error, Fd, Result};
 
+use alloc::format;
 use core::fmt;
 
 use std::io::{IoSlice, IoSliceMut};
@@ -28,6 +29,9 @@ cfg_std_unix! {
 cfg_std_windows! {
     use std::os::windows::io::{AsRawSocket, RawSocket};
 }
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use std::path::Path;
 
 cfg_async! {
     mod nb_connect;
@@ -102,6 +106,15 @@ impl NameConnection {
                 ConnectAddress::Socket(path) => {
                     cfg_if::cfg_if! {
                         if #[cfg(unix)] {
+                            // connect to the abstract socket if we can
+                            #[cfg(any(target_os = "linux", target_os = "android"))]
+                            match connect_abstract(&path) {
+                                Ok(stream) => return Ok(Self::from_unix_stream(stream)),
+                                Err(e) => {
+                                    tracing::error!("Encountered error connection to abstract socket: {:?}", e);
+                                }
+                            }
+
                             // begin a Unix domain socket connection to the path
                             match UnixStream::connect(path) {
                                 Ok(stream) => return Ok(Self::from_unix_stream(stream)),
@@ -113,6 +126,12 @@ impl NameConnection {
                             error = Some(Error::make_unsupported(crate::Unsupported::Socket));
                         }
                     }
+                }
+                addr => {
+                    error = Some(Error::make_msg(format!(
+                        "Unsupported connection address: {:?}",
+                        addr,
+                    )));
                 }
             }
         }
@@ -178,6 +197,35 @@ impl NameConnection {
             _ => None,
         }
     }
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn connect_abstract(path: &Path) -> Result<UnixStream> {
+    use alloc::vec;
+    use socket2::{SockAddr, Socket, Domain, Type};
+    use std::{ffi::OsStr, os::unix::ffi::OsStrExt};
+
+    // create a name with a zero in front
+    let bytes = path.as_os_str().as_bytes();
+    let mut abstract_socket_buf = vec![0; bytes.len() + 1];
+    abstract_socket_buf[1..].copy_from_slice(bytes);
+    let abstract_socket = OsStr::from_bytes(&abstract_socket_buf);
+
+    // build socket details
+    let sock_addr = SockAddr::unix(abstract_socket)?;
+
+    // create socket
+    let sock = Socket::new(
+        Domain::UNIX,
+        Type::STREAM,
+        None
+    )?;
+
+    // connect to the address
+    sock.connect(&sock_addr)?;
+
+    // cast to UnixStream
+    Ok(sock.into())
 }
 
 cfg_async! {

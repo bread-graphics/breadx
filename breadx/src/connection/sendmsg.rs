@@ -96,7 +96,7 @@ impl SendmsgConnection {
         &self,
         iov: &mut [IoSliceMut<'_>],
         fds: &mut Vec<Fd>,
-        flags: MsgFlags,
+        mut flags: MsgFlags,
     ) -> Result<usize> {
         let span = tracing::trace_span!("recvmsg");
         let _enter = span.enter();
@@ -109,6 +109,9 @@ impl SendmsgConnection {
 
         let mut cmsg_space = nix::cmsg_space!([Fd; 32]);
 
+        // set up flags
+        recvmsg::cloexec_flag(&mut flags);
+
         // run recvmsg
         let msg = loop {
             match recvmsg::<()>(conn, iov, Some(&mut cmsg_space), flags) {
@@ -120,6 +123,7 @@ impl SendmsgConnection {
 
         // process the infomration
         let bytes_read = msg.bytes;
+        let mut cloexec_result = Ok(());
         fds.extend(
             msg.cmsgs()
                 .filter_map(|cmsg| match cmsg {
@@ -127,12 +131,13 @@ impl SendmsgConnection {
                     _ => None,
                 })
                 .flatten()
-                .map(Fd::new),
+                .map(Fd::new)
+                .inspect(|fd| recvmsg::set_cloexec(fd, &mut cloexec_result)),
         );
 
         tracing::trace!("read {} bytes and {} fds", bytes_read, fds.len());
 
-        Ok(bytes_read)
+        cloexec_result.map(|()| bytes_read)
     }
 
     /// Call the sendmsg() function for the socket.
@@ -234,4 +239,57 @@ impl Connection for SendmsgConnection {
 
 impl Connection for &SendmsgConnection {
     impl_sendmsg_conn! { & }
+}
+
+// the below pattern is used to ensure CLOEXEC is set on all FDs received
+// by the recvmsg() above
+//
+// design very much inspired by psychon
+
+#[cfg(not(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+mod recvmsg {
+    use crate::{Error, Fd, Result};
+    use nix::{fcntl, sys::socket::MsgFlags};
+    use std::os::unix::prelude::AsRawFd;
+
+    /// No-op, `CLOEXEC` flag doesn't exist.
+    pub(crate) fn cloexec_flag(_flags: &mut MsgFlags) {}
+
+    /// Set `CLOEXEC` on the given file descriptor.
+    pub(crate) fn set_cloexec(fd: &Fd, res: &mut Result<()>) {
+        if let Err(e) = fcntl::fcntl(
+            fd.as_raw_fd(),
+            fcntl::FcntlArg::F_SETFD(fcntl::FdFlag::FD_CLOEXEC),
+        ) {
+            *res = Err(Error::nix(e));
+        }
+    }
+}
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+mod recvmsg {
+    use crate::{Fd, Result};
+    use nix::sys::socket::MsgFlags;
+
+    /// Set the `MSG_CMSG_CLOEXEC` flag for the `recvmsg()` call.
+    pub(crate) fn cloexec_flag(flags: &mut MsgFlags) {
+        *flags |= MsgFlags::MSG_CMSG_CLOEXEC;
+    }
+
+    /// No-op, `CLOEXEC` is already set.
+    pub(crate) fn set_cloexec(_fd: &Fd, _res: &mut Result<()>) {}
 }

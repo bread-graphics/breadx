@@ -1,9 +1,10 @@
 // MIT/Apache2 License
 
 #![cfg(feature = "async")]
+#![allow(clippy::needless_pass_by_value)]
 
 use crate::{Error, NameConnection, Result, Unblock};
-use alloc::{boxed::Box, string::ToString};
+use alloc::{boxed::Box, format, string::ToString};
 use core::{
     future::{self, Future},
     pin::Pin,
@@ -13,8 +14,15 @@ use futures_util::{
     Stream,
 };
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::{
+    net::{Ipv4Addr, Ipv6Addr, SocketAddr},
+    path::PathBuf,
+};
 use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
+
+cfg_std_unix! {
+    use std::os::unix::ffi::OsStrExt;
+}
 
 #[allow(unused_imports)]
 use crate::Unsupported;
@@ -101,22 +109,24 @@ fn instruction_into_socket(ci: ConnectAddress<'_>) -> SockAddrStream<'_> {
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     // unix socket for the path
-                    let sock_details = SockAddr::unix(path).map_err(Error::io)
-                        .map(|sock_addr| (SocketDetails {
+                    unix_connections(path)
+                        .map(|sock_addr| sock_addr.map(|sock_addr| { (SocketDetails {
                             addr: sock_addr,
                             domain: Domain::UNIX,
                             protocol: None,
-                        }, SocketMode::Unix));
-
-                    stream::once(future::ready(sock_details)).boxed()
+                        }, SocketMode::Unix) })).boxed()
                 } else {
                     let _ = path;
-                    stream::once(future::ready(
+                    one(
                         Err(Error::make_unsupported(crate::Unsupported::Socket))
-                    )).boxed()
+                    )
                 }
             }
         }
+        addr => one(Err(Error::make_msg(format!(
+            "Unsupported connection address: {:?}",
+            addr,
+        )))),
     }
 }
 
@@ -126,11 +136,11 @@ fn tcp_ip_addrs(
 ) -> Pin<Box<dyn Stream<Item = Result<SocketAddr>> + Send + '_>> {
     // fast paths that don't involve blocking
     if let Ok(ip) = hostname.parse::<Ipv4Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
+        return one(Ok(SocketAddr::new(ip.into(), port)));
     }
 
     if let Ok(ip) = hostname.parse::<Ipv6Addr>() {
-        return stream::once(future::ready(Ok(SocketAddr::new(ip.into(), port)))).boxed();
+        return one(Ok(SocketAddr::new(ip.into(), port)));
     }
 
     // slow path, use the Unblock struct with ToSocketAddrs
@@ -138,6 +148,36 @@ fn tcp_ip_addrs(
     Unblock::new(move || std::net::ToSocketAddrs::to_socket_addrs(&socket_addr))
         .map(|res| res.map_err(Error::io))
         .boxed()
+}
+
+#[cfg(all(unix, any(target_os = "linux", target_os = "android")))]
+fn unix_connections(path: PathBuf) -> impl Stream<Item = Result<SockAddr>> + Send {
+    use alloc::vec;
+    use std::ffi::OsStr;
+
+    // first, try connecting to the abstract socket (prepend with zero)
+    let path_bytes = path.as_os_str().as_bytes();
+    let mut abstract_path_buf = vec![0; path_bytes.len() + 1];
+    abstract_path_buf[1..].copy_from_slice(path_bytes);
+    let abstract_path = OsStr::from_bytes(&abstract_path_buf);
+
+    // setup vec with both options
+    let paths_to_try = [
+        SockAddr::unix(abstract_path).map_err(Into::into),
+        SockAddr::unix(&path).map_err(Into::into),
+    ];
+
+    stream::iter(paths_to_try)
+}
+
+#[cfg(all(unix, not(any(target_os = "linux", target_os = "android"))))]
+fn unix_connections(path: PathBuf) -> impl Stream<Item = Result<SockAddr>> + Send {
+    // abstract sockets are only supported on linux/android
+    one(SockAddr::unix(&path).map_err(Into::into))
+}
+
+fn one<'a, T: 'a + Send>(item: T) -> Pin<Box<dyn Stream<Item = T> + Send + 'a>> {
+    stream::once(future::ready(item)).boxed()
 }
 
 struct SocketDetails {
