@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
+    branches:
+      - master
   pull_request:
 
 env:
+  BREADX_EXAMPLE_TIMEOUT: 1
   RUSTFLAGS: -Dwarnings
   clippy_version: 1.60.0
 
@@ -52,6 +55,32 @@ jobs:
           command: clippy
           args: --all --tests --all-features
 
+  # copy-pasted from async-io
+  cross:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Rust
+      run: rustup update stable
+    - name: Install cross
+      uses: taiki-e/install-action@cross
+    - name: Android
+      if: startsWith(matrix.os, 'ubuntu')
+      run: cross test --target arm-linux-androideabi
+    - name: NetBSD
+      if: startsWith(matrix.os, 'ubuntu')
+      run: cross build --target x86_64-unknown-netbsd
+    - name: FreeBSD
+      if: startsWith(matrix.os, 'ubuntu')
+      run: cross build --target x86_64-unknown-freebsd
+    - name: iOS
+      if: startsWith(matrix.os, 'macos')
+      run: cross build --target aarch64-apple-ios
+
   test:
     name: run tests
     runs-on: ${{ matrix.os }}
@@ -84,9 +113,7 @@ jobs:
 
       # run tests for all crates
       - name: Default Features Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: cargo test
 
       # run tests with no default features
       - name: No Default Features Test
@@ -115,4 +142,15 @@ jobs:
       - name: Parking Lot Test
         run: cargo test --features pl all-extensions
         working-directory: breadx
+
+      # run all examples
+      # took this from x11rb's ci
+      - name: Run Examples
+        run: |
+            cd breadx
+            for example in examples/*.rs; do
+              example=${example/examples\//}
+              example=${example/.rs/}
+              xvfb-run -a cargo run --example "$example" --all-features
+            done
   

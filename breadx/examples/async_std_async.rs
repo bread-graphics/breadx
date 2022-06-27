@@ -1,6 +1,10 @@
 // MIT/Apache2 License
 
 #[cfg(feature = "async-std-support")]
+#[path = "util/cancel.rs"]
+mod cancel;
+
+#[cfg(feature = "async-std-support")]
 use breadx::Result;
 
 #[cfg(feature = "async-std-support")]
@@ -14,6 +18,8 @@ mod inner {
     };
 
     pub async fn real_main() -> Result<()> {
+        super::cancel::spawn_kill_thread();
+
         // almost identical to the tokio example, see that for comments
         let mut connection = async_std_support::connect(None).await?;
 
@@ -104,6 +110,8 @@ mod inner {
                 &wm_delete_window,
             )
             .await?;
+
+        super::cancel::spawn_close_thread(wid);
 
         // primary event loop
         loop {
