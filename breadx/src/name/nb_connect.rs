@@ -14,13 +14,12 @@ use futures_util::{
     Stream,
 };
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
-use std::{
-    net::{Ipv4Addr, Ipv6Addr, SocketAddr},
-    path::PathBuf,
-};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
 use x11rb_protocol::parse_display::{ConnectAddress, ParsedDisplay};
 
-cfg_std_unix! {}
+cfg_std_unix! {
+    use std::path::PathBuf;
+}
 
 #[allow(unused_imports)]
 use crate::Unsupported;
