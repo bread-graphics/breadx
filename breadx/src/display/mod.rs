@@ -106,7 +106,7 @@ cfg_async! {
 }
 
 use crate::Result;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, sync::Arc};
 use x11rb_protocol::protocol::{
     xproto::{GetInputFocusRequest, Screen, Setup},
     Event,
@@ -135,7 +135,7 @@ pub trait DisplayBase {
     /// keycodes, and more.
     ///
     /// [`Setup`]: crate::protocol::xproto::Setup
-    fn setup(&self) -> &Setup;
+    fn setup(&self) -> &Arc<Setup>;
 
     /// Get the screen associated with this display.
     ///
@@ -517,7 +517,7 @@ cfg_async! {
 /* Mut impls */
 
 impl<D: DisplayBase + ?Sized> DisplayBase for &mut D {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         (**self).setup()
     }
 
@@ -622,7 +622,7 @@ cfg_async! {
 /* Box impls */
 
 impl<D: DisplayBase + ?Sized> DisplayBase for Box<D> {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         (**self).setup()
     }
 

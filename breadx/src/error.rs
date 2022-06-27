@@ -336,10 +336,7 @@ impl fmt::Debug for Error {
                         f.write_str("SetupFailed: could not authenticate")
                     }
                     Inner::SetupFailed(SetupFailure::Failed(fail)) => {
-                        let reason = match str::from_utf8(&fail.reason) {
-                            Ok(reason) => reason, 
-                            Err(_) => "bad utf-8",
-                        };
+                        let reason = str::from_utf8(&fail.reason).unwrap_or("bad utf-8");
                         write!(f, "SetupFailed: {}", reason)
                     }
                     Inner::X11Error(x11) => fmt::Debug::fmt(x11, f),

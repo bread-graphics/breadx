@@ -12,7 +12,7 @@ use crate::{
     },
     Error, NameConnection, Result,
 };
-use alloc::{string::ToString, vec, vec::Vec};
+use alloc::{string::ToString, sync::Arc, vec, vec::Vec};
 use core::{
     future::Future,
     task::{Context, Poll},
@@ -278,7 +278,7 @@ fn try_io<C: AsRawFd + Connection, R>(
 /* Trait forwarding for AsyncFd */
 
 impl<D: AsRawFd + DisplayBase> DisplayBase for AsyncFd<D> {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         self.get_ref().setup()
     }
 
@@ -299,7 +299,7 @@ impl<'lt, D: AsRawFd + DisplayBase> DisplayBase for &'lt AsyncFd<D>
 where
     &'lt D: DisplayBase,
 {
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         self.get_ref().setup()
     }
 

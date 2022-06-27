@@ -2,23 +2,23 @@
 
 #![cfg(feature = "sync_display")]
 
-use super::{BasicDisplay, Display, DisplayBase, RawReply, RawRequest};
-use crate::{connection::Connection, mutex::Mutex, Result};
+use super::{Display, DisplayBase, RawReply, RawRequest};
+use crate::{mutex::Mutex, Result};
 use alloc::sync::Arc;
 use x11rb_protocol::protocol::{xproto::Setup, Event};
 
 cfg_async! {
-    use super::{AsyncStatus, CanBeAsyncDisplay};
+    use super::{AsyncStatus, CanBeAsyncDisplay, AsyncDisplay, Interest};
     use concurrent_queue::ConcurrentQueue;
-    use core::task::{Context, Waker};
+    use core::task::{Context, Waker, Poll};
 }
 
 /// A `Display` that uses a mutex to coordinate access.
-pub struct SyncDisplay<Conn> {
-    inner: Mutex<BasicDisplay<Conn>>,
+pub struct SyncDisplay<Dpy: ?Sized> {
     setup: Arc<Setup>,
     default_screen_index: usize,
     waiters: Waiters,
+    inner: Mutex<Dpy>,
 }
 
 /// A helper type for `SyncDisplay` that allows us to use `Waker`s to wake up
@@ -32,23 +32,42 @@ struct Waiters {
     wakers: ConcurrentQueue<Waker>,
 }
 
-impl<Conn: Connection> From<BasicDisplay<Conn>> for SyncDisplay<Conn> {
-    fn from(bd: BasicDisplay<Conn>) -> Self {
-        let setup = bd.setup.clone();
+impl<Dpy: DisplayBase> From<Dpy> for SyncDisplay<Dpy> {
+    fn from(bd: Dpy) -> Self {
+        let setup = bd.setup().clone();
         Self {
             setup,
-            default_screen_index: bd.default_screen_index,
+            default_screen_index: bd.default_screen_index(),
             inner: Mutex::new(bd),
             waiters: Waiters {
                 #[cfg(feature = "async")]
-                wakers: ConcurrentQueue::unbounded(),
+                wakers: make_waker_queue(),
             },
         }
     }
 }
 
-impl<Conn: Connection> SyncDisplay<Conn> {
-    fn with_inner<R>(&self, f: impl FnOnce(&mut BasicDisplay<Conn>) -> R) -> R {
+#[cfg(all(feature = "async", feature = "std"))]
+fn make_waker_queue() -> ConcurrentQueue<Waker> {
+    // if the user wants an unbounded queue, oblige them
+    if std::env::var_os("BREADX_UNBOUNDED_WAKER_QUEUE")
+        .as_ref()
+        .and_then(|t| t.to_str())
+        == Some("1")
+    {
+        ConcurrentQueue::unbounded()
+    } else {
+        ConcurrentQueue::bounded(1024)
+    }
+}
+
+#[cfg(all(feature = "async", not(feature = "std")))]
+fn make_waker_queue() -> ConcurrentQueue<Waker> {
+    ConcurrentQueue::bounded(1024)
+}
+
+impl<Dpy: ?Sized> SyncDisplay<Dpy> {
+    fn with_inner<R>(&self, f: impl FnOnce(&mut Dpy) -> R) -> R {
         let res = f(&mut *self.inner.lock());
 
         // signal that we have released the mutex
@@ -56,15 +75,16 @@ impl<Conn: Connection> SyncDisplay<Conn> {
         res
     }
 
-    fn with_inner_mut<R>(&mut self, f: impl FnOnce(&mut BasicDisplay<Conn>) -> R) -> R {
+    fn with_inner_mut<R>(&mut self, f: impl FnOnce(&mut Dpy) -> R) -> R {
         let res = f(self.inner.get_mut());
-        self.waiters.release();
+        // don't need to signal, &mut indicates that no one has an
+        // & reference == no wakers
         res
     }
 
     fn try_with_inner<R>(
         &self,
-        f: impl FnOnce(&mut BasicDisplay<Conn>) -> Result<Option<R>>,
+        f: impl FnOnce(&mut Dpy) -> Result<Option<R>>,
     ) -> Result<Option<R>> {
         match self.inner.try_lock() {
             Some(mut lock) => {
@@ -77,10 +97,10 @@ impl<Conn: Connection> SyncDisplay<Conn> {
     }
 
     #[cfg(feature = "async")]
-    fn poll_inner<R>(
+    fn try_status_inner<R>(
         &self,
         ctx: &mut Context<'_>,
-        f: impl FnOnce(&mut BasicDisplay<Conn>, &mut Context<'_>) -> Result<AsyncStatus<R>>,
+        f: impl FnOnce(&mut Dpy, &mut Context<'_>) -> Result<AsyncStatus<R>>,
     ) -> Result<AsyncStatus<R>> {
         match self.inner.try_lock() {
             Some(mut lock) => {
@@ -91,6 +111,25 @@ impl<Conn: Connection> SyncDisplay<Conn> {
             None => {
                 self.waiters.push(ctx.waker());
                 Ok(AsyncStatus::UserControlled)
+            }
+        }
+    }
+
+    #[cfg(feature = "async")]
+    fn poll_inner<R>(
+        &self,
+        ctx: &mut Context<'_>,
+        f: impl FnOnce(&mut Dpy, &mut Context<'_>) -> Poll<Result<R>>,
+    ) -> Poll<Result<R>> {
+        match self.inner.try_lock() {
+            Some(mut lock) => {
+                let res = f(&mut *lock, ctx);
+                self.waiters.release();
+                res
+            }
+            None => {
+                self.waiters.push(ctx.waker());
+                Poll::Pending
             }
         }
     }
@@ -110,8 +149,8 @@ impl Waiters {
     }
 }
 
-impl<Conn: Connection> DisplayBase for SyncDisplay<Conn> {
-    fn setup(&self) -> &Setup {
+impl<Dpy: DisplayBase + ?Sized> DisplayBase for SyncDisplay<Dpy> {
+    fn setup(&self) -> &Arc<Setup> {
         &self.setup
     }
 
@@ -128,8 +167,8 @@ impl<Conn: Connection> DisplayBase for SyncDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
-    fn setup(&self) -> &Setup {
+impl<Dpy: DisplayBase + ?Sized> DisplayBase for &SyncDisplay<Dpy> {
+    fn setup(&self) -> &Arc<Setup> {
         &self.setup
     }
 
@@ -146,7 +185,7 @@ impl<Conn: Connection> DisplayBase for &SyncDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> Display for SyncDisplay<Conn> {
+impl<Dpy: Display + ?Sized> Display for SyncDisplay<Dpy> {
     fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.with_inner_mut(move |inner| inner.send_request_raw(req))
     }
@@ -176,7 +215,7 @@ impl<Conn: Connection> Display for SyncDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> Display for &SyncDisplay<Conn> {
+impl<Dpy: Display + ?Sized> Display for &SyncDisplay<Dpy> {
     fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.with_inner(move |inner| inner.send_request_raw(req))
     }
@@ -207,7 +246,7 @@ impl<Conn: Connection> Display for &SyncDisplay<Conn> {
 }
 
 cfg_async! {
-    impl<Conn: Connection> CanBeAsyncDisplay for SyncDisplay<Conn> {
+    impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for SyncDisplay<Dpy> {
         fn format_request(
             &mut self,
             req: &mut RawRequest<'_, '_>,
@@ -249,13 +288,13 @@ cfg_async! {
         }
     }
 
-    impl<Conn: Connection> CanBeAsyncDisplay for &SyncDisplay<Conn> {
+    impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &SyncDisplay<Dpy> {
         fn format_request(
             &mut self,
             req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<u64>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.format_request(req, ctx))
+            self.try_status_inner(ctx, move |inner, ctx| inner.format_request(req, ctx))
         }
 
         fn try_send_request_raw(
@@ -263,7 +302,7 @@ cfg_async! {
             req: &mut RawRequest<'_, '_>,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<()>> {
-            self.poll_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx))
+            self.try_status_inner(ctx, move |inner, ctx| inner.try_send_request_raw(req, ctx))
         }
 
         fn try_wait_for_reply_raw(
@@ -271,25 +310,47 @@ cfg_async! {
             seq: u64,
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
-            self.poll_inner(ctx, move |inner, ctx| {
+            self.try_status_inner(ctx, move |inner, ctx| {
                 inner.try_wait_for_reply_raw(seq, ctx)
             })
         }
 
         fn try_wait_for_event(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<Event>> {
-            self.poll_inner(ctx, CanBeAsyncDisplay::try_wait_for_event)
+            self.try_status_inner(ctx, CanBeAsyncDisplay::try_wait_for_event)
         }
 
         fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
-            self.poll_inner(ctx, CanBeAsyncDisplay::try_flush)
+            self.try_status_inner(ctx, CanBeAsyncDisplay::try_flush)
         }
 
         fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
-            self.poll_inner(ctx, CanBeAsyncDisplay::try_generate_xid)
+            self.try_status_inner(ctx, CanBeAsyncDisplay::try_generate_xid)
         }
 
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
-            self.poll_inner(ctx, CanBeAsyncDisplay::try_maximum_request_length)
+            self.try_status_inner(ctx, CanBeAsyncDisplay::try_maximum_request_length)
+        }
+    }
+
+    impl<Dpy: AsyncDisplay + ?Sized> AsyncDisplay for SyncDisplay<Dpy> {
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
+            ctx: &mut Context< '_>,
+        ) -> Poll<Result<()>> {
+            self.poll_inner(ctx, |dpy, ctx| dpy.poll_for_interest(interest, callback, ctx))
+        }
+    }
+
+    impl<Dpy: AsyncDisplay + ?Sized> AsyncDisplay for &SyncDisplay<Dpy> {
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
+            ctx: &mut Context< '_>,
+        ) -> Poll<Result<()>> {
+            self.poll_inner(ctx, |dpy, ctx| dpy.poll_for_interest(interest, callback, ctx))
         }
     }
 }

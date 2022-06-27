@@ -1,42 +1,42 @@
 // MIT/Apache2 License
 
-use crate::{connection::Connection, Result};
+use crate::Result;
 
-use super::{BasicDisplay, Display, DisplayBase, RawReply, RawRequest};
+use super::{Display, DisplayBase, RawReply, RawRequest};
 use alloc::sync::Arc;
 use core::cell::RefCell;
 use x11rb_protocol::protocol::{xproto::Setup, Event};
 
 cfg_async! {
-    use super::CanBeAsyncDisplay;
-    use core::task::Context;
+    use super::{Interest, AsyncDisplay, CanBeAsyncDisplay};
+    use core::task::{Context, Poll};
 }
 
 /// An implementation of `Display` that can be used immutably through
 /// thread-unsafe cells.
-pub struct CellDisplay<Conn> {
-    inner: RefCell<BasicDisplay<Conn>>,
+pub struct CellDisplay<Dpy: ?Sized> {
     setup: Arc<Setup>,
     default_screen_index: usize,
+    inner: RefCell<Dpy>,
 }
 
-impl<Conn: Connection> From<BasicDisplay<Conn>> for CellDisplay<Conn> {
-    fn from(inner: BasicDisplay<Conn>) -> Self {
-        let setup = inner.setup.clone();
+impl<Dpy: DisplayBase> From<Dpy> for CellDisplay<Dpy> {
+    fn from(inner: Dpy) -> Self {
+        let setup = inner.setup().clone();
         Self {
-            default_screen_index: inner.default_screen_index,
+            default_screen_index: inner.default_screen_index(),
             inner: RefCell::new(inner),
             setup,
         }
     }
 }
 
-impl<Conn: Connection> DisplayBase for CellDisplay<Conn> {
+impl<Dpy: DisplayBase + ?Sized> DisplayBase for CellDisplay<Dpy> {
     fn default_screen_index(&self) -> usize {
         self.default_screen_index
     }
 
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         &self.setup
     }
 
@@ -49,7 +49,7 @@ impl<Conn: Connection> DisplayBase for CellDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> Display for CellDisplay<Conn> {
+impl<Dpy: Display + ?Sized> Display for CellDisplay<Dpy> {
     fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.inner.get_mut().send_request_raw(req)
     }
@@ -79,12 +79,12 @@ impl<Conn: Connection> Display for CellDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> DisplayBase for &CellDisplay<Conn> {
+impl<Dpy: DisplayBase + ?Sized> DisplayBase for &CellDisplay<Dpy> {
     fn default_screen_index(&self) -> usize {
         self.default_screen_index
     }
 
-    fn setup(&self) -> &Setup {
+    fn setup(&self) -> &Arc<Setup> {
         &self.setup
     }
 
@@ -97,7 +97,7 @@ impl<Conn: Connection> DisplayBase for &CellDisplay<Conn> {
     }
 }
 
-impl<Conn: Connection> Display for &CellDisplay<Conn> {
+impl<Dpy: Display + ?Sized> Display for &CellDisplay<Dpy> {
     fn send_request_raw(&mut self, req: RawRequest<'_, '_>) -> Result<u64> {
         self.inner.borrow_mut().send_request_raw(req)
     }
@@ -128,7 +128,7 @@ impl<Conn: Connection> Display for &CellDisplay<Conn> {
 }
 
 cfg_async! {
-    impl<Conn: Connection> CanBeAsyncDisplay for CellDisplay<Conn> {
+    impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for CellDisplay<Dpy> {
         fn try_send_request_raw(
             &mut self,
             req: &mut RawRequest<'_, '_>,
@@ -173,7 +173,7 @@ cfg_async! {
         }
     }
 
-    impl<Conn: Connection> CanBeAsyncDisplay for &CellDisplay<Conn> {
+    impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &CellDisplay<Dpy> {
         fn try_send_request_raw(
             &mut self,
             req: &mut RawRequest<'_, '_>,
@@ -215,6 +215,28 @@ cfg_async! {
 
         fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<u32>> {
             self.inner.borrow_mut().try_generate_xid(ctx)
+        }
+    }
+
+    impl<Dpy: AsyncDisplay + ?Sized> AsyncDisplay for CellDisplay<Dpy> {
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
+            ctx: &mut Context< '_>
+        ) -> Poll<Result<()>> {
+            self.inner.get_mut().poll_for_interest(interest, callback, ctx)
+        }
+    }
+
+    impl<Dpy: AsyncDisplay + ?Sized> AsyncDisplay for &CellDisplay<Dpy> {
+        fn poll_for_interest(
+            &mut self,
+            interest: Interest,
+            callback: &mut dyn FnMut(&mut dyn AsyncDisplay, &mut Context< '_>) -> Result<()>,
+            ctx: &mut Context< '_>
+        ) -> Poll<Result<()>> {
+            self.inner.borrow_mut().poll_for_interest(interest, callback, ctx)
         }
     }
 }
