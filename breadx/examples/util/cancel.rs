@@ -64,7 +64,7 @@ pub fn spawn_close_thread(main_window: xproto::Window) {
                 32,
                 main_window,
                 protocols,
-                [delete_window, 0, 0, 0, 0]
+                [delete_window, 0, 0, 0, 0],
             );
             let mut send_event = xproto::SendEventRequest {
                 propagate: false,

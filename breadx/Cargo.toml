@@ -23,12 +23,16 @@ parking_lot = { version = "0.12.0", optional = true }
 socket2 = { version = "0.4", optional = true }
 tokio = { version = "1.18.2", features = ["net", "rt"], optional = true }
 tracing = { version = "0.1.34", default-features = false }
-x11rb-protocol = { git = "https://github.com/psychon/x11rb", default-features = false }
+x11rb-protocol = { version = "0.10", default-features = false }
 
 [dev-dependencies]
 async-std = { version = "1.11.0", features = ["attributes"] }
+chrono = "0.4.19"
+euclid = "0.22.7"
+ordered-float = "3.0.0"
 spin_on = "0.1.1"
-tokio = { version = "1.18.2", features = ["macros", "io-std", "io-util", "rt-multi-thread", "time", "tracing"] }
+tokio = { version = "1.18.2", features = ["macros", "io-std", "io-util", "sync", "time", "tracing"] }
+tokio-stream = "0.1.9"
 tracing-subscriber = "0.3.11"
 
 [features]
@@ -45,16 +49,16 @@ composite = ["xfixes", "x11rb-protocol/composite"]
 damage = ["xfixes", "x11rb-protocol/damage"]
 dpms = ["x11rb-protocol/dpms"]
 dri2 = ["x11rb-protocol/dri2"]
-dri3 = ["std", "x11rb-protocol/dri3"]
+dri3 = ["x11rb-protocol/dri3"]
 glx = ["x11rb-protocol/glx"]
 present = ["randr", "xfixes", "sync", "x11rb-protocol/present"]
-randr = ["render", "std", "x11rb-protocol/randr"]
+randr = ["render", "x11rb-protocol/randr"]
 record = ["x11rb-protocol/record"]
 render = ["x11rb-protocol/render"]
 res = ["x11rb-protocol/res"]
 screensaver = ["x11rb-protocol/screensaver"]
 shape = ["x11rb-protocol/shape"]
-shm = ["std", "x11rb-protocol/shm"]
+shm = ["x11rb-protocol/shm"]
 sync = ["x11rb-protocol/sync"]
 xevie = ["x11rb-protocol/xevie"]
 xf86dri = ["x11rb-protocol/xf86dri"]
