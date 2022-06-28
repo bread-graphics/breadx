@@ -1,6 +1,6 @@
 [package]
 name = "breadx"
-version = "0.5.0"
+version = "3.0.0"
 authors = ["notgull <jtnunley01@gmail.com>"]
 edition = "2018"
 
@@ -34,6 +34,7 @@ spin_on = "0.1.1"
 tokio = { version = "1.18.2", features = ["macros", "io-std", "io-util", "sync", "time", "tracing"] }
 tokio-stream = "0.1.9"
 tracing-subscriber = "0.3.11"
+uds_windows = "1.0.2"
 
 [features]
 default = ["std"]

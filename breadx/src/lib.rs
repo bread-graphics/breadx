@@ -164,7 +164,8 @@ cfg_std! {
 )]
 pub(crate) mod automatically_generated;
 
-pub type Fd = x11rb_protocol::RawFdContainer;
+#[doc(inline)]
+pub use x11rb_protocol::RawFdContainer as Fd;
 
 pub mod connection;
 pub mod display;

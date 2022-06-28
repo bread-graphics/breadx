@@ -476,4 +476,42 @@ cfg_std_windows! {
     }
 }
 
-// TODO: implement Connection for Windows and WASI
+// TODO: implement Connection for WASI once WASI supports sockets
+
+#[cfg(test)]
+mod tests {
+    use super::StdConnection;
+    use crate::connection::Connection;
+    use std::io::{Read, Write};
+
+    #[cfg(unix)]
+    use std::os::unix::io::AsRawFd;
+    #[cfg(unix)]
+    fn pair() -> (impl Read + Write + AsRawFd, impl Read + Write + AsRawFd) {
+        std::os::unix::net::UnixStream::pair().unwrap()
+    }
+
+    #[cfg(windows)]
+    use std::os::windows::io::AsRawSocket;
+    #[cfg(windows)]
+    fn pair() -> (
+        impl Read + Write + AsRawSocket,
+        impl Read + Write + AsRawSocket,
+    ) {
+        uds_windows::UnixStream::pair().unwrap()
+    }
+
+    #[test]
+    fn basic() {
+        // just read and write to make sure it's sane
+        let (left, right) = pair();
+        let mut writer = StdConnection::new(left);
+        let mut reader = StdConnection::new(right);
+
+        let data = b"Hello, world!";
+        writer.send_slice(data).unwrap();
+        let mut buffer = [0u8; 13];
+        reader.recv_slice(&mut buffer).unwrap();
+        assert_eq!(buffer, *data);
+    }
+}

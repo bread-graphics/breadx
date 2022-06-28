@@ -293,3 +293,75 @@ mod recvmsg {
     /// No-op, `CLOEXEC` is already set.
     pub(crate) fn set_cloexec(_fd: &Fd, _res: &mut Result<()>) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use super::SendmsgConnection;
+    use crate::{connection::Connection, Fd};
+    use alloc::vec::Vec;
+    use core::iter;
+    use std::{
+        ffi::CString,
+        io::{IoSlice, IoSliceMut},
+        os::unix::net::UnixStream,
+        sync::atomic::{AtomicUsize, Ordering::SeqCst},
+    };
+
+    /// Generate a useless file descriptor we can pass around.
+    fn useless_fd() -> Fd {
+        static ID_GENERATOR: AtomicUsize = AtomicUsize::new(0);
+        let id = ID_GENERATOR.fetch_add(1, SeqCst);
+
+        let name = CString::new(std::format!("useless-fd-{}", id)).unwrap();
+        let memfd =
+            nix::sys::memfd::memfd_create(&name, nix::sys::memfd::MemFdCreateFlag::MFD_CLOEXEC)
+                .unwrap();
+
+        Fd::new(memfd)
+    }
+
+    #[test]
+    fn send_and_recv_test() {
+        let (input, output) = UnixStream::pair().unwrap();
+        let mut in_conn = SendmsgConnection::new(input);
+        let mut out_conn = SendmsgConnection::new(output);
+
+        // send some data, along with some file descriptors
+        let data = b"Hello, world!";
+        let mut fds = iter::repeat_with(useless_fd).take(3).collect::<Vec<_>>();
+
+        let iov = [IoSlice::new(&data[..]), IoSlice::new(&data[..])];
+
+        in_conn.send_slices_and_fds(&iov[..], &mut fds).unwrap();
+
+        // receive the data and the file descriptors
+        let mut buffer = [0u8; 26];
+        let (b1, b2) = buffer.split_at_mut(13);
+        let mut received_data = [IoSliceMut::new(b1), IoSliceMut::new(b2)];
+        let mut received_fds = Vec::new();
+        out_conn
+            .recv_slices_and_fds(&mut received_data, &mut received_fds)
+            .unwrap();
+
+        assert_eq!(&buffer, b"Hello, world!Hello, world!".as_ref());
+    }
+
+    #[test]
+    fn non_anomalous_test() {
+        let (input, output) = UnixStream::pair().unwrap();
+        let mut in_conn = SendmsgConnection::new(input);
+        let mut out_conn = SendmsgConnection::new(output);
+
+        // send some data, along with some file descriptors
+        let data = b"Hello, world!";
+        let iov = [IoSlice::new(&data[..]), IoSlice::new(&data[..])];
+
+        in_conn.send_slices(&iov[..]).unwrap();
+
+        // receive the data and the file descriptors
+        let mut buffer = [0u8; 26];
+        out_conn.recv_slice(&mut buffer).unwrap();
+
+        assert_eq!(&buffer, b"Hello, world!Hello, world!".as_ref());
+    }
+}

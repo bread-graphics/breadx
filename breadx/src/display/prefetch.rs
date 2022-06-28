@@ -115,6 +115,11 @@ impl<T: PrefetchTarget> Prefetch<T> {
         Ok(())
     }
 
+    /// Error out.
+    pub(crate) fn on_x11_error(&mut self) {
+        *self = PrefetchState::Complete(T::on_x11_error()).into();
+    }
+
     /// Evaluate the prefetch while blocking.
     pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {
         // call all functions in order
@@ -122,8 +127,15 @@ impl<T: PrefetchTarget> Prefetch<T> {
         let request = self.request_to_format();
         let seq = request.take(|request| display.send_request_raw(request))?;
         self.sent_override(seq);
-        let reply = display.wait_for_reply_raw(self.sequence())?;
-        self.read_reply(reply)?;
+        match display.wait_for_reply_raw(self.sequence()) {
+            Ok(reply) => {
+                self.read_reply(reply)?;
+            }
+            Err(e) if e.is_protocol_error() => {
+                self.on_x11_error();
+            }
+            Err(e) => return Err(e),
+        };
         Ok(self.get_if_resolved().unwrap())
     }
 }
@@ -208,8 +220,14 @@ cfg_async! {
 
             if self.not_yet_read() {
                 tracing::trace!("receiving reply");
-                let reply = mtry!(display.try_wait_for_reply_raw(self.sequence(), ctx));
-                self.read_reply(reply)?;
+                match display.try_wait_for_reply_raw(self.sequence(), ctx) {
+                    Ok(AsyncStatus::Ready(t)) => self.read_reply(t)?,
+                    Ok(status) => return Ok(status.map(|_| unreachable!())),
+                    Err(e) if e.is_protocol_error() => {
+                        self.on_x11_error();
+                    }
+                    Err(e) => return Err(e),
+                }
             }
 
             Ok(AsyncStatus::Ready(self.get_if_resolved().unwrap()))
@@ -262,7 +280,8 @@ impl PrefetchTarget for GetInputFocusRequest {
     }
 
     fn on_x11_error() -> Self::Target {
-        todo!()
+        tracing::error!("synchronization should never error out");
+        GetInputFocusReply::default()
     }
 }
 
@@ -274,6 +293,7 @@ impl PrefetchTarget for GetXIDRangeRequest {
     }
 
     fn on_x11_error() -> Self::Target {
-        todo!()
+        tracing::error!("XID refresh should never error out");
+        GetXIDRangeReply::default()
     }
 }
