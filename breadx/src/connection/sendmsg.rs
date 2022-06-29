@@ -325,7 +325,7 @@ mod tests {
     /// Alternate version that creates a tempfile instead of a memfd.
     #[cfg(not(target_os = "linux"))]
     fn useless_fd() -> Fd {
-        use std::{fs, path::PathBuf, cell::RefCell, os::unix::io::AsRawFd};
+        use std::{cell::RefCell, fs, os::unix::io::AsRawFd, path::PathBuf};
 
         struct TempfileRuntime {
             filenames: RefCell<Vec<PathBuf>>,

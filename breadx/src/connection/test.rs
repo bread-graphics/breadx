@@ -117,7 +117,10 @@ pub(crate) fn with_test_connection(
 
 mod tests {
     use super::*;
-    use crate::{setup_tracing, connection::{new_io_slice, new_io_slice_mut}};
+    use crate::{
+        connection::{new_io_slice, new_io_slice_mut},
+        setup_tracing,
+    };
     use alloc::vec;
 
     #[test]

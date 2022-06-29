@@ -19,17 +19,13 @@ pub struct CheckForError<'this, Dpy: ?Sized> {
 }
 
 type FnTy = Box<
-    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<()>>
-        + Send
-        + 'static,
+    dyn FnMut(&mut dyn AsyncDisplay, &mut Context<'_>) -> Result<AsyncStatus<()>> + Send + 'static,
 >;
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> CheckForError<'this, Dpy> {
     pub(crate) fn polling(display: &'this mut Dpy, seq: u64) -> Self {
         // setup the function
-        let func: FnTy = Box::new(move |display, ctx| {
-            display.try_check_for_error(seq, ctx)
-        });
+        let func: FnTy = Box::new(move |display, ctx| display.try_check_for_error(seq, ctx));
 
         let try_with = display.try_with(func);
 

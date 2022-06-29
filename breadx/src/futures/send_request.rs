@@ -26,7 +26,11 @@ pub struct SendRequest<'this, Dpy: ?Sized, Reply> {
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized> SendRequest<'this, Dpy, ()> {
-    pub(crate) fn for_void<Req: VoidRequest>(display: &'this mut Dpy, discard_reply: bool, req: Req) -> Self {
+    pub(crate) fn for_void<Req: VoidRequest>(
+        display: &'this mut Dpy,
+        discard_reply: bool,
+        req: Req,
+    ) -> Self {
         from_void_request(req, discard_reply, move |req| Self {
             innards: display.send_request_raw(req),
             span: None,
@@ -84,8 +88,7 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: Unpin> Future for SendRequest<'th
         let _enter = this.span.as_ref().map(Span::enter);
 
         // call the innards
-        this
-            .innards
+        this.innards
             .poll_unpin(ctx)
             .map_ok(|seq| Cookie::from_sequence(seq))
     }

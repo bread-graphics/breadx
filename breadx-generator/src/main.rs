@@ -56,6 +56,8 @@ fn main() -> Result<()> {
 
 //! Contains automatically generated items.
 
+#![rustfmt::skip]
+
 use crate::{Result, display::{Cookie, Display, DisplayExt}};
 use alloc::borrow::Cow;
 #[allow(unused_imports)]

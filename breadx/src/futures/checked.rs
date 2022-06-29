@@ -5,11 +5,11 @@ use futures_util::{Future, FutureExt};
 use tracing::Span;
 use x11rb_protocol::x11_utils::TryParseFd;
 
+use super::{SendRequest, WaitForReply};
 use crate::{
     display::{AsyncDisplay, AsyncDisplayExt},
     Result,
 };
-use super::{SendRequest, WaitForReply};
 
 /// A wrapper around [`SendRequest`] that immediately resolves the cookie.
 pub struct CheckedSendRequest<'this, Dpy: ?Sized, Reply> {

@@ -67,13 +67,11 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: TryParseFd + Unpin> Future
                     Poll::Pending => Poll::Pending,
                 }
             }
-            Innards::Checking(ref mut check) => {
-                check.poll_unpin(ctx).map_ok(|()| {
-                    Reply::try_parse_fd(&[], &mut Vec::new())
-                        .unwrap_or_else(|_| unreachable!())
-                        .0
-                })
-            }
+            Innards::Checking(ref mut check) => check.poll_unpin(ctx).map_ok(|()| {
+                Reply::try_parse_fd(&[], &mut Vec::new())
+                    .unwrap_or_else(|_| unreachable!())
+                    .0
+            }),
         }
     }
 }
