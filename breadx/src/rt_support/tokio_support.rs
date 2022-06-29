@@ -356,6 +356,10 @@ impl<D: AsRawFd + CanBeAsyncDisplay> CanBeAsyncDisplay for AsyncFd<D> {
     fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<u32>> {
         self.get_mut().try_generate_xid(ctx)
     }
+    
+    fn try_check_for_error(&mut self,seq:u64,ctx: &mut Context< '_>) -> Result<AsyncStatus<()>> {
+        self.get_mut().try_check_for_error(seq,ctx)
+    }
 }
 
 impl<'lt, D: AsRawFd + DisplayBase> CanBeAsyncDisplay for &'lt AsyncFd<D>
@@ -400,5 +404,9 @@ where
 
     fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
         self.get_ref().try_maximum_request_length(ctx)
+    }
+
+    fn try_check_for_error(&mut self,seq:u64,ctx: &mut Context< '_>) -> Result<AsyncStatus<()>> {
+        self.get_ref().try_check_for_error(seq,ctx)
     }
 }

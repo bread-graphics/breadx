@@ -77,6 +77,10 @@ impl<Dpy: Display + ?Sized> Display for CellDisplay<Dpy> {
     fn flush(&mut self) -> Result<()> {
         self.inner.get_mut().flush()
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        self.inner.get_mut().check_for_error(seq)
+    }
 }
 
 impl<Dpy: DisplayBase + ?Sized> DisplayBase for &CellDisplay<Dpy> {
@@ -125,6 +129,10 @@ impl<Dpy: Display + ?Sized> Display for &CellDisplay<Dpy> {
     fn flush(&mut self) -> Result<()> {
         self.inner.borrow_mut().flush()
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        self.inner.borrow_mut().check_for_error(seq)
+    }
 }
 
 cfg_async! {
@@ -171,6 +179,14 @@ cfg_async! {
         fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<u32>> {
             self.inner.get_mut().try_generate_xid(ctx)
         }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<super::AsyncStatus<()>> {
+            self.inner.get_mut().try_check_for_error(seq, ctx)
+        }
     }
 
     impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &CellDisplay<Dpy> {
@@ -215,6 +231,14 @@ cfg_async! {
 
         fn try_generate_xid(&mut self, ctx: &mut Context<'_>) -> Result<super::AsyncStatus<u32>> {
             self.inner.borrow_mut().try_generate_xid(ctx)
+        }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<super::AsyncStatus<()>> {
+            self.inner.borrow_mut().try_check_for_error(seq, ctx)
         }
     }
 

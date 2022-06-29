@@ -90,7 +90,7 @@ fn main() -> breadx::Result<()> {
     let wm_protocols = connection.wait_for_reply(wm_protocols)?.atom;
     let wm_delete_window = connection.wait_for_reply(wm_delete_window)?.atom;
 
-    connection.change_property_checked(
+    connection.change_property(
         xproto::PropMode::REPLACE,
         wid,
         wm_protocols,

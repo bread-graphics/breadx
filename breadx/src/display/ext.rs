@@ -38,8 +38,12 @@ impl<D: DisplayBase + ?Sized> DisplayBaseExt for D {}
 /// Extension traits to allow for sending generic requests and replies.
 pub trait DisplayExt: Display {
     /// Send a request with no reply.
-    fn send_void_request(&mut self, request: impl VoidRequest) -> Result<Cookie<()>> {
-        from_void_request(request, |request| {
+    fn send_void_request(
+        &mut self,
+        request: impl VoidRequest,
+        discard_reply: bool,
+    ) -> Result<Cookie<()>> {
+        from_void_request(request, discard_reply, |request| {
             let seq = self.send_request_raw(request)?;
 
             Ok(Cookie::from(seq))
@@ -79,7 +83,11 @@ pub trait DisplayExt: Display {
             // zero sized reply indicates that this is a void request,
             // check if we need to
             tracing::debug!("void request, beginning synchronize");
-            self.synchronize()?;
+
+            // ensure it didn't error out
+            // this implies a synchronize
+            self.check_for_error(cookie.into())?;
+
             return Ok(R::try_parse_fd(&[], &mut Vec::new())
                 .unwrap_or_else(|_| unreachable!())
                 .0);
@@ -138,6 +146,14 @@ cfg_async! {
             futures::SendRequestRaw::polling(self, request)
         }
 
+        /// Check to see if a void request has returned.
+        fn check_for_error(
+            &mut self,
+            seq: u64
+        ) -> futures::CheckForError<'_, Self> {
+            futures::CheckForError::polling(self, seq)
+        }
+
         /// Generate an XID.
         fn generate_xid(
             &mut self
@@ -149,8 +165,9 @@ cfg_async! {
         fn send_void_request(
             &mut self,
             request: impl VoidRequest,
+            discard_reply: bool,
         ) -> futures::SendRequest<'_, Self, ()> {
-            futures::SendRequest::for_void(self, request)
+            futures::SendRequest::for_void(self, discard_reply, request)
         }
 
         /// Send a request with a reply to the X11 server.

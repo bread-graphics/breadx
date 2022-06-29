@@ -9,6 +9,9 @@
 //!
 //! [`Display`]: crate::display::Display
 
+mod check_for_error;
+pub use check_for_error::*;
+
 mod checked;
 pub use checked::*;
 

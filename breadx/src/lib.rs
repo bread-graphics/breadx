@@ -159,6 +159,7 @@ cfg_std! {
 
 #[allow(
     clippy::cast_possible_truncation,
+    clippy::let_and_return,
     clippy::needless_lifetimes,
     clippy::too_many_arguments
 )]

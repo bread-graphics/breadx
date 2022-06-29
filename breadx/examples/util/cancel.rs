@@ -74,9 +74,9 @@ pub fn spawn_close_thread(main_window: xproto::Window) {
             };
 
             // send the events, fallibly
-            display.send_void_request(send_event.clone()).ok();
+            display.send_void_request(send_event.clone(), true).ok();
             send_event.event_mask = xproto::EventMask::SUBSTRUCTURE_REDIRECT.into();
-            display.send_void_request(send_event).ok();
+            display.send_void_request(send_event, true).ok();
             display.flush().unwrap();
         })
         .expect("failed to spawn close thread");

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-use super::{Synchronize, WaitForReplyRaw};
+use super::{CheckForError, WaitForReplyRaw};
 use crate::{
     display::{AsyncDisplay, AsyncDisplayExt, Cookie},
     Result,
@@ -24,14 +24,14 @@ pub struct WaitForReply<'this, Dpy: ?Sized, Reply> {
 
 enum Innards<'this, Dpy: ?Sized> {
     Waiting(WaitForReplyRaw<'this, Dpy>),
-    Synchronizing(Synchronize<'this, Dpy>),
+    Checking(CheckForError<'this, Dpy>),
 }
 
 impl<'this, Dpy: AsyncDisplay + ?Sized, Reply> WaitForReply<'this, Dpy, Reply> {
     pub(crate) fn new(dpy: &'this mut Dpy, cookie: Cookie<Reply>) -> Self {
         Self {
             innards: if mem::size_of::<Reply>() == 0 {
-                Innards::Synchronizing(dpy.synchronize())
+                Innards::Checking(dpy.check_for_error(cookie.sequence()))
             } else {
                 Innards::Waiting(dpy.wait_for_reply_raw(cookie.sequence()))
             },
@@ -42,7 +42,7 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply> WaitForReply<'this, Dpy, Reply> {
     pub(crate) fn cannibalize(self) -> &'this mut Dpy {
         match self.innards {
             Innards::Waiting(innards) => innards.cannibalize(),
-            Innards::Synchronizing(innards) => innards.cannibalize(),
+            Innards::Checking(innards) => innards.cannibalize(),
         }
     }
 }
@@ -67,8 +67,8 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: TryParseFd + Unpin> Future
                     Poll::Pending => Poll::Pending,
                 }
             }
-            Innards::Synchronizing(ref mut synchronize) => {
-                synchronize.poll_unpin(ctx).map_ok(|()| {
+            Innards::Checking(ref mut check) => {
+                check.poll_unpin(ctx).map_ok(|()| {
                     Reply::try_parse_fd(&[], &mut Vec::new())
                         .unwrap_or_else(|_| unreachable!())
                         .0

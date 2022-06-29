@@ -9,6 +9,7 @@ use core::{convert::TryFrom, mem};
 use x11rb_protocol::{
     connection::ReplyFdKind,
     x11_utils::{ReplyFDsRequest, ReplyRequest, Request, TryParseFd, VoidRequest},
+    DiscardMode,
 };
 
 /// The raw request.
@@ -29,6 +30,7 @@ pub struct RawRequest<'target, 'req> {
     advanced: usize,
     variant: ReplyFdKind,
     extension_name: Option<&'static str>,
+    discard_reply: bool,
     /// Scratch space buffer for use in formatting.
     buffer: Option<&'req mut [u8; 8]>,
 }
@@ -41,6 +43,7 @@ pub(crate) struct BufferedRequest {
     fds: Vec<Fd>,
     advanced: usize,
     variant: ReplyFdKind,
+    discard_reply: bool,
     extension_name: Option<&'static str>,
     buffer: [u8; 8],
 }
@@ -48,6 +51,7 @@ pub(crate) struct BufferedRequest {
 fn from_request<R: Request, Ret>(
     request: R,
     variant: ReplyFdKind,
+    discard_reply: bool,
     f: impl FnOnce(RawRequest<'_, '_>) -> Ret,
 ) -> Ret {
     // use u8::MAX as a placeholder
@@ -63,7 +67,10 @@ fn from_request<R: Request, Ret>(
     // buffer to use for formatting
     let mut buffer = [0; 8];
 
-    let req = RawRequest::new(&mut slices, fds, variant, R::EXTENSION_NAME, &mut buffer);
+    let mut req = RawRequest::new(&mut slices, fds, variant, R::EXTENSION_NAME, &mut buffer);
+    if discard_reply {
+        req.discard_reply();
+    }
 
     f(req)
 }
@@ -71,9 +78,10 @@ fn from_request<R: Request, Ret>(
 /// Create a new `RawRequest` from a `VoidRequest` type.
 pub fn from_void_request<R: VoidRequest, Ret>(
     request: R,
+    discard_reply: bool,
     f: impl FnOnce(RawRequest<'_, '_>) -> Ret,
 ) -> Ret {
-    from_request(request, ReplyFdKind::NoReply, f)
+    from_request(request, ReplyFdKind::NoReply, discard_reply, f)
 }
 
 /// Create a new `RawRequest` from a `ReplyRequest` type.
@@ -81,7 +89,7 @@ pub fn from_reply_request<R: ReplyRequest, Ret>(
     request: R,
     f: impl FnOnce(RawRequest<'_, '_>) -> Ret,
 ) -> Ret {
-    from_request(request, ReplyFdKind::ReplyWithoutFDs, f)
+    from_request(request, ReplyFdKind::ReplyWithoutFDs, false, f)
 }
 
 /// Create a new `RawRequest` from a `ReplyFDsRequest` type.
@@ -89,7 +97,7 @@ pub fn from_reply_fds_request<R: ReplyFDsRequest, Ret>(
     request: R,
     f: impl FnOnce(RawRequest<'_, '_>) -> Ret,
 ) -> Ret {
-    from_request(request, ReplyFdKind::ReplyWithFDs, f)
+    from_request(request, ReplyFdKind::ReplyWithFDs, false, f)
 }
 
 impl<'target, 'req> RawRequest<'target, 'req> {
@@ -117,7 +125,21 @@ impl<'target, 'req> RawRequest<'target, 'req> {
             advanced: 0,
             variant,
             extension_name,
+            discard_reply: false,
             buffer: Some(buffer),
+        }
+    }
+
+    /// Discard the reply.
+    fn discard_reply(&mut self) {
+        self.discard_reply = true;
+    }
+
+    pub(crate) fn discard_mode(&self) -> Option<DiscardMode> {
+        if self.discard_reply {
+            Some(DiscardMode::DiscardReply)
+        } else {
+            None
         }
     }
 
@@ -271,6 +293,7 @@ impl BufferedRequest {
             fds: mem::take(&mut self.fds),
             advanced: self.advanced,
             variant: self.variant,
+            discard_reply: self.discard_reply,
             extension_name: self.extension_name,
         };
 
@@ -294,6 +317,7 @@ cfg_async! {
                 fds: mem::take(&mut self.fds),
                 advanced: self.advanced,
                 variant: self.variant,
+                discard_reply: self.discard_reply,
                 extension_name: self.extension_name,
             };
 
@@ -345,6 +369,7 @@ impl<'target, 'req> From<RawRequest<'target, 'req>> for BufferedRequest {
             variant: raw.variant,
             extension_name: raw.extension_name,
             fds: raw.fds,
+            discard_reply: raw.discard_reply,
             buffer: match raw.buffer {
                 Some(buf) => *buf,
                 None => [0; 8],

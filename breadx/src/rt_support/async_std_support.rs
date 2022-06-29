@@ -345,6 +345,10 @@ impl<D: CanBeAsyncDisplay> CanBeAsyncDisplay for Async<D> {
     fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
         self.get_mut().try_maximum_request_length(ctx)
     }
+
+    fn try_check_for_error(&mut self,seq:u64,ctx: &mut Context< '_>) -> Result<AsyncStatus<()>> {
+        self.get_mut().try_check_for_error(seq,ctx)
+    }
 }
 
 impl<'lt, D: DisplayBase> CanBeAsyncDisplay for &'lt Async<D>
@@ -389,5 +393,9 @@ where
 
     fn try_flush(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>> {
         self.get_ref().try_flush(ctx)
+    }
+
+    fn try_check_for_error(&mut self,seq:u64,ctx: &mut Context< '_>) -> Result<AsyncStatus<()>> {
+        self.get_ref().try_check_for_error(seq,ctx)
     }
 }

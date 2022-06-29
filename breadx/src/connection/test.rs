@@ -117,9 +117,8 @@ pub(crate) fn with_test_connection(
 
 mod tests {
     use super::*;
-    use crate::setup_tracing;
+    use crate::{setup_tracing, connection::{new_io_slice, new_io_slice_mut}};
     use alloc::vec;
-    use std::io::IoSlice;
 
     #[test]
     fn test_send_slices_and_fds() {
@@ -130,9 +129,9 @@ mod tests {
             vec![],
             |mut conn| {
                 let slices = vec![
-                    IoSlice::new(&[1, 2, 3]),
-                    IoSlice::new(&[4, 5, 6]),
-                    IoSlice::new(&[7, 8, 9]),
+                    new_io_slice(&[1, 2, 3]),
+                    new_io_slice(&[4, 5, 6]),
+                    new_io_slice(&[7, 8, 9]),
                 ];
                 let mut fds = (&[1, 2, 3, 4, 5])
                     .iter()
@@ -168,9 +167,9 @@ mod tests {
                 let (bborrow2, bborrow3) = bborrow_r.split_at_mut(3);
 
                 let mut iov = [
-                    IoSliceMut::new(bborrow1),
-                    IoSliceMut::new(bborrow2),
-                    IoSliceMut::new(bborrow3),
+                    new_io_slice_mut(bborrow1),
+                    new_io_slice_mut(bborrow2),
+                    new_io_slice_mut(bborrow3),
                 ];
                 let mut fds = vec![];
                 let mut total_len = 9;
