@@ -10,6 +10,8 @@
 //! These functions are only active if the "BREADX_EXAMPLE_TIMEOUT"
 //! environment variable is present at compile time.
 
+#![cfg(feature = "std")]
+
 use breadx::{display::DisplayConnection, prelude::*, protocol::xproto};
 use std::{process, thread, time::Duration};
 

@@ -53,48 +53,48 @@
 //! [`DisplayConnection::connect()`]: crate::display::DisplayConnection::connect
 //! [`DisplayFunctionsExt`]: crate::display::DisplayFunctionsExt
 //!
-//! ```rust,no_run
-//! use breadx::{prelude::*, display::DisplayConnection, protocol::xproto};
-//!
-//! # fn main() -> breadx::Result<()> {
-//! // establish a connection to the X11 server
-//! let mut connection = DisplayConnection::connect(None)?;
-//!
-//! // create a window
-//! // note the "_checked" suffix, this indicates that the result of the
-//! // function will be checked by the server after it is run
-//! // also note that we need to create an XID for the window ahead of time
-//! let wid = connection.generate_xid()?;
-//! connection.create_window_checked(
-//!     0, // depth
-//!     wid,
-//!     connection.default_screen().root, // parent
-//!     0, // x
-//!     0, // y
-//!     600, // width
-//!     400, // height
-//!     0, // border width
-//!     xproto::WindowClass::COPY_FROM_PARENT,
-//!     0, // visual
-//!     xproto::CreateWindowAux::new()
-//!         .background_pixel(connection.default_screen().white_pixel)
-//! )?;
-//!
-//! // map the window to the screen
-//! // note the lack of _checked here
-//! connection.map_window(wid)?;
-//!
-//! // primary event loop
-//! loop {
-//!     let event = connection.wait_for_event()?;
-//!
-//!     match event {
-//!         // match on the Event struct in here
-//!         # _ => {},
-//!     }
-//! }
-//! # Ok(()) }
-//! ```
+#![cfg_attr(feature = "std", doc = " ```rust,no_run")]
+#![cfg_attr(feature = "std", doc = " use breadx::{prelude::*, display::DisplayConnection, protocol::xproto};")]
+#![cfg_attr(feature = "std", doc = "")]
+#![cfg_attr(feature = "std", doc = " # fn main() -> breadx::Result<()> {")]
+#![cfg_attr(feature = "std", doc = " // establish a connection to the X11 server")]
+#![cfg_attr(feature = "std", doc = " let mut connection = DisplayConnection::connect(None)?;")]
+#![cfg_attr(feature = "std", doc = "")]
+#![cfg_attr(feature = "std", doc = " // create a window")]
+#![cfg_attr(feature = "std", doc = " // note the \"_checked\" suffix, this indicates that the result of the")]
+#![cfg_attr(feature = "std", doc = " // function will be checked by the server after it is run")]
+#![cfg_attr(feature = "std", doc = " // also note that we need to create an XID for the window ahead of time")]
+#![cfg_attr(feature = "std", doc = " let wid = connection.generate_xid()?;")]
+#![cfg_attr(feature = "std", doc = " connection.create_window_checked(")]
+#![cfg_attr(feature = "std", doc = "     0, // depth")]
+#![cfg_attr(feature = "std", doc = "     wid,")]
+#![cfg_attr(feature = "std", doc = "     connection.default_screen().root, // parent")]
+#![cfg_attr(feature = "std", doc = "     0, // x")]
+#![cfg_attr(feature = "std", doc = "     0, // y")]
+#![cfg_attr(feature = "std", doc = "     600, // width")]
+#![cfg_attr(feature = "std", doc = "     400, // height")]
+#![cfg_attr(feature = "std", doc = "     0, // border width")]
+#![cfg_attr(feature = "std", doc = "     xproto::WindowClass::COPY_FROM_PARENT,")]
+#![cfg_attr(feature = "std", doc = "     0, // visual")]
+#![cfg_attr(feature = "std", doc = "     xproto::CreateWindowAux::new()")]
+#![cfg_attr(feature = "std", doc = "         .background_pixel(connection.default_screen().white_pixel)")]
+#![cfg_attr(feature = "std", doc = " )?;")]
+#![cfg_attr(feature = "std", doc = "")]
+#![cfg_attr(feature = "std", doc = " // map the window to the screen")]
+#![cfg_attr(feature = "std", doc = " // note the lack of _checked here")]
+#![cfg_attr(feature = "std", doc = " connection.map_window(wid)?;")]
+#![cfg_attr(feature = "std", doc = "")]
+#![cfg_attr(feature = "std", doc = " // primary event loop")]
+#![cfg_attr(feature = "std", doc = " loop {")]
+#![cfg_attr(feature = "std", doc = "     let event = connection.wait_for_event()?;")]
+#![cfg_attr(feature = "std", doc = "")]
+#![cfg_attr(feature = "std", doc = "     match event {")]
+#![cfg_attr(feature = "std", doc = "         // match on the Event struct in here")]
+#![cfg_attr(feature = "std", doc = "         # _ => {},")]
+#![cfg_attr(feature = "std", doc = "     }")]
+#![cfg_attr(feature = "std", doc = " }")]
+#![cfg_attr(feature = "std", doc = " # Ok(()) }")]
+#![cfg_attr(feature = "std", doc = " ```")]
 //!
 //! See the [tutorial](crate::tutorials::introduction) for more information
 //! on the usage of `breadx`.
@@ -188,4 +188,5 @@ pub mod prelude {
     }
 }
 
+#[cfg(feature = "std")]
 pub mod tutorials;

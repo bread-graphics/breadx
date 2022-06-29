@@ -36,28 +36,28 @@ const DEFAULT_WRITE_CAPACITY: usize = 16384;
 /// advantage of buffering. However, smaller, more frequent reads are
 /// common in X11, so this type is useful in general.
 ///
-/// ## Example
-///
-/// ```rust,no_run
-/// use breadx::connection::{BufConnection, Connection, StdConnection};
-/// use std::net::TcpStream;
-///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// // create a connection that isn't buffered
-/// let socket = TcpStream::connect("localhost:6000")?;
-/// let connection = StdConnection::new(socket);
-///
-/// // create a connection that is buffered
-/// let mut connection = BufConnection::new(connection);
-///
-/// let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);
-///
-/// // these two reads would normally result in two syscalls
-/// // however, with buffering, only one syscall occurs
-/// connection.recv_slice(&mut buf1)?;
-/// connection.recv_slice(&mut buf2)?;
-/// # Ok(()) }
-/// ```
+#[cfg_attr(feature = "std", doc = " ## Example")]
+#[cfg_attr(feature = "std", doc = "")]
+#[cfg_attr(feature = "std", doc = " ```rust,no_run")]
+#[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
+#[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
+#[cfg_attr(feature = "std", doc = "")]
+#[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
+#[cfg_attr(feature = "std", doc = " // create a connection that isn't buffered")]
+#[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
+#[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
+#[cfg_attr(feature = "std", doc = "")]
+#[cfg_attr(feature = "std", doc = " // create a connection that is buffered")]
+#[cfg_attr(feature = "std", doc = " let mut connection = BufConnection::new(connection);")]
+#[cfg_attr(feature = "std", doc = "")]
+#[cfg_attr(feature = "std", doc = " let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);")]
+#[cfg_attr(feature = "std", doc = "")]
+#[cfg_attr(feature = "std", doc = " // these two reads would normally result in two syscalls")]
+#[cfg_attr(feature = "std", doc = " // however, with buffering, only one syscall occurs")]
+#[cfg_attr(feature = "std", doc = " connection.recv_slice(&mut buf1)?;")]
+#[cfg_attr(feature = "std", doc = " connection.recv_slice(&mut buf2)?;")]
+#[cfg_attr(feature = "std", doc = " # Ok(()) }")]
+#[cfg_attr(feature = "std", doc = " ```")]
 ///
 /// [`Connection`]: crate::connection::Connection
 /// [`BufReader`]: std::io::BufReader
@@ -140,19 +140,19 @@ cfg_std_windows! {
 impl<C: Connection> BufConnection<C> {
     /// Create a new `BufConnection` from a given connection.
     ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// use breadx::connection::{BufConnection, Connection, StdConnection};
-    /// use std::net::TcpStream;
-    ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let socket = TcpStream::connect("localhost:6000")?;
-    /// let connection = StdConnection::new(socket);
-    /// let connection = BufConnection::new(connection);
-    /// # let _ = connection;
-    /// # Ok(()) }
-    /// ```
+    #[cfg_attr(feature = "std", doc = " ## Example")]
+    #[cfg_attr(feature = "std", doc = "")]
+    #[cfg_attr(feature = "std", doc = " ```rust,no_run")]
+    #[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
+    #[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
+    #[cfg_attr(feature = "std", doc = "")]
+    #[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
+    #[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
+    #[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
+    #[cfg_attr(feature = "std", doc = " let connection = BufConnection::new(connection);")]
+    #[cfg_attr(feature = "std", doc = " # let _ = connection;")]
+    #[cfg_attr(feature = "std", doc = " # Ok(()) }")]
+    #[cfg_attr(feature = "std", doc = " ```")]
     pub fn new(conn: C) -> Self {
         Self::with_capacity(DEFAULT_READ_CAPACITY, DEFAULT_WRITE_CAPACITY, conn)
     }
@@ -163,19 +163,19 @@ impl<C: Connection> BufConnection<C> {
     /// This can be useful if you expect your program to use different
     /// amounts of read and write data than normal ones do.
     ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// use breadx::connection::{BufConnection, Connection, StdConnection};
-    /// use std::net::TcpStream;
-    ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let socket = TcpStream::connect("localhost:6000")?;
-    /// let connection = StdConnection::new(socket);
-    /// let connection = BufConnection::with_capacity(1024, 2048, connection);
-    /// # let _ = connection;
-    /// # Ok(()) }
-    /// ```
+    #[cfg_attr(feature = "std", doc = " ## Example")]
+    #[cfg_attr(feature = "std", doc = "")]
+    #[cfg_attr(feature = "std", doc = " ```rust,no_run")]
+    #[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
+    #[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
+    #[cfg_attr(feature = "std", doc = "")]
+    #[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
+    #[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
+    #[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
+    #[cfg_attr(feature = "std", doc = " let connection = BufConnection::with_capacity(1024, 2048, connection);")]
+    #[cfg_attr(feature = "std", doc = " # let _ = connection;")]
+    #[cfg_attr(feature = "std", doc = " # Ok(()) }")]
+    #[cfg_attr(feature = "std", doc = " ```")]
     pub fn with_capacity(read_capacity: usize, write_capacity: usize, conn: C) -> Self {
         let read_buf = ReadBuffer {
             buf: vec![0; read_capacity].into_boxed_slice(),
