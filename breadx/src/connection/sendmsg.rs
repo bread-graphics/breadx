@@ -301,14 +301,16 @@ mod tests {
     use alloc::vec::Vec;
     use core::iter;
     use std::{
-        ffi::CString,
         io::{IoSlice, IoSliceMut},
         os::unix::net::UnixStream,
         sync::atomic::{AtomicUsize, Ordering::SeqCst},
     };
 
     /// Generate a useless file descriptor we can pass around.
+    #[cfg(target_os = "linux")]
     fn useless_fd() -> Fd {
+        use std::ffi::CString;
+
         static ID_GENERATOR: AtomicUsize = AtomicUsize::new(0);
         let id = ID_GENERATOR.fetch_add(1, SeqCst);
 
@@ -318,6 +320,48 @@ mod tests {
                 .unwrap();
 
         Fd::new(memfd)
+    }
+
+    /// Alternate version that creates a tempfile instead of a memfd.
+    #[cfg(not(target_os = "linux"))]
+    fn useless_fd() -> Fd {
+        use std::{fs, path::PathBuf, cell::RefCell, os::unix::io::AsRawFd};
+
+        struct TempfileRuntime {
+            filenames: RefCell<Vec<PathBuf>>,
+        }
+
+        impl TempfileRuntime {
+            fn create_fd(&self) -> Fd {
+                static ID_GENERATOR: AtomicUsize = AtomicUsize::new(0);
+                let id = ID_GENERATOR.fetch_add(1, SeqCst);
+
+                // create file and add name to list of files to clean up
+                let name = PathBuf::from(std::format!("/tmp/useless-fd-{}", id));
+                let file = fs::File::create(&name).unwrap();
+                self.filenames.borrow_mut().push(name);
+
+                let fd = Fd::new(file.as_raw_fd());
+                std::mem::forget(file);
+                fd
+            }
+        }
+
+        impl Drop for TempfileRuntime {
+            fn drop(&mut self) {
+                for name in self.filenames.borrow_mut().drain(..) {
+                    fs::remove_file(&name).unwrap();
+                }
+            }
+        }
+
+        std::thread_local! {
+            static RUNTIME: TempfileRuntime = TempfileRuntime {
+                filenames: RefCell::new(Vec::new()),
+            };
+        }
+
+        RUNTIME.with(TempfileRuntime::create_fd)
     }
 
     #[test]

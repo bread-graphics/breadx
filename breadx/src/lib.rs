@@ -163,6 +163,7 @@ cfg_std! {
     clippy::needless_lifetimes,
     clippy::too_many_arguments
 )]
+#[rustfmt::skip]
 pub(crate) mod automatically_generated;
 
 #[doc(inline)]
