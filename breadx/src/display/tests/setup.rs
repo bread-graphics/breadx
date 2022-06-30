@@ -1,80 +1,75 @@
-Setup {
-    status: 1,
-    protocol_major_version: 11,
-    protocol_minor_version: 0,
-    length: 3651,
-    release_number: 12101003,
-    resource_id_base: 157286400,
-    resource_id_mask: 2097151,
-    motion_buffer_size: 256,
-    maximum_request_length: 65535,
-    image_byte_order: LSBFirst,
-    bitmap_format_bit_order: LSBFirst,
-    bitmap_format_scanline_unit: 32,
-    bitmap_format_scanline_pad: 32,
-    min_keycode: 8,
-    max_keycode: 255,
-    vendor: [
-        84,
-        104,
-        101,
-        32,
-        88,
-        46,
-        79,
-        114,
-        103,
-        32,
-        70,
-        111,
-        117,
-        110,
-        100,
-        97,
-        116,
-        105,
-        111,
-        110,
-    ],
-    pixmap_formats: [
-        Format {
-            depth: 1,
-            bits_per_pixel: 1,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 4,
-            bits_per_pixel: 8,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 8,
-            bits_per_pixel: 8,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 15,
-            bits_per_pixel: 16,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 16,
-            bits_per_pixel: 16,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 24,
-            bits_per_pixel: 32,
-            scanline_pad: 32,
-        },
-        Format {
-            depth: 32,
-            bits_per_pixel: 32,
-            scanline_pad: 32,
-        },
-    ],
-    roots: [
-        Screen {
+// MIT/Apache2 License
+
+#![allow(clippy::unreadable_literal, clippy::too_many_lines)]
+
+use alloc::vec;
+use x11rb_protocol::protocol::xproto::{
+    BackingStore, Depth, Format, ImageOrder, Screen, Setup, VisualClass, Visualtype,
+};
+
+/// The setup from my machine, copy pasted here so that it can be used
+/// in testing.
+///
+/// Please do not use this to doxx me.
+pub(crate) fn test_setup() -> Setup {
+    Setup {
+        status: 1,
+        protocol_major_version: 11,
+        protocol_minor_version: 0,
+        length: 3651,
+        release_number: 12101003,
+        resource_id_base: 88080384,
+        resource_id_mask: 2097151,
+        motion_buffer_size: 256,
+        maximum_request_length: 65535,
+        image_byte_order: ImageOrder::LSB_FIRST,
+        bitmap_format_bit_order: ImageOrder::LSB_FIRST,
+        bitmap_format_scanline_unit: 32,
+        bitmap_format_scanline_pad: 32,
+        min_keycode: 8,
+        max_keycode: 255,
+        vendor: vec![
+            84, 104, 101, 32, 88, 46, 79, 114, 103, 32, 70, 111, 117, 110, 100, 97, 116, 105, 111,
+            110,
+        ],
+        pixmap_formats: vec![
+            Format {
+                depth: 1,
+                bits_per_pixel: 1,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 4,
+                bits_per_pixel: 8,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 8,
+                bits_per_pixel: 8,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 15,
+                bits_per_pixel: 16,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 16,
+                bits_per_pixel: 16,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 24,
+                bits_per_pixel: 32,
+                scanline_pad: 32,
+            },
+            Format {
+                depth: 32,
+                bits_per_pixel: 32,
+                scanline_pad: 32,
+            },
+        ],
+        roots: vec![Screen {
             root: 1955,
             default_colormap: 32,
             white_pixel: 16777215,
@@ -87,16 +82,16 @@ Setup {
             min_installed_maps: 1,
             max_installed_maps: 1,
             root_visual: 33,
-            backing_stores: WhenMapped,
+            backing_stores: BackingStore::WHEN_MAPPED,
             save_unders: false,
             root_depth: 24,
-            allowed_depths: [
+            allowed_depths: vec![
                 Depth {
                     depth: 24,
-                    visuals: [
+                    visuals: vec![
                         Visualtype {
                             visual_id: 33,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -105,7 +100,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 34,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -114,7 +109,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1357,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -123,7 +118,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1358,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -132,7 +127,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1359,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -141,7 +136,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1360,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -150,7 +145,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1361,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -159,7 +154,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1362,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -168,7 +163,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1363,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -177,7 +172,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1364,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -186,7 +181,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1365,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -195,7 +190,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1366,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -204,7 +199,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1367,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -213,7 +208,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1368,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -222,7 +217,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1369,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -231,7 +226,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1370,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -240,7 +235,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1371,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -249,7 +244,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1372,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -258,7 +253,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1373,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -267,7 +262,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1374,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -276,7 +271,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1375,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -285,7 +280,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1376,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -294,7 +289,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1377,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -303,7 +298,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1378,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -312,7 +307,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1379,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -321,7 +316,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1380,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -330,7 +325,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1381,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -339,7 +334,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1382,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -348,7 +343,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1383,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -357,7 +352,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1384,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -366,7 +361,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1385,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -375,7 +370,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1386,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -384,7 +379,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1387,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -393,7 +388,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1388,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -402,7 +397,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1389,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -411,7 +406,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1390,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -420,7 +415,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1391,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -429,7 +424,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1392,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -438,7 +433,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1393,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -447,7 +442,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1394,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -456,7 +451,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1395,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -465,7 +460,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1396,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -474,7 +469,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1397,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -483,7 +478,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1398,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -492,7 +487,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1399,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -501,7 +496,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1400,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -510,7 +505,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1401,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -519,7 +514,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1402,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -528,7 +523,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1403,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -537,7 +532,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1404,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -546,7 +541,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1405,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -555,7 +550,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1406,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -564,7 +559,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1407,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -573,7 +568,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1408,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -582,7 +577,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1409,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -591,7 +586,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1410,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -600,7 +595,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1411,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -609,7 +604,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1412,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -618,7 +613,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1413,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -627,7 +622,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1414,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -636,7 +631,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1415,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -645,7 +640,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1416,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -654,7 +649,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1417,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -663,7 +658,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1418,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -672,7 +667,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1419,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -681,7 +676,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1420,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -690,7 +685,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1421,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -699,7 +694,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1422,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -708,7 +703,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1423,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -717,7 +712,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1424,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -726,7 +721,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1425,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -735,7 +730,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1426,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -744,7 +739,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1427,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -753,7 +748,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1428,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -762,7 +757,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1429,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -771,7 +766,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1430,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -780,7 +775,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1431,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -789,7 +784,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1432,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -798,7 +793,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1433,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -807,7 +802,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1434,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -816,7 +811,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1435,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -825,7 +820,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1436,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -834,7 +829,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1437,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -843,7 +838,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1438,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -852,7 +847,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1439,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -861,7 +856,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1440,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -870,7 +865,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1441,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -879,7 +874,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1442,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -888,7 +883,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1443,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -897,7 +892,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1444,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -906,7 +901,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1445,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -915,7 +910,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1446,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -924,7 +919,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1447,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -933,7 +928,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1448,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -942,7 +937,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1449,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -951,7 +946,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1450,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -960,7 +955,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1451,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -969,7 +964,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1452,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -978,7 +973,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1453,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -987,7 +982,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1454,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -996,7 +991,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1455,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1005,7 +1000,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1456,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1014,7 +1009,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1457,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1023,7 +1018,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1458,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1032,7 +1027,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1459,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1041,7 +1036,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1460,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1050,7 +1045,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1461,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1059,7 +1054,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1462,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1068,7 +1063,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1463,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1077,7 +1072,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1464,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1086,7 +1081,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1465,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1095,7 +1090,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1466,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1104,7 +1099,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1467,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1113,7 +1108,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1468,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1122,7 +1117,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1469,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1131,7 +1126,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1470,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1140,7 +1135,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1471,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1149,7 +1144,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1472,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1158,7 +1153,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1473,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1167,7 +1162,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1474,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1176,7 +1171,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1475,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1185,7 +1180,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1476,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1194,7 +1189,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1477,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1203,7 +1198,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1478,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1212,7 +1207,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1479,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1221,7 +1216,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1480,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1230,7 +1225,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1481,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1239,7 +1234,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1482,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1248,7 +1243,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1483,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1257,7 +1252,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1484,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1266,7 +1261,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1485,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1275,7 +1270,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1486,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1284,7 +1279,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1487,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1293,7 +1288,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1488,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1302,7 +1297,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1489,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1311,7 +1306,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1490,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1320,7 +1315,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1491,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1329,7 +1324,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1492,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1338,7 +1333,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1493,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1347,7 +1342,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1494,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1356,7 +1351,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1495,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1365,7 +1360,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1496,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1374,7 +1369,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1497,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1383,7 +1378,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1498,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1392,7 +1387,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1499,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1401,7 +1396,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1500,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1410,7 +1405,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1501,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1419,7 +1414,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1502,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1428,7 +1423,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1503,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1437,7 +1432,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1504,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1446,7 +1441,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1505,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1455,7 +1450,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1506,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1464,7 +1459,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1507,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1473,7 +1468,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1508,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1482,7 +1477,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1509,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1491,7 +1486,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1510,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1500,7 +1495,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1511,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1509,7 +1504,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1512,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1518,7 +1513,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1513,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1527,7 +1522,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1514,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1536,7 +1531,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1515,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1545,7 +1540,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1516,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1554,7 +1549,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1517,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1563,7 +1558,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1518,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1572,7 +1567,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1519,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1581,7 +1576,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1520,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1590,7 +1585,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1521,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1599,7 +1594,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1522,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1608,7 +1603,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1523,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1617,7 +1612,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1524,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1626,7 +1621,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1525,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1635,7 +1630,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1526,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1644,7 +1639,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1527,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1653,7 +1648,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1528,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1662,7 +1657,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1529,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1671,7 +1666,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1530,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1680,7 +1675,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1531,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1689,7 +1684,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1532,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1698,7 +1693,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1533,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1707,7 +1702,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1534,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1716,7 +1711,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1535,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1725,7 +1720,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1536,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1734,7 +1729,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1537,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1743,7 +1738,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1538,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1752,7 +1747,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1539,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1761,7 +1756,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1540,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1770,7 +1765,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1541,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1779,7 +1774,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1542,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1788,7 +1783,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1543,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1797,7 +1792,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1544,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1806,7 +1801,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1545,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1815,7 +1810,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1546,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1824,7 +1819,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1547,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1833,7 +1828,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1548,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1842,7 +1837,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1549,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1851,7 +1846,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1550,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1860,7 +1855,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1551,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1869,7 +1864,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1552,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1878,7 +1873,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1553,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1887,7 +1882,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1554,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1896,7 +1891,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1555,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1905,7 +1900,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1556,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1914,7 +1909,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1557,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1923,7 +1918,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1558,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1932,7 +1927,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1559,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1941,7 +1936,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1560,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1950,7 +1945,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1561,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1959,7 +1954,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1562,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1968,7 +1963,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1563,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1977,7 +1972,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1564,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1986,7 +1981,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1565,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -1995,7 +1990,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1566,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2004,7 +1999,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1567,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2013,7 +2008,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1568,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2022,7 +2017,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1569,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2031,7 +2026,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1570,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2040,7 +2035,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1571,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2049,7 +2044,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1572,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2058,7 +2053,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1573,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2067,7 +2062,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1574,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2076,7 +2071,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1575,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2085,7 +2080,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1576,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2094,7 +2089,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1577,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2103,7 +2098,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1578,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2112,7 +2107,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1579,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2121,7 +2116,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1580,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2130,7 +2125,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1581,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2139,7 +2134,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1582,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2148,7 +2143,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1583,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2157,7 +2152,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1584,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2166,7 +2161,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1585,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2175,7 +2170,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1586,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2184,7 +2179,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1587,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2193,7 +2188,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1588,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2202,7 +2197,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1589,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2211,7 +2206,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1590,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2220,7 +2215,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1591,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2229,7 +2224,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1592,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2238,7 +2233,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1593,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2247,7 +2242,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1594,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2256,7 +2251,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1595,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2265,7 +2260,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1596,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2274,7 +2269,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1597,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2283,7 +2278,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1598,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2292,7 +2287,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1599,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2301,7 +2296,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1600,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2310,7 +2305,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1601,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2319,7 +2314,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1602,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2328,7 +2323,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1603,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2337,7 +2332,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1604,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2346,7 +2341,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1605,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2355,7 +2350,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1606,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2364,7 +2359,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1607,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2373,7 +2368,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1608,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2382,7 +2377,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1609,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2391,7 +2386,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1610,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2400,7 +2395,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1611,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2409,7 +2404,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1612,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2418,7 +2413,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1613,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2427,7 +2422,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1614,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2436,7 +2431,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1615,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2445,7 +2440,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1616,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2454,7 +2449,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1617,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2463,7 +2458,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1618,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2472,7 +2467,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1619,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2481,7 +2476,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1620,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2490,7 +2485,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1621,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2499,7 +2494,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1622,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2508,7 +2503,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1623,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2517,7 +2512,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1624,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2526,7 +2521,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1625,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2535,7 +2530,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1626,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2544,7 +2539,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1627,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2553,7 +2548,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1628,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2562,7 +2557,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1629,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2571,7 +2566,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1630,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2580,7 +2575,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1631,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2589,7 +2584,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1632,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2598,7 +2593,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1633,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2607,7 +2602,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1634,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2616,7 +2611,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1635,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2625,7 +2620,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1636,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2634,7 +2629,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1637,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2643,7 +2638,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1638,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2652,7 +2647,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1639,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2661,7 +2656,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1640,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2670,7 +2665,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1641,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2679,7 +2674,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1642,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2688,7 +2683,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1643,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2697,7 +2692,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1644,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2706,7 +2701,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1645,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2715,7 +2710,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1646,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2724,7 +2719,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1647,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2733,7 +2728,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1648,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2742,7 +2737,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1649,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2751,7 +2746,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1650,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2760,7 +2755,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1651,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2769,7 +2764,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1652,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2778,7 +2773,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1653,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2787,7 +2782,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1654,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2796,7 +2791,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1655,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2805,7 +2800,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1656,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2814,7 +2809,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1657,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2823,7 +2818,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1658,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2832,7 +2827,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1659,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2841,7 +2836,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1660,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2850,7 +2845,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1661,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2859,7 +2854,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1662,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2868,7 +2863,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1663,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2877,7 +2872,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1664,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2886,7 +2881,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1665,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2895,7 +2890,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1666,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2904,7 +2899,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1667,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2913,7 +2908,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1668,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2922,7 +2917,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1669,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2931,7 +2926,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1670,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2940,7 +2935,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1671,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2949,7 +2944,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1672,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2958,7 +2953,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1673,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2967,7 +2962,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1674,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2976,7 +2971,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1675,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2985,7 +2980,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1676,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -2994,7 +2989,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1677,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3003,7 +2998,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1678,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3012,7 +3007,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1679,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3021,7 +3016,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1680,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3030,7 +3025,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1681,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3039,7 +3034,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1682,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3048,7 +3043,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1683,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3057,7 +3052,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1684,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3066,7 +3061,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1685,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3075,7 +3070,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1686,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3084,7 +3079,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1687,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3093,7 +3088,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1688,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3102,7 +3097,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1689,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3111,7 +3106,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1690,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3120,7 +3115,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1691,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3129,7 +3124,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1692,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3138,7 +3133,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1693,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3147,7 +3142,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1694,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3156,7 +3151,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1695,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3165,7 +3160,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1696,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3174,7 +3169,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1697,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3183,7 +3178,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1698,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3192,7 +3187,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1699,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3201,7 +3196,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1700,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3210,7 +3205,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1701,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3219,7 +3214,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1702,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3228,7 +3223,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1703,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3237,7 +3232,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1704,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3246,7 +3241,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1705,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3255,7 +3250,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1706,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3264,7 +3259,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1707,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3273,7 +3268,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1708,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3282,7 +3277,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1709,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3291,7 +3286,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1710,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3300,7 +3295,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1711,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3309,7 +3304,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1712,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3318,7 +3313,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1713,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3327,7 +3322,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1714,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3336,7 +3331,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1715,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3345,7 +3340,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1716,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3354,7 +3349,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1717,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3363,7 +3358,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1718,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3372,7 +3367,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1719,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3381,7 +3376,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1720,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3390,7 +3385,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1721,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3399,7 +3394,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1722,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3408,7 +3403,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1723,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3417,7 +3412,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1724,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3426,7 +3421,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1725,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3435,7 +3430,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1726,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3444,7 +3439,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1727,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3453,7 +3448,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1728,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3462,7 +3457,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1729,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3471,7 +3466,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1730,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3480,7 +3475,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1731,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3489,7 +3484,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1732,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3498,7 +3493,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1733,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3507,7 +3502,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1734,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3516,7 +3511,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1735,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3525,7 +3520,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1736,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3534,7 +3529,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1737,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3543,7 +3538,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1738,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3552,7 +3547,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1739,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3561,7 +3556,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1740,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3570,7 +3565,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1741,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3579,7 +3574,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1742,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3588,7 +3583,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1743,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3597,7 +3592,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1744,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3606,7 +3601,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1745,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3615,7 +3610,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1746,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3624,7 +3619,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1747,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3633,7 +3628,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1748,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3642,7 +3637,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1749,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3651,7 +3646,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1750,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3660,7 +3655,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1751,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3669,7 +3664,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1752,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3678,7 +3673,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1753,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3687,7 +3682,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1754,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3696,7 +3691,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1755,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3705,7 +3700,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1756,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3714,7 +3709,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1757,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3723,7 +3718,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1758,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3732,7 +3727,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1759,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3741,7 +3736,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1760,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3750,7 +3745,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1761,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3759,7 +3754,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1762,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3768,7 +3763,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1763,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3777,7 +3772,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1764,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3786,7 +3781,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1765,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3795,7 +3790,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1766,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3804,7 +3799,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1767,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3813,7 +3808,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1768,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3822,7 +3817,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1769,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3831,7 +3826,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1770,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3840,7 +3835,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1771,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3849,7 +3844,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1772,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3858,7 +3853,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1773,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3867,7 +3862,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1774,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3876,7 +3871,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1775,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3885,7 +3880,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1776,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3894,7 +3889,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1777,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3903,7 +3898,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1778,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3912,7 +3907,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1779,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3921,7 +3916,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1780,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3930,7 +3925,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1781,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3939,7 +3934,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1782,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3948,7 +3943,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1783,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3957,7 +3952,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1784,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3966,7 +3961,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1785,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3975,7 +3970,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1786,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3984,7 +3979,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1787,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -3993,7 +3988,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1788,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4002,7 +3997,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1789,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4011,7 +4006,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1790,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4020,7 +4015,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1791,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4029,7 +4024,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1792,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4038,7 +4033,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1793,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4047,7 +4042,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1794,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4056,7 +4051,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1795,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4065,7 +4060,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1796,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4074,7 +4069,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1797,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4083,7 +4078,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1798,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4092,7 +4087,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1799,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4101,7 +4096,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1800,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4110,7 +4105,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1801,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4119,7 +4114,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1802,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4128,7 +4123,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1803,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4137,7 +4132,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1804,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4146,7 +4141,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1805,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4155,7 +4150,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1806,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4164,7 +4159,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1807,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4173,7 +4168,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1808,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4182,7 +4177,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1809,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4191,7 +4186,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1810,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4200,7 +4195,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1811,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4209,7 +4204,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1812,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4218,7 +4213,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1813,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4227,7 +4222,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1814,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4236,7 +4231,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1815,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4245,7 +4240,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1816,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4254,7 +4249,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1817,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4263,7 +4258,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1818,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4272,7 +4267,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1819,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4281,7 +4276,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1820,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4290,7 +4285,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1821,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4299,7 +4294,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1822,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4308,7 +4303,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1823,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4317,7 +4312,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1824,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4326,7 +4321,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1825,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4335,7 +4330,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1826,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4344,7 +4339,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1827,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4353,7 +4348,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1828,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4362,7 +4357,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1829,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4371,7 +4366,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1830,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4380,7 +4375,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1831,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4389,7 +4384,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1832,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4398,7 +4393,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1833,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4407,7 +4402,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1834,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4416,7 +4411,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1835,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4425,7 +4420,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1836,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4434,7 +4429,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1837,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4443,7 +4438,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1838,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4452,7 +4447,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1839,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4461,7 +4456,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1840,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4470,7 +4465,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1841,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4479,7 +4474,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1842,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4488,7 +4483,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1843,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4497,7 +4492,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1844,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4506,7 +4501,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1845,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4515,7 +4510,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1846,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4524,7 +4519,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1847,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4533,7 +4528,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1848,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4542,7 +4537,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1849,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4551,7 +4546,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1850,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4560,7 +4555,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1851,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4569,7 +4564,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1852,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4578,7 +4573,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1853,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4587,7 +4582,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1854,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4596,7 +4591,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1855,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4605,7 +4600,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1856,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4614,7 +4609,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1857,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4623,7 +4618,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1858,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4632,7 +4627,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1859,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4641,7 +4636,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1860,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4650,7 +4645,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1861,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4659,7 +4654,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1862,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4668,7 +4663,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1863,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4677,7 +4672,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1864,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4686,7 +4681,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1865,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4695,7 +4690,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1866,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4704,7 +4699,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1867,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4713,7 +4708,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1868,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4722,7 +4717,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1869,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4731,7 +4726,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1870,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4740,7 +4735,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1871,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4749,7 +4744,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1872,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4758,7 +4753,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1873,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4767,7 +4762,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1874,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4776,7 +4771,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1875,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4785,7 +4780,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1876,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4794,7 +4789,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1877,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4803,7 +4798,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1878,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4812,7 +4807,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1879,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4821,7 +4816,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1880,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4830,7 +4825,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1881,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4839,7 +4834,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1882,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4848,7 +4843,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1883,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4857,7 +4852,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1884,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4866,7 +4861,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1885,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4875,7 +4870,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1886,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4884,7 +4879,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1887,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4893,7 +4888,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1888,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4902,7 +4897,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1889,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4911,7 +4906,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1890,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4920,7 +4915,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1891,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4929,7 +4924,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1892,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4938,7 +4933,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1893,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4947,7 +4942,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1894,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4956,7 +4951,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1895,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4965,7 +4960,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1896,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4974,7 +4969,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1897,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4983,7 +4978,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1898,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -4992,7 +4987,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1899,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5001,7 +4996,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1900,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5010,7 +5005,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1901,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5019,7 +5014,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1902,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5028,7 +5023,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1903,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5037,7 +5032,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1904,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5046,7 +5041,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1905,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5055,7 +5050,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1906,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5064,7 +5059,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1907,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5073,7 +5068,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1908,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5082,7 +5077,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1909,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5091,7 +5086,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1910,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5100,7 +5095,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1911,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5109,7 +5104,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1912,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5118,7 +5113,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1913,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5127,7 +5122,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1914,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5136,7 +5131,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1915,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5145,7 +5140,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1916,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5154,7 +5149,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1917,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5163,7 +5158,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1918,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5172,7 +5167,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1919,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5181,7 +5176,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1920,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5190,7 +5185,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1921,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5199,7 +5194,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1922,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5208,7 +5203,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1923,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5217,7 +5212,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1924,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5226,7 +5221,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1925,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5235,7 +5230,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1926,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5244,7 +5239,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1927,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5253,7 +5248,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1928,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5262,7 +5257,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1929,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5271,7 +5266,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1930,
-                            class: DirectColor,
+                            class: VisualClass::DIRECT_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5282,30 +5277,30 @@ Setup {
                 },
                 Depth {
                     depth: 1,
-                    visuals: [],
+                    visuals: vec![],
                 },
                 Depth {
                     depth: 4,
-                    visuals: [],
+                    visuals: vec![],
                 },
                 Depth {
                     depth: 8,
-                    visuals: [],
+                    visuals: vec![],
                 },
                 Depth {
                     depth: 15,
-                    visuals: [],
+                    visuals: vec![],
                 },
                 Depth {
                     depth: 16,
-                    visuals: [],
+                    visuals: vec![],
                 },
                 Depth {
                     depth: 32,
-                    visuals: [
+                    visuals: vec![
                         Visualtype {
                             visual_id: 180,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5314,7 +5309,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1931,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5323,7 +5318,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1932,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5332,7 +5327,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1933,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5341,7 +5336,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1934,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5350,7 +5345,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1935,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5359,7 +5354,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1936,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5368,7 +5363,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1937,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5377,7 +5372,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1938,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5386,7 +5381,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1939,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5395,7 +5390,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1940,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5404,7 +5399,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1941,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5413,7 +5408,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1942,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5422,7 +5417,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1943,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5431,7 +5426,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1944,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5440,7 +5435,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1945,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5449,7 +5444,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1946,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5458,7 +5453,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1947,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5467,7 +5462,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1948,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5476,7 +5471,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1949,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5485,7 +5480,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1950,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5494,7 +5489,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1951,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5503,7 +5498,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1952,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5512,7 +5507,7 @@ Setup {
                         },
                         Visualtype {
                             visual_id: 1953,
-                            class: TrueColor,
+                            class: VisualClass::TRUE_COLOR,
                             bits_per_rgb_value: 8,
                             colormap_entries: 256,
                             red_mask: 16711680,
@@ -5522,6 +5517,6 @@ Setup {
                     ],
                 },
             ],
-        },
-    ],
+        }],
+    }
 }

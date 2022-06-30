@@ -159,12 +159,14 @@ cfg_std! {
 
 #[allow(
     clippy::cast_possible_truncation,
+    clippy::let_and_return,
     clippy::needless_lifetimes,
     clippy::too_many_arguments
 )]
 pub(crate) mod automatically_generated;
 
-pub type Fd = x11rb_protocol::RawFdContainer;
+#[doc(inline)]
+pub use x11rb_protocol::RawFdContainer as Fd;
 
 pub mod connection;
 pub mod display;

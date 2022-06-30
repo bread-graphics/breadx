@@ -3,10 +3,11 @@
 use crate::{Error, Fd, InvalidState, Result};
 use alloc::vec::Vec;
 use x11rb_protocol::{
-    connection::{Connection as ProtoConnection, ReplyFdKind},
+    connection::{Connection as ProtoConnection, PollReply, ReplyFdKind},
     id_allocator::{IdAllocator, IdsExhausted},
     protocol::{xc_misc::GetXIDRangeReply, xproto::Setup, Event},
     x11_utils::{ExtInfoProvider, X11Error},
+    DiscardMode,
 };
 
 use super::RawReply;
@@ -73,6 +74,27 @@ impl X11Core {
         Ok(Some(RawReply::new(buf.into_boxed_slice(), fds)))
     }
 
+    /// Can we check to see if this sequence number has errored out?
+    pub(crate) fn ready_for_error_check(&mut self, reply: u64) -> bool {
+        self.proto.prepare_check_for_reply_or_error(reply)
+    }
+
+    /// Check to see if this sequence number has errored out.
+    ///
+    /// Returns `true` if the sequence number is ready. Returns an
+    /// error if it's errored out.
+    pub(crate) fn check_for_error(
+        &mut self,
+        reply: u64,
+        ext_info: &dyn ExtInfoProvider,
+    ) -> Result<bool> {
+        match self.proto.poll_check_for_reply_or_error(reply) {
+            PollReply::NoReply => Ok(true),
+            PollReply::Reply(buf) => self.try_parse_error(buf, ext_info).map(|_| true),
+            PollReply::TryAgain => Ok(false),
+        }
+    }
+
     /// Fetch the next event, if we have it.
     pub(crate) fn fetch_event(&mut self, ext_info: &dyn ExtInfoProvider) -> Result<Option<Event>> {
         let (buf, _) = match self.proto.poll_for_event_with_sequence() {
@@ -89,6 +111,10 @@ impl X11Core {
 
     pub(crate) fn send_request(&mut self, variant: ReplyFdKind) -> Option<u64> {
         self.proto.send_request(variant)
+    }
+
+    pub(crate) fn discard_reply(&mut self, seq: u64, mode: DiscardMode) {
+        self.proto.discard_reply(seq, mode);
     }
 
     pub(crate) fn generate_xid(&mut self) -> Option<u32> {

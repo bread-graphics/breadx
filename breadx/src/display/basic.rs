@@ -454,6 +454,11 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         // format the request
         request.format(extension_opcode, max_len)?;
 
+        // set it up as a discard if necessary
+        if let Some(mode) = request.discard_mode() {
+            self.core.discard_reply(seq, mode);
+        }
+
         Ok(AsyncStatus::Ready(seq))
     }
 
@@ -479,6 +484,32 @@ impl<Conn: Connection> BasicDisplay<Conn> {
         }
 
         Ok(AsyncStatus::Ready(()))
+    }
+
+    /// Check to see if the given void request completed without error.
+    fn partial_error_check(
+        &mut self,
+        seq: u64,
+        ctx: Option<&Waker>,
+        strategy: &mut impl Strategy<Conn>,
+    ) -> Result<AsyncStatus<()>> {
+        // if we aren't ready set, synchronize
+        while self.core.ready_for_error_check(seq) {
+            tracing::debug!("synchronizing until we are ready to check for an error");
+            mtry!(self.partial_synchronize(ctx, strategy));
+        }
+
+        // check for an error
+        loop {
+            if self.core.check_for_error(seq, &self.extension_map)? {
+                // we received no error, so we're done
+                return Ok(AsyncStatus::Ready(()));
+            }
+
+            // wait
+            tracing::debug!("reading packets to try to get an error");
+            mtry!(self.wait(strategy));
+        }
     }
 
     /// Try to generate an XID.
@@ -598,6 +629,11 @@ impl<Conn: Connection> Display for BasicDisplay<Conn> {
         // flush connection buffer
         self.conn.with(Connection::flush)
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        self.partial_error_check(seq, None, &mut BlockingStrategy)
+            .map(AsyncStatus::unwrap)
+    }
 }
 
 cfg_async! {
@@ -641,6 +677,14 @@ cfg_async! {
             _ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
             self.fetch_reply(seq, &mut NonBlockingStrategy)
+        }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.partial_error_check(seq, Some(ctx.waker()), &mut NonBlockingStrategy)
         }
     }
 }

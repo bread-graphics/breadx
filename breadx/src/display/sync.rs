@@ -213,6 +213,10 @@ impl<Dpy: Display + ?Sized> Display for SyncDisplay<Dpy> {
     fn synchronize(&mut self) -> Result<()> {
         self.with_inner_mut(Display::synchronize)
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        self.with_inner_mut(move |inner| inner.check_for_error(seq))
+    }
 }
 
 impl<Dpy: Display + ?Sized> Display for &SyncDisplay<Dpy> {
@@ -242,6 +246,10 @@ impl<Dpy: Display + ?Sized> Display for &SyncDisplay<Dpy> {
 
     fn synchronize(&mut self) -> Result<()> {
         self.with_inner(Display::synchronize)
+    }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        self.with_inner(move |inner| inner.check_for_error(seq))
     }
 }
 
@@ -286,6 +294,14 @@ cfg_async! {
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
             self.with_inner_mut(move |inner| inner.try_maximum_request_length(ctx))
         }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.with_inner_mut(move |inner| inner.try_check_for_error(seq, ctx))
+        }
     }
 
     impl<Dpy: CanBeAsyncDisplay + ?Sized> CanBeAsyncDisplay for &SyncDisplay<Dpy> {
@@ -329,6 +345,14 @@ cfg_async! {
 
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
             self.try_status_inner(ctx, CanBeAsyncDisplay::try_maximum_request_length)
+        }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            self.try_status_inner(ctx, move |inner, ctx| inner.try_check_for_error(seq, ctx))
         }
     }
 

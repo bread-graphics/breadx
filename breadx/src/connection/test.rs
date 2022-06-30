@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-#![cfg(all(feature = "std", unix, test))]
+#![cfg(test)]
 
 use alloc::vec::Vec;
 use core::{cmp, mem};
@@ -54,7 +54,16 @@ impl<'a> Connection for TestConnection<'a> {
         }
 
         self.written_fds
-            .extend(mem::take(fds).into_iter().map(Fd::into_raw_fd));
+            .extend(mem::take(fds).into_iter().map(|fd| {
+                cfg_if::cfg_if! {
+                    if #[cfg(all(feature = "std", unix))] {
+                        Fd::into_raw_fd(fd)
+                    } else {
+                        let _ = fd;
+                        0
+                    }
+                }
+            }));
         Ok(len)
     }
 
@@ -102,7 +111,19 @@ pub(crate) fn with_test_connection(
 ) {
     let mut written_bytes = Vec::new();
     let mut written_fds = Vec::new();
-    let mut read_fds = read_fds.into_iter().map(Fd::from).collect::<Vec<_>>();
+    let mut read_fds = read_fds
+        .into_iter()
+        .map(|fd| {
+            cfg_if::cfg_if! {
+                if #[cfg(all(feature = "std", unix))] {
+                    Fd::from(fd)
+                } else {
+                    let _ = fd;
+                    panic!("can't parse fds on non-std unix")
+                }
+            }
+        })
+        .collect::<Vec<_>>();
 
     let conn = TestConnection::new(
         read_bytes,
@@ -115,11 +136,14 @@ pub(crate) fn with_test_connection(
     asserts(written_bytes, written_fds);
 }
 
+#[cfg(all(unix, feature = "std"))]
 mod tests {
     use super::*;
-    use crate::setup_tracing;
+    use crate::{
+        connection::{new_io_slice, new_io_slice_mut},
+        setup_tracing,
+    };
     use alloc::vec;
-    use std::io::IoSlice;
 
     #[test]
     fn test_send_slices_and_fds() {
@@ -130,9 +154,9 @@ mod tests {
             vec![],
             |mut conn| {
                 let slices = vec![
-                    IoSlice::new(&[1, 2, 3]),
-                    IoSlice::new(&[4, 5, 6]),
-                    IoSlice::new(&[7, 8, 9]),
+                    new_io_slice(&[1, 2, 3]),
+                    new_io_slice(&[4, 5, 6]),
+                    new_io_slice(&[7, 8, 9]),
                 ];
                 let mut fds = (&[1, 2, 3, 4, 5])
                     .iter()
@@ -168,9 +192,9 @@ mod tests {
                 let (bborrow2, bborrow3) = bborrow_r.split_at_mut(3);
 
                 let mut iov = [
-                    IoSliceMut::new(bborrow1),
-                    IoSliceMut::new(bborrow2),
-                    IoSliceMut::new(bborrow3),
+                    new_io_slice_mut(bborrow1),
+                    new_io_slice_mut(bborrow2),
+                    new_io_slice_mut(bborrow3),
                 ];
                 let mut fds = vec![];
                 let mut total_len = 9;

@@ -56,6 +56,8 @@ fn main() -> Result<()> {
 
 //! Contains automatically generated items.
 
+#![rustfmt::skip]
+
 use crate::{Result, display::{Cookie, Display, DisplayExt}};
 use alloc::borrow::Cow;
 #[allow(unused_imports)]
@@ -65,7 +67,6 @@ use __private::Sealed;
 
 cfg_async! {
     use crate::{display::{AsyncDisplay, AsyncDisplayExt}, futures};
-    use tracing::{Instrument, instrument::Instrumented};
     use __private::Sealed2;
 }
 "#

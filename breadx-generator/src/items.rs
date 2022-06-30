@@ -124,6 +124,7 @@ pub fn generate_item(header: &Header, item: &ToplevelItem, mode: Mode) -> Option
                 req,
                 &params,
                 &return_type,
+                fncall_to_use,
                 mode,
             ));
 
@@ -161,7 +162,7 @@ fn write_initial_send(
     if matches!(mode, Mode::Async) {
         writeln!(
             item,
-            ") -> Instrumented<futures::SendRequest<'this, Self, {}>> {{",
+            ") -> futures::SendRequest<'this, Self, {}> {{",
             return_type
         )
         .unwrap();
@@ -186,6 +187,41 @@ fn write_initial_send(
     }
 
     // build the request in the item
+    build_request(&mut item, &struct_name, header, params);
+    create_cookie(&mut item, fncall_to_use, mode, false);
+
+    // return the cookie
+    writeln!(item, "    cookie").unwrap();
+
+    writeln!(item, "}}").unwrap();
+
+    item
+}
+
+fn create_cookie(item: &mut String, fncall_to_use: &'static str, mode: Mode, immediate_fn: bool) {
+    // send the request with the cookie
+    write!(item, "    let cookie = self.{}(request", fncall_to_use).unwrap();
+
+    // if we're sending a void request, determine whether or not we
+    // should discard the reply
+    if fncall_to_use == "send_void_request" {
+        write!(item, ", {:?}", !immediate_fn).unwrap();
+    }
+
+    item.push(')');
+    if immediate_fn && matches!(mode, Mode::Sync) {
+        item.push('?');
+    }
+
+    if matches!(mode, Mode::Async) && !immediate_fn {
+        // ensure that the span is attached to the future
+        write!(item, ".with_span(span)").unwrap();
+    }
+
+    item.push_str(";\n");
+}
+
+fn build_request(item: &mut impl Write, struct_name: &str, header: &Header, params: &[Parameter]) {
     writeln!(
         item,
         "    let request = types::{}::{}Request {{",
@@ -227,20 +263,6 @@ fn write_initial_send(
         }
     }
     writeln!(item, "    }};").unwrap();
-
-    // send the request with the cookie
-    write!(item, "    self.{}(request)", fncall_to_use).unwrap();
-
-    if matches!(mode, Mode::Async) {
-        // ensure that the span is attached to the future
-        writeln!(item, ".instrument(span)").unwrap();
-    } else {
-        item.push('\n');
-    }
-
-    writeln!(item, "}}").unwrap();
-
-    item
 }
 
 fn immediate_function(
@@ -248,6 +270,7 @@ fn immediate_function(
     req: &Request,
     params: &[Parameter],
     return_type: &ReturnType,
+    fncall_to_use: &'static str,
     mode: Mode,
 ) -> String {
     let mut item = String::new();
@@ -261,6 +284,7 @@ fn immediate_function(
         ReturnType::Reply(_) => "immediate",
     };
     let fnname = format!("{}_{}", old_fnname, suffix);
+    let struct_name = camel_case_name(&req.name);
 
     // emit the function header
     if matches!(mode, Mode::Async) {
@@ -273,7 +297,7 @@ fn immediate_function(
     if matches!(mode, Mode::Async) {
         writeln!(
             item,
-            ") -> Instrumented<futures::CheckedSendRequest<'this, Self, {}>> {{",
+            ") -> futures::CheckedSendRequest<'this, Self, {}> {{",
             return_type
         )
         .unwrap();
@@ -281,29 +305,19 @@ fn immediate_function(
         writeln!(item, ") -> Result<{}> {{", return_type).unwrap();
     }
 
-    // call the previous function
-    writeln!(item, "    let cookie = self.{}(", old_fnname).unwrap();
-    for param in params {
-        writeln!(item, "        {},", param.name).unwrap();
-    }
-    writeln!(
-        item,
-        "    ){};",
-        if matches!(mode, Mode::Sync) { "?" } else { "" }
-    )
-    .unwrap();
+    // build a cookie
+    build_request(&mut item, &struct_name, header, params);
+    create_cookie(&mut item, fncall_to_use, mode, true);
 
     // resolve the cookie
     if matches!(mode, Mode::Async) {
-        writeln!(item, "    let span = cookie.span().clone();").unwrap();
-        writeln!(item, "    let cookie = cookie.into_inner();").unwrap();
         writeln!(
             item,
             "    let res: futures::CheckedSendRequest<'this, Self, {}> = cookie.into();",
             return_type
         )
         .unwrap();
-        writeln!(item, "    res.instrument(span)").unwrap();
+        writeln!(item, "    res").unwrap();
     } else {
         writeln!(item, "    self.wait_for_reply(cookie)").unwrap();
     }

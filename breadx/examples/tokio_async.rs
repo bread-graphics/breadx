@@ -1,6 +1,10 @@
 // MIT/Apache2 License
 
 #[cfg(all(feature = "tokio-support", unix))]
+#[path = "util/cancel.rs"]
+mod cancel;
+
+#[cfg(all(feature = "tokio-support", unix))]
 use breadx::Result;
 
 #[cfg(all(feature = "tokio-support", unix))]
@@ -15,6 +19,8 @@ mod inner {
 
     #[tokio::main(flavor = "current_thread")]
     pub async fn real_main() -> Result<()> {
+        super::cancel::spawn_kill_thread();
+
         // Connect to the server.
         let mut connection = tokio_support::connect(None).await?;
 
@@ -105,6 +111,8 @@ mod inner {
                 &wm_delete_window,
             )
             .await?;
+
+        super::cancel::spawn_close_thread(wid);
 
         // primary event loop
         loop {

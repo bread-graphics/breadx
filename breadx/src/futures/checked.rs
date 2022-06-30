@@ -2,18 +2,19 @@
 
 use core::{mem, task::Poll};
 use futures_util::{Future, FutureExt};
+use tracing::Span;
 use x11rb_protocol::x11_utils::TryParseFd;
 
+use super::{SendRequest, WaitForReply};
 use crate::{
     display::{AsyncDisplay, AsyncDisplayExt},
     Result,
 };
 
-use super::{SendRequest, WaitForReply};
-
 /// A wrapper around [`SendRequest`] that immediately resolves the cookie.
 pub struct CheckedSendRequest<'this, Dpy: ?Sized, Reply> {
     inner: Innards<'this, Dpy, Reply>,
+    span: Option<Span>,
 }
 
 enum Innards<'this, Dpy: ?Sized, Reply> {
@@ -25,8 +26,9 @@ enum Innards<'this, Dpy: ?Sized, Reply> {
 impl<'this, Dpy: ?Sized, Reply> From<SendRequest<'this, Dpy, Reply>>
     for CheckedSendRequest<'this, Dpy, Reply>
 {
-    fn from(inner: SendRequest<'this, Dpy, Reply>) -> Self {
+    fn from(mut inner: SendRequest<'this, Dpy, Reply>) -> Self {
         Self {
+            span: inner.take_span(),
             inner: Innards::SendRequest(inner),
         }
     }
@@ -42,6 +44,9 @@ impl<'this, Dpy: AsyncDisplay + ?Sized, Reply: Unpin + TryParseFd> Future
         ctx: &mut core::task::Context<'_>,
     ) -> Poll<Self::Output> {
         let this = self.get_mut();
+
+        // take the span
+        let _enter = this.span.as_ref().map(Span::enter);
 
         loop {
             match this.inner {

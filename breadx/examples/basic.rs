@@ -2,6 +2,9 @@
 
 //! Demonstration of the basic capabilities of `breadx`.
 
+#[path = "util/cancel.rs"]
+mod cancel;
+
 #[cfg(feature = "std")]
 use breadx::{
     display::DisplayConnection,
@@ -12,6 +15,7 @@ use breadx::{
 #[cfg(feature = "std")]
 fn main() -> breadx::Result<()> {
     tracing_subscriber::fmt::init();
+    cancel::spawn_kill_thread();
 
     // Create a new display connection.
     let mut connection = DisplayConnection::connect(None)?;
@@ -86,7 +90,7 @@ fn main() -> breadx::Result<()> {
     let wm_protocols = connection.wait_for_reply(wm_protocols)?.atom;
     let wm_delete_window = connection.wait_for_reply(wm_delete_window)?.atom;
 
-    connection.change_property_checked(
+    connection.change_property(
         xproto::PropMode::REPLACE,
         wid,
         wm_protocols,
@@ -95,6 +99,8 @@ fn main() -> breadx::Result<()> {
         1,
         &wm_delete_window,
     )?;
+
+    cancel::spawn_close_thread(wid);
 
     // primary event loop
     loop {

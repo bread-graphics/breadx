@@ -98,6 +98,10 @@ cfg_sync! {
     pub use sync::SyncDisplay;
 }
 
+cfg_test! {
+    //mod tests;
+}
+
 pub use crate::automatically_generated::DisplayFunctionsExt;
 cfg_async! {
     pub use crate::automatically_generated::AsyncDisplayFunctionsExt;
@@ -282,6 +286,13 @@ pub trait Display: DisplayBase {
             self.wait_for_reply_raw(seq).map(|_| ())
         })
     }
+
+    /// Check for an error for the given sequence number.
+    ///
+    /// This is intended to be used for void requests. For all
+    /// other requests, either an error will occur or the reply
+    /// will be discarded.
+    fn check_for_error(&mut self, seq: u64) -> Result<()>;
 
     /// Flush all pending requests to the server.
     ///
@@ -483,6 +494,9 @@ cfg_async! {
         ///
         /// This function doesn't have to be cancel safe.
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>>;
+
+        /// Try to check for an error.
+        fn try_check_for_error(&mut self, seq: u64, ctx: &mut Context<'_>) -> Result<AsyncStatus<()>>;
     }
 
     /// A non-blocking interface to the X11 server.
@@ -562,6 +576,10 @@ impl<D: Display + ?Sized> Display for &mut D {
     fn maximum_request_length(&mut self) -> Result<usize> {
         (**self).maximum_request_length()
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        (**self).check_for_error(seq)
+    }
 }
 
 cfg_async! {
@@ -604,6 +622,14 @@ cfg_async! {
 
         fn try_maximum_request_length(&mut self, ctx: &mut Context<'_>) -> Result<AsyncStatus<usize>> {
             (**self).try_maximum_request_length(ctx)
+        }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            (**self).try_check_for_error(seq, ctx)
         }
     }
 
@@ -667,6 +693,10 @@ impl<D: Display + ?Sized> Display for Box<D> {
     fn wait_for_reply_raw(&mut self, seq: u64) -> Result<RawReply> {
         (**self).wait_for_reply_raw(seq)
     }
+
+    fn check_for_error(&mut self, seq: u64) -> Result<()> {
+        (**self).check_for_error(seq)
+    }
 }
 
 cfg_async! {
@@ -709,6 +739,14 @@ cfg_async! {
             ctx: &mut Context<'_>,
         ) -> Result<AsyncStatus<RawReply>> {
             (**self).try_wait_for_reply_raw(seq, ctx)
+        }
+
+        fn try_check_for_error(
+            &mut self,
+            seq: u64,
+            ctx: &mut Context<'_>,
+        ) -> Result<AsyncStatus<()>> {
+            (**self).try_check_for_error(seq, ctx)
         }
     }
 
