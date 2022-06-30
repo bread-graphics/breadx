@@ -32,7 +32,7 @@ pub fn spawn_kill_thread() {
             // kill the program
             tracing::error!("{}", KILL_PROGRAM);
 
-            process::exit(1);
+            process::exit(0);
         })
         .expect("failed to spawn kill thread");
 }
