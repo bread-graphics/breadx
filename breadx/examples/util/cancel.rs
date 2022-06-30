@@ -5,7 +5,7 @@
 //! This is used in CI to be able to run these programs as a testing
 //! measure. The ideal case opens a new display and sends the kill
 //! command to the given root window. The less-ideal case, in case
-//! a deadlock happens, manually kills the program after five seconds.
+//! a deadlock happens, manually kills the program after one minute.
 //!
 //! These functions are only active if the "BREADX_EXAMPLE_TIMEOUT"
 //! environment variable is present at compile time.
@@ -26,13 +26,13 @@ pub fn spawn_kill_thread() {
     thread::Builder::new()
         .name("kill-thread".to_string())
         .spawn(|| {
-            // wait five seconds
-            thread::sleep(Duration::from_secs(5));
+            // wait one minute
+            thread::sleep(Duration::from_secs(60));
 
             // kill the program
             tracing::error!("{}", KILL_PROGRAM);
 
-            process::exit(0);
+            process::exit(1);
         })
         .expect("failed to spawn kill thread");
 }

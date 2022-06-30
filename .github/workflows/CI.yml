@@ -144,7 +144,7 @@ jobs:
 
       # run all examples
       # took this from x11rb's ci
-      - name: Run Examples
+      - name: Run Examples (Linux)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
             cd breadx
@@ -153,4 +153,33 @@ jobs:
               example=${example/.rs/}
               xvfb-run -a cargo run --example "$example" --all-features
             done
+
+      # run examples on windows
+      - uses: cygwin/cygwin-install-action@master
+        if: startsWith(matrix.os, 'windows')
+        with:
+          packages: xorg-server-extra
+
+      - name: Run Examples (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: powershell
+        env:
+          DISPLAY: 127.0.0.1:0
+        run: |
+          $xvfb = Start-Process -PassThru -FilePath C:\cygwin\bin\Xvfb.exe -ArgumentList "-listen tcp :0"
+          Get-ChildItem breadx/examples |
+            Where {$_.extension -eq ".rs"} |
+            Foreach-Object {
+            
+            cargo run --example $($_.BaseName) --all-features
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Example $($_.BaseName) failed"
+            }
+          }
+          Stop-Process -Id $xvfb.Id
+
+
+
+      
   
