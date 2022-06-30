@@ -325,7 +325,6 @@ impl<Conn: Connection> BasicDisplay<Conn> {
                 }
                 Some(None) => {
                     // prefetch
-                    // TODO: does this work on non-bigreq systems?
                     mtry!(self.prefetch_maximum_length(ctx, strategy));
                 }
                 Some(Some(sz)) => {

@@ -193,8 +193,6 @@ impl<'target, 'req> RawRequest<'target, 'req> {
             self.data[1] = new_io_slice(&buffer[..4]);
             advance_io(&mut self.data[2], 4);
         } else {
-            // TODO: probably more efficient to use i/o
-            // slices in this case
             let length_bytes = ((x_len + 1) as u32).to_ne_bytes();
 
             // copy existing data to the buffer

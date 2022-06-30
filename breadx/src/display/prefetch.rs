@@ -123,7 +123,6 @@ impl<T: PrefetchTarget> Prefetch<T> {
     /// Evaluate the prefetch while blocking.
     pub fn evaluate(&mut self, display: &mut impl Display) -> Result<&T::Target> {
         // call all functions in order
-        // TODO: handle on_x11_error
         let request = self.request_to_format();
         let seq = request.take(|request| display.send_request_raw(request))?;
         self.sent_override(seq);
