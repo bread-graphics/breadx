@@ -145,6 +145,7 @@ jobs:
       # run all examples
       # took this from x11rb's ci
       - name: Run Examples
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
             cd breadx
             for example in examples/*.rs; do
