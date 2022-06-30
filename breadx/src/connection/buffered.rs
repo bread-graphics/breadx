@@ -592,6 +592,7 @@ impl WriteBuffer {
 mod tests {
     use super::*;
     use crate::{connection::with_test_connection, utils::setup_tracing};
+    #[cfg(all(feature = "std", unix))]
     use core::mem::ManuallyDrop;
 
     #[cfg(all(feature = "std", unix))]
@@ -624,6 +625,7 @@ mod tests {
         }
     }
 
+    #[cfg(all(feature = "std", unix))]
     #[test]
     fn test_read_vectored() {
         setup_tracing();

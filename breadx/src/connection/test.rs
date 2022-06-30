@@ -59,7 +59,8 @@ impl<'a> Connection for TestConnection<'a> {
                     if #[cfg(all(feature = "std", unix))] {
                         Fd::into_raw_fd(fd)
                     } else {
-                        unreachable!()
+                        let _ = fd;
+                        0
                     }
                 }
             }));
@@ -117,6 +118,7 @@ pub(crate) fn with_test_connection(
                 if #[cfg(all(feature = "std", unix))] {
                     Fd::from(fd)
                 } else {
+                    let _ = fd;
                     panic!("can't parse fds on non-std unix")
                 }
             }
