@@ -554,7 +554,7 @@ impl ReadBuffer {
         debug_assert!(self.valid_range.start <= self.valid_range.end);
 
         // reset ringbuffer back to start if we're empty now
-        if self.valid_range.is_empty() {
+        if Range::is_empty(&self.valid_range) {
             self.valid_range = 0..0;
         }
     }
@@ -600,7 +600,7 @@ mod tests {
     fn test_write_vectored() {
         setup_tracing();
 
-        for buf_size in [16384, 5] {
+        for buf_size in [16384, 5].iter().copied() {
             with_test_connection(
                 &[],
                 vec![],
@@ -608,7 +608,7 @@ mod tests {
                     let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
                     let iov = [new_io_slice(b"Hello,"), new_io_slice(b" world!")];
-                    let mut fds = (15..20).map(Fd::from).collect::<Vec<_>>();
+                    let mut fds = (15i32..20).map(Fd::new).collect::<Vec<_>>();
 
                     let amt = bc.send_slices_and_fds(&iov, &mut fds).unwrap();
 
@@ -618,7 +618,7 @@ mod tests {
                     bc.flush().unwrap();
                 },
                 |write_bytes, write_fds| {
-                    assert_eq!(&write_bytes, b"Hello, world!".as_ref());
+                    assert_eq!(write_bytes.as_slice(), b"Hello, world!".as_ref());
                     assert_eq!(write_fds, vec![15, 16, 17, 18, 19]);
                 },
             );
@@ -630,7 +630,7 @@ mod tests {
     fn test_read_vectored() {
         setup_tracing();
 
-        for buf_size in [16384] {
+        for buf_size in [16384].iter().copied() {
             with_test_connection(
                 b"Hello, world!",
                 vec![15, 16, 17, 18, 19],
@@ -679,7 +679,7 @@ mod tests {
     fn test_write_vectored_without_fds() {
         setup_tracing();
 
-        for buf_size in [16384, 5] {
+        for buf_size in [16384, 5].iter().copied() {
             with_test_connection(
                 &[],
                 vec![],
@@ -694,7 +694,7 @@ mod tests {
                     bc.flush().unwrap();
                 },
                 |write_bytes, write_fds| {
-                    assert_eq!(&write_bytes, b"Hello, world!".as_ref());
+                    assert_eq!(write_bytes.as_slice(), b"Hello, world!".as_ref());
                     assert_eq!(write_fds, vec![]);
                 },
             );
@@ -705,7 +705,7 @@ mod tests {
     fn test_write_buffer() {
         setup_tracing();
 
-        for buf_size in [16384, 5] {
+        for buf_size in [16384, 5].iter().copied() {
             with_test_connection(
                 &[],
                 vec![],
@@ -728,7 +728,7 @@ mod tests {
     fn test_read_buffer() {
         setup_tracing();
 
-        for buf_size in [16834, 6] {
+        for buf_size in [16834, 6].iter().copied() {
             with_test_connection(
                 b"Hello, world!",
                 vec![],

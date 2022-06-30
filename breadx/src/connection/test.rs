@@ -116,7 +116,7 @@ pub(crate) fn with_test_connection(
         .map(|fd| {
             cfg_if::cfg_if! {
                 if #[cfg(all(feature = "std", unix))] {
-                    Fd::from(fd)
+                    Fd::new(fd)
                 } else {
                     let _ = fd;
                     panic!("can't parse fds on non-std unix")
@@ -161,7 +161,7 @@ mod tests {
                 let mut fds = (&[1, 2, 3, 4, 5])
                     .iter()
                     .copied()
-                    .map(Fd::from)
+                    .map(Fd::new)
                     .collect::<Vec<_>>();
                 let mut total_len = 9;
 

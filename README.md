@@ -1,5 +1,16 @@
 # breadx
 
+[![crates.io][crates-badge]][crates-url]
+[![Documentation][docs-badge]][docs-url]
+[![Build Status][build-badge]][build-url]
+
+[crates-badge]: https://img.shields.io/crates/v/breadx
+[crates-url]: https://crates.io/crates/breadx
+[docs-badge]: https://img.shields.io/docsrs/breadx
+[docs-url]: https://docs.rs/breadx
+[build-badge]: https://img.shields.io/github/workflow/status/bread-graphics/breadx/CI
+[build-url]: https://github.com/bread-graphics/breadx/actions?query=workflow%3ACI+branch%3Amaster
+
 An implementation of the X Window System Protocol in Rust, with an emphasis on comprehensability and usability.
 
 ## Advantages
@@ -19,6 +30,12 @@ An implementation of the X Window System Protocol in Rust, with an emphasis on c
 ## Tutorials/Examples
 
 For tutorials and examples of breadx's usage, check out [the docs](https://docs.rs/breadx).
+
+## MSRV
+
+The current MSRV for `breadx` with all features enabled is 1.49.0. This is largely tied to `tokio`'s MSRV, and with fewer features enabled `breadx`
+is likely to work on Rust versions as low as 1.46.0 (although this is never guaranteed). The MSRV will not be changed without either a
+major or minor version bump.
 
 ## License
 
