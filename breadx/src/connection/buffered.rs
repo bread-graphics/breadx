@@ -36,41 +36,41 @@ const DEFAULT_WRITE_CAPACITY: usize = 16384;
 /// advantage of buffering. However, smaller, more frequent reads are
 /// common in X11, so this type is useful in general.
 ///
-#[cfg_attr(feature = "std", doc = " ## Example")]
-#[cfg_attr(feature = "std", doc = "")]
-#[cfg_attr(feature = "std", doc = " ```rust,no_run")]
-#[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
-#[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
-#[cfg_attr(feature = "std", doc = "")]
-#[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
-#[cfg_attr(feature = "std", doc = " // create a connection that isn't buffered")]
-#[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
-#[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
-#[cfg_attr(feature = "std", doc = "")]
-#[cfg_attr(feature = "std", doc = " // create a connection that is buffered")]
-#[cfg_attr(feature = "std", doc = " let mut connection = BufConnection::new(connection);")]
-#[cfg_attr(feature = "std", doc = "")]
-#[cfg_attr(feature = "std", doc = " let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);")]
-#[cfg_attr(feature = "std", doc = "")]
-#[cfg_attr(feature = "std", doc = " // these two reads would normally result in two syscalls")]
-#[cfg_attr(feature = "std", doc = " // however, with buffering, only one syscall occurs")]
-#[cfg_attr(feature = "std", doc = " connection.recv_slice(&mut buf1)?;")]
-#[cfg_attr(feature = "std", doc = " connection.recv_slice(&mut buf2)?;")]
-#[cfg_attr(feature = "std", doc = " # Ok(()) }")]
-#[cfg_attr(feature = "std", doc = " ```")]
+/// ## Example
+///
+/// ```rust,no_run
+/// use breadx::connection::{BufConnection, Connection, StdConnection};
+/// use std::net::TcpStream;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // create a connection that isn't buffered
+/// let socket = TcpStream::connect("localhost:6000")?;
+/// let connection = StdConnection::new(socket);
+///
+/// // create a connection that is buffered
+/// let mut connection = BufConnection::new(connection);
+///
+/// let (mut buf1, mut buf2) = ([0u8; 16], [0u8; 16]);
+///
+/// // these two reads would normally result in two syscalls
+/// // however, with buffering, only one syscall occurs
+/// connection.recv_slice(&mut buf1)?;
+/// connection.recv_slice(&mut buf2)?;
+/// # Ok(()) }
+/// ```
 ///
 /// [`Connection`]: crate::connection::Connection
 /// [`BufReader`]: std::io::BufReader
 /// [`BufWriter`]: std::io::BufWriter
-pub struct BufConnection<C> {
-    /// The connection we're wrapping around.
-    conn: C,
+pub struct BufConnection<C: ?Sized> {
     /// The read buffer, containing data that has been read from the
     /// connection but not yet returned to the caller.
     read_buf: ReadBuffer,
     /// The write buffer, containing data that has been written to the
     /// connection but not yet flushed.
     write_buf: WriteBuffer,
+    /// The connection we're wrapping around.
+    conn: C,
 }
 
 /// The buffer used to store reads.
@@ -103,26 +103,26 @@ struct WriteBuffer {
     fds: Vec<Fd>,
 }
 
-impl<C: Connection> From<C> for BufConnection<C> {
+impl<C> From<C> for BufConnection<C> {
     fn from(conn: C) -> Self {
         Self::new(conn)
     }
 }
 
-impl<C: Connection> AsRef<C> for BufConnection<C> {
+impl<C: ?Sized> AsRef<C> for BufConnection<C> {
     fn as_ref(&self) -> &C {
         &self.conn
     }
 }
 
-impl<C: Connection> AsMut<C> for BufConnection<C> {
+impl<C: ?Sized> AsMut<C> for BufConnection<C> {
     fn as_mut(&mut self) -> &mut C {
         &mut self.conn
     }
 }
 
 cfg_std_unix! {
-    impl<C: AsRawFd> AsRawFd for BufConnection<C> {
+    impl<C: AsRawFd + ?Sized> AsRawFd for BufConnection<C> {
         fn as_raw_fd(&self) -> RawFd {
             self.conn.as_raw_fd()
         }
@@ -130,29 +130,29 @@ cfg_std_unix! {
 }
 
 cfg_std_windows! {
-    impl<C: AsRawSocket> AsRawSocket for BufConnection<C> {
+    impl<C: AsRawSocket + ?Sized> AsRawSocket for BufConnection<C> {
         fn as_raw_socket(&self) -> RawSocket {
             self.conn.as_raw_socket()
         }
     }
 }
 
-impl<C: Connection> BufConnection<C> {
+impl<C> BufConnection<C> {
     /// Create a new `BufConnection` from a given connection.
     ///
-    #[cfg_attr(feature = "std", doc = " ## Example")]
-    #[cfg_attr(feature = "std", doc = "")]
-    #[cfg_attr(feature = "std", doc = " ```rust,no_run")]
-    #[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
-    #[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
-    #[cfg_attr(feature = "std", doc = "")]
-    #[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
-    #[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
-    #[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
-    #[cfg_attr(feature = "std", doc = " let connection = BufConnection::new(connection);")]
-    #[cfg_attr(feature = "std", doc = " # let _ = connection;")]
-    #[cfg_attr(feature = "std", doc = " # Ok(()) }")]
-    #[cfg_attr(feature = "std", doc = " ```")]
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{BufConnection, Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    /// let connection = BufConnection::new(connection);
+    /// # let _ = connection;
+    /// # Ok(()) }
+    /// ```
     pub fn new(conn: C) -> Self {
         Self::with_capacity(DEFAULT_READ_CAPACITY, DEFAULT_WRITE_CAPACITY, conn)
     }
@@ -163,19 +163,19 @@ impl<C: Connection> BufConnection<C> {
     /// This can be useful if you expect your program to use different
     /// amounts of read and write data than normal ones do.
     ///
-    #[cfg_attr(feature = "std", doc = " ## Example")]
-    #[cfg_attr(feature = "std", doc = "")]
-    #[cfg_attr(feature = "std", doc = " ```rust,no_run")]
-    #[cfg_attr(feature = "std", doc = " use breadx::connection::{BufConnection, Connection, StdConnection};")]
-    #[cfg_attr(feature = "std", doc = " use std::net::TcpStream;")]
-    #[cfg_attr(feature = "std", doc = "")]
-    #[cfg_attr(feature = "std", doc = " # fn main() -> Result<(), Box<dyn std::error::Error>> {")]
-    #[cfg_attr(feature = "std", doc = " let socket = TcpStream::connect(\"localhost:6000\")?;")]
-    #[cfg_attr(feature = "std", doc = " let connection = StdConnection::new(socket);")]
-    #[cfg_attr(feature = "std", doc = " let connection = BufConnection::with_capacity(1024, 2048, connection);")]
-    #[cfg_attr(feature = "std", doc = " # let _ = connection;")]
-    #[cfg_attr(feature = "std", doc = " # Ok(()) }")]
-    #[cfg_attr(feature = "std", doc = " ```")]
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// use breadx::connection::{BufConnection, Connection, StdConnection};
+    /// use std::net::TcpStream;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let socket = TcpStream::connect("localhost:6000")?;
+    /// let connection = StdConnection::new(socket);
+    /// let connection = BufConnection::with_capacity(1024, 2048, connection);
+    /// # let _ = connection;
+    /// # Ok(()) }
+    /// ```
     pub fn with_capacity(read_capacity: usize, write_capacity: usize, conn: C) -> Self {
         let read_buf = ReadBuffer {
             buf: vec![0; read_capacity].into_boxed_slice(),
@@ -190,12 +190,14 @@ impl<C: Connection> BufConnection<C> {
         };
 
         Self {
-            conn,
             read_buf,
             write_buf,
+            conn,
         }
     }
+}
 
+impl<C: Connection + ?Sized> BufConnection<C> {
     /// Flush the `WriteBuffer` to the underlying connection.
     ///
     /// This will flush the `WriteBuffer` to the underlying connection,
@@ -298,7 +300,9 @@ impl<C: Connection> BufConnection<C> {
 
         Ok(total_len)
     }
+}
 
+impl<C: Connection + ?Sized> BufConnection<C> {
     /// Copy from the read buffer into the given slice.
     fn copy_into_slice(&mut self, slice: &mut [u8]) -> usize {
         let amt = cmp::min(slice.len(), self.read_buf.readable_slice().len());
@@ -433,47 +437,7 @@ impl<C: Connection> BufConnection<C> {
     }
 }
 
-impl<Conn: Connection> Connection for BufConnection<Conn> {
-    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
-        self.send_slices_impl(slices, move |this, slices, true_write| {
-            if true_write {
-                this.conn.send_slices_and_fds(slices, fds)
-            } else {
-                this.write_buf.fds.append(fds);
-                Ok(0)
-            }
-        })
-    }
-
-    fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
-        self.send_slices_impl(slices, |this, slice, true_write| {
-            if true_write {
-                this.conn.send_slices(slice)
-            } else {
-                Ok(0)
-            }
-        })
-    }
-
-    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
-        // if we can't fit the slice in the current write buffer,
-        // flush the buffer
-        if slice.len() >= self.write_buf.spare_capacity() {
-            self.flush_write_buffer()?;
-        }
-
-        // if the slice will never fit in the current write buffer,
-        // forward the call to the underlying connection
-        if slice.len() > self.write_buf.capacity() {
-            return self.conn.send_slice(slice);
-        }
-
-        // copy the slice into the write buffer
-        self.copy_slice_to_buffer(slice);
-
-        Ok(slice.len())
-    }
-
+impl<Conn: Connection + ?Sized> Connection for BufConnection<Conn> {
     fn recv_slices_and_fds(
         &mut self,
         slices: &mut [IoSliceMut<'_>],
@@ -514,6 +478,46 @@ impl<Conn: Connection> Connection for BufConnection<Conn> {
         self.recv_slice_impl(slice, Some(fds), |conn, slices, fds| {
             conn.non_blocking_recv_slices_and_fds(slices, fds)
         })
+    }
+
+    fn send_slices_and_fds(&mut self, slices: &[IoSlice<'_>], fds: &mut Vec<Fd>) -> Result<usize> {
+        self.send_slices_impl(slices, move |this, slices, true_write| {
+            if true_write {
+                this.conn.send_slices_and_fds(slices, fds)
+            } else {
+                this.write_buf.fds.append(fds);
+                Ok(0)
+            }
+        })
+    }
+
+    fn send_slices(&mut self, slices: &[IoSlice<'_>]) -> Result<usize> {
+        self.send_slices_impl(slices, |this, slice, true_write| {
+            if true_write {
+                this.conn.send_slices(slice)
+            } else {
+                Ok(0)
+            }
+        })
+    }
+
+    fn send_slice(&mut self, slice: &[u8]) -> Result<usize> {
+        // if we can't fit the slice in the current write buffer,
+        // flush the buffer
+        if slice.len() >= self.write_buf.spare_capacity() {
+            self.flush_write_buffer()?;
+        }
+
+        // if the slice will never fit in the current write buffer,
+        // forward the call to the underlying connection
+        if slice.len() > self.write_buf.capacity() {
+            return self.conn.send_slice(slice);
+        }
+
+        // copy the slice into the write buffer
+        self.copy_slice_to_buffer(slice);
+
+        Ok(slice.len())
     }
 
     fn flush(&mut self) -> Result<()> {
@@ -584,12 +588,13 @@ impl WriteBuffer {
     }
 }
 
-#[cfg(all(feature = "std", unix, test))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::{connection::with_test_connection, utils::setup_tracing};
     use core::mem::ManuallyDrop;
 
+    #[cfg(all(feature = "std", unix))]
     #[test]
     fn test_write_vectored() {
         setup_tracing();
@@ -601,7 +606,7 @@ mod tests {
                 |conn| {
                     let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-                    let iov = [IoSlice::new(b"Hello,"), IoSlice::new(b" world!")];
+                    let iov = [new_io_slice(b"Hello,"), new_io_slice(b" world!")];
                     let mut fds = (15..20).map(Fd::from).collect::<Vec<_>>();
 
                     let amt = bc.send_slices_and_fds(&iov, &mut fds).unwrap();
@@ -637,9 +642,9 @@ mod tests {
                     let buf3 = &mut buf3[..3];
 
                     let mut iov = [
-                        IoSliceMut::new(buf1),
-                        IoSliceMut::new(buf2),
-                        IoSliceMut::new(buf3),
+                        new_io_slice_mut(buf1),
+                        new_io_slice_mut(buf2),
+                        new_io_slice_mut(buf3),
                     ];
 
                     let mut fds = ManuallyDrop::new(vec![]);
@@ -657,7 +662,7 @@ mod tests {
                     // try to follow up with another read
                     let (buf1, buf2) = buffer.split_at_mut(2);
                     let buf2 = &mut buf2[..2];
-                    let mut iov = [IoSliceMut::new(buf1), IoSliceMut::new(buf2)];
+                    let mut iov = [new_io_slice_mut(buf1), new_io_slice_mut(buf2)];
                     let mut fds = vec![];
 
                     assert_eq!(bc.recv_slices_and_fds(&mut iov, &mut fds).unwrap(), 4);
@@ -679,7 +684,7 @@ mod tests {
                 |conn| {
                     let mut bc = BufConnection::with_capacity(buf_size, buf_size, conn);
 
-                    let iov = [IoSlice::new(b"Hello,"), IoSlice::new(b" world!")];
+                    let iov = [new_io_slice(b"Hello,"), new_io_slice(b" world!")];
 
                     let amt = bc.send_slices(&iov).unwrap();
                     assert_eq!(amt, 13);

@@ -1,6 +1,6 @@
 // MIT/Apache2 License
 
-#![cfg(all(feature = "std", unix, test))]
+#![cfg(test)]
 
 use alloc::vec::Vec;
 use core::{cmp, mem};
@@ -54,7 +54,15 @@ impl<'a> Connection for TestConnection<'a> {
         }
 
         self.written_fds
-            .extend(mem::take(fds).into_iter().map(Fd::into_raw_fd));
+            .extend(mem::take(fds).into_iter().map(|fd| {
+                cfg_if::cfg_if! {
+                    if #[cfg(all(feature = "std", unix))] {
+                        Fd::into_raw_fd(fd)
+                    } else {
+                        unreachable!()
+                    }
+                }
+            }));
         Ok(len)
     }
 
@@ -102,7 +110,18 @@ pub(crate) fn with_test_connection(
 ) {
     let mut written_bytes = Vec::new();
     let mut written_fds = Vec::new();
-    let mut read_fds = read_fds.into_iter().map(Fd::from).collect::<Vec<_>>();
+    let mut read_fds = read_fds
+        .into_iter()
+        .map(|fd| {
+            cfg_if::cfg_if! {
+                if #[cfg(all(feature = "std", unix))] {
+                    Fd::from(fd)
+                } else {
+                    panic!("can't parse fds on non-std unix")
+                }
+            }
+        })
+        .collect::<Vec<_>>();
 
     let conn = TestConnection::new(
         read_bytes,
@@ -115,6 +134,7 @@ pub(crate) fn with_test_connection(
     asserts(written_bytes, written_fds);
 }
 
+#[cfg(all(unix, feature = "std"))]
 mod tests {
     use super::*;
     use crate::{
