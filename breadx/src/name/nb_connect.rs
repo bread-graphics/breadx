@@ -160,7 +160,7 @@ fn unix_connections(path: PathBuf) -> impl Stream<Item = Result<SockAddr>> + Sen
     let abstract_path = OsStr::from_bytes(&abstract_path_buf);
 
     // setup vec with both options
-    let paths_to_try = [
+    let paths_to_try = vec![
         SockAddr::unix(abstract_path).map_err(Into::into),
         SockAddr::unix(&path).map_err(Into::into),
     ];

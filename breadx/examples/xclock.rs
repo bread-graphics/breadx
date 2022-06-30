@@ -459,7 +459,10 @@ mod inner {
                 let p1 = FlVector::new(p1x, p1y);
                 let p2 = FlVector::new(p2x, p2y);
 
-                cvt_line(p2, p1, 5.0)
+                let tris = cvt_line(p2, p1, 5.0);
+                // below line is required to keep 1.49.0 MSRV
+                // in a saner program I'd just return the tris array
+                Vec::from(tris)
             })
             .collect::<Vec<_>>();
 
