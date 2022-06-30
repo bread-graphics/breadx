@@ -16,8 +16,6 @@ An implementation of the X Window System Protocol in Rust, with an emphasis on c
 * On its own, `breadx` is not compatible with libraries that use `lixcb` or Xlib. Consider using [`whitebreadx`](https://github.com/bread-graphics/whitebreadx) if this is important.
 * `breadx` provides no utility or helper functions beyond the requests that go on the wire.
 
-If you're looking for a more complete, full-Rust X11 implementation with support for all documented extensions, consider [x11rb](https://github.com/psychon/x11rb/). This project sets out to accomplish very much the same goal as breadx, although with different ideas of how to accomplish those goals.
-
 ## Tutorials/Examples
 
 For tutorials and examples of breadx's usage, check out [the docs](https://docs.rs/breadx).
