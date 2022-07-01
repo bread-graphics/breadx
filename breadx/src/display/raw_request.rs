@@ -1,4 +1,7 @@
-// MIT/Apache2 License
+//               Copyright John Nunley, 2022.
+// Distributed under the Boost Software License, Version 1.0.
+//       (See accompanying file LICENSE or copy at
+//         https://www.boost.org/LICENSE_1_0.txt)
 
 use crate::{
     connection::{advance_io, new_io_slice, IoSlice},
@@ -27,6 +30,7 @@ pub struct RawRequest<'target, 'req> {
     // - third data slice has at least four bytes
     data: &'target mut [IoSlice<'req>],
     fds: Vec<Fd>,
+    // the number of bytes into data that we've advanced
     advanced: usize,
     variant: ReplyFdKind,
     extension_name: Option<&'static str>,
@@ -135,7 +139,8 @@ impl<'target, 'req> RawRequest<'target, 'req> {
         self.discard_reply = true;
     }
 
-    pub(crate) fn discard_mode(&self) -> Option<DiscardMode> {
+    #[must_use]
+    pub fn discard_mode(&self) -> Option<DiscardMode> {
         if self.discard_reply {
             Some(DiscardMode::DiscardReply)
         } else {

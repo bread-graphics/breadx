@@ -1,4 +1,7 @@
-// MIT/Apache2 License
+//               Copyright John Nunley, 2022.
+// Distributed under the Boost Software License, Version 1.0.
+//       (See accompanying file LICENSE or copy at
+//         https://www.boost.org/LICENSE_1_0.txt)
 
 //! `breadx` is a comprehensive implementation of the [X11 client protocol]
 //! with an aim to be featureful and powerful, but also easy to use.
@@ -149,7 +152,7 @@ pub use x11rb_protocol::{connect, x11_utils};
 /// The protocol used during communication.
 pub mod protocol {
     #[doc(inline)]
-    pub use x11rb_protocol::{connection::ReplyFdKind, protocol::*, x11_utils::*};
+    pub use x11rb_protocol::{connection::ReplyFdKind, protocol::*, x11_utils::*, DiscardMode};
 }
 
 cfg_std! {

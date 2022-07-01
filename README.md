@@ -39,4 +39,8 @@ major or minor version bump.
 
 ## License
 
-Dual licensed under the MIT and Apache 2.0 Licenses, just like Rust proper is.
+This package is distributed under the Boost Software License Version 1.0.
+Consult the [LICENSE](./LICENSE) file or consult the [web mirror] for
+more information.
+
+[web mirror]: https://www.boost.org/LICENSE_1_0.txt

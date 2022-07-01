@@ -1,4 +1,7 @@
-// MIT/Apache2 License
+//               Copyright John Nunley, 2022.
+// Distributed under the Boost Software License, Version 1.0.
+//       (See accompanying file LICENSE or copy at
+//         https://www.boost.org/LICENSE_1_0.txt)
 
 #![cfg(feature = "async")]
 #![allow(clippy::needless_pass_by_value)]
@@ -192,6 +195,10 @@ enum SocketMode {
 
 impl SocketDetails {
     fn connect(self) -> Result<Socket> {
+        // impl here is taken from:
+        // https://github.com/smol-rs/nb-connect/blob/master/src/lib.rs
+        // nb-connect is dual-licensed under MIT or Apache 2.0
+
         let SocketDetails {
             addr,
             domain,

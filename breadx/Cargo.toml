@@ -1,10 +1,15 @@
+#               Copyright John Nunley, 2022.
+# Distributed under the Boost Software License, Version 1.0.
+#       (See accompanying file LICENSE or copy at
+#         https://www.boost.org/LICENSE_1_0.txt)
+
 [package]
 name = "breadx"
-version = "3.0.1"
+version = "3.1.0"
 authors = ["notgull <jtnunley01@gmail.com>"]
 edition = "2018"
 description = "Pure-Rust X11 connection implementation with a focus on adaptability"
-license = "MIT OR Apache-2.0"
+license = "BSL-1.0"
 homepage = "https://github.com/bread-graphics/breadx#readme"
 repository = "https://github.com/bread-graphics/breadx"
 documentation = "https://docs.rs/breadx"
@@ -106,3 +111,6 @@ all-extensions = [
     "xv",
     "xvmc",
 ]
+
+[package.metadata.docs.rs]
+all-features = true

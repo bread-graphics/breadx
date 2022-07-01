@@ -1,9 +1,13 @@
+#               Copyright John Nunley, 2022.
+# Distributed under the Boost Software License, Version 1.0.
+#       (See accompanying file LICENSE or copy at
+#         https://www.boost.org/LICENSE_1_0.txt)
+
 [package]
 name = "breadx-generator"
 version = "0.1.0"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "BSL-1.0"
 
 [dependencies]
 anyhow = "1.0.57"
