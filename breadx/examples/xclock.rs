@@ -3,10 +3,9 @@
 //! This is a `breadx` port of the `xclock` utility.
 //!
 //! `tokio` is used as a backing runtime to coordinate everything.
-//! X11 events are sent into a channel along with events from a timer,
-//! where they are processed in a single event loop. The `chrono` crate
-//! is used to keep an accurate time, and the `euclid` crate is used
-//! for geometry. The XRender extension is used for drawing.
+//! The `chrono` crate is used to keep an accurate time, and the 
+//! `euclid` crate is used for geometry. The XRender extension is 
+//! used for drawing.
 //!
 //! For the time being, the `tokio` portion of this program restricts it
 //! to being `Unix`-exclusive.
