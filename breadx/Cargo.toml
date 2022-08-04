@@ -35,13 +35,13 @@ x11rb-protocol = { version = "~0.10", default-features = false }
 
 [dev-dependencies]
 async-std = { version = "1.11.0", features = ["attributes"] }
-chrono = "0.4.19"
+chrono = "0.4.20"
 euclid = "0.22.7"
 ordered-float = "3.0.0"
 spin_on = "0.1.1"
 tokio = { version = "1.19", features = ["macros", "io-std", "io-util", "sync", "time", "tracing"] }
 tokio-stream = "0.1.9"
-tracing-subscriber = "0.3.11"
+tracing-subscriber = "0.3.15"
 uds_windows = "1.0.2"
 
 [features]
