@@ -104,7 +104,7 @@ impl SendmsgConnection {
         let span = tracing::trace_span!("recvmsg");
         let _enter = span.enter();
 
-        if iov.is_empty() {
+        if iov.iter().all(|slice| slice.is_empty()) {
             return Ok(0);
         }
 
@@ -126,6 +126,11 @@ impl SendmsgConnection {
 
         // process the infomration
         let bytes_read = msg.bytes;
+
+        if bytes_read == 0 {
+            return Err(Error::make_disconnected());
+        }
+
         let mut cloexec_result = Ok(());
         fds.extend(
             msg.cmsgs()
