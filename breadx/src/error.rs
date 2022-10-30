@@ -77,6 +77,8 @@ enum Inner {
         /// Maximum request length.
         max_len: usize,
     },
+    /// Connection was closed.
+    Disconnected,
     /// Attempted to send a request while another was in progress.
     #[cfg(feature = "async")]
     AsyncSendInProgress {
@@ -146,6 +148,10 @@ impl Error {
 
     pub(crate) fn make_large_request(x_len: usize, max_len: usize) -> Self {
         Error::from_inner(Inner::RequestTooLarge { x_len, max_len })
+    }
+
+    pub(crate) fn make_disconnected() -> Self {
+        Error::from_inner(Inner::Disconnected)
     }
 
     pub(crate) fn make_setup_failure(sf: SetupFailure) -> Self {
@@ -278,6 +284,12 @@ impl Error {
             inner => Err(Self::from_inner(inner)),
         }
     }
+
+    /// Did this error occur because the X11 connection was closed?
+    #[must_use]
+    pub fn disconnected(&self) -> bool {
+        matches!(self.inner, Inner::Disconnected)
+    }
 }
 
 // crate-private api
@@ -349,6 +361,7 @@ impl fmt::Debug for Error {
                     Inner::RequestTooLarge { x_len, max_len } => {
                         write!(f, "RequestTooLarge: {} > {}", x_len, max_len)
                     }
+                    Inner::Disconnected => write!(f, "Disconnected"),
                     #[cfg(feature = "async")]
                     Inner::AsyncSendInProgress { seq } => {
                         write!(f, "AsyncSendInProgress: seq {}", seq)
@@ -405,6 +418,7 @@ impl fmt::Display for Error {
                     max_len * 4
                 )
             }
+            Inner::Disconnected => write!(f, "connection to the X server was closed"),
             #[cfg(feature = "async")]
             Inner::AsyncSendInProgress { seq } => {
                 write!(f, "async send in progress for sequence {}", seq)

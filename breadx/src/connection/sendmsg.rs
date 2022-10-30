@@ -126,6 +126,11 @@ impl SendmsgConnection {
 
         // process the infomration
         let bytes_read = msg.bytes;
+
+        if bytes_read == 0 {
+            return Err(Error::make_disconnected());
+        }
+
         let mut cloexec_result = Ok(());
         fds.extend(
             msg.cmsgs()
