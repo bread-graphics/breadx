@@ -104,7 +104,7 @@ impl SendmsgConnection {
         let span = tracing::trace_span!("recvmsg");
         let _enter = span.enter();
 
-        if !iov.iter().any(|slice| !slice.is_empty()) {
+        if iov.iter().all(|slice| slice.is_empty()) {
             return Ok(0);
         }
 
