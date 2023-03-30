@@ -1,3 +1,7 @@
+## Passively Maintained
+
+The original author will spend their effort helping to maintain [`x11rb`](https://crates.io/crates/x11rb) instead of this crate. Bugs will still be fixed; however new features will not be added.
+
 # breadx
 
 [![crates.io][crates-badge]][crates-url]
